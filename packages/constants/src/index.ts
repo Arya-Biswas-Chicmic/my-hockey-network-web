@@ -1,0 +1,90 @@
+import type { RoleOption } from '@my-hockey-network/types';
+
+export enum ROUTES {
+  ONBOARDING = 'Onboarding',
+  SIGNUP = 'Signup',
+  LOGIN = 'Login',
+  FORGOT_PASSWORD = 'ForgotPassword',
+  MAIN_TABS = 'MainTabs',
+}
+
+export const DEFAULT_ROLE_OPTIONS: RoleOption[] = [
+  {
+    id: 'parent',
+    title: 'Parent / Guardian',
+    description: 'Support my athlete on and off the ice',
+    icon: '/parents.png',
+  },
+  {
+    id: 'player',
+    title: 'Player',
+    description: 'I play hockey',
+    icon: '/player.png',
+  },
+  {
+    id: 'coach',
+    title: 'Coach / Team Staff',
+    description: 'I coach or support a team.',
+    icon: '/CoachTeam.png',
+  },
+];
+
+export const DEFAULT_SELECTED_ROLE_IDS: string[] = ['player'];
+
+export const BRAND_COLORS = {
+  primary: '#0B66C2',
+  primaryHover: '#09519b',
+  primaryActive: '#073f78',
+  heading: '#424242',
+  subheading: '#BDBDBD',
+  textDark: '#0C1014',
+  textMuted: 'rgba(12, 16, 20, 0.8)',
+  borderLight: '#8C8C8C33',
+  borderSelected: '#A7D3FF',
+  bgCard: '#FFFFFF',
+  bgScreen: '#FFFFFF',
+  bgIllustration: '#0d59cf',
+} as const;
+
+export const ONBOARDING_STRINGS = {
+  title: 'How are you\ninvolved in hockey?',
+  subtitle: 'Select all that apply. You can update this\nanytime in your settings',
+  continueButton: 'Continue',
+} as const;
+
+export const CREATE_ACCOUNT_STRINGS = {
+  title: 'Create Account',
+  subtitle: "Let's Create your account",
+  fullNameLabel: 'Full Name',
+  fullNamePlaceholder: 'enter your name',
+  emailLabel: 'Email',
+  emailPlaceholder: 'admin@gmail.com',
+  dobLabel: 'DOB',
+  dobPlaceholder: 'DD/MM/YYYY',
+  passwordLabel: 'Password',
+  passwordPlaceholder: 'enter your password',
+  submitButton: 'Sign up',
+  googleButton: 'Continue with Google',
+  backButton: 'Back',
+  alreadyHaveAccount: 'Already have an account? ',
+  signInLink: 'Sign-in',
+} as const;
+
+export const STORAGE_KEYS = {
+  AUTH_TOKEN: 'auth_token_v1',
+  USER_THEME: 'user_theme_preference',
+  ONBOARDING_STATE: 'onboarding_state_v1',
+} as const;
+
+export const API_URLS = {
+  BASE_URL: 'https://api.myhockeynetwork.com',
+  LOGIN: '/auth/login',
+  SIGNUP: '/auth/signup',
+  REFRESH_TOKEN: '/auth/refresh',
+  PROFILE: '/user/profile',
+} as const;
+
+export const REGEX_PATTERNS = {
+  EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  DATE_DDMMYYYY: /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012])\/(19|20)\d\d$/,
+} as const;

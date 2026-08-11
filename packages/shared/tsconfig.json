@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "declaration": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@my-hockey-network/types": ["../types/src/index.ts"],
+      "@my-hockey-network/constants": ["../constants/src/index.ts"],
+      "@my-hockey-network/design-system": ["../design-system/src/index.ts"],
+      "@my-hockey-network/utils": ["../utils/src/index.ts"],
+      "@my-hockey-network/core": ["../core/src/index.ts"],
+      "@my-hockey-network/auth": ["../auth/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*"]
+}
