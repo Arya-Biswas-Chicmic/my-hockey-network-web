@@ -1,13 +1,62 @@
-import { OnboardingModal } from './components/features/onboarding/OnboardingModal';
+import React, { useState } from 'react';
+import { 
+  GuardianApprovalPage, 
+  RequestSentPage, 
+  OnboardingPage, 
+  HomePage, 
+  MyNetworkPage, 
+  EventsPage, 
+  MessagingPage, 
+  NotificationsPage, 
+  ProfilePage 
+} from './pages';
 
 export default function App() {
-  const handleComplete = (data: { selectedRoles: string[]; accountData?: any }) => {
-    console.log('Onboarding & Signup Complete:', data);
+  const [currentScreen, setCurrentScreen] = useState<string>('home');
+
+  const handleNavigate = (screen: string) => {
+    setCurrentScreen(screen);
+  };
+
+  const handleLogout = () => {
+    setCurrentScreen('onboarding');
   };
 
   return (
-    <main className="onboarding-screen">
-      <OnboardingModal onComplete={handleComplete} />
-    </main>
+    <div className="app-viewport">
+      {currentScreen === 'home' && (
+        <HomePage onNavigate={handleNavigate} onLogout={handleLogout} />
+      )}
+      {currentScreen === 'network' && (
+        <MyNetworkPage onNavigate={handleNavigate} onLogout={handleLogout} />
+      )}
+      {currentScreen === 'events' && (
+        <EventsPage onNavigate={handleNavigate} onLogout={handleLogout} />
+      )}
+      {currentScreen === 'messaging' && (
+        <MessagingPage onNavigate={handleNavigate} onLogout={handleLogout} />
+      )}
+      {currentScreen === 'notifications' && (
+        <NotificationsPage onNavigate={handleNavigate} onLogout={handleLogout} />
+      )}
+      {currentScreen === 'profile' && (
+        <ProfilePage onNavigate={handleNavigate} onLogout={handleLogout} />
+      )}
+
+      {/* Onboarding Flow Screens */}
+      {currentScreen === 'onboarding' && (
+        <OnboardingPage onComplete={() => setCurrentScreen('guardian')} />
+      )}
+      {currentScreen === 'guardian' && (
+        <GuardianApprovalPage 
+          onSendSuccess={() => setCurrentScreen('sent')}
+          onSignOut={handleLogout}
+        />
+      )}
+      {currentScreen === 'sent' && (
+        <RequestSentPage onComplete={() => setCurrentScreen('home')} />
+      )}
+    </div>
   );
 }
+

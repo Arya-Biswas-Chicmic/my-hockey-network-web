@@ -7,21 +7,31 @@
     "apps/*"
   ],
   "scripts": {
+    "scan": "node scripts/scan-obfuscation.mjs",
+    "predev": "npm run scan",
     "dev": "npm run dev:web",
+    "prebuild": "npm run scan",
+    "build": "npm run build:web",
+    "prestart": "npm run scan",
     "start": "npm run dev:web",
+    "prelint": "npm run scan",
+    "lint": "npm run lint --workspaces --if-present",
+    "pretypecheck": "npm run scan",
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky",
     "dev:web": "npm run dev --workspace=apps/web",
     "build:web": "npm run build --workspace=apps/web",
     "start:mobile": "npm run start --workspace=apps/mobile",
     "dev:mobile": "npm run start --workspace=apps/mobile",
     "android:mobile": "npm run android --workspace=apps/mobile",
-    "ios:mobile": "npm run ios --workspace=apps/mobile",
-    "lint": "npm run lint --workspaces --if-present"
+    "ios:mobile": "npm run ios --workspace=apps/mobile"
   },
   "overrides": {
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
     "typescript": "^5.9.2"
   },
   "dependencies": {

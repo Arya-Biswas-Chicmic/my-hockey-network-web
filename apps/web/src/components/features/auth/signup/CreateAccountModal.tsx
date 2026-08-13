@@ -1,5 +1,5 @@
 import React from 'react';
-import { OnboardingIllustration } from '../onboarding/OnboardingIllustration';
+import { OnboardingIllustration } from '../../onboarding/OnboardingIllustration';
 import { CreateAccountForm } from './CreateAccountForm';
 
 interface CreateAccountModalProps {
@@ -9,21 +9,11 @@ interface CreateAccountModalProps {
   onSignInClick?: () => void;
 }
 
-export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
-  onSignUp,
-  onGoogleSignIn,
-  onBack,
-  onSignInClick,
-}) => {
+export const CreateAccountModal: React.FC<CreateAccountModalProps> = (props) => {
   return (
     <div className="onboarding-modal">
       <OnboardingIllustration />
-      <CreateAccountForm
-        onSignUp={onSignUp}
-        onGoogleSignIn={onGoogleSignIn}
-        onBack={onBack}
-        onSignInClick={onSignInClick}
-      />
+      <CreateAccountForm {...props} />
     </div>
   );
 };

@@ -4,8 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "scan": "node ../../scripts/scan-obfuscation.mjs",
+    "predev": "npm run scan",
     "dev": "vite",
+    "prebuild": "npm run scan",
     "build": "tsc -b && vite build",
+    "prelint": "npm run scan",
     "lint": "eslint .",
     "preview": "vite preview"
   },

@@ -70,6 +70,36 @@ export const CREATE_ACCOUNT_STRINGS = {
   signInLink: 'Sign-in',
 } as const;
 
+export const GUARDIAN_APPROVAL_STRINGS = {
+  brandName: 'MyHockey',
+  panelTitle: 'Empowering the next generation of \nathletes.',
+  panelSubtitle: 'Join the premier network for hockey players, coaches, and families. Safety and sportsmanship start with a strong community foundation.',
+  featureSecureTitle: 'Secure Verification',
+  featureSecureSubtitle: 'Strict compliance with youth safety standards.',
+  featureParentalTitle: 'Parental Controls',
+  featureParentalSubtitle: "Managing your child's hockey journey together.",
+  formTitle: 'Guardian Approval Required',
+  formSubtitle: 'To keep your account safe and follow community guidelines, we need a parent or guardian to verify your account.',
+  emailLabel: 'Parent/Guardian Email Address',
+  emailPlaceholder: 'email@example.com',
+  sendRequestButton: 'Send Verification Request',
+  signOutButton: 'Sign Out',
+  havingTrouble: 'Having trouble? ',
+  contactSupport: 'Contact Support',
+} as const;
+
+export const REQUEST_SENT_STRINGS = {
+  title: 'Request Sent!',
+  subtitle: "We've emailed your parent/guardian. Once they approve, you'll have limited access to MyHockey Network. You can explore some public content in the meantime.",
+  continueButton: 'Continue',
+  featureTournamentsTitle: 'Public Tournaments',
+  featureTournamentsDesc: 'View open bracket results and regional rankings.',
+  featureCommunityTitle: 'Community Board',
+  featureCommunityDesc: "See what's happening in the local hockey scene.",
+} as const;
+
+
+
 export const STORAGE_KEYS = {
   AUTH_TOKEN: 'auth_token_v1',
   USER_THEME: 'user_theme_preference',
