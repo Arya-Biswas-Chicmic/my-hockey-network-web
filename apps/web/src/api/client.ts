@@ -29,8 +29,8 @@ export class ApiError extends Error {
   }
 }
 
-// Environment base URL (defaults to http://localhost:3000/v1)
-const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:3000/v1';
+// Environment base URL (defaults to ngrok live backend URL /v1)
+const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'https://reposeful-kareen-controllingly.ngrok-free.dev/v1';
 
 // Helper to read cookie by name (for mhn_csrf)
 export function getCookie(name: string): string | null {
@@ -53,6 +53,7 @@ async function executeRefresh(): Promise<boolean> {
       headers: {
         'Content-Type': 'application/json',
         'X-Client-Type': 'web',
+        'ngrok-skip-browser-warning': 'true',
       },
       credentials: 'include',
     });
@@ -98,6 +99,7 @@ export async function apiFetch<T = any>(
   const headers: Record<string, string> = {
     'X-Client-Type': 'web',
     'Accept-Language': 'en',
+    'ngrok-skip-browser-warning': 'true',
     ...(options.headers as Record<string, string> || {}),
   };
 
