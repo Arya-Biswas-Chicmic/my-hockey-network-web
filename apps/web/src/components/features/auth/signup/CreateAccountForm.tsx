@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { CREATE_ACCOUNT_STRINGS } from '@my-hockey-network/shared';
 
 interface CreateAccountFormProps {
-  onSignUp?: (data: { fullName: string; email: string; dob: string; password: string }) => void;
+  onSignUp?: (data: { fullName: string; email: string; dob: string; password?: string }) => void;
   onGoogleSignIn?: () => void;
   onBack?: () => void;
   onSignInClick?: () => void;
@@ -17,13 +17,51 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [dob, setDob] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  // Smart DOB auto-formatter: e.g. 10042020 -> 10/04/2020
+  const formatDobInput = (val: string) => {
+    const digits = val.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 2) {
+      return digits;
+    }
+    if (digits.length <= 4) {
+      return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    }
+    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+  };
+
+  const handleDobChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawVal = e.target.value;
+    const formatted = formatDobInput(rawVal);
+    setDob(formatted);
+  };
+
+  const handleCalendarClick = () => {
+    if (dateInputRef.current) {
+      if (typeof dateInputRef.current.showPicker === 'function') {
+        dateInputRef.current.showPicker();
+      } else {
+        dateInputRef.current.click();
+      }
+    }
+  };
+
+  const handleDatePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const dateVal = e.target.value; // Format: YYYY-MM-DD
+    if (dateVal) {
+      const parts = dateVal.split('-');
+      if (parts.length === 3) {
+        const [yyyy, mm, dd] = parts;
+        setDob(`${dd}/${mm}/${yyyy}`);
+      }
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (onSignUp) {
-      onSignUp({ fullName, email, dob, password });
+      onSignUp({ fullName, email, dob });
     }
   };
 
@@ -73,59 +111,38 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
           <label className="auth-label" htmlFor="dob">
             {CREATE_ACCOUNT_STRINGS.dobLabel}
           </label>
-          <div className="auth-input-wrapper">
+          <div className="auth-input-wrapper" style={{ position: 'relative' }}>
             <input
               id="dob"
               type="text"
               className="auth-input"
               placeholder={CREATE_ACCOUNT_STRINGS.dobPlaceholder}
               value={dob}
-              onChange={(e) => setDob(e.target.value)}
+              onChange={handleDobChange}
+              maxLength={10}
             />
             <img
               src="/calendar.png"
               alt="Calendar"
-              className="auth-input-icon"
-            />
-          </div>
-        </div>
-
-        <div className="auth-form-group">
-          <label className="auth-label" htmlFor="password">
-            {CREATE_ACCOUNT_STRINGS.passwordLabel}
-          </label>
-          <div className="auth-input-wrapper">
-            <input
-              id="password"
-              type={showPassword ? 'text' : 'password'}
-              className="auth-input"
-              placeholder={CREATE_ACCOUNT_STRINGS.passwordPlaceholder}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <svg
               className="auth-input-icon auth-input-icon-clickable"
-              onClick={() => setShowPassword(!showPassword)}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              {showPassword ? (
-                <>
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                  <line x1="1" y1="1" x2="23" y2="23" />
-                </>
-              ) : (
-                <>
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </>
-              )}
-            </svg>
+              onClick={handleCalendarClick}
+              style={{ cursor: 'pointer' }}
+            />
+            <input
+              type="date"
+              ref={dateInputRef}
+              onChange={handleDatePickerChange}
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '32px',
+                height: '100%',
+                opacity: 0,
+                cursor: 'pointer',
+                zIndex: 2,
+              }}
+            />
           </div>
         </div>
 

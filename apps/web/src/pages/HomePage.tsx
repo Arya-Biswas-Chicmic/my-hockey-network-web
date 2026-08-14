@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Header } from '../components/common/Header';
 import { PendingBanner } from '../components/common/PendingBanner';
 import { ProfileSummaryCard } from '../components/features/home/ProfileSummaryCard';
-import { FeedPostCard } from '../components/features/home/FeedPostCard';
+import { FeedPostCard, FeedPostProps } from '../components/features/home/FeedPostCard';
 import { MatchesWidget } from '../components/features/home/MatchesWidget';
 import { UpcomingEventsWidget } from '../components/features/home/UpcomingEventsWidget';
 import { InviteGrowWidget } from '../components/features/home/InviteGrowWidget';
+import { CreatePostModal } from '../components/features/home/CreatePostModal';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -15,16 +16,10 @@ interface PageProps {
 export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [activeNavTab, setActiveNavTab] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
-
-  const handleTabChange = (tab: string) => {
-    setActiveNavTab(tab);
-    if (onNavigate) {
-      onNavigate(tab);
-    }
-  };
+  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 
   // Sample feed posts matching the Figma screenshot
-  const posts = [
+  const [feedPosts, setFeedPosts] = useState<FeedPostProps[]>([
     {
       id: 'p1',
       authorName: 'KC Blueknocks',
@@ -49,7 +44,30 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       commentsCount: 5,
       isFollowing: false,
     }
-  ];
+  ]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveNavTab(tab);
+    if (onNavigate) {
+      onNavigate(tab);
+    }
+  };
+
+  const handleCreatePost = (content: string, postImage?: string) => {
+    const newPost = {
+      id: `post-${Date.now()}`,
+      authorName: 'Alexander Ovechkin',
+      authorRole: 'LW • #8',
+      authorTime: 'Just now',
+      authorAvatar: '/ovechkin.png',
+      content,
+      postImage,
+      likesCount: 0,
+      commentsCount: 0,
+      isFollowing: false,
+    };
+    setFeedPosts([newPost, ...feedPosts]);
+  };
 
   return (
     <div className="mhn-home-page-root">
@@ -58,8 +76,8 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}
-        userName="Jack Ruffle"
-        userAvatar="/jack.png"
+        userName="Alexander Ovechkin"
+        userAvatar="/ovechkin.png"
       />
 
       {/* Pending Guardian Notice Banner */}
@@ -83,14 +101,14 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             teamLogo="/HC.png"
             followers="1M"
             following="700"
-            onPostClick={() => alert('Create new post modal')}
+            onPostClick={() => setIsCreatePostOpen(true)}
           />
         </aside>
 
         {/* Center Column: Feed Posts */}
         <section className="mhn-layout-col-center">
           <div className="mhn-feed-posts-stack">
-            {posts.map((post) => (
+            {feedPosts.map((post) => (
               <FeedPostCard 
                 key={post.id}
                 {...post}
@@ -136,6 +154,15 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           />
         </aside>
       </main>
+
+      {/* Create Post Modal */}
+      <CreatePostModal
+        isOpen={isCreatePostOpen}
+        onClose={() => setIsCreatePostOpen(false)}
+        onSubmit={handleCreatePost}
+        userName="Alexander Ovechkin"
+        userAvatar="/ovechkin.png"
+      />
     </div>
   );
 };

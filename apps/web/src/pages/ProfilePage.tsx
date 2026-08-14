@@ -382,14 +382,17 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       <span className="mhn-season-metric-label">GP</span>
                       <span className="mhn-season-metric-value">81</span>
                     </div>
+                    <div className="mhn-season-metric-divider" />
                     <div className="mhn-season-metric-col">
                       <span className="mhn-season-metric-label">G</span>
                       <span className="mhn-season-metric-value">7</span>
                     </div>
+                    <div className="mhn-season-metric-divider" />
                     <div className="mhn-season-metric-col">
                       <span className="mhn-season-metric-label">A</span>
                       <span className="mhn-season-metric-value">7</span>
                     </div>
+                    <div className="mhn-season-metric-divider" />
                     <div className="mhn-season-metric-col">
                       <span className="mhn-season-metric-label">P</span>
                       <span className="mhn-season-metric-value">14</span>
@@ -422,7 +425,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   {/* Card 3 */}
                   <div className="mhn-percentile-card">
                     <div className="mhn-percentile-card-header">
-                      <span className="mhn-percentile-badge-outline">&gt;50th PERCENTILE</span>
+                      <span className="mhn-percentile-badge-outline">&lt;50th PERCENTILE</span>
                       <div className="mhn-percentile-info-icon" title="Most Miles Skated Info">i</div>
                     </div>
                     <div className="mhn-percentile-value">2.63</div>

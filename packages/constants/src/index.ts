@@ -61,8 +61,6 @@ export const CREATE_ACCOUNT_STRINGS = {
   emailPlaceholder: 'admin@gmail.com',
   dobLabel: 'DOB',
   dobPlaceholder: 'DD/MM/YYYY',
-  passwordLabel: 'Password',
-  passwordPlaceholder: 'enter your password',
   submitButton: 'Sign up',
   googleButton: 'Continue with Google',
   backButton: 'Back',

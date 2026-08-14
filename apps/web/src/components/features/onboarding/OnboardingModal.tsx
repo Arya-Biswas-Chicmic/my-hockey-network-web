@@ -5,13 +5,13 @@ import { CreateAccountForm, VerifyEmailForm } from '../auth';
 import { DEFAULT_ROLE_OPTIONS, DEFAULT_SELECTED_ROLE_IDS } from '../../../constants/onboarding';
 
 interface OnboardingModalProps {
-  onComplete?: (data: { selectedRoles: string[]; accountData?: { fullName: string; email: string; dob: string; password: string } }) => void;
+  onComplete?: (data: { selectedRoles: string[]; accountData?: { fullName: string; email: string; dob: string; password?: string } }) => void;
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedRoles, setSelectedRoles] = useState<string[]>(DEFAULT_SELECTED_ROLE_IDS);
-  const [accountData, setAccountData] = useState<{ fullName: string; email: string; dob: string; password: string }>({
+  const [accountData, setAccountData] = useState<{ fullName: string; email: string; dob: string; password?: string }>({
     fullName: '',
     email: 'sarah@email.com',
     dob: '',
@@ -28,7 +28,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
     setStep(2);
   };
 
-  const handleSignUp = (data: { fullName: string; email: string; dob: string; password: string }) => {
+  const handleSignUp = (data: { fullName: string; email: string; dob: string; password?: string }) => {
     setAccountData(data);
     setStep(3);
   };

@@ -98,26 +98,6 @@ const SignupScreen = ({ navigation }: Props) => {
               </View>
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.inputLabel}>{CREATE_ACCOUNT_STRINGS.passwordLabel}</Text>
-              <View style={styles.inputWithIconWrapper}>
-                <TextInput
-                  style={styles.textInputWithIcon}
-                  placeholder={CREATE_ACCOUNT_STRINGS.passwordPlaceholder}
-                  placeholderTextColor="#BFBFBF"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                />
-                <Pressable
-                  onPress={() => setShowPassword(!showPassword)}
-                  hitSlop={8}
-                >
-                  <Text style={styles.eyeToggleText}>{showPassword ? '🙈' : '👁️'}</Text>
-                </Pressable>
-              </View>
-            </View>
-
             <Pressable style={styles.signUpButton} onPress={handleSignUp}>
               <Text style={styles.signUpButtonText}>
                 {CREATE_ACCOUNT_STRINGS.submitButton}

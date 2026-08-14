@@ -3,7 +3,7 @@ import { OnboardingIllustration } from '../../onboarding/OnboardingIllustration'
 import { CreateAccountForm } from './CreateAccountForm';
 
 interface CreateAccountModalProps {
-  onSignUp?: (data: { fullName: string; email: string; dob: string; password: string }) => void;
+  onSignUp?: (data: { fullName: string; email: string; dob: string; password?: string }) => void;
   onGoogleSignIn?: () => void;
   onBack?: () => void;
   onSignInClick?: () => void;
