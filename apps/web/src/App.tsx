@@ -23,6 +23,15 @@ export default function App() {
     setCurrentScreen('onboarding');
   };
 
+  const handleOnboardingComplete = (data?: any) => {
+    // If minor, route to guardian request setup, otherwise route directly to home screen
+    if (data?.onboardingResult?.isMinor) {
+      setCurrentScreen('guardian');
+    } else {
+      setCurrentScreen('home');
+    }
+  };
+
   return (
     <div className="app-viewport">
       {currentScreen === 'home' && (
@@ -53,7 +62,7 @@ export default function App() {
 
       {/* Onboarding Flow Screens */}
       {currentScreen === 'onboarding' && (
-        <OnboardingPage onComplete={() => setCurrentScreen('guardian')} />
+        <OnboardingPage onComplete={handleOnboardingComplete} />
       )}
       {currentScreen === 'guardian' && (
         <GuardianApprovalPage 
@@ -67,4 +76,3 @@ export default function App() {
     </div>
   );
 }
-
