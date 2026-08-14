@@ -119,7 +119,8 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
           {/* Upcoming Events Widget */}
           <UpcomingEventsWidget 
-            onViewAll={() => alert('View all upcoming events')}
+            onViewAll={() => handleTabChange('events')}
+            onEventClick={() => handleTabChange('event-detail')}
           />
 
           {/* Invite & Grow Widget */}

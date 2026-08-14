@@ -71,7 +71,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
           {code.map((digit, idx) => (
             <input
               key={idx}
-              ref={(el) => (inputRefs.current[idx] = el)}
+              ref={(el) => { inputRefs.current[idx] = el; }}
               type="text"
               inputMode="numeric"
               maxLength={1}
@@ -83,8 +83,8 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
           ))}
         </div>
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           className="btn-submit btn-confirm-otp"
         >
           Confirm
@@ -92,8 +92,8 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
       </form>
 
       {/* Change Email */}
-      <button 
-        type="button" 
+      <button
+        type="button"
         onClick={onChangeEmail}
         className="auth-back-link btn-change-email"
       >

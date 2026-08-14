@@ -7,3 +7,5 @@ export { EventsPage } from './EventsPage';
 export { MessagingPage } from './MessagingPage';
 export { NotificationsPage } from './NotificationsPage';
 export { ProfilePage } from './ProfilePage';
+export { EventDetailPage } from './EventDetailPage';
+

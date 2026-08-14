@@ -49,13 +49,8 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Left: Brand Logo */}
         <div className="mhn-header-logo-area">
           <div className="mhn-logo-badge" onClick={() => handleTabClick('home')} style={{ cursor: 'pointer' }}>
-            <span className="mhn-logo-title">MHN</span>
-            <span className="mhn-logo-subtitle">MY HOCKEY NETWORK</span>
             <div className="mhn-logo-stick-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 18L15 4C15.5 3.5 16.5 3.5 17 4L19.5 6.5C20 7 20 8 19.5 8.5L12 18H4Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M3 20H13C14 20 15 19.5 15.5 18.5L17 16" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
+             <img src="/logo.png" className='logo'/>
             </div>
           </div>
         </div>

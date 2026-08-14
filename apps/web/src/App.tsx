@@ -8,7 +8,8 @@ import {
   EventsPage, 
   MessagingPage, 
   NotificationsPage, 
-  ProfilePage 
+  ProfilePage,
+  EventDetailPage
 } from './pages';
 
 export default function App() {
@@ -41,6 +42,13 @@ export default function App() {
       )}
       {currentScreen === 'profile' && (
         <ProfilePage onNavigate={handleNavigate} onLogout={handleLogout} />
+      )}
+      {currentScreen === 'event-detail' && (
+        <EventDetailPage 
+          onNavigate={handleNavigate} 
+          onLogout={handleLogout}
+          onBack={() => setCurrentScreen('profile')}
+        />
       )}
 
       {/* Onboarding Flow Screens */}

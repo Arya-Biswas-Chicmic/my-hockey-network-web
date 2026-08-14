@@ -12,6 +12,7 @@ export interface EventItem {
 interface UpcomingEventsWidgetProps {
   events?: EventItem[];
   onViewAll?: () => void;
+  onEventClick?: (id: string) => void;
 }
 
 const DEFAULT_EVENTS: EventItem[] = [
@@ -27,7 +28,8 @@ const DEFAULT_EVENTS: EventItem[] = [
 
 export const UpcomingEventsWidget: React.FC<UpcomingEventsWidgetProps> = ({
   events = DEFAULT_EVENTS,
-  onViewAll
+  onViewAll,
+  onEventClick
 }) => {
   return (
     <div className="mhn-sidebar-card">
@@ -40,7 +42,12 @@ export const UpcomingEventsWidget: React.FC<UpcomingEventsWidgetProps> = ({
 
       <div className="mhn-events-list">
         {events.map((event) => (
-          <div key={event.id} className="mhn-event-card-item">
+          <div 
+            key={event.id} 
+            className="mhn-event-card-item"
+            onClick={() => onEventClick && onEventClick(event.id)}
+            style={{ cursor: 'pointer' }}
+          >
             {/* Left Date Badge Box */}
             <div className="mhn-event-date-box">
               <span className="mhn-event-month">{event.month}</span>
