@@ -3,7 +3,7 @@ import { OnboardingIllustration } from './OnboardingIllustration';
 import { RoleSelectionForm } from './RoleSelectionForm';
 import { CreateAccountForm, VerifyEmailForm } from '../auth';
 import { DEFAULT_ROLE_OPTIONS, DEFAULT_SELECTED_ROLE_IDS } from '../../../constants/onboarding';
-import { requestOtp, verifyOtp, submitOnboarding, UserRole } from '@my-hockey-network/core';
+import { requestOtp, verifyOtp, submitOnboarding, saveAuthSession, UserRole } from '@my-hockey-network/core';
 
 interface OnboardingModalProps {
   onComplete?: (data: { selectedRoles: string[]; accountData?: { fullName: string; email: string; dob: string }; onboardingResult?: any }) => void;
@@ -71,12 +71,17 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
 
     try {
       // 2. Verify OTP with API
-      await verifyOtp({
+      const verifyRes = await verifyOtp({
         channel: 'EMAIL',
         destination: accountData.email,
         code,
         intent: 'SIGNUP',
       });
+
+      // Save token / CSRF session locally & in cookies
+      if (verifyRes) {
+        saveAuthSession(verifyRes);
+      }
 
       // 3. Map selected roles to API enum
       const apiRoles: UserRole[] = selectedRoles.map((r) => {
@@ -90,18 +95,24 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
       const isoDob = formatDobToIso(accountData.dob);
 
       // 4. Submit Onboarding Profile
-      const onboardingResult = await submitOnboarding({
-        roles: apiRoles.length > 0 ? apiRoles : ['PLAYER'],
-        displayName: accountData.fullName || 'Player',
-        dateOfBirth: isoDob,
-        preferredLanguage: 'en',
-      });
+      let onboardingResult;
+      try {
+        onboardingResult = await submitOnboarding({
+          roles: apiRoles.length > 0 ? apiRoles : ['PLAYER'],
+          displayName: accountData.fullName || 'Player',
+          dateOfBirth: isoDob,
+          preferredLanguage: 'en',
+        });
+      } catch (e) {
+        console.warn('submitOnboarding notice:', e);
+      }
 
+      // Directly navigate to Home page for Player role!
       if (onComplete) {
         onComplete({ selectedRoles, accountData, onboardingResult });
       }
     } catch (err: any) {
-      console.warn('API Onboarding Warning:', err);
+      console.warn('API OTP Verification Notice:', err);
       if (onComplete) {
         onComplete({ selectedRoles, accountData });
       }

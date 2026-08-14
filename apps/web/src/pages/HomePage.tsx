@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '../components/common/Header';
 import { PendingBanner } from '../components/common/PendingBanner';
 import { ProfileSummaryCard } from '../components/features/home/ProfileSummaryCard';
@@ -7,6 +7,7 @@ import { MatchesWidget } from '../components/features/home/MatchesWidget';
 import { UpcomingEventsWidget } from '../components/features/home/UpcomingEventsWidget';
 import { InviteGrowWidget } from '../components/features/home/InviteGrowWidget';
 import { CreatePostModal } from '../components/features/home/CreatePostModal';
+import { getAuthMe, saveUserProfile, AuthMeResponse } from '@my-hockey-network/core';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -17,6 +18,26 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [activeNavTab, setActiveNavTab] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  const [userSession, setUserSession] = useState<AuthMeResponse | null>(null);
+
+  // Hit GET /v1/auth/me on Home page mount
+  useEffect(() => {
+    async function loadUserSession() {
+      try {
+        console.log('🚀 [HomePage Mounted] Hitting GET /v1/auth/me API...');
+        const res = await getAuthMe();
+        if (res) {
+          setUserSession(res);
+          saveUserProfile(res);
+          console.log('✅ [HomePage] Auth Me API Response:', res);
+        }
+      } catch (err: any) {
+        console.warn('⚠️ [HomePage] Auth Me API Error:', err.message || err);
+      }
+    }
+
+    loadUserSession();
+  }, []);
 
   // Sample feed posts matching the Figma screenshot
   const [feedPosts, setFeedPosts] = useState<FeedPostProps[]>([
