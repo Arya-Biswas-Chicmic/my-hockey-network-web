@@ -29,8 +29,8 @@ export class ApiError extends Error {
   }
 }
 
-// Environment base URL (defaults to ngrok live backend URL /v1)
-const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'https://reposeful-kareen-controllingly.ngrok-free.dev/v1';
+// Environment base URL (defaults to /v1 proxy to bypass CORS in development)
+const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || '/v1';
 
 // Helper to read cookie by name (for mhn_csrf)
 export function getCookie(name: string): string | null {

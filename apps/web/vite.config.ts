@@ -9,6 +9,18 @@ const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    proxy: {
+      '/v1': {
+        target: 'https://reposeful-kareen-controllingly.ngrok-free.dev',
+        changeOrigin: true,
+        secure: false,
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       '@my-hockey-network/types': path.resolve(__dirname, '../../packages/types/src/index.ts'),
