@@ -74,9 +74,15 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         {/* Left Column: Profile Summary & Post Action */}
         <aside className="mhn-layout-col-left">
           <ProfileSummaryCard 
-            name="Jack Ruffle"
-            role="Player"
-            avatarUrl="/player.png"
+            name="Alexander Ovechkin"
+            role="LW • #8"
+            avatarUrl="/ovechkin.png"
+            coverUrl="/cover.png"
+            location="Austria, Europe"
+            teamName="HC Bloemendaal"
+            teamLogo="/HC.png"
+            followers="1M"
+            following="700"
             onPostClick={() => alert('Create new post modal')}
           />
         </aside>

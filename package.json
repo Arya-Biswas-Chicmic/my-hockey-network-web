@@ -21,6 +21,8 @@
     "prepare": "husky",
     "dev:web": "npm run dev --workspace=apps/web",
     "build:web": "npm run build --workspace=apps/web",
+    "deploy:web": "npm run build:web && npx netlify-cli deploy --prod --dir=apps/web/dist --filter @my-hockey-network/web",
+    "deploy": "npm run deploy:web",
     "start:mobile": "npm run start --workspace=apps/mobile",
     "dev:mobile": "npm run start --workspace=apps/mobile",
     "android:mobile": "npm run android --workspace=apps/mobile",
