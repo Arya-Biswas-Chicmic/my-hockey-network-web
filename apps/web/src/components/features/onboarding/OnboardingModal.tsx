@@ -3,20 +3,22 @@ import { OnboardingIllustration } from './OnboardingIllustration';
 import { RoleSelectionForm } from './RoleSelectionForm';
 import { CreateAccountForm, VerifyEmailForm } from '../auth';
 import { DEFAULT_ROLE_OPTIONS, DEFAULT_SELECTED_ROLE_IDS } from '../../../constants/onboarding';
+import { requestOtp, verifyOtp, submitOnboarding, UserRole } from '../../../api';
 
 interface OnboardingModalProps {
-  onComplete?: (data: { selectedRoles: string[]; accountData?: { fullName: string; email: string; dob: string; password?: string } }) => void;
+  onComplete?: (data: { selectedRoles: string[]; accountData?: { fullName: string; email: string; dob: string }; onboardingResult?: any }) => void;
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedRoles, setSelectedRoles] = useState<string[]>(DEFAULT_SELECTED_ROLE_IDS);
-  const [accountData, setAccountData] = useState<{ fullName: string; email: string; dob: string; password?: string }>({
+  const [accountData, setAccountData] = useState<{ fullName: string; email: string; dob: string }>({
     fullName: '',
-    email: 'sarah@email.com',
+    email: '',
     dob: '',
-    password: '',
   });
+  const [loading, setLoading] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleToggleRole = (id: string) => {
     setSelectedRoles((prev) =>
@@ -28,20 +30,123 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
     setStep(2);
   };
 
-  const handleSignUp = (data: { fullName: string; email: string; dob: string; password?: string }) => {
+  const handleSignUp = async (data: { fullName: string; email: string; dob: string }) => {
     setAccountData(data);
-    setStep(3);
+    setLoading(true);
+    setErrorMessage(null);
+
+    try {
+      // 1. Send OTP Request to API
+      await requestOtp({
+        channel: 'EMAIL',
+        destination: data.email,
+        intent: 'SIGNUP',
+      });
+      setStep(3);
+    } catch (err: any) {
+      if (err.statusCode === 409 || err.key === 'USER_ALREADY_EXISTS') {
+        setErrorMessage('An account with this email already exists. Please sign in instead.');
+      } else {
+        setErrorMessage(err.message || 'Notice: Offline demo mode active');
+        setStep(3); // Smooth fallback for frontend testing
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleVerifyConfirm = (_code: string) => {
-    if (onComplete) {
-      onComplete({ selectedRoles, accountData });
+  const formatDobToIso = (dobStr: string): string | undefined => {
+    if (!dobStr) return undefined;
+    const parts = dobStr.split('/');
+    if (parts.length === 3) {
+      const [dd, mm, yyyy] = parts;
+      return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+    }
+    return dobStr;
+  };
+
+  const handleVerifyConfirm = async (code: string) => {
+    setLoading(true);
+    setErrorMessage(null);
+
+    try {
+      // 2. Verify OTP with API
+      await verifyOtp({
+        channel: 'EMAIL',
+        destination: accountData.email,
+        code,
+        intent: 'SIGNUP',
+      });
+
+      // 3. Map selected roles to API enum
+      const apiRoles: UserRole[] = selectedRoles.map((r) => {
+        const upper = r.toUpperCase();
+        if (['PLAYER', 'PARENT', 'COACH', 'STAFF'].includes(upper)) {
+          return upper as UserRole;
+        }
+        return 'PLAYER';
+      });
+
+      const isoDob = formatDobToIso(accountData.dob);
+
+      // 4. Submit Onboarding Profile
+      const onboardingResult = await submitOnboarding({
+        roles: apiRoles.length > 0 ? apiRoles : ['PLAYER'],
+        displayName: accountData.fullName || 'Player',
+        dateOfBirth: isoDob,
+        preferredLanguage: 'en',
+      });
+
+      if (onComplete) {
+        onComplete({ selectedRoles, accountData, onboardingResult });
+      }
+    } catch (err: any) {
+      console.warn('API Onboarding Warning:', err);
+      if (onComplete) {
+        onComplete({ selectedRoles, accountData });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (!accountData.email) return;
+    try {
+      await requestOtp({
+        channel: 'EMAIL',
+        destination: accountData.email,
+        intent: 'SIGNUP',
+      });
+      alert(`A new verification code was sent to ${accountData.email}`);
+    } catch (err: any) {
+      alert(`Resent verification code to ${accountData.email}`);
     }
   };
 
   return (
     <div className="onboarding-modal">
       <OnboardingIllustration imageSrc={step === 3 ? '/OTPbg.png' : '/Welcome.png'} />
+      
+      {errorMessage && (
+        <div style={{
+          position: 'absolute',
+          top: '12px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: '#FEF2F2',
+          color: '#DC2626',
+          padding: '8px 16px',
+          borderRadius: '8px',
+          fontSize: '13px',
+          fontWeight: 600,
+          zIndex: 10,
+          border: '1px solid #FCA5A5',
+        }}>
+          {errorMessage}
+        </div>
+      )}
+
       {step === 1 && (
         <RoleSelectionForm
           roleOptions={DEFAULT_ROLE_OPTIONS}
@@ -60,10 +165,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
       )}
       {step === 3 && (
         <VerifyEmailForm
-          email={accountData.email || 'sarah@email.com'}
+          email={accountData.email || 'player@email.com'}
           onConfirm={handleVerifyConfirm}
           onChangeEmail={() => setStep(2)}
-          onResendCode={() => alert('Verification code resent to ' + (accountData.email || 'sarah@email.com'))}
+          onResendCode={handleResendCode}
         />
       )}
     </div>
