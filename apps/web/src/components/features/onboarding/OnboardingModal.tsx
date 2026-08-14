@@ -172,6 +172,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
           onGoogleSignIn={() => setStep(3)}
           onBack={() => setStep(1)}
           onSignInClick={() => setStep(1)}
+          loading={loading}
         />
       )}
       {step === 3 && (
@@ -180,6 +181,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
           onConfirm={handleVerifyConfirm}
           onChangeEmail={() => setStep(2)}
           onResendCode={handleResendCode}
+          loading={loading}
         />
       )}
     </div>

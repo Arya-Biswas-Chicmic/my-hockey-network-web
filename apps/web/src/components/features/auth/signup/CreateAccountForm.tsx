@@ -1,11 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { CREATE_ACCOUNT_STRINGS } from '@my-hockey-network/shared';
+import { Spinner } from '../../../common/Spinner';
 
 interface CreateAccountFormProps {
   onSignUp?: (data: { fullName: string; email: string; dob: string; password?: string }) => void;
   onGoogleSignIn?: () => void;
   onBack?: () => void;
   onSignInClick?: () => void;
+  loading?: boolean;
 }
 
 export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
@@ -13,6 +15,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
   onGoogleSignIn,
   onBack,
   onSignInClick,
+  loading = false,
 }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -146,8 +149,15 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
           </div>
         </div>
 
-        <button type="submit" className="btn-submit">
-          {CREATE_ACCOUNT_STRINGS.submitButton}
+        <button type="submit" className="btn-submit" disabled={loading} style={{ opacity: loading ? 0.75 : 1 }}>
+          {loading ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <Spinner size="sm" color="#FFFFFF" />
+              <span>Sending Code...</span>
+            </span>
+          ) : (
+            CREATE_ACCOUNT_STRINGS.submitButton
+          )}
         </button>
       </form>
 

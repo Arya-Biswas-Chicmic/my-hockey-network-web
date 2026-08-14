@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
+import { Spinner } from '../../../common/Spinner';
 
 interface VerifyEmailFormProps {
   email?: string;
   onConfirm?: (code: string) => void;
   onChangeEmail?: () => void;
   onResendCode?: () => void;
+  loading?: boolean;
 }
 
 export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
@@ -12,6 +14,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
   onConfirm,
   onChangeEmail,
   onResendCode,
+  loading = false,
 }) => {
   const [code, setCode] = useState<string[]>(['', '', '', '', '', '']);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -79,6 +82,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
               onChange={(e) => handleChange(idx, e.target.value)}
               onKeyDown={(e) => handleKeyDown(idx, e)}
               className="otp-digit-input"
+              disabled={loading}
             />
           ))}
         </div>
@@ -86,8 +90,17 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
         <button
           type="submit"
           className="btn-submit btn-confirm-otp"
+          disabled={loading}
+          style={{ opacity: loading ? 0.75 : 1 }}
         >
-          Confirm
+          {loading ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <Spinner size="sm" color="#FFFFFF" />
+              <span>Verifying...</span>
+            </span>
+          ) : (
+            'Confirm'
+          )}
         </button>
       </form>
 

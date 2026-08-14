@@ -7,6 +7,7 @@ import { MatchesWidget } from '../components/features/home/MatchesWidget';
 import { UpcomingEventsWidget } from '../components/features/home/UpcomingEventsWidget';
 import { InviteGrowWidget } from '../components/features/home/InviteGrowWidget';
 import { CreatePostModal } from '../components/features/home/CreatePostModal';
+import { Spinner } from '../components/common/Spinner';
 import { getAuthMe, saveUserProfile, AuthMeResponse } from '@my-hockey-network/core';
 
 interface PageProps {
@@ -19,10 +20,12 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [userSession, setUserSession] = useState<AuthMeResponse | null>(null);
+  const [isPageLoading, setIsPageLoading] = useState<boolean>(true);
 
   // Hit GET /v1/auth/me on Home page mount
   useEffect(() => {
     async function loadUserSession() {
+      setIsPageLoading(true);
       try {
         console.log('🚀 [HomePage Mounted] Hitting GET /v1/auth/me API...');
         const res = await getAuthMe();
@@ -33,6 +36,8 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         }
       } catch (err: any) {
         console.warn('⚠️ [HomePage] Auth Me API Error:', err.message || err);
+      } finally {
+        setIsPageLoading(false);
       }
     }
 
@@ -92,6 +97,27 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
   const currentUserName = userSession?.profile?.displayName || 'Alexander Ovechkin';
   const currentUserRole = userSession?.profile?.type || userSession?.primaryRole || 'LW • #8';
+
+  if (isPageLoading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        width: '100%',
+        backgroundColor: '#FFFFFF',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '24px',
+      }}>
+        <img src="/logo.png" alt="My Hockey Network" style={{ height: '48px', objectFit: 'contain' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#0F172A', fontWeight: 600, fontSize: '15px' }}>
+          <Spinner size="md" color="#0091FF" />
+          <span>Loading Home Network...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mhn-home-page-root">
