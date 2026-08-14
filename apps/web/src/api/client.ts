@@ -68,6 +68,24 @@ async function executeRefresh(): Promise<boolean> {
   }
 }
 
+// Helper to log equivalent cURL command string to browser console
+function logCurlCommand(url: string, method: string, headers: Record<string, string>, body?: any) {
+  const curlParts = [`curl -X ${method} "${url}"`];
+
+  for (const [k, v] of Object.entries(headers)) {
+    curlParts.push(`  -H "${k}: ${v}"`);
+  }
+
+  if (body) {
+    const bodyStr = typeof body === 'string' ? body : JSON.stringify(body);
+    curlParts.push(`  -d '${bodyStr}'`);
+  }
+
+  const curlCommand = curlParts.join(' \\\n');
+  console.log(`%c 🌐 [API Call] ${method} ${url}`, 'color: #0091FF; font-weight: bold; font-size: 13px;');
+  console.log(`%c${curlCommand}`, 'color: #10B981; font-family: monospace; font-size: 12px;');
+}
+
 export async function apiFetch<T = any>(
   path: string,
   options: RequestInit = {},
@@ -95,6 +113,9 @@ export async function apiFetch<T = any>(
       headers['X-CSRF-Token'] = csrfToken;
     }
   }
+
+  // Log equivalent cURL command to console
+  logCurlCommand(url, method, headers, options.body);
 
   const fetchOptions: RequestInit = {
     ...options,
