@@ -5475,6 +5475,138 @@
 }
 
 /* ==========================================================================
+   About Screen - Intro Form Styling (Figma Image 11)
+   ========================================================================== */
+.mhn-about-intro-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 580px;
+  width: 100%;
+}
+
+.mhn-about-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mhn-about-field-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  margin: 0;
+}
+
+.mhn-about-input-box {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 42px 12px 16px;
+  font-size: 14px;
+  color: #0f172a;
+  background-color: #ffffff;
+  outline: none;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.mhn-about-input-box:focus {
+  border-color: #0091ff;
+  box-shadow: 0 0 0 3px rgba(0, 145, 255, 0.1);
+}
+
+.mhn-about-textarea-box {
+  min-height: 84px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.mhn-about-edit-icon {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.mhn-about-edit-icon:hover {
+  opacity: 1;
+}
+
+.mhn-about-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.mhn-about-select-box {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 42px 12px 16px;
+  font-size: 14px;
+  color: #0f172a;
+  background-color: #ffffff;
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.mhn-about-select-box:focus {
+  border-color: #0091ff;
+}
+
+.mhn-about-select-arrow {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.mhn-about-role-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.mhn-about-btn-cancel {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  background-color: #e2e8f0;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.mhn-about-btn-cancel:hover {
+  background-color: #cbd5e1;
+}
+
+.mhn-about-btn-save {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  background-color: #e2e8f0;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
    OTP / Email Verification Form Styling
    ========================================================================== */
 

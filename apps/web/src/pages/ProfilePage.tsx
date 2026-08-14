@@ -10,8 +10,14 @@ interface PageProps {
 
 export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [activeNavTab, setActiveNavTab] = useState('profile');
-  const [activeProfileTab, setActiveProfileTab] = useState<'posts' | 'media' | 'stats' | 'about'>('stats');
-  const [activeAboutSection, setActiveAboutSection] = useState<'intro' | 'career' | 'details'>('career');
+  const [activeProfileTab, setActiveProfileTab] = useState<'posts' | 'media' | 'stats' | 'about'>('about');
+  const [activeAboutSection, setActiveAboutSection] = useState<'intro' | 'career' | 'details'>('intro');
+
+  // Intro Form States matching Image 11
+  const [bioText, setBioText] = useState('Competitive ice hockey player focused on teamwork, discipline, and continuous improvement on and off the ice.');
+  const [selectedRole, setSelectedRole] = useState('Player');
+  const [positionText, setPositionText] = useState('Center');
+  const [jerseyText, setJerseyText] = useState('97');
 
   const [selectedSeason, setSelectedSeason] = useState('2025-26');
   const [selectedSeasonType, setSelectedSeasonType] = useState('Regular Season');
@@ -119,8 +125,8 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             <div className="mhn-profile-avatar-outer">
               <div className="mhn-profile-avatar-inner">
                 <img
-                  src="/jack.png"
-                  alt="Jack Ruffle"
+                  src="/ovechkin.png"
+                  alt="Alexander Ovechkin"
                   className="mhn-profile-hero-avatar-img"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/userPlaceholder.png';
@@ -132,13 +138,13 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             {/* User Meta & Action Buttons */}
             <div className="mhn-profile-meta-and-actions">
               <div className="mhn-profile-text-meta">
-                <h2 className="mhn-profile-hero-name">Jack Ruffle</h2>
+                <h2 className="mhn-profile-hero-name">Alexander Ovechkin</h2>
                 <div className="mhn-profile-hero-stats">
                   <span><strong>1M</strong> Followers</span>
                   <span><strong>289</strong> Following</span>
                 </div>
                 <p className="mhn-profile-hero-role" style={{ marginTop: '4px' }}>
-                  Center • #97 • @HC Bloemendaal
+                  LW • #8 • @HC Bloemendaal
                 </p>
                 <div className="mhn-profile-location-line" style={{ marginTop: '4px' }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -469,8 +475,100 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 {/* Right Detail Panel */}
                 <div className="mhn-about-main-panel">
                   {activeAboutSection === 'intro' && (
-                    <div className="mhn-about-section-content">
-                      <p className="mhn-about-placeholder-text">Center player passionate about competitive hockey.</p>
+                    <div className="mhn-about-intro-form">
+                      {/* Bio */}
+                      <div className="mhn-about-field-group">
+                        <label className="mhn-about-field-label">Bio</label>
+                        <div style={{ position: 'relative' }}>
+                          <textarea
+                            value={bioText}
+                            onChange={(e) => setBioText(e.target.value)}
+                            className="mhn-about-input-box mhn-about-textarea-box"
+                            rows={3}
+                          />
+                          <img
+                            src="/edit2.png"
+                            alt="Edit bio"
+                            className="mhn-about-edit-icon"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Role */}
+                      <div className="mhn-about-field-group">
+                        <label className="mhn-about-field-label">Role</label>
+                        <div className="mhn-about-select-wrapper">
+                          <select
+                            value={selectedRole}
+                            onChange={(e) => setSelectedRole(e.target.value)}
+                            className="mhn-about-select-box"
+                          >
+                            <option value="Player">Player</option>
+                            <option value="Parent / Guardian">Parent / Guardian</option>
+                            <option value="Coach / Team Staff">Coach / Team Staff</option>
+                          </select>
+                          <span className="mhn-about-select-arrow">▼</span>
+                        </div>
+
+                        {/* Cancel / Save Action Buttons */}
+                        <div className="mhn-about-role-actions">
+                          <button
+                            type="button"
+                            className="mhn-about-btn-cancel"
+                            onClick={() => {
+                              setBioText("Competitive ice hockey player focused on teamwork, discipline, and continuous improvement on and off the ice.");
+                              setSelectedRole("Player");
+                              setPositionText("Center");
+                              setJerseyText("97");
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            className="mhn-about-btn-save"
+                            disabled
+                          >
+                            Save
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Position */}
+                      <div className="mhn-about-field-group">
+                        <label className="mhn-about-field-label">Position</label>
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            type="text"
+                            value={positionText}
+                            onChange={(e) => setPositionText(e.target.value)}
+                            className="mhn-about-input-box"
+                          />
+                          <img
+                            src="/edit2.png"
+                            alt="Edit position"
+                            className="mhn-about-edit-icon"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Jersey Number */}
+                      <div className="mhn-about-field-group">
+                        <label className="mhn-about-field-label">Jersey Number</label>
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            type="text"
+                            value={jerseyText}
+                            onChange={(e) => setJerseyText(e.target.value)}
+                            className="mhn-about-input-box"
+                          />
+                          <img
+                            src="/edit2.png"
+                            alt="Edit jersey number"
+                            className="mhn-about-edit-icon"
+                          />
+                        </div>
+                      </div>
                     </div>
                   )}
 
