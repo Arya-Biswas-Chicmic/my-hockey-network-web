@@ -3,7 +3,7 @@ import { OnboardingIllustration } from './OnboardingIllustration';
 import { RoleSelectionForm } from './RoleSelectionForm';
 import { CreateAccountForm, VerifyEmailForm } from '../auth';
 import { DEFAULT_ROLE_OPTIONS, DEFAULT_SELECTED_ROLE_IDS } from '../../../constants/onboarding';
-import { requestOtp, verifyOtp, submitOnboarding, UserRole } from '../../../api';
+import { requestOtp, verifyOtp, submitOnboarding, UserRole } from '@my-hockey-network/core';
 
 interface OnboardingModalProps {
   onComplete?: (data: { selectedRoles: string[]; accountData?: { fullName: string; email: string; dob: string }; onboardingResult?: any }) => void;
