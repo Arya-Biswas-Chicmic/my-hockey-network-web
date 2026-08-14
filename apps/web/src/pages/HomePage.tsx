@@ -90,6 +90,9 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     setFeedPosts([newPost, ...feedPosts]);
   };
 
+  const currentUserName = userSession?.profile?.displayName || 'Alexander Ovechkin';
+  const currentUserRole = userSession?.profile?.type || userSession?.primaryRole || 'LW • #8';
+
   return (
     <div className="mhn-home-page-root">
       {/* Top Navigation Bar Header */}
@@ -97,7 +100,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}
-        userName="Alexander Ovechkin"
+        userName={currentUserName}
         userAvatar="/ovechkin.png"
       />
 
@@ -113,8 +116,8 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         {/* Left Column: Profile Summary & Post Action */}
         <aside className="mhn-layout-col-left">
           <ProfileSummaryCard 
-            name="Alexander Ovechkin"
-            role="LW • #8"
+            name={currentUserName}
+            role={currentUserRole}
             avatarUrl="/ovechkin.png"
             coverUrl="/cover.png"
             location="Austria, Europe"
