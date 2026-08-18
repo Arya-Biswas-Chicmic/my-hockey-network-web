@@ -155,8 +155,18 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search"
+              onChange={(e) => {
+                const val = e.target.value;
+                setSearchQuery(val);
+                if (val.toLowerCase().includes('notif')) {
+                  setActiveSubTab('notification');
+                } else if (val.toLowerCase().includes('block')) {
+                  setActiveSubTab('blocked');
+                } else if (val.toLowerCase().includes('email') || val.toLowerCase().includes('role') || val.toLowerCase().includes('lang')) {
+                  setActiveSubTab('general');
+                }
+              }}
+              placeholder="Search settings..."
               className="mhn-settings-search-input"
             />
           </div>

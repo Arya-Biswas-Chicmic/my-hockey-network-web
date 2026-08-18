@@ -6,6 +6,7 @@ interface LoginFormProps {
   onGoogleSignIn?: () => void;
   onSignUpClick?: () => void;
   loading?: boolean;
+  errorMessage?: string | null;
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({
@@ -13,15 +14,69 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   onGoogleSignIn,
   onSignUpClick,
   loading = false,
+  errorMessage = null,
 }) => {
   const [email, setEmail] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const computeEmailError = (val: string): string | null => {
+    const trimmed = val.trim();
+    if (!trimmed) {
+      return 'Please fill out this field.';
+    }
+    if (!trimmed.includes('@')) {
+      return `Please include an '@' in the email address. '${trimmed}' is missing an '@'.`;
+    }
+    if (trimmed.indexOf('@') === 0) {
+      return `Please enter a part preceding '@'. '${trimmed}' is incomplete.`;
+    }
+    if (trimmed.endsWith('@')) {
+      return `Please enter a part following '@'. '${trimmed}' is incomplete.`;
+    }
+    const parts = trimmed.split('@');
+    if (parts.length > 2) {
+      return `An email address cannot contain multiple '@' symbols in '${trimmed}'.`;
+    }
+    const domain = parts[1];
+    if (!domain.includes('.')) {
+      return `Please include a valid domain (e.g. .com) in '${trimmed}'.`;
+    }
+    if (domain.endsWith('.')) {
+      return `Please enter a domain suffix after '.' in '${trimmed}'.`;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmed)) {
+      return `Please enter a valid email address. '${trimmed}' is invalid.`;
+    }
+    return null;
+  };
+
+  const validateEmail = (val: string): boolean => {
+    const err = computeEmailError(val);
+    setValidationError(err);
+    return err === null;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setEmail(val);
+    if (validationError) {
+      const err = computeEmailError(val);
+      setValidationError(err);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSignIn && email.trim()) {
+    if (!validateEmail(email)) {
+      return;
+    }
+    if (onSignIn) {
       onSignIn(email.trim());
     }
   };
+
+  const activeError = validationError || errorMessage;
 
   return (
     <div className="onboarding-form">
@@ -31,24 +86,104 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       </div>
 
       <form onSubmit={handleSubmit} className="auth-form-stack">
-        <div className="auth-form-group">
+        <div className="auth-form-group" style={{ position: 'relative' }}>
           <label className="auth-label" htmlFor="loginEmail">
             Email Address
           </label>
           <div className="auth-input-wrapper">
             <input
               id="loginEmail"
-              type="email"
+              type="text"
               className="auth-input"
               placeholder="enter email address"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              onChange={handleChange}
+              onBlur={() => {
+                if (email) validateEmail(email);
+              }}
+              style={
+                activeError
+                  ? {
+                      borderColor: '#1D61D1',
+                      outline: 'none',
+                      boxShadow: '0 0 0 3px rgba(29, 97, 209, 0.2)',
+                    }
+                  : {}
+              }
             />
           </div>
+
+          {/* Floating Tooltip Callout Bubble (HTML5 Validation Style) */}
+          {activeError && (
+            <div
+              className="mhn-validation-tooltip-bubble"
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 6px)',
+                left: '0',
+                zIndex: 100,
+                backgroundColor: '#FFFFFF',
+                border: '1px solid #71717A',
+                borderRadius: '6px',
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.16)',
+                padding: '8px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                maxWidth: '100%',
+                fontSize: '13px',
+                color: '#18181B',
+                fontWeight: 500,
+                lineHeight: '1.35',
+              }}
+            >
+              {/* Pointer Triangle Arrow */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '-6px',
+                  left: '18px',
+                  width: '10px',
+                  height: '10px',
+                  backgroundColor: '#FFFFFF',
+                  borderLeft: '1px solid #71717A',
+                  borderTop: '1px solid #71717A',
+                  transform: 'rotate(45deg)',
+                }}
+              />
+
+              {/* Orange Exclamation Badge */}
+              <div
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  backgroundColor: '#EA580C',
+                  borderRadius: '3px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#FFFFFF',
+                  fontSize: '13px',
+                  fontWeight: 900,
+                  flexShrink: 0,
+                  lineHeight: 1,
+                }}
+              >
+                !
+              </div>
+
+              {/* Tooltip Text */}
+              <span>{activeError}</span>
+            </div>
+          )}
         </div>
 
-        <button type="submit" className="btn-submit" disabled={loading} style={{ opacity: loading ? 0.75 : 1, marginTop: '12px' }}>
+        <button
+          type="submit"
+          className="btn-submit"
+          disabled={loading}
+          style={{ opacity: loading ? 0.75 : 1, marginTop: '28px' }}
+        >
           {loading ? (
             <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               <Spinner size="sm" color="#FFFFFF" />

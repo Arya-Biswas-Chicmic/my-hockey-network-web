@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import {
   AuthMeResponse,
   OtpVerifyResponse,
@@ -35,6 +35,8 @@ export const AuthProvider: React.FC<{ children: ReactNode; onNavigateToAuth?: ()
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  const isLoggingOutRef = useRef<boolean>(false);
+
   const setUserProfile = (profile: AuthMeResponse) => {
     setUser(profile);
     saveUserProfile(profile);
@@ -46,6 +48,7 @@ export const AuthProvider: React.FC<{ children: ReactNode; onNavigateToAuth?: ()
   };
 
   const loadAuthMe = async (): Promise<AuthMeResponse | null> => {
+    if (isLoggingOutRef.current) return null;
     setIsLoading(true);
     try {
       console.log('🚀 [AuthContext] Fetching live GET /v1/auth/me...');
@@ -65,7 +68,15 @@ export const AuthProvider: React.FC<{ children: ReactNode; onNavigateToAuth?: ()
   };
 
   const handleLogout = async () => {
+    if (isLoggingOutRef.current) return;
+    isLoggingOutRef.current = true;
     setIsLoading(true);
+
+    // 1. Immediately wipe local state and storage FIRST to prevent infinite 401 retry loops
+    setUser(null);
+    setSession(null);
+    clearAuthSession();
+
     try {
       console.log('🚀 [AuthContext] Hitting POST /v1/auth/logout API...');
       await logoutApi();
@@ -73,10 +84,8 @@ export const AuthProvider: React.FC<{ children: ReactNode; onNavigateToAuth?: ()
     } catch (err: any) {
       console.warn('⚠️ [AuthContext] Logout API Notice:', err.message || err);
     } finally {
-      setUser(null);
-      setSession(null);
-      clearAuthSession();
       setIsLoading(false);
+      isLoggingOutRef.current = false;
       setToastMessage('Logged out successfully');
       if (onNavigateToAuth) {
         onNavigateToAuth();
@@ -84,12 +93,22 @@ export const AuthProvider: React.FC<{ children: ReactNode; onNavigateToAuth?: ()
     }
   };
 
+  // Automatically fetch live profile data on mount if valid session exists
+  useEffect(() => {
+    const hasToken = typeof localStorage !== 'undefined' && (localStorage.getItem('mhn_access_token') || localStorage.getItem('mhn_auth_session'));
+    if (hasToken && !isLoggingOutRef.current) {
+      loadAuthMe();
+    }
+  }, []);
+
   // Intercept 401 Unauthorized API responses across the app
   useEffect(() => {
     const handleUnauthorizedEvent = (event: CustomEvent) => {
       console.warn('🚨 [401 Unauthorized Event Intercepted]:', event.detail);
-      setToastMessage('Session expired or Unauthorized (401). Logging out...');
-      handleLogout();
+      if (!isLoggingOutRef.current) {
+        setToastMessage('Session expired or Unauthorized (401). Logging out...');
+        handleLogout();
+      }
     };
 
     window.addEventListener('mhn:unauthorized' as any, handleUnauthorizedEvent);

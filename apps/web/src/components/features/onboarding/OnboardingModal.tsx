@@ -10,7 +10,7 @@ interface OnboardingModalProps {
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) => {
-  const [authMode, setAuthMode] = useState<'signup' | 'login'>('signup');
+  const [authMode, setAuthMode] = useState<'signup' | 'login'>('login');
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loginStep, setLoginStep] = useState<1 | 2>(1);
   const [loginEmail, setLoginEmail] = useState<string>('');
@@ -240,6 +240,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
               selectedRoles={selectedRoles}
               onToggleRole={handleToggleRole}
               onContinue={handleRoleSelectionContinue}
+              onBack={handleSwitchToLogin}
             />
           )}
           {step === 2 && (
@@ -258,6 +259,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
               onChangeEmail={() => setStep(2)}
               onResendCode={handleResendCode}
               loading={loading}
+              errorMessage={errorMessage}
             />
           )}
         </>
@@ -272,6 +274,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
               onGoogleSignIn={() => setLoginStep(2)}
               onSignUpClick={handleSwitchToSignup}
               loading={loading}
+              errorMessage={errorMessage}
             />
           )}
           {loginStep === 2 && (
@@ -281,6 +284,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
               onChangeEmail={() => setLoginStep(1)}
               onResendCode={handleResendCode}
               loading={loading}
+              errorMessage={errorMessage}
             />
           )}
         </>

@@ -2,27 +2,74 @@ import React from 'react';
 
 export const FeedPostSkeleton: React.FC = () => {
   return (
-    <div className="mhn-post-figma-card" style={{ padding: '20px', backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-        <div className="mhn-skeleton-avatar animate-pulse" style={{ width: '44px', height: '44px', borderRadius: '50%' }} />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <div className="mhn-skeleton-line animate-pulse" style={{ width: '40%', height: '14px', borderRadius: '4px' }} />
-          <div className="mhn-skeleton-line animate-pulse" style={{ width: '25%', height: '10px', borderRadius: '4px' }} />
+    <div
+      className="mhn-post-figma-card"
+      style={{
+        padding: '20px',
+        backgroundColor: '#FFFFFF',
+        borderRadius: '16px',
+        border: '1px solid #E2E8F0',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '14px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+      }}
+    >
+      {/* Header Row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+          {/* Avatar Skeleton */}
+          <div
+            className="mhn-skeleton-avatar"
+            style={{ width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0 }}
+          />
+          {/* Name & Subtitle Skeleton */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+            <div
+              className="mhn-skeleton-line"
+              style={{ width: '38%', height: '14px', borderRadius: '4px' }}
+            />
+            <div
+              className="mhn-skeleton-line"
+              style={{ width: '22%', height: '11px', borderRadius: '4px' }}
+            />
+          </div>
         </div>
+
+        {/* 3 Dots Icon Placeholder */}
+        <div
+          className="mhn-skeleton-line"
+          style={{ width: '20px', height: '14px', borderRadius: '4px' }}
+        />
       </div>
+
       {/* Text Lines */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-        <div className="mhn-skeleton-line animate-pulse" style={{ width: '90%', height: '14px', borderRadius: '4px' }} />
-        <div className="mhn-skeleton-line animate-pulse" style={{ width: '60%', height: '14px', borderRadius: '4px' }} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="mhn-skeleton-line" style={{ width: '94%', height: '13px', borderRadius: '4px' }} />
+        <div className="mhn-skeleton-line" style={{ width: '70%', height: '13px', borderRadius: '4px' }} />
       </div>
-      {/* Media Image Box */}
-      <div className="mhn-skeleton-line animate-pulse" style={{ width: '100%', height: '260px', borderRadius: '12px', marginBottom: '16px' }} />
-      {/* Action Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-        <div className="mhn-skeleton-line animate-pulse" style={{ width: '48px', height: '16px', borderRadius: '4px' }} />
-        <div className="mhn-skeleton-line animate-pulse" style={{ width: '48px', height: '16px', borderRadius: '4px' }} />
-        <div className="mhn-skeleton-line animate-pulse" style={{ width: '32px', height: '16px', borderRadius: '4px' }} />
+
+      {/* Media Box Skeleton */}
+      <div
+        className="mhn-skeleton-line"
+        style={{ width: '100%', height: '220px', borderRadius: '12px' }}
+      />
+
+      {/* Footer Action Icons */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '28px', paddingTop: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="mhn-skeleton-line" style={{ width: '18px', height: '18px', borderRadius: '50%' }} />
+          <div className="mhn-skeleton-line" style={{ width: '24px', height: '12px', borderRadius: '4px' }} />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="mhn-skeleton-line" style={{ width: '18px', height: '18px', borderRadius: '50%' }} />
+          <div className="mhn-skeleton-line" style={{ width: '24px', height: '12px', borderRadius: '4px' }} />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="mhn-skeleton-line" style={{ width: '18px', height: '18px', borderRadius: '50%' }} />
+        </div>
       </div>
     </div>
   );

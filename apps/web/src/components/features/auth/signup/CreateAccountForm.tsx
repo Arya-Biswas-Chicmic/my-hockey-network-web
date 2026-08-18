@@ -70,6 +70,30 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
 
   return (
     <div className="onboarding-form">
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'none',
+            border: 'none',
+            color: '#0B66C2',
+            fontSize: '14px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            marginBottom: '12px',
+            padding: 0,
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          <span>Back</span>
+        </button>
+      )}
       <div className="header-wrapper">
         <h1 className="onboarding-title">{CREATE_ACCOUNT_STRINGS.title}</h1>
         <p className="onboarding-subtitle">{CREATE_ACCOUNT_STRINGS.subtitle}</p>

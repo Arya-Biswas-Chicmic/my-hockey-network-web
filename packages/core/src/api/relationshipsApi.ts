@@ -126,6 +126,82 @@ export async function acceptGuardianInvite(code: string, clientType: 'web' | 'mo
 }
 
 /**
+ * Decline Guardian Invite (Child declines invite code)
+ */
+export async function declineGuardianInvite(code: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(API_ENDPOINTS.RELATIONSHIPS.GUARDIAN_INVITES_DECLINE, {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  }, clientType);
+}
+
+/**
+ * Get Pending Guardian Requests (for Adult)
+ */
+export async function getPendingGuardianRequests(clientType: 'web' | 'mobile' = 'web'): Promise<{ items: any[] }> {
+  return apiFetch<{ items: any[] }>(API_ENDPOINTS.RELATIONSHIPS.GUARDIAN_REQUESTS_PENDING, { method: 'GET' }, clientType);
+}
+
+/**
+ * Accept Guardian Request (Adult accepts 6-digit code)
+ */
+export async function acceptGuardianRequest(code: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(API_ENDPOINTS.RELATIONSHIPS.GUARDIAN_REQUESTS_ACCEPT, {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  }, clientType);
+}
+
+/**
+ * Decline Guardian Request (Adult declines request)
+ */
+export async function declineGuardianRequest(code: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(API_ENDPOINTS.RELATIONSHIPS.GUARDIAN_REQUESTS_DECLINE, {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  }, clientType);
+}
+
+/**
+ * Send Contact Request (POST /v1/relationships/contact-requests)
+ */
+export async function sendContactRequest(target: TargetEntity, reason: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ relationship: RelationshipItem }> {
+  return apiFetch<{ relationship: RelationshipItem }>(API_ENDPOINTS.RELATIONSHIPS.CONTACT_REQUESTS, {
+    method: 'POST',
+    body: JSON.stringify({ target, reason }),
+  }, clientType);
+}
+
+/**
+ * Send Affiliation Request (POST /v1/relationships/affiliations)
+ */
+export async function sendAffiliation(source: TargetEntity, target: TargetEntity, reason?: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ relationship: RelationshipItem }> {
+  return apiFetch<{ relationship: RelationshipItem }>(API_ENDPOINTS.RELATIONSHIPS.AFFILIATIONS, {
+    method: 'POST',
+    body: JSON.stringify({ source, target, reason }),
+  }, clientType);
+}
+
+/**
+ * Block User / Entity (POST /v1/relationships/blocks)
+ */
+export async function blockUser(target: TargetEntity, reason?: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(API_ENDPOINTS.RELATIONSHIPS.BLOCKS, {
+    method: 'POST',
+    body: JSON.stringify({ target, reason }),
+  }, clientType);
+}
+
+/**
+ * Unblock User / Entity (DELETE /v1/relationships/blocks/:id)
+ */
+export async function unblockUser(blockId: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(`${API_ENDPOINTS.RELATIONSHIPS.BLOCKS}/${blockId}`, {
+    method: 'DELETE',
+  }, clientType);
+}
+
+/**
  * Fetch People You May Know recommendations
  */
 export async function getPeopleYouMayKnow(limit = 10, clientType: 'web' | 'mobile' = 'web'): Promise<{ items: any[] }> {

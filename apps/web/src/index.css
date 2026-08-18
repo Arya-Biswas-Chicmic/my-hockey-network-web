@@ -8638,3 +8638,41 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Production-Ready Shimmer Skeleton Loading Animations */
+@keyframes shimmerWave {
+  0% {
+    background-position: -250% 0;
+  }
+  100% {
+    background-position: 250% 0;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.mhn-shimmer-box,
+.mhn-skeleton-line,
+.mhn-skeleton-avatar {
+  background: linear-gradient(
+    90deg,
+    #F1F5F9 0%,
+    #E2E8F0 25%,
+    #F8FAFC 50%,
+    #E2E8F0 75%,
+    #F1F5F9 100%
+  );
+  background-size: 250% 100%;
+  animation: shimmerWave 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-pulse {
+  animation: pulseGlow 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

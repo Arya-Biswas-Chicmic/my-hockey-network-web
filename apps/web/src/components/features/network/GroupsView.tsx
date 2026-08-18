@@ -69,8 +69,8 @@ export const GroupsView: React.FC<GroupsViewProps> = ({ onViewGroup }) => {
       <div className="mhn-groups-search-box">
         <div className="mhn-groups-search-input-wrapper">
           <svg className="mhn-groups-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
             type="text"
@@ -120,12 +120,12 @@ export const GroupsView: React.FC<GroupsViewProps> = ({ onViewGroup }) => {
             <div className="mhn-group-card-body">
               <h3 className="mhn-group-title">{group.name}</h3>
               <p className="mhn-group-members">{group.membersCount}</p>
-              
-              <button 
+
+              <button
                 className="mhn-btn-view-group"
                 onClick={() => onViewGroup && onViewGroup(group.id)}
               >
-                View Group
+                Join Group
               </button>
             </div>
           </div>

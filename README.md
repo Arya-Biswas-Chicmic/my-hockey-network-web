@@ -1,75 +1,77 @@
-# React + TypeScript + Vite
+# My Hockey Network — Web Application & API Integration
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Production-ready web application for **My Hockey Network**, built with React 19, TypeScript 5, Vite, and centralized core architecture. Fully integrated with backend endpoints specified in `endpoints.md`, `flows.md`, and `README.md`.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 1. System Architecture & Tech Stack
 
-## React Compiler
+* **Core Framework:** React 19 + TypeScript 5
+* **Build Tool:** Vite 6 Monorepo
+* **Shared Architecture:** `packages/core` (Centralized `apiFetch`, HTTP interceptors, token refresh, and endpoint catalogs)
+* **Styling:** Vanilla CSS design system with HSL tokens, CSS variables, glassmorphism, and responsive breakpoints ([index.css](file:///Users/harpindersingh/Desktop/my-hockey-network/apps/web/src/index.css))
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 2. API Integration & Service Mappings
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+All API operations are implemented in `packages/core/src/api`:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+| Module | Service File | Core Endpoints Handled |
+|---|---|---|
+| **Auth** | [authApi.ts](file:///Users/harpindersingh/Desktop/my-hockey-network/packages/core/src/api/authApi.ts) | `POST /v1/auth/otp/request`, `POST /v1/auth/otp/verify`, `POST /v1/auth/onboarding`, `GET /v1/auth/me`, `POST /v1/auth/refresh`, `POST /v1/auth/logout` |
+| **Relationships** | [relationshipsApi.ts](file:///Users/harpindersingh/Desktop/my-hockey-network/packages/core/src/api/relationshipsApi.ts) | `GET /v1/relationships`, `POST /follow`, `POST /connections`, `POST /contact-requests`, `POST /affiliations`, `POST /blocks`, `POST /guardian-invites`, `POST /guardian-requests` |
+| **Feed & Posts** | [postsApi.ts](file:///Users/harpindersingh/Desktop/my-hockey-network/packages/core/src/api/postsApi.ts) | `GET /v1/feed`, `POST /v1/posts`, `POST /v1/posts/:id/repost`, `POST /v1/posts/:id/reactions`, `POST /v1/posts/:id/comments` |
+| **Groups** | [groupsApi.ts](file:///Users/harpindersingh/Desktop/my-hockey-network/packages/core/src/api/groupsApi.ts) | `GET /v1/groups`, `POST /v1/groups`, `GET /v1/groups/:id`, `POST /v1/groups/:id/join`, `POST /v1/groups/:id/members` |
+| **Organizations** | [organizationsApi.ts](file:///Users/harpindersingh/Desktop/my-hockey-network/packages/core/src/api/organizationsApi.ts) | `GET /v1/organizations`, `POST /v1/organizations`, `GET /v1/organizations/:id` |
+| **Supervision** | [supervisionApi.ts](file:///Users/harpindersingh/Desktop/my-hockey-network/packages/core/src/api/supervisionApi.ts) | `GET /v1/supervision`, `POST /v1/supervision/children`, `GET /v1/supervision/:minorId/controls`, `PUT /v1/supervision/:minorId/controls`, `GET /v1/supervision/:minorId/logs` |
+| **Approvals** | [approvalsApi.ts](file:///Users/harpindersingh/Desktop/my-hockey-network/packages/core/src/api/approvalsApi.ts) | `GET /v1/approvals`, `GET /v1/approvals/:id`, `POST /v1/approvals/:id/approve`, `POST /v1/approvals/:id/decline` |
+| **Alerts** | [alertsApi.ts](file:///Users/harpindersingh/Desktop/my-hockey-network/packages/core/src/api/alertsApi.ts) | `GET /v1/alerts`, `GET /v1/alerts/unread-count`, `POST /v1/alerts/:id/read`, `POST /v1/alerts/read-all` |
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 3. Key Screen Navigation Flows
 
-```
+1. **Home Feed (`HomePage.tsx`):** Displays home feed posts, create post box, suggestions sidebar, and skeleton loaders.
+2. **My Network (`MyNetworkPage.tsx`):** Connections, Followers, and Pending Requests with tab switching and search filtering.
+3. **Supervision / Family Hub (`SupervisionPage.tsx`):**
+   - **Permissions Tab:** Granular permission category accordions (Home, Network, Messaging, Notifications).
+   - **Requests Tab:** Supervision request cards with Accept / Ignore CTAs.
+   - **Logs Tab:** Activity audit logs with date/time, activity summary, initiator, and action links.
+   - **Add Minor Wizard (`+`):** Multi-step wizard supporting both *Create a new player profile* and *Link an existing player profile* leading to the **Request Sent!** screen.
+4. **Settings (`SettingsPage.tsx`):** General Account settings, Notification preferences toggle, and Blocked Users unblock management with search filtering.
+5. **User Profile (`ProfilePage.tsx`):** Public player/user profile header, stats, bio, media items, and connections list.
+6. **Notifications (`NotificationsPage.tsx`):** Alerts list with unread filter and mark-as-read options.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 4. Testing Status & Quality Assurance
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+* **TypeScript Compilation:** `npm run typecheck` passes with **0 errors**.
+* **Automated API Testing:** `node scripts/test-all-apis.mjs` executes integration tests against backend routes.
+* **Code Security:** `npm run scan` verifies no obfuscation or security issues exist.
 
+---
+
+## 5. Documentation & Backend Dependencies
+
+* **[API_INTEGRATION_GUIDE.md](API_INTEGRATION_GUIDE.md):** Complete architectural breakdown, flow sequence diagrams, and endpoint catalog.
+* **[BACKEND_REQUIREMENTS.md](BACKEND_REQUIREMENTS.md):** Specification of missing backend fields (`categories` grouping on controls, initial controls on child create, counterparty nested profile expansion).
+
+---
+
+## 6. Running Locally
+
+```bash
+# Install dependencies
+npm install
+
+# Start local Vite development server
+npm run dev
+
+# Run automated API integration tests
+node scripts/test-all-apis.mjs
+
+# Execute TypeScript typecheck
+npm run typecheck
 ```

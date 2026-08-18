@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '../components/common/Header';
+import {
+  getSupervisionData,
+  createManagedChild,
+  sendGuardianInvite,
+  getApprovals,
+  approveRequest,
+  declineRequest,
+} from '@my-hockey-network/core';
 
 interface SupervisionPageProps {
   onNavigate?: (screen: string) => void;
@@ -23,6 +31,34 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
     { id: 'w2', name: 'David', age: 10, avatar: '/lucas.png' },
   ]);
 
+  const [apiLoading, setApiLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  // Load live supervision wards on mount
+  useEffect(() => {
+    async function loadLiveSupervision() {
+      try {
+        setApiLoading(true);
+        const data = await getSupervisionData();
+        if (data && data.children && data.children.length > 0) {
+          const mapped = data.children.map((c: any) => ({
+            id: c.id,
+            name: c.displayName || c.firstName || 'Minor Player',
+            age: c.age || 12,
+            avatar: c.avatarUrl || '/connor.png',
+          }));
+          setWards(mapped);
+          setSelectedWardId(mapped[0].id);
+        }
+      } catch (err: any) {
+        console.warn('Live supervision fetch notice:', err.message || err);
+      } finally {
+        setApiLoading(false);
+      }
+    }
+    loadLiveSupervision();
+  }, []);
+
   // Form States for "Create a new player profile"
   const [newPlayer, setNewPlayer] = useState({
     fullName: '',
@@ -40,6 +76,7 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
 
   // Form State for "Link an existing player"
   const [linkChildEmail, setLinkChildEmail] = useState('');
+  const [linkEmailError, setLinkEmailError] = useState<string | null>(null);
 
   // Accordion collapsed state for Permission Categories
   const [expandedCategories, setExpandedCategories] = useState({
@@ -58,11 +95,14 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
 
   // Permission Toggle States matching Figma Images 31 & 32
   const [homePermissions, setHomePermissions] = useState({
+    homeVisibility: true,
+    activityLogSharing: true,
+    discoverability: false,
     viewFeed: true,
-    createPosts: false,
+    createPosts: true,
     commentOnPosts: true,
     reactToPosts: true,
-    sharePosts: false,
+    sharePosts: true,
   });
 
   const [networkPermissions, setNetworkPermissions] = useState({
@@ -561,10 +601,19 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
                     <input
                       type="email"
                       value={linkChildEmail}
-                      onChange={(e) => setLinkChildEmail(e.target.value)}
+                      onChange={(e) => {
+                        setLinkChildEmail(e.target.value);
+                        if (linkEmailError) setLinkEmailError(null);
+                      }}
                       placeholder="email@example.com"
-                      className="mhn-form-input"
+                      className={`mhn-form-input ${linkEmailError ? 'mhn-input-error' : ''}`}
+                      style={linkEmailError ? { borderColor: '#EF4444', backgroundColor: '#FEF2F2' } : {}}
                     />
+                    {linkEmailError && (
+                      <div style={{ color: '#DC2626', fontSize: '13px', marginTop: '6px', fontWeight: 500 }}>
+                        {linkEmailError}
+                      </div>
+                    )}
                   </div>
                 </div>
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { EmptyState } from './EmptyState';
+import { NetworkSkeletonGrid } from './NetworkSkeletonLoader';
 
 export interface ConnectionMember {
   id: string;
@@ -20,7 +21,7 @@ const sampleConnections: ConnectionMember[] = [
     roleTag: 'C • #97',
     teamName: 'HC Bloemendaal',
     teamLogo: '/kcBlue.png',
-    location: 'Austria, Europe',
+    location: 'Austria ,Europe',
     type: 'followers',
   },
   {
@@ -30,7 +31,7 @@ const sampleConnections: ConnectionMember[] = [
     roleTag: 'Head Coach • U16 AAA',
     teamName: 'HC Bloemendaal',
     teamLogo: '/kcBlue.png',
-    location: 'Austria, Europe',
+    location: 'Austria ,Europe',
     type: 'followers',
   },
   {
@@ -40,7 +41,7 @@ const sampleConnections: ConnectionMember[] = [
     roleTag: 'Team',
     teamName: 'HC Bloemendaal',
     teamLogo: '/kcBlue.png',
-    location: 'Austria, Europe',
+    location: 'Austria ,Europe',
     type: 'followers',
   },
   {
@@ -50,7 +51,7 @@ const sampleConnections: ConnectionMember[] = [
     roleTag: 'C • #86',
     teamName: 'HC Bloemendaal',
     teamLogo: '/kcBlue.png',
-    location: 'Austria, Europe',
+    location: 'Austria ,Europe',
     type: 'followers',
   },
   {
@@ -60,7 +61,7 @@ const sampleConnections: ConnectionMember[] = [
     roleTag: 'C • #97',
     teamName: 'HC Bloemendaal',
     teamLogo: '/kcBlue.png',
-    location: 'Austria, Europe',
+    location: 'Austria ,Europe',
     type: 'followers',
   },
   {
@@ -70,7 +71,7 @@ const sampleConnections: ConnectionMember[] = [
     roleTag: 'Head Coach • U16 AAA',
     teamName: 'HC Bloemendaal',
     teamLogo: '/kcBlue.png',
-    location: 'Austria, Europe',
+    location: 'Austria ,Europe',
     type: 'followers',
   },
   {
@@ -80,7 +81,7 @@ const sampleConnections: ConnectionMember[] = [
     roleTag: 'Team',
     teamName: 'HC Bloemendaal',
     teamLogo: '/kcBlue.png',
-    location: 'Austria, Europe',
+    location: 'Austria ,Europe',
     type: 'followers',
   },
   {
@@ -90,7 +91,7 @@ const sampleConnections: ConnectionMember[] = [
     roleTag: 'C • #86',
     teamName: 'HC Bloemendaal',
     teamLogo: '/kcBlue.png',
-    location: 'Austria, Europe',
+    location: 'Austria ,Europe',
     type: 'followers',
   },
   {
@@ -100,7 +101,7 @@ const sampleConnections: ConnectionMember[] = [
     roleTag: 'C • #97',
     teamName: 'HC Bloemendaal',
     teamLogo: '/kcBlue.png',
-    location: 'Austria, Europe',
+    location: 'Austria ,Europe',
     type: 'followers',
   },
   {
@@ -110,7 +111,7 @@ const sampleConnections: ConnectionMember[] = [
     roleTag: 'Head Coach • U16 AAA',
     teamName: 'HC Bloemendaal',
     teamLogo: '/kcBlue.png',
-    location: 'Austria, Europe',
+    location: 'Austria ,Europe',
     type: 'followers',
   },
   {
@@ -120,7 +121,7 @@ const sampleConnections: ConnectionMember[] = [
     roleTag: 'Team',
     teamName: 'HC Bloemendaal',
     teamLogo: '/kcBlue.png',
-    location: 'Austria, Europe',
+    location: 'Austria ,Europe',
     type: 'followers',
   },
   {
@@ -130,16 +131,17 @@ const sampleConnections: ConnectionMember[] = [
     roleTag: 'C • #86',
     teamName: 'HC Bloemendaal',
     teamLogo: '/kcBlue.png',
-    location: 'Austria, Europe',
+    location: 'Austria ,Europe',
     type: 'followers',
   },
 ];
 
 interface ConnectionsViewProps {
   onMessageClick?: (member: ConnectionMember) => void;
+  isLoading?: boolean;
 }
 
-export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick }) => {
+export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick, isLoading = false }) => {
   const [activeTab, setActiveTab] = useState<'followers' | 'following'>('followers');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -152,14 +154,29 @@ export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick
   );
 
   return (
-    <div className="mhn-connections-view-container">
+    <div className="mhn-connections-view-container" style={{ width: '100%' }}>
       {/* 1. Page Header Title matching Figma */}
-      <h2 className="mhn-connections-title">Connections</h2>
+      <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0F172A', marginBottom: '16px', marginTop: 0 }}>
+        Connections
+      </h2>
 
       {/* 2. Full Width Search Input Bar */}
-      <div className="mhn-connections-search-wrapper">
+      <div
+        className="mhn-connections-search-wrapper"
+        style={{
+          position: 'relative',
+          width: '100%',
+          marginBottom: '20px',
+        }}
+      >
         <svg
-          className="mhn-connections-search-icon"
+          style={{
+            position: 'absolute',
+            left: '14px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            pointerEvents: 'none',
+          }}
           width="18"
           height="18"
           viewBox="0 0 24 24"
@@ -177,73 +194,181 @@ export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search"
-          className="mhn-connections-search-input"
+          style={{
+            width: '100%',
+            height: '44px',
+            borderRadius: '8px',
+            border: '1px solid #CBD5E1',
+            paddingLeft: '42px',
+            paddingRight: '16px',
+            fontSize: '14px',
+            outline: 'none',
+            backgroundColor: '#FFFFFF',
+          }}
         />
       </div>
 
-      {/* 3. Followers / Following Sub-Tabs matching Figma */}
-      <div className="mhn-connections-tabs-row">
+      {/* 3. Followers / Following Sub-Tabs matching Figma Screenshot */}
+      <div
+        className="mhn-connections-tabs-row"
+        style={{
+          display: 'flex',
+          width: '100%',
+          borderBottom: '1px solid #E2E8F0',
+          marginBottom: '24px',
+          gap: '0',
+        }}
+      >
         <button
           onClick={() => setActiveTab('followers')}
-          className={`mhn-connections-tab-btn ${activeTab === 'followers' ? 'mhn-connections-tab-active' : ''}`}
+          style={{
+            flex: 1,
+            padding: '14px 16px',
+            backgroundColor: 'transparent',
+            border: 'none',
+            borderBottom: activeTab === 'followers' ? '3px solid #18181B' : '3px solid transparent',
+            marginBottom: '-1px',
+            color: activeTab === 'followers' ? '#18181B' : '#71717A',
+            fontSize: '15px',
+            fontWeight: activeTab === 'followers' ? 700 : 500,
+            cursor: 'pointer',
+            transition: 'all 0.15s ease-in-out',
+            textAlign: 'center',
+          }}
         >
-          <span>Followers</span>
-          {activeTab === 'followers' && <div className="mhn-connections-tab-line" />}
+          Followers
         </button>
 
         <button
           onClick={() => setActiveTab('following')}
-          className={`mhn-connections-tab-btn ${activeTab === 'following' ? 'mhn-connections-tab-active' : ''}`}
+          style={{
+            flex: 1,
+            padding: '14px 16px',
+            backgroundColor: 'transparent',
+            border: 'none',
+            borderBottom: activeTab === 'following' ? '3px solid #18181B' : '3px solid transparent',
+            marginBottom: '-1px',
+            color: activeTab === 'following' ? '#18181B' : '#71717A',
+            fontSize: '15px',
+            fontWeight: activeTab === 'following' ? 700 : 500,
+            cursor: 'pointer',
+            transition: 'all 0.15s ease-in-out',
+            textAlign: 'center',
+          }}
         >
-          <span>Following</span>
-          {activeTab === 'following' && <div className="mhn-connections-tab-line" />}
+          Following
         </button>
       </div>
 
       {/* 4. 4-Column Grid of Connection Cards matching Figma */}
-      {filteredMembers.length === 0 ? (
+      {isLoading ? (
+        <NetworkSkeletonGrid count={8} />
+      ) : filteredMembers.length === 0 ? (
         <EmptyState 
           title="No Connections Found"
           message="There are no connections or followers matching your criteria."
           iconType="connections"
         />
       ) : (
-        <div className="mhn-connections-grid">
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+            gap: '16px',
+            width: '100%',
+          }}
+        >
           {filteredMembers.map((member) => (
-            <div key={member.id} className="mhn-connection-card">
+            <div
+              key={member.id}
+              style={{
+                backgroundColor: '#FFFFFF',
+                border: '1px solid #E2E8F0',
+                borderRadius: '12px',
+                padding: '20px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+              }}
+            >
               {/* Avatar Circle with blue ring */}
-              <div className="mhn-connection-avatar-outer">
+              <div
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '50%',
+                  padding: '3px',
+                  border: '2px solid #1860C3',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '12px',
+                }}
+              >
                 <img
                   src={member.avatarUrl}
                   alt={member.name}
-                  className="mhn-connection-avatar-img"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                  }}
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/userPlaceholder.png';
                   }}
                 />
               </div>
 
-              {/* User Name & Role Tag */}
-              <h4 className="mhn-connection-name">{member.name}</h4>
-              <p className="mhn-connection-role">{member.roleTag}</p>
+              {/* User Name */}
+              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: '0 0 2px 0' }}>
+                {member.name}
+              </h4>
+
+              {/* Role Tag */}
+              <p style={{ fontSize: '12px', color: '#64748B', margin: '0 0 8px 0', fontWeight: 500 }}>
+                {member.roleTag}
+              </p>
 
               {/* Team Pill Badge */}
-              <div className="mhn-connection-team-pill">
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#1860C3',
+                  marginBottom: '6px',
+                }}
+              >
                 {member.teamLogo && (
                   <img
                     src={member.teamLogo}
                     alt={member.teamName}
-                    className="mhn-connection-team-logo"
+                    style={{ width: '16px', height: '16px', objectFit: 'contain' }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/HC.png';
                     }}
                   />
                 )}
-                <span className="mhn-connection-team-name">{member.teamName}</span>
+                <span>{member.teamName}</span>
               </div>
 
               {/* Location Line */}
-              <div className="mhn-connection-location-line">
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '12px',
+                  color: '#64748B',
+                  marginBottom: '16px',
+                }}
+              >
                 <svg
                   width="12"
                   height="12"
@@ -262,8 +387,27 @@ export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick
 
               {/* Primary Action Button: Message */}
               <button
-                className="mhn-connection-btn-message"
+                type="button"
                 onClick={() => onMessageClick && onMessageClick(member)}
+                style={{
+                  width: '100%',
+                  height: '38px',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #1860C3',
+                  borderRadius: '8px',
+                  color: '#1860C3',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  marginTop: 'auto',
+                  transition: 'background-color 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#EFF6FF';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#FFFFFF';
+                }}
               >
                 Message
               </button>

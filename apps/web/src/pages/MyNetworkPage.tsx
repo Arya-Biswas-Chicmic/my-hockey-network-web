@@ -31,25 +31,24 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [livePendingRequests, setLivePendingRequests] = useState<PendingRequestProps[]>([]);
   const [liveSuggestedUsers, setLiveSuggestedUsers] = useState<SuggestedUserProps[]>([]);
-  const [hasFetchedApi, setHasFetchedApi] = useState<boolean>(false);
+  const [apiErrorMsg, setApiErrorMsg] = useState<string | null>(null);
 
   // Fetch API network data on mount
   useEffect(() => {
     async function loadNetworkData() {
       setIsLoading(true);
+      setApiErrorMsg(null);
 
       // 1. Pending Requests (GET /v1/relationships)
       try {
         console.log('🚀 [MyNetworkPage] Fetching GET /v1/relationships...');
         const res = await getRelationships({ direction: 'incoming', status: 'PENDING' });
-        setHasFetchedApi(true);
 
         if (res?.items && Array.isArray(res.items)) {
           console.log('✅ [MyNetworkPage] Relationships items count:', res.items.length);
           const mapped: PendingRequestProps[] = res.items.map((item: RelationshipItem) => {
             const cp = item.counterparty;
             
-            // Format roleTag from position & jerseyNumber or primaryRole or roleTag or requestReason
             let formattedRole = cp?.roleTag || '';
             if (!formattedRole) {
               if (cp?.position && cp?.jerseyNumber) {
@@ -76,9 +75,17 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
             };
           });
           setLivePendingRequests(mapped);
+        } else {
+          setLivePendingRequests([]);
         }
       } catch (err: any) {
-        console.warn('⚠️ [MyNetworkPage] Relationships API Warning:', err.message || err);
+        console.warn('⚠️ [MyNetworkPage] Relationships API Error (e.g. 502):', err.message || err);
+        setLivePendingRequests([]);
+        if (err.statusCode === 502 || String(err.message).includes('502')) {
+          setApiErrorMsg('Backend service unavailable (HTTP 502 Bad Gateway). Please try again later.');
+        } else {
+          setApiErrorMsg(err.message || 'Failed to load network requests.');
+        }
       }
 
       // 2. People You May Know (GET /v1/recommendations/people)
@@ -97,17 +104,12 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
             isFollowing: false,
           }));
           setLiveSuggestedUsers(mapped);
+        } else {
+          setLiveSuggestedUsers([]);
         }
       } catch (err: any) {
         console.warn('⚠️ [MyNetworkPage] People Recommendations Warning:', err.message || err);
-      }
-
-      // 3. Suggested People (GET /v1/recommendations/suggested)
-      try {
-        console.log('🚀 [MyNetworkPage] Fetching GET /v1/recommendations/suggested...');
-        await getSuggestedPeople({ limit: 10 });
-      } catch (err: any) {
-        console.warn('⚠️ [MyNetworkPage] Suggested Recommendations Warning:', err.message || err);
+        setLiveSuggestedUsers([]);
       } finally {
         setIsLoading(false);
       }
@@ -126,110 +128,18 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
     }
   };
 
-  const handleViewGroup = (groupId: string) => {
-    // Navigation placeholder
-  };
-
-  // Sample pending requests fallback if API hasn't returned any items and was not explicitly empty
-  const pendingRequestsSample: PendingRequestProps[] = [
-    {
-      id: 'r1',
-      name: 'Connor McDavid',
-      avatarUrl: '/connor.png',
-      roleTag: 'C • #97',
-      teamName: 'HC Bloemendaal',
-      teamLogo: '/kcBlue.png',
-      location: 'Austria, Europe'
-    },
-    {
-      id: 'r2',
-      name: 'Lucas Bennett',
-      avatarUrl: '/lucas.png',
-      roleTag: 'Head Coach • U18 AAA',
-      teamName: 'HC Bloemendaal',
-      teamLogo: '/kcBlue.png',
-      location: 'Austria, Europe'
-    },
-    {
-      id: 'r3',
-      name: 'Columbus Blue Jackets',
-      avatarUrl: '/columbus.png',
-      roleTag: 'Team',
-      teamName: 'HC Bloemendaal',
-      teamLogo: '/kcBlue.png',
-      location: 'Austria, Europe'
-    },
-    {
-      id: 'r4',
-      name: 'Jack Hughes',
-      avatarUrl: '/jack.png',
-      roleTag: 'C • #86',
-      teamName: 'HC Bloemendaal',
-      teamLogo: '/kcBlue.png',
-      location: 'Austria, Europe'
-    }
-  ];
-
-  // Sample suggested users fallback
-  const suggestedUsersSample: SuggestedUserProps[] = [
-    {
-      id: 's1',
-      name: 'Connor McDavid',
-      avatarUrl: '/connor.png',
-      roleTag: 'C • #97',
-      teamName: 'HC Bloemendaal',
-      teamLogo: '/kcBlue.png',
-      location: 'Austria, Europe',
-      isFollowing: false
-    },
-    {
-      id: 's2',
-      name: 'Lucas Bennett',
-      avatarUrl: '/lucas.png',
-      roleTag: 'Head Coach • U18 AAA',
-      teamName: 'HC Bloemendaal',
-      teamLogo: '/kcBlue.png',
-      location: 'Austria, Europe',
-      isFollowing: false
-    },
-    {
-      id: 's3',
-      name: 'Columbus Blue Jackets',
-      avatarUrl: '/columbus.png',
-      roleTag: 'Team',
-      teamName: 'HC Bloemendaal',
-      teamLogo: '/kcBlue.png',
-      location: 'Austria, Europe',
-      isFollowing: false
-    },
-    {
-      id: 's4',
-      name: 'Jack Hughes',
-      avatarUrl: '/jack.png',
-      roleTag: 'C • #86',
-      teamName: 'HC Bloemendaal',
-      teamLogo: '/kcBlue.png',
-      location: 'Austria, Europe',
-      isFollowing: false
-    }
-  ];
-
   const filterTabs = [
     { id: 'Invitations', label: 'Invitations' },
     { id: 'People you may know', label: 'People you may know' }
   ];
 
-  // Determine list items (Use pure API dynamic data when fetched, zero dummy fallbacks)
-  const effectivePendingList = hasFetchedApi ? livePendingRequests : pendingRequestsSample;
-  const effectiveSuggestedList = hasFetchedApi ? liveSuggestedUsers : [];
-
-  const filteredPendingRequests = effectivePendingList.filter((r) =>
+  const filteredPendingRequests = livePendingRequests.filter((r) =>
     r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     r.roleTag.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (r.teamName && r.teamName.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const filteredSuggestedUsers = effectiveSuggestedList.filter((u) =>
+  const filteredSuggestedUsers = liveSuggestedUsers.filter((u) =>
     u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.roleTag.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (u.teamName && u.teamName.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -279,6 +189,10 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                       setCurrentView('groups');
                     } else if (item === 'connectors' || item === 'connections') {
                       setCurrentView('connections');
+                    } else if (item === 'events') {
+                      if (onNavigate) {
+                        onNavigate('events');
+                      }
                     } else {
                       setCurrentView('network');
                     }
@@ -289,10 +203,31 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
 
             {/* Right Main Content Area */}
             <section className="mhn-network-col-main">
+              {apiErrorMsg && (
+                <div
+                  style={{
+                    backgroundColor: '#FEF2F2',
+                    border: '1px solid #FCA5A5',
+                    color: '#DC2626',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    marginBottom: '16px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  <span>⚠️</span>
+                  <span>{apiErrorMsg}</span>
+                </div>
+              )}
+
               {currentView === 'connections' ? (
                 <ConnectionsView onMessageClick={() => onNavigate && onNavigate('messaging')} />
               ) : currentView === 'groups' ? (
-                <GroupsView onViewGroup={handleViewGroup} />
+                <GroupsView onViewGroup={() => {}} />
               ) : (
                 <>
                   {/* Header Title Section */}
@@ -320,18 +255,43 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                     </div>
                   </div>
 
-                  {/* Navigation Filter Tabs */}
-                  <div className="mhn-network-tabs-bar">
-                    {filterTabs.map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setActiveFilterTab(tab.id)}
-                        className={`mhn-network-tab-btn ${activeFilterTab === tab.id ? 'mhn-network-tab-active' : ''}`}
-                      >
-                        <span>{tab.label}</span>
-                        {activeFilterTab === tab.id && <div className="mhn-network-tab-line" />}
-                      </button>
-                    ))}
+                  {/* Sub-Filter Tabs Row matching Figma Screenshot 2 */}
+                  <div
+                    className="mhn-network-filter-tabs-row"
+                    style={{
+                      display: 'flex',
+                      width: '100%',
+                      borderBottom: '1px solid #E2E8F0',
+                      marginTop: '20px',
+                      marginBottom: '24px',
+                      gap: '0',
+                    }}
+                  >
+                    {filterTabs.map((tab) => {
+                      const isActive = activeFilterTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveFilterTab(tab.id)}
+                          style={{
+                            flex: 1,
+                            padding: '14px 16px',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            borderBottom: isActive ? '3px solid #18181B' : '3px solid transparent',
+                            marginBottom: '-1px',
+                            color: isActive ? '#18181B' : '#71717A',
+                            fontSize: '15px',
+                            fontWeight: isActive ? 700 : 500,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease-in-out',
+                            textAlign: 'center',
+                          }}
+                        >
+                          {tab.label}
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {/* Pending Requests Section */}
@@ -348,8 +308,8 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                         <NetworkSkeletonGrid count={4} />
                       ) : filteredPendingRequests.length === 0 ? (
                         <EmptyState 
-                          title="No Pending Invitations"
-                          message="You currently have no pending network connection requests."
+                          title="No Pending Requests"
+                          message={apiErrorMsg ? "Unable to load requests due to service unavailability." : "You currently have no pending network connection requests."}
                           iconType="invitations"
                         />
                       ) : (
@@ -377,7 +337,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                       <NetworkSkeletonGrid count={4} />
                     ) : filteredSuggestedUsers.length === 0 ? (
                       <EmptyState 
-                        title="No Data Found"
+                        title="No Suggestions Found"
                         message="There are no user recommendations or suggestions available at the moment."
                         iconType="nodata"
                       />

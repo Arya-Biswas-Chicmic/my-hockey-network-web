@@ -75,6 +75,17 @@ export interface AuthMeResponse {
     isMinor: boolean;
     accessLevel: 'LIMITED' | 'SUPERVISED' | 'FULL';
     verificationStatus: string;
+    firstName?: string;
+    lastName?: string;
+    bio?: string;
+    city?: string;
+    dateOfBirth?: string;
+    position?: string;
+    shootsCatches?: string;
+    jerseyNumber?: number | string | null;
+    genderCategory?: string;
+    preferredLanguage?: string;
+    defaultVisibility?: string;
   };
   counts?: {
     followers?: number;

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
+import { getAuthSession, getUserProfile } from '@my-hockey-network/core';
 import { 
   GuardianApprovalPage, 
   RequestSentPage, 
@@ -15,24 +16,104 @@ import {
   SupervisionPage
 } from './pages';
 
+function getScreenFromPath(path: string): string {
+  const cleanPath = path.replace(/^\//, '').trim().toLowerCase();
+  if (!cleanPath || cleanPath === 'home') return 'home';
+  const knownScreens = [
+    'home',
+    'network',
+    'events',
+    'messaging',
+    'notifications',
+    'profile',
+    'settings',
+    'supervision',
+    'event-detail',
+    'onboarding',
+    'guardian',
+    'sent'
+  ];
+  return knownScreens.includes(cleanPath) ? cleanPath : 'home';
+}
+
+function hasActiveToken(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const session = getAuthSession();
+    const profile = getUserProfile();
+    const token = localStorage.getItem('mhn_access_token') || localStorage.getItem('accessToken');
+    return !!(session || profile || token);
+  } catch {
+    return false;
+  }
+}
+
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<string>('home');
+  const [currentScreen, setCurrentScreen] = useState<string>(() => {
+    if (!hasActiveToken()) {
+      return 'onboarding';
+    }
+    return getScreenFromPath(window.location.pathname);
+  });
+
+  useEffect(() => {
+    // Keep URL in sync with initial load screen
+    if (hasActiveToken()) {
+      const initialScreen = getScreenFromPath(window.location.pathname);
+      const urlPath = initialScreen === 'home' ? '/' : `/${initialScreen}`;
+      if (window.location.pathname !== urlPath) {
+        window.history.replaceState({}, '', urlPath);
+      }
+    } else {
+      if (window.location.pathname !== '/onboarding' && window.location.pathname !== '/') {
+        window.history.replaceState({}, '', '/onboarding');
+      }
+    }
+
+    // Sync browser back/forward history navigation
+    const handlePopState = () => {
+      if (!hasActiveToken()) {
+        setCurrentScreen('onboarding');
+        return;
+      }
+      const targetScreen = getScreenFromPath(window.location.pathname);
+      setCurrentScreen(targetScreen);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   const handleNavigate = (screen: string) => {
+    if (!hasActiveToken() && screen !== 'onboarding' && screen !== 'guardian' && screen !== 'sent') {
+      setCurrentScreen('onboarding');
+      window.history.pushState({}, '', '/onboarding');
+      return;
+    }
+
     setCurrentScreen(screen);
+    const urlPath = screen === 'home' ? '/' : `/${screen}`;
+    if (window.location.pathname !== urlPath) {
+      window.history.pushState({}, '', urlPath);
+    }
   };
 
   const handleLogout = () => {
     setCurrentScreen('onboarding');
+    if (window.location.pathname !== '/onboarding') {
+      window.history.pushState({}, '', '/onboarding');
+    }
   };
 
   const handleOnboardingComplete = (data?: any) => {
-    // Redirect directly to Home Screen after OTP verification & onboarding completion
     setCurrentScreen('home');
+    window.history.pushState({}, '', '/');
   };
 
   return (
-    <AuthProvider onNavigateToAuth={() => setCurrentScreen('onboarding')}>
+    <AuthProvider onNavigateToAuth={handleLogout}>
       <div className="app-viewport">
         {currentScreen === 'home' && (
           <HomePage onNavigate={handleNavigate} onLogout={handleLogout} />
@@ -62,7 +143,7 @@ export default function App() {
           <EventDetailPage 
             onNavigate={handleNavigate} 
             onLogout={handleLogout}
-            onBack={() => setCurrentScreen('profile')}
+            onBack={() => handleNavigate('profile')}
           />
         )}
 
@@ -72,12 +153,12 @@ export default function App() {
         )}
         {currentScreen === 'guardian' && (
           <GuardianApprovalPage 
-            onSendSuccess={() => setCurrentScreen('sent')}
+            onSendSuccess={() => handleNavigate('sent')}
             onSignOut={handleLogout}
           />
         )}
         {currentScreen === 'sent' && (
-          <RequestSentPage onComplete={() => setCurrentScreen('home')} />
+          <RequestSentPage onComplete={() => handleNavigate('home')} />
         )}
       </div>
     </AuthProvider>

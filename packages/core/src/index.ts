@@ -7,6 +7,11 @@ export * from './api/authApi';
 export * from './api/authStore';
 export * from './api/postsApi';
 export * from './api/relationshipsApi';
+export * from './api/groupsApi';
+export * from './api/organizationsApi';
+export * from './api/supervisionApi';
+export * from './api/approvalsApi';
+export * from './api/alertsApi';
 
 export const toggleRoleSelection = (currentRoles: string[], roleId: string): string[] => {
   if (currentRoles.includes(roleId)) {

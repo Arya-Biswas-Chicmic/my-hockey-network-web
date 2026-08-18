@@ -28,6 +28,14 @@ export const Header: React.FC<HeaderProps> = ({
   const resolvedAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl || userAvatar || '/userPlaceholder.png';
   const [activeUser, setActiveUser] = useState({ name: resolvedName, avatar: resolvedAvatar });
 
+  React.useEffect(() => {
+    if (user) {
+      const name = user.profile?.displayName || (user as any)?.displayName || userName || 'Player';
+      const avatar = user.profile?.avatarUrl || (user as any)?.avatarUrl || userAvatar || '/userPlaceholder.png';
+      setActiveUser({ name, avatar });
+    }
+  }, [user, userName, userAvatar]);
+
   const handleTabClick = (tabId: string) => {
     setCurrentTab(tabId);
     if (onTabChange) {

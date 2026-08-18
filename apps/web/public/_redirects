@@ -1,0 +1,3 @@
+# Netlify Redirects & API Proxy Configuration
+/v1/* https://reposeful-kareen-controllingly.ngrok-free.dev/v1/:splat 200!
+/* /index.html 200

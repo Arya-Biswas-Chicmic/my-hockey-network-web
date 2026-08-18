@@ -55,6 +55,25 @@ export async function getFeed(cursor?: string, limit = 20, clientType: 'web' | '
   }
 }
 
+/**
+ * Fetch Posts authored by a specific user profile (GET /v1/posts?authorProfileId=...)
+ */
+export async function getUserPosts(authorProfileId: string, limit = 20, clientType: 'web' | 'mobile' = 'web'): Promise<FeedResponse> {
+  const query = new URLSearchParams({ authorProfileId, limit: String(limit) });
+  try {
+    const res = await apiFetch<any>(`${API_ENDPOINTS.POSTS.BASE}?${query.toString()}`, { method: 'GET' }, clientType);
+    const payload = res?.data || res;
+    const items = payload?.items || (Array.isArray(payload) ? payload : []);
+    return {
+      items,
+      nextCursor: payload?.nextCursor || null,
+    };
+  } catch (err: any) {
+    console.warn('⚠️ [getUserPosts] API Warning:', err.message || err);
+    return { items: [] };
+  }
+}
+
 export interface CreatePostApiResponse {
   success?: boolean;
   statusCode?: number;

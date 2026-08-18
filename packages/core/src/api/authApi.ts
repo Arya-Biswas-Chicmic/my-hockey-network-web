@@ -50,6 +50,30 @@ export async function getAuthMe(clientType: 'web' | 'mobile' = 'web'): Promise<A
   }, clientType);
 }
 
+export interface UpdateProfileDTO {
+  displayName?: string;
+  firstName?: string;
+  lastName?: string;
+  bio?: string;
+  city?: string;
+  dateOfBirth?: string;
+  position?: string;
+  shootsCatches?: string;
+  jerseyNumber?: number;
+  genderCategory?: string;
+  avatarUrl?: string;
+}
+
+/**
+ * Update user profile details (PATCH /v1/auth/profile)
+ */
+export async function updateAuthProfile(dto: UpdateProfileDTO, clientType: 'web' | 'mobile' = 'web'): Promise<AuthMeResponse> {
+  return apiFetch<AuthMeResponse>(API_ENDPOINTS.AUTH.PROFILE, {
+    method: 'PATCH',
+    body: JSON.stringify(dto),
+  }, clientType);
+}
+
 /**
  * Logout current device session (Shared for Web & Mobile)
  */

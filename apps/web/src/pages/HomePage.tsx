@@ -12,6 +12,7 @@ import { Spinner } from '../components/common/Spinner';
 import { EmptyState } from '../components/features/network/EmptyState';
 import { HomeSkeletonLoader } from '../components/features/home/HomeSkeletonLoader';
 import { getAuthMe, saveUserProfile, AuthMeResponse, createPost, getFeed } from '@my-hockey-network/core';
+import { useAuth } from '../context/AuthContext';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -27,6 +28,8 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [isPageLoading, setIsPageLoading] = useState<boolean>(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
+  const { setUserProfile } = useAuth();
+
   // Hit GET /v1/auth/me & GET /v1/feed on Home page mount
   useEffect(() => {
     async function loadInitialData() {
@@ -40,7 +43,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
         if (meRes.status === 'fulfilled' && meRes.value) {
           setUserSession(meRes.value);
-          saveUserProfile(meRes.value);
+          setUserProfile(meRes.value);
           console.log('✅ [HomePage] Auth Me API Response:', meRes.value);
         }
 

@@ -3,8 +3,10 @@ import { Header } from '../components/common/Header';
 import { PendingBanner } from '../components/common/PendingBanner';
 import { FeedPostCard } from '../components/features/home/FeedPostCard';
 import { CreatePostModal } from '../components/features/home/CreatePostModal';
+import { EditProfileModal, EditProfileFormData } from '../components/features/profile';
+import { FeedPostSkeleton } from '../components/features/home/HomeSkeletonLoader';
 import { useAuth } from '../context/AuthContext';
-import { createPost } from '@my-hockey-network/core';
+import { createPost, getUserPosts, updateAuthProfile } from '@my-hockey-network/core';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -12,7 +14,7 @@ interface PageProps {
 }
 
 export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
-  const { user } = useAuth();
+  const { user, setUserProfile } = useAuth();
   const [activeNavTab, setActiveNavTab] = useState('profile');
   const [activeProfileTab, setActiveProfileTab] = useState<'posts' | 'media' | 'stats' | 'about'>('about');
   const [activeAboutSection, setActiveAboutSection] = useState<'intro' | 'career' | 'details'>('intro');
@@ -21,16 +23,24 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const liveAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl || '/userPlaceholder.png';
   const liveRole = user?.primaryRole || user?.profile?.type || 'PLAYER';
 
+  // Live profile field fallbacks from GET /v1/auth/me
+  const liveBio = user?.profile?.bio || 'Competitive ice hockey player focused on teamwork, discipline, and continuous improvement on and off the ice.';
+  const livePosition = user?.profile?.position || 'Center';
+  const liveJersey = user?.profile?.jerseyNumber !== null && user?.profile?.jerseyNumber !== undefined ? String(user.profile.jerseyNumber) : '97';
+  const liveCity = user?.profile?.city || 'Austria, Europe';
+  const liveDob = user?.profile?.dateOfBirth ? new Date(user.profile.dateOfBirth).toLocaleDateString() : '01-01-2001';
+  const liveGender = user?.profile?.genderCategory || 'Male';
+
   // Intro Form States matching Image 11
-  const [bioText, setBioText] = useState('Competitive ice hockey player focused on teamwork, discipline, and continuous improvement on and off the ice.');
+  const [bioText, setBioText] = useState(liveBio);
   const [selectedRole, setSelectedRole] = useState('Player');
-  const [positionText, setPositionText] = useState('Center');
-  const [jerseyText, setJerseyText] = useState('97');
+  const [positionText, setPositionText] = useState(livePosition);
+  const [jerseyText, setJerseyText] = useState(liveJersey);
 
   // Personal Details Form States
-  const [locationText, setLocationText] = useState('Austria, Europe');
-  const [dobText, setDobText] = useState('01-01-2001');
-  const [genderText, setGenderText] = useState('Male');
+  const [locationText, setLocationText] = useState(liveCity);
+  const [dobText, setDobText] = useState(liveDob);
+  const [genderText, setGenderText] = useState(liveGender);
 
   const [selectedSeason, setSelectedSeason] = useState('2025-26');
   const [selectedSeasonType, setSelectedSeasonType] = useState('Regular Season');
@@ -39,6 +49,81 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isPostsLoading, setIsPostsLoading] = useState(true);
+  const [liveUserPosts, setLiveUserPosts] = useState<any[]>([]);
+
+  // Fetch author posts when profile mounts (GET /v1/posts?authorProfileId=...)
+  React.useEffect(() => {
+    const profileId = user?.profile?.id || user?.id;
+    if (profileId) {
+      console.log(`🚀 [ProfilePage] Fetching user posts for authorProfileId: ${profileId}...`);
+      setIsPostsLoading(true);
+      getUserPosts(profileId)
+        .then((res) => {
+          if (res?.items && Array.isArray(res.items)) {
+            console.log(`✅ [ProfilePage] User posts fetched: ${res.items.length} posts`);
+            setLiveUserPosts(res.items);
+          }
+        })
+        .finally(() => {
+          setIsPostsLoading(false);
+        });
+    } else {
+      setIsPostsLoading(false);
+    }
+  }, [user]);
+
+  const handleSaveProfile = async (data: EditProfileFormData) => {
+    console.log('🚀 [ProfilePage] Hitting PATCH /v1/auth/profile API with payload:', data);
+    
+    // Format dateOfBirth as YYYY-MM-DD (e.g., "2004-03-11") matching backend payload
+    let formattedDob = data.dateOfBirth;
+    if (formattedDob && formattedDob.includes('T')) {
+      formattedDob = formattedDob.split('T')[0];
+    }
+
+    // Only send avatarUrl key if a new/custom image or URL was uploaded (omit key if placeholder/empty)
+    let avatarUrlToSend: string | undefined = undefined;
+    if (data.avatarUrl && data.avatarUrl !== '/userPlaceholder.png' && !data.avatarUrl.includes('userPlaceholder.png')) {
+      avatarUrlToSend = data.avatarUrl;
+    }
+
+    const dto = {
+      displayName: data.displayName || undefined,
+      firstName: data.firstName || undefined,
+      lastName: data.lastName || undefined,
+      bio: data.bio || undefined,
+      city: data.city || undefined,
+      dateOfBirth: formattedDob || undefined,
+      position: data.position || undefined,
+      shootsCatches: data.shootsCatches || undefined,
+      jerseyNumber: data.jerseyNumber !== '' && data.jerseyNumber !== null && data.jerseyNumber !== undefined ? Number(data.jerseyNumber) : undefined,
+      genderCategory: data.genderCategory || undefined,
+      avatarUrl: avatarUrlToSend,
+    };
+
+    console.log('📤 [PATCH /v1/auth/profile Payload Sent]:', JSON.stringify(dto, null, 2));
+
+    try {
+      const res = await updateAuthProfile(dto);
+      console.log('✅ [ProfilePage] Profile updated successfully via API:', res);
+      if (res) {
+        setUserProfile(res);
+      }
+    } catch (err: any) {
+      console.error('❌ [ProfilePage] Update Profile Error:', err);
+      throw err;
+    }
+
+    // Update local preview state
+    if (data.position) setPositionText(data.position);
+    if (data.jerseyNumber) setJerseyText(data.jerseyNumber);
+    if (data.bio) setBioText(data.bio);
+    if (data.city) setLocationText(data.city);
+    if (data.genderCategory) setGenderText(data.genderCategory);
+    if (data.dateOfBirth) setDobText(data.dateOfBirth);
+  };
 
   const handleTabChange = (tab: string) => {
     setActiveNavTab(tab);
@@ -52,8 +137,9 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     postImage?: string,
     privacySettings?: { audience: string; shareWith?: string; dontShareWith?: string; locationTag?: string }
   ) => {
-    let audienceEnum: 'EVERYONE' | 'GROUPS' | 'CUSTOM' = 'EVERYONE';
-    if (privacySettings?.audience === 'Groups') audienceEnum = 'GROUPS';
+    let audienceEnum: 'PUBLIC' | 'CONNECTIONS' | 'GROUP' | 'CUSTOM' = 'PUBLIC';
+    if (privacySettings?.audience === 'Connections') audienceEnum = 'CONNECTIONS';
+    if (privacySettings?.audience === 'Groups') audienceEnum = 'GROUP';
     if (privacySettings?.audience === 'Custom') audienceEnum = 'CUSTOM';
 
     const parseEmails = (str?: string) =>
@@ -117,21 +203,129 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     '/event4.png'
   ];
 
-  // Sample About Career Teams matching Figma Screenshot 3
-  const careerTeams = [
+  // About Career Teams matching user screenshot
+  const [careerTeamsList, setCareerTeamsList] = useState([
     {
       id: 't1',
       name: 'Boston Bruins',
-      subtitle: 'Center • 2 January 2024 - Present • Dagestan, Russia',
+      position: 'Center',
+      city: 'Dagestan, Russia',
+      isCurrent: true,
+      startMonth: 'January',
+      startYear: '2024',
+      endMonth: '',
+      endYear: '',
+      description: 'Good times',
+      subtitle: 'Center · 2 January 2024 - Present · Dagestan, Russia',
       logo: '/kcBlue.png',
     },
     {
       id: 't2',
       name: 'Carolina Hurricanes',
-      subtitle: 'Center • 2022 - 2024 • Toronto, Canada',
+      position: 'Center',
+      city: 'Toronto, Canada',
+      isCurrent: false,
+      startMonth: '',
+      startYear: '2022',
+      endMonth: '',
+      endYear: '2024',
+      description: 'Good times',
+      subtitle: 'Center · 2022 - 2024 · Toronto, Canada',
       logo: '/HC.png',
     }
-  ];
+  ]);
+
+  const [isAddTeamFormOpen, setIsAddTeamFormOpen] = useState(true);
+  const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
+
+  // Form Fields matching user screenshot
+  const [teamNameInput, setTeamNameInput] = useState('');
+  const [teamPositionInput, setTeamPositionInput] = useState('');
+  const [teamCityInput, setTeamCityInput] = useState('');
+  const [isCurrentPlayingInput, setIsCurrentPlayingInput] = useState(true);
+  const [startMonthInput, setStartMonthInput] = useState('');
+  const [startYearInput, setStartYearInput] = useState('');
+  const [endMonthInput, setEndMonthInput] = useState('');
+  const [endYearInput, setEndYearInput] = useState('');
+  const [teamDescInput, setTeamDescInput] = useState('');
+
+  const resetTeamForm = () => {
+    setEditingTeamId(null);
+    setTeamNameInput('');
+    setTeamPositionInput('');
+    setTeamCityInput('');
+    setIsCurrentPlayingInput(true);
+    setStartMonthInput('');
+    setStartYearInput('');
+    setEndMonthInput('');
+    setEndYearInput('');
+    setTeamDescInput('');
+    setIsAddTeamFormOpen(false);
+  };
+
+  const handleSaveTeam = () => {
+    if (!teamNameInput.trim()) return;
+
+    const pos = teamPositionInput || 'Player';
+    const city = teamCityInput || 'Location';
+    const startStr = startMonthInput && startYearInput ? `${startMonthInput} ${startYearInput}` : (startYearInput || '2024');
+    const endStr = isCurrentPlayingInput ? 'Present' : (endMonthInput && endYearInput ? `${endMonthInput} ${endYearInput}` : (endYearInput || 'Present'));
+    const subtitleText = `${pos} · ${startStr} - ${endStr} · ${city}`;
+
+    if (editingTeamId) {
+      setCareerTeamsList((prev) =>
+        prev.map((t) =>
+          t.id === editingTeamId
+            ? {
+                ...t,
+                name: teamNameInput,
+                position: teamPositionInput,
+                city: teamCityInput,
+                isCurrent: isCurrentPlayingInput,
+                startMonth: startMonthInput,
+                startYear: startYearInput,
+                endMonth: endMonthInput,
+                endYear: endYearInput,
+                description: teamDescInput,
+                subtitle: subtitleText,
+              }
+            : t
+        )
+      );
+    } else {
+      const newTeam = {
+        id: `t_${Date.now()}`,
+        name: teamNameInput,
+        position: teamPositionInput,
+        city: teamCityInput,
+        isCurrent: isCurrentPlayingInput,
+        startMonth: startMonthInput,
+        startYear: startYearInput,
+        endMonth: endMonthInput,
+        endYear: endYearInput,
+        description: teamDescInput,
+        subtitle: subtitleText,
+        logo: '/kcBlue.png',
+      };
+      setCareerTeamsList((prev) => [newTeam, ...prev]);
+    }
+
+    resetTeamForm();
+  };
+
+  const handleEditClick = (team: any) => {
+    setEditingTeamId(team.id);
+    setTeamNameInput(team.name);
+    setTeamPositionInput(team.position);
+    setTeamCityInput(team.city);
+    setIsCurrentPlayingInput(team.isCurrent);
+    setStartMonthInput(team.startMonth);
+    setStartYearInput(team.startYear);
+    setEndMonthInput(team.endMonth || '');
+    setEndYearInput(team.endYear || '');
+    setTeamDescInput(team.description);
+    setIsAddTeamFormOpen(true);
+  };
 
   return (
     <div className="mhn-profile-page-root">
@@ -214,7 +408,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   <div className="share-profile-text">Share Profile</div>
                 </button>
                 <button
-                  onClick={() => alert('Edit profile modal')}
+                  onClick={() => setIsEditProfileOpen(true)}
                   className="mhn-btn-edit-profile"
                 >
                   <div className="edit-profile-text">Edit Profile</div>
@@ -266,130 +460,104 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 <button className="mhn-btn-create-post" onClick={() => setIsCreatePostOpen(true)}>Create Post</button>
               </div>
 
-              {/* 2 Side-by-Side Post Cards matching Figma */}
-              <div className="mhn-posts-grid-wrapper">
-                {/* Left Card */}
-                <div
-                  className="mhn-post-figma-card"
-                  onClick={() => onNavigate && onNavigate('event-detail')}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div>
-                    <div className="mhn-post-figma-header">
-                      <div className="mhn-post-figma-author">
-                        <img
-                          src={liveAvatar}
-                          alt={liveName}
-                          className="mhn-post-figma-avatar"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-                          }}
-                        />
-                        <div className="mhn-post-figma-meta">
-                          <h4 className="mhn-post-figma-author-name">{liveName}</h4>
-                          <span className="mhn-post-figma-subtitle">C • #97 • 1 Aug</span>
+              {/* Dynamic Live Posts Grid from API or Shimmer Skeleton */}
+              {isPostsLoading ? (
+                <div className="mhn-posts-grid-wrapper">
+                  <FeedPostSkeleton />
+                  <FeedPostSkeleton />
+                </div>
+              ) : (
+                <div className="mhn-posts-grid-wrapper">
+                  {(liveUserPosts.length > 0 ? liveUserPosts : [
+                    {
+                      id: 'post-1',
+                      body: "First tournament of the season! Let's go!",
+                      likeCount: 13,
+                      commentCount: 2,
+                      repostCount: 0,
+                      createdAt: "2026-08-17T11:39:39.830Z",
+                      media: [{ url: "/playHockey.png" }],
+                      authorProfile: { displayName: liveName, avatarUrl: liveAvatar, position: "C", jerseyNumber: 97 }
+                    },
+                    {
+                      id: 'post-2',
+                      body: "🏒 FINAL MATCH DAY! 🏆 Everything we've trained for comes down to this. The ice is ready, and we're ready. #IceHockey #FinalMatch #GameDay",
+                      likeCount: 24,
+                      commentCount: 5,
+                      repostCount: 1,
+                      createdAt: "2026-08-17T11:43:09.856Z",
+                      media: [{ url: "/mhnStars.png" }],
+                      authorProfile: { displayName: liveName, avatarUrl: liveAvatar, position: "C", jerseyNumber: 97 }
+                    }
+                  ]).map((post: any) => {
+                    const author = post.authorProfile || post.author || {};
+                    const postName = author.displayName || liveName;
+                    const postAvatar = author.avatarUrl || liveAvatar;
+                    const postRole = author.position && author.jerseyNumber ? `${author.position} • #${author.jerseyNumber}` : `${liveRole} • #${jerseyText}`;
+                    const mediaUrl = post.media && post.media.length > 0 ? post.media[0].url : null;
+                    const formattedDate = post.createdAt ? new Date(post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '1 Aug';
+
+                    return (
+                      <div
+                        key={post.id}
+                        className="mhn-post-figma-card"
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <div>
+                          <div className="mhn-post-figma-header">
+                            <div className="mhn-post-figma-author">
+                              <img
+                                src={postAvatar}
+                                alt={postName}
+                                className="mhn-post-figma-avatar"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = '/userPlaceholder.png';
+                                }}
+                              />
+                              <div className="mhn-post-figma-meta">
+                                <h4 className="mhn-post-figma-author-name">{postName}</h4>
+                                <span className="mhn-post-figma-subtitle">{postRole} • {formattedDate}</span>
+                              </div>
+                            </div>
+                            <button className="mhn-post-figma-more-btn" aria-label="More">
+                              <img src='/threeDots.png' className='three-dots-icon' alt='three-dots' />
+                            </button>
+                          </div>
+
+                          {post.body && (
+                            <p className="mhn-post-figma-text">
+                              {post.body}
+                            </p>
+                          )}
+
+                          {mediaUrl && (
+                            <div className="mhn-post-figma-image-box">
+                              <img src={mediaUrl} alt="Post media" className="mhn-post-figma-image" />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mhn-post-figma-footer">
+                          <div className="mhn-post-figma-action">
+                            <img src="/like.png" alt="Like" className="like-count-icon" />
+                            <span>{post.likeCount ?? post.reactionsCount ?? 0}</span>
+                          </div>
+
+                          <div className="mhn-post-figma-action">
+                            <img src="/comment.png" alt="Comment" className="comment-count-icon" />
+                            <span>{post.commentCount ?? post.commentsCount ?? 0}</span>
+                          </div>
+
+                          <div className="mhn-post-figma-action">
+                            <img src="/share.png" alt="Share" className="share-count-icon" />
+                            <span>{post.repostCount ?? 0}</span>
+                          </div>
                         </div>
                       </div>
-                      <button className="mhn-post-figma-more-btn" aria-label="More">
-                        <img src='/threeDots.png' className='three-dots-icon' alt='three-dots' />
-                      </button>
-                    </div>
-
-                    <p className="mhn-post-figma-text">
-                      <strong>First tournament of the season! Let's go!</strong>
-                    </p>
-                    <p className="mhn-post-figma-text-more">... more</p>
-
-                    <div className="mhn-post-figma-image-box">
-                      <img src="/playHockey.png" alt="Hockey match" className="mhn-post-figma-image" />
-                    </div>
-                  </div>
-
-                  <div className="mhn-post-figma-footer">
-                    <div className="mhn-post-figma-action">
-                      <img src="/like.png" alt="" className="like-count-icon" />
-                      <span>13</span>
-                    </div>
-
-                    <div className="mhn-post-figma-action">
-                      <img src="/comment.png" alt="" className="comment-count-icon" />
-                      <span>2</span>
-                    </div>
-
-                    <div className="mhn-post-figma-action">
-                      <img src="/share.png" alt="" className="share-count-icon" />
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
-
-                {/* Right Card */}
-                <div
-                  className="mhn-post-figma-card"
-                  onClick={() => onNavigate && onNavigate('event-detail')}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div>
-                    <div className="mhn-post-figma-header">
-                      <div className="mhn-post-figma-author">
-                        <img
-                          src={liveAvatar}
-                          alt={liveName}
-                          className="mhn-post-figma-avatar"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-                          }}
-                        />
-                        <div className="mhn-post-figma-meta">
-                          <h4 className="mhn-post-figma-author-name">{liveName}</h4>
-                          <span className="mhn-post-figma-subtitle">C • #97 • 20 July</span>
-                        </div>
-                      </div>
-                      <img src='/threeDots.png' className='three-dots-icon' alt='three-dots' />
-                    </div>
-
-                    <p className="mhn-post-figma-text">
-                      🏒 <strong>FINAL MATCH DAY! 🏆</strong>
-                    </p>
-                    <p className="mhn-post-figma-text" style={{ fontSize: '13px', color: '#475569' }}>
-                      Everything we've trained for comes down to pressure is high, the ice is ready, and we're ready. everything we've got.<br />
-                      No fear. No excuses. Just heart, teamwork, One final battle. One chance to become champions trophy home! 🔥🏆
-                    </p>
-                    <p className="mhn-post-figma-hashtags">
-                      #IceHockey #FinalMatch #GameDay
-                    </p>
-                  </div>
-
-                  <div className="mhn-post-figma-footer">
-                    <div className="mhn-post-figma-action">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.78-8.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                      </svg>
-                      <span>13</span>
-                    </div>
-
-                    <div className="mhn-post-figma-action">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                      </svg>
-                      <span>2</span>
-                    </div>
-
-                    <div className="mhn-post-figma-action">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2">
-                        <line x1="22" y1="2" x2="11" y2="13" />
-                        <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Floating Next Arrow Button */}
-                <button className="mhn-posts-next-arrow" aria-label="Next posts">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </button>
-              </div>
+              )}
 
               {/* Bottom Show All Button */}
               <div className="mhn-posts-show-all-divider">
@@ -867,25 +1035,376 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   )}
 
                   {activeAboutSection === 'career' && (
-                    <div className="mhn-about-section-content">
-                      <div className="mhn-about-teams-header">
-                        <h4 className="mhn-about-teams-title">Teams</h4>
-                        <button className="mhn-btn-add-team" title="Add Team">
-                          <img src='/add3.png' alt='add3' className='add3'/>
+                    <div className="mhn-about-section-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      {/* Teams Header */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Teams</h4>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isAddTeamFormOpen && !editingTeamId) {
+                              resetTeamForm();
+                            } else {
+                              resetTeamForm();
+                              setIsAddTeamFormOpen(true);
+                            }
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                          title="Add Team"
+                        >
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                          </svg>
                         </button>
                       </div>
-                      <div className="mhn-about-team-list">
-                        {careerTeams.map((team) => (
-                          <div key={team.id} className="mhn-about-team-item">
-                            <div className="mhn-about-team-left">
-                              <img src={team.logo} alt={team.name} className="mhn-about-team-logo" />
-                              <div className="mhn-about-team-info">
-                                <span className="mhn-about-team-name">{team.name}</span>
-                                <span className="mhn-about-team-subtitle">{team.subtitle}</span>
+
+                      {/* Add / Edit Team Form Card matching User Screenshot */}
+                      {isAddTeamFormOpen && (
+                        <div
+                          style={{
+                            backgroundColor: '#FFFFFF',
+                            border: '1px solid #E2E8F0',
+                            borderRadius: '12px',
+                            padding: '20px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '16px',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                          }}
+                        >
+                          {/* Team Input */}
+                          <div>
+                            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                              Team
+                            </label>
+                            <input
+                              type="text"
+                              value={teamNameInput}
+                              onChange={(e) => setTeamNameInput(e.target.value)}
+                              placeholder="Team name"
+                              style={{
+                                width: '100%',
+                                height: '42px',
+                                borderRadius: '8px',
+                                border: '1px solid #CBD5E1',
+                                padding: '0 12px',
+                                fontSize: '14px',
+                                outline: 'none',
+                              }}
+                            />
+                          </div>
+
+                          {/* Position Select */}
+                          <div>
+                            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                              Position
+                            </label>
+                            <select
+                              value={teamPositionInput}
+                              onChange={(e) => setTeamPositionInput(e.target.value)}
+                              style={{
+                                width: '100%',
+                                height: '42px',
+                                borderRadius: '8px',
+                                border: '1px solid #CBD5E1',
+                                padding: '0 12px',
+                                fontSize: '14px',
+                                outline: 'none',
+                                backgroundColor: '#FFFFFF',
+                                color: teamPositionInput ? '#0F172A' : '#94A3B8',
+                              }}
+                            >
+                              <option value="">Select</option>
+                              <option value="Center">Center</option>
+                              <option value="Left Wing">Left Wing</option>
+                              <option value="Right Wing">Right Wing</option>
+                              <option value="Defense">Defense</option>
+                              <option value="Goaltender">Goaltender</option>
+                            </select>
+                          </div>
+
+                          {/* City/Town Select */}
+                          <div>
+                            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                              City/Town
+                            </label>
+                            <select
+                              value={teamCityInput}
+                              onChange={(e) => setTeamCityInput(e.target.value)}
+                              style={{
+                                width: '100%',
+                                height: '42px',
+                                borderRadius: '8px',
+                                border: '1px solid #CBD5E1',
+                                padding: '0 12px',
+                                fontSize: '14px',
+                                outline: 'none',
+                                backgroundColor: '#FFFFFF',
+                                color: teamCityInput ? '#0F172A' : '#94A3B8',
+                              }}
+                            >
+                              <option value="">Select</option>
+                              <option value="Dagestan, Russia">Dagestan, Russia</option>
+                              <option value="Toronto, Canada">Toronto, Canada</option>
+                              <option value="Austria, Europe">Austria, Europe</option>
+                              <option value="Boston, MA">Boston, MA</option>
+                            </select>
+                          </div>
+
+                          {/* Checkbox: I currently playing here */}
+                          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>
+                            <input
+                              type="checkbox"
+                              checked={isCurrentPlayingInput}
+                              onChange={(e) => setIsCurrentPlayingInput(e.target.checked)}
+                              style={{ width: '16px', height: '16px', accentColor: '#1860C3', cursor: 'pointer' }}
+                            />
+                            <span>I currently playing here</span>
+                          </label>
+
+                          {/* Start Date: Month + Year side-by-side */}
+                          <div>
+                            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                              Start date
+                            </label>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                              <select
+                                value={startMonthInput}
+                                onChange={(e) => setStartMonthInput(e.target.value)}
+                                style={{
+                                  height: '42px',
+                                  borderRadius: '8px',
+                                  border: '1px solid #CBD5E1',
+                                  padding: '0 12px',
+                                  fontSize: '14px',
+                                  outline: 'none',
+                                  backgroundColor: '#FFFFFF',
+                                  color: startMonthInput ? '#0F172A' : '#94A3B8',
+                                }}
+                              >
+                                <option value="">Month</option>
+                                <option value="January">January</option>
+                                <option value="February">February</option>
+                                <option value="March">March</option>
+                                <option value="April">April</option>
+                                <option value="May">May</option>
+                                <option value="June">June</option>
+                                <option value="July">July</option>
+                                <option value="August">August</option>
+                                <option value="September">September</option>
+                                <option value="October">October</option>
+                                <option value="November">November</option>
+                                <option value="December">December</option>
+                              </select>
+
+                              <select
+                                value={startYearInput}
+                                onChange={(e) => setStartYearInput(e.target.value)}
+                                style={{
+                                  height: '42px',
+                                  borderRadius: '8px',
+                                  border: '1px solid #CBD5E1',
+                                  padding: '0 12px',
+                                  fontSize: '14px',
+                                  outline: 'none',
+                                  backgroundColor: '#FFFFFF',
+                                  color: startYearInput ? '#0F172A' : '#94A3B8',
+                                }}
+                              >
+                                <option value="">Year</option>
+                                {['2026', '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016', '2015', '2010'].map((y) => (
+                                  <option key={y} value={y}>{y}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* End Date (if !isCurrentPlayingInput) */}
+                          {!isCurrentPlayingInput && (
+                            <div>
+                              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                                End date
+                              </label>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <select
+                                  value={endMonthInput}
+                                  onChange={(e) => setEndMonthInput(e.target.value)}
+                                  style={{
+                                    height: '42px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #CBD5E1',
+                                    padding: '0 12px',
+                                    fontSize: '14px',
+                                    outline: 'none',
+                                    backgroundColor: '#FFFFFF',
+                                    color: endMonthInput ? '#0F172A' : '#94A3B8',
+                                  }}
+                                >
+                                  <option value="">Month</option>
+                                  <option value="January">January</option>
+                                  <option value="February">February</option>
+                                  <option value="March">March</option>
+                                  <option value="April">April</option>
+                                  <option value="May">May</option>
+                                  <option value="June">June</option>
+                                  <option value="July">July</option>
+                                  <option value="August">August</option>
+                                  <option value="September">September</option>
+                                  <option value="October">October</option>
+                                  <option value="November">November</option>
+                                  <option value="December">December</option>
+                                </select>
+
+                                <select
+                                  value={endYearInput}
+                                  onChange={(e) => setEndYearInput(e.target.value)}
+                                  style={{
+                                    height: '42px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #CBD5E1',
+                                    padding: '0 12px',
+                                    fontSize: '14px',
+                                    outline: 'none',
+                                    backgroundColor: '#FFFFFF',
+                                    color: endYearInput ? '#0F172A' : '#94A3B8',
+                                  }}
+                                >
+                                  <option value="">Year</option>
+                                  {['2026', '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016', '2015', '2010'].map((y) => (
+                                    <option key={y} value={y}>{y}</option>
+                                  ))}
+                                </select>
                               </div>
                             </div>
-                            <button className="mhn-about-team-edit-btn" aria-label="Edit team">
-                              <img src="/edit3.png" alt="Edit team" className='edit3' />
+                          )}
+
+                          {/* Description Textarea */}
+                          <div>
+                            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                              Description
+                            </label>
+                            <textarea
+                              rows={3}
+                              value={teamDescInput}
+                              onChange={(e) => setTeamDescInput(e.target.value)}
+                              placeholder="Tell us about it"
+                              style={{
+                                width: '100%',
+                                borderRadius: '8px',
+                                border: '1px solid #CBD5E1',
+                                padding: '10px 12px',
+                                fontSize: '14px',
+                                outline: 'none',
+                                fontFamily: 'inherit',
+                                resize: 'vertical',
+                              }}
+                            />
+                          </div>
+
+                          {/* Buttons Row: Cancel and Save */}
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '4px' }}>
+                            <button
+                              type="button"
+                              onClick={resetTeamForm}
+                              style={{
+                                backgroundColor: '#E2E8F0',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '8px 20px',
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                color: '#334155',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleSaveTeam}
+                              disabled={!teamNameInput.trim()}
+                              style={{
+                                backgroundColor: teamNameInput.trim() ? '#1860C3' : '#CBD5E1',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '8px 24px',
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                color: '#FFFFFF',
+                                cursor: teamNameInput.trim() ? 'pointer' : 'not-allowed',
+                              }}
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Saved Career Teams List matching user screenshot */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {careerTeamsList.map((team) => (
+                          <div
+                            key={team.id}
+                            style={{
+                              backgroundColor: '#FFFFFF',
+                              border: '1px solid #F1F5F9',
+                              borderRadius: '10px',
+                              padding: '16px',
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              justifyContent: 'space-between',
+                              gap: '12px',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+                              <img
+                                src={team.logo}
+                                alt={team.name}
+                                style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'contain' }}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = '/kcBlue.png';
+                                }}
+                              />
+                              <div>
+                                <h5 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: '0 0 2px 0' }}>
+                                  {team.name}
+                                </h5>
+                                <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 4px 0', fontWeight: 500 }}>
+                                  {team.subtitle}
+                                </p>
+                                {team.description && (
+                                  <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0, fontStyle: 'italic' }}>
+                                    {team.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleEditClick(team)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '6px',
+                                borderRadius: '6px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                              title="Edit team details"
+                            >
+                              <img src="/edit3.png" alt="Edit" style={{ width: '16px', height: '16px' }} />
                             </button>
                           </div>
                         ))}
@@ -975,6 +1494,15 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           isLoading={isCreatingPost}
           userName={liveName}
           userAvatar={liveAvatar}
+        />
+      )}
+
+      {/* Edit Profile Modal */}
+      {isEditProfileOpen && (
+        <EditProfileModal
+          isOpen={isEditProfileOpen}
+          onClose={() => setIsEditProfileOpen(false)}
+          onSave={handleSaveProfile}
         />
       )}
     </div>

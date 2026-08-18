@@ -37,6 +37,9 @@ export function getApiBaseUrl(): string {
   if (typeof globalThis !== 'undefined' && (globalThis as any).process?.env?.VITE_API_BASE_URL) {
     return (globalThis as any).process.env.VITE_API_BASE_URL;
   }
+  if (typeof window !== 'undefined' && window.location.origin.includes('netlify.app')) {
+    return '/v1';
+  }
   return DEFAULT_BACKEND_URL;
 }
 
