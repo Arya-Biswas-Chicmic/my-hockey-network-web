@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../../context/AuthContext';
 import { FeedPostCard, FeedPostProps } from '../home/FeedPostCard';
 import { CreatePostModal } from '../home/CreatePostModal';
 
@@ -13,6 +14,11 @@ export const GroupDetailView: React.FC<GroupDetailViewProps> = ({
   groupName = 'San Jose Sharks',
   onBackToGroups
 }) => {
+  const { user } = useAuth();
+  const resolvedName = user?.profile?.displayName || (user as any)?.displayName || 'Player';
+  const resolvedAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl || '/userPlaceholder.png';
+  const resolvedRole = user?.primaryRole || user?.profile?.type || 'PLAYER';
+
   const [activeTab, setActiveTab] = useState<'posts' | 'about' | 'people' | 'media' | 'files'>('posts');
   const [isJoined, setIsJoined] = useState(true);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
@@ -37,10 +43,10 @@ export const GroupDetailView: React.FC<GroupDetailViewProps> = ({
   const handleCreatePost = (content: string, postImage?: string) => {
     const newPost: FeedPostProps = {
       id: `post-${Date.now()}`,
-      authorName: 'Alexander Ovechkin',
-      authorRole: 'LW • #8',
+      authorName: resolvedName,
+      authorRole: resolvedRole,
       authorTime: 'Just now',
-      authorAvatar: '/ovechkin.png',
+      authorAvatar: resolvedAvatar,
       content,
       postImage,
       likesCount: 0,
@@ -65,12 +71,19 @@ export const GroupDetailView: React.FC<GroupDetailViewProps> = ({
             {/* Avatar Circle */}
             <div className="mhn-group-member-avatar-wrapper">
               <div className="mhn-group-member-avatar-circle">
-                <img src="/ovechkin.png" alt="Alexander Ovechkin" className="mhn-group-member-avatar-img" />
+                <img 
+                  src={resolvedAvatar} 
+                  alt={resolvedName} 
+                  className="mhn-group-member-avatar-img" 
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/userPlaceholder.png';
+                  }}
+                />
               </div>
             </div>
             {/* Info */}
             <div className="mhn-group-member-info">
-              <h3 className="mhn-group-member-name">Alexander Ovechkin</h3>
+              <h3 className="mhn-group-member-name">{resolvedName}</h3>
               <p className="mhn-group-member-joined">Joined Group 1 August 2025</p>
             </div>
           </div>
@@ -230,8 +243,6 @@ export const GroupDetailView: React.FC<GroupDetailViewProps> = ({
         isOpen={isPostModalOpen}
         onClose={() => setIsPostModalOpen(false)}
         onSubmit={handleCreatePost}
-        userName="Alexander Ovechkin"
-        userAvatar="/ovechkin.png"
       />
     </div>
   );

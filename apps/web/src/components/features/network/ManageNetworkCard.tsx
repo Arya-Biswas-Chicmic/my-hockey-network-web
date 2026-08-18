@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAuth } from '../../../context/AuthContext';
 
 interface ManageNetworkCardProps {
   name?: string;
@@ -14,17 +15,25 @@ interface ManageNetworkCardProps {
 }
 
 export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
-  name = 'Jack Ruffle',
-  role = 'Center • #97',
-  avatarUrl = '/jack.png',
+  name,
+  role,
+  avatarUrl,
   bannerUrl = '/cover.png',
   location = 'Austria, Europe',
   teamName = 'HC Bregenzerwald',
   teamLogo = '/HC.png',
-  followersCount = '1M',
-  followingCount = '700',
+  followersCount,
+  followingCount,
   onMenuItemClick
 }) => {
+  const { user } = useAuth();
+
+  const resolvedName = user?.profile?.displayName || (user as any)?.displayName || name || 'Player';
+  const resolvedRole = user?.primaryRole || user?.profile?.type || role || 'PLAYER';
+  const resolvedAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl || avatarUrl || '/userPlaceholder.png';
+  const resolvedFollowers = user?.counts?.followers !== undefined ? user.counts.followers : (followersCount ?? 0);
+  const resolvedFollowing = user?.counts?.following !== undefined ? user.counts.following : (followingCount ?? 0);
+
   return (
     <div className="mhn-manage-network-stack">
       {/* Top Profile Card with Stats */}
@@ -45,8 +54,8 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
         <div className="mhn-network-avatar-wrapper">
           <div className="mhn-network-avatar-circle">
             <img 
-              src={avatarUrl} 
-              alt={name} 
+              src={resolvedAvatar} 
+              alt={resolvedName} 
               className="mhn-network-avatar-img"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/userPlaceholder.png';
@@ -57,8 +66,8 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
 
         {/* User Info */}
         <div className="mhn-network-user-info">
-          <h3 className="mhn-network-user-name">{name}</h3>
-          <p className="mhn-network-user-role">{role}</p>
+          <h3 className="mhn-network-user-name">{resolvedName}</h3>
+          <p className="mhn-network-user-role">{resolvedRole}</p>
 
           {/* Location Line */}
           {location && (
@@ -90,12 +99,12 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
         {/* Followers / Following Stats Row */}
         <div className="mhn-network-stats-row">
           <div className="mhn-network-stat-col">
-            <span className="mhn-network-stat-number">{followersCount}</span>
+            <span className="mhn-network-stat-number">{resolvedFollowers}</span>
             <span className="mhn-network-stat-label">Followers</span>
           </div>
           <div className="mhn-network-stat-divider" />
           <div className="mhn-network-stat-col">
-            <span className="mhn-network-stat-number">{followingCount}</span>
+            <span className="mhn-network-stat-number">{resolvedFollowing}</span>
             <span className="mhn-network-stat-label">Following</span>
           </div>
         </div>

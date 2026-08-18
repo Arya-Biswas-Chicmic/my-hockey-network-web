@@ -41,8 +41,6 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}
-        userName="Jack Ruffle"
-        userAvatar="/jack.png"
       />
 
       {/* Main Centered Content */}

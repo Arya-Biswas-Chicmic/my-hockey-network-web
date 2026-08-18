@@ -76,6 +76,10 @@ export interface AuthMeResponse {
     accessLevel: 'LIMITED' | 'SUPERVISED' | 'FULL';
     verificationStatus: string;
   };
+  counts?: {
+    followers?: number;
+    following?: number;
+  };
 }
 
 export interface GuardianRequestDTO {

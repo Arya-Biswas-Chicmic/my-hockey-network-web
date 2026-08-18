@@ -14,7 +14,7 @@ export const RoleSelectionForm: React.FC<OnboardingFormProps> = ({
     <div className="onboarding-form">
       <OnboardingHeader
         title={'How are you\ninvolved in hockey?'}
-        subtitle={'Select all that apply. You can update this\nanytime in your settings'}
+        subtitle={'Select your role. You can update this\nanytime in your settings'}
       />
 
       <div className="role-options-stack">

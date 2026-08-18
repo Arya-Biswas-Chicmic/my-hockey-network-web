@@ -27,8 +27,6 @@ export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}
-        userName="Jack Ruffle"
-        userAvatar="/jack.png"
       />
 
       {/* Pending Guardian Notice Banner */}

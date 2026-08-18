@@ -2,8 +2,11 @@ import type { CreateAccountDTO, UserProfile } from '@my-hockey-network/types';
 
 export * from './api/client';
 export * from './api/types';
+export * from './api/urls';
 export * from './api/authApi';
 export * from './api/authStore';
+export * from './api/postsApi';
+export * from './api/relationshipsApi';
 
 export const toggleRoleSelection = (currentRoles: string[], roleId: string): string[] => {
   if (currentRoles.includes(roleId)) {

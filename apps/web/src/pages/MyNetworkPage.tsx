@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '../components/common/Header';
 import { ManageNetworkCard } from '../components/features/network/ManageNetworkCard';
 import { ProfileSummaryCard } from '../components/features/home/ProfileSummaryCard';
 import { GroupsView } from '../components/features/network/GroupsView';
 import { GroupDetailView } from '../components/features/network/GroupDetailView';
+import { ConnectionsView } from '../components/features/network/ConnectionsView';
 import { PendingRequestCard, PendingRequestProps } from '../components/features/network/PendingRequestCard';
 import { SuggestedUserCard, SuggestedUserProps } from '../components/features/network/SuggestedUserCard';
+import { NetworkSkeletonGrid } from '../components/features/network/NetworkSkeletonLoader';
+import { EmptyState } from '../components/features/network/EmptyState';
+import {
+  getRelationships,
+  getPeopleYouMayKnow,
+  getSuggestedPeople,
+  RelationshipItem,
+} from '@my-hockey-network/core';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -14,10 +23,98 @@ interface PageProps {
 
 export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [activeNavTab, setActiveNavTab] = useState('network');
-  const [currentView, setCurrentView] = useState<'network' | 'groups' | 'group-detail'>('network');
+  const [currentView, setCurrentView] = useState<'network' | 'connections' | 'groups' | 'group-detail'>('network');
   const [selectedGroupId, setSelectedGroupId] = useState('g1');
   const [activeFilterTab, setActiveFilterTab] = useState('Invitations');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [livePendingRequests, setLivePendingRequests] = useState<PendingRequestProps[]>([]);
+  const [liveSuggestedUsers, setLiveSuggestedUsers] = useState<SuggestedUserProps[]>([]);
+  const [hasFetchedApi, setHasFetchedApi] = useState<boolean>(false);
+
+  // Fetch API network data on mount
+  useEffect(() => {
+    async function loadNetworkData() {
+      setIsLoading(true);
+
+      // 1. Pending Requests (GET /v1/relationships)
+      try {
+        console.log('🚀 [MyNetworkPage] Fetching GET /v1/relationships...');
+        const res = await getRelationships({ direction: 'incoming', status: 'PENDING' });
+        setHasFetchedApi(true);
+
+        if (res?.items && Array.isArray(res.items)) {
+          console.log('✅ [MyNetworkPage] Relationships items count:', res.items.length);
+          const mapped: PendingRequestProps[] = res.items.map((item: RelationshipItem) => {
+            const cp = item.counterparty;
+            
+            // Format roleTag from position & jerseyNumber or primaryRole or roleTag or requestReason
+            let formattedRole = cp?.roleTag || '';
+            if (!formattedRole) {
+              if (cp?.position && cp?.jerseyNumber) {
+                formattedRole = `${cp.position} • #${cp.jerseyNumber}`;
+              } else if (cp?.position) {
+                formattedRole = cp.position;
+              } else if (cp?.primaryRole || cp?.profileType) {
+                formattedRole = cp.primaryRole || cp.profileType || '-';
+              } else if (item.requestReason) {
+                formattedRole = item.requestReason;
+              } else {
+                formattedRole = '-';
+              }
+            }
+
+            return {
+              id: item.id,
+              name: cp?.displayName || (item.source as any)?.displayName || '-',
+              avatarUrl: cp?.avatarUrl || (item.source as any)?.avatarUrl || '/userPlaceholder.png',
+              roleTag: formattedRole,
+              teamName: cp?.teamName || '-',
+              teamLogo: cp?.teamLogo || '/kcBlue.png',
+              location: cp?.location || '-',
+            };
+          });
+          setLivePendingRequests(mapped);
+        }
+      } catch (err: any) {
+        console.warn('⚠️ [MyNetworkPage] Relationships API Warning:', err.message || err);
+      }
+
+      // 2. People You May Know (GET /v1/recommendations/people)
+      try {
+        console.log('🚀 [MyNetworkPage] Fetching GET /v1/recommendations/people...');
+        const peopleRes = await getPeopleYouMayKnow(10);
+        if (peopleRes?.items && Array.isArray(peopleRes.items)) {
+          const mapped: SuggestedUserProps[] = peopleRes.items.map((item: any) => ({
+            id: item.id || item.userId || `rec_${Math.random()}`,
+            name: item.displayName || item.name || '-',
+            avatarUrl: item.avatarUrl || '/userPlaceholder.png',
+            roleTag: item.roleTag || item.position || item.primaryRole || '-',
+            teamName: item.teamName || '-',
+            teamLogo: item.teamLogo || '/kcBlue.png',
+            location: item.location || '-',
+            isFollowing: false,
+          }));
+          setLiveSuggestedUsers(mapped);
+        }
+      } catch (err: any) {
+        console.warn('⚠️ [MyNetworkPage] People Recommendations Warning:', err.message || err);
+      }
+
+      // 3. Suggested People (GET /v1/recommendations/suggested)
+      try {
+        console.log('🚀 [MyNetworkPage] Fetching GET /v1/recommendations/suggested...');
+        await getSuggestedPeople({ limit: 10 });
+      } catch (err: any) {
+        console.warn('⚠️ [MyNetworkPage] Suggested Recommendations Warning:', err.message || err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadNetworkData();
+  }, []);
 
   const handleTabChange = (tab: string) => {
     setActiveNavTab(tab);
@@ -30,11 +127,11 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
   };
 
   const handleViewGroup = (groupId: string) => {
-    // Navigation disabled for now as requested
+    // Navigation placeholder
   };
 
-  // Sample pending requests
-  const pendingRequests: PendingRequestProps[] = [
+  // Sample pending requests fallback if API hasn't returned any items and was not explicitly empty
+  const pendingRequestsSample: PendingRequestProps[] = [
     {
       id: 'r1',
       name: 'Connor McDavid',
@@ -73,8 +170,8 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
     }
   ];
 
-  // Sample suggested users
-  const suggestedUsers: SuggestedUserProps[] = [
+  // Sample suggested users fallback
+  const suggestedUsersSample: SuggestedUserProps[] = [
     {
       id: 's1',
       name: 'Connor McDavid',
@@ -122,13 +219,17 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
     { id: 'People you may know', label: 'People you may know' }
   ];
 
-  const filteredPendingRequests = pendingRequests.filter((r) =>
+  // Determine list items (Use pure API dynamic data when fetched, zero dummy fallbacks)
+  const effectivePendingList = hasFetchedApi ? livePendingRequests : pendingRequestsSample;
+  const effectiveSuggestedList = hasFetchedApi ? liveSuggestedUsers : [];
+
+  const filteredPendingRequests = effectivePendingList.filter((r) =>
     r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     r.roleTag.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (r.teamName && r.teamName.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const filteredSuggestedUsers = suggestedUsers.filter((u) =>
+  const filteredSuggestedUsers = effectiveSuggestedList.filter((u) =>
     u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.roleTag.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (u.teamName && u.teamName.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -141,8 +242,6 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}
-        userName="Alexander Ovechkin"
-        userAvatar="/ovechkin.png"
       />
 
       {/* Main Container */}
@@ -159,33 +258,27 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
             <aside className="mhn-network-col-left">
               {currentView === 'groups' ? (
                 <ProfileSummaryCard 
-                  name="Alexander Ovechkin"
-                  role="LW • #8"
-                  avatarUrl="/ovechkin.png"
                   coverUrl="/cover.png"
                   location="Austria, Europe"
                   teamName="HC Bloemendaal"
                   teamLogo="/HC.png"
-                  followers="1M"
-                  following="700"
                   onPostClick={() => {
                     if (onNavigate) onNavigate('home');
                   }}
                 />
               ) : (
                 <ManageNetworkCard 
-                  name="Alexander Ovechkin"
-                  role="LW • #8"
-                  avatarUrl="/ovechkin.png"
                   bannerUrl="/cover.png"
                   location="Austria, Europe"
                   teamName="HC Bloemendaal"
                   teamLogo="/HC.png"
-                  followersCount="1M"
-                  followingCount="700"
+                  followersCount="-"
+                  followingCount="-"
                   onMenuItemClick={(item) => {
                     if (item === 'groups') {
                       setCurrentView('groups');
+                    } else if (item === 'connectors' || item === 'connections') {
+                      setCurrentView('connections');
                     } else {
                       setCurrentView('network');
                     }
@@ -196,7 +289,9 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
 
             {/* Right Main Content Area */}
             <section className="mhn-network-col-main">
-              {currentView === 'groups' ? (
+              {currentView === 'connections' ? (
+                <ConnectionsView onMessageClick={() => onNavigate && onNavigate('messaging')} />
+              ) : currentView === 'groups' ? (
                 <GroupsView onViewGroup={handleViewGroup} />
               ) : (
                 <>
@@ -244,14 +339,26 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                     <div className="mhn-network-section">
                       <div className="mhn-network-section-header">
                         <h3 className="mhn-network-section-title">Pending Requests</h3>
-                        <button className="mhn-network-view-all">View all</button>
+                        {filteredPendingRequests.length > 0 && (
+                          <button className="mhn-network-view-all">View all</button>
+                        )}
                       </div>
 
-                      <div className="mhn-pending-requests-grid">
-                        {filteredPendingRequests.map((request) => (
-                          <PendingRequestCard key={request.id} {...request} />
-                        ))}
-                      </div>
+                      {isLoading ? (
+                        <NetworkSkeletonGrid count={4} />
+                      ) : filteredPendingRequests.length === 0 ? (
+                        <EmptyState 
+                          title="No Pending Invitations"
+                          message="You currently have no pending network connection requests."
+                          iconType="invitations"
+                        />
+                      ) : (
+                        <div className="mhn-pending-requests-grid">
+                          {filteredPendingRequests.map((request) => (
+                            <PendingRequestCard key={request.id} {...request} />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -261,14 +368,26 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                       <h3 className="mhn-network-section-title">
                         {activeFilterTab === 'People you may know' ? 'People you may know' : 'Suggested for You'}
                       </h3>
-                      <button className="mhn-network-view-all">View all</button>
+                      {filteredSuggestedUsers.length > 0 && (
+                        <button className="mhn-network-view-all">View all</button>
+                      )}
                     </div>
 
-                    <div className="mhn-suggested-grid">
-                      {filteredSuggestedUsers.map((user) => (
-                        <SuggestedUserCard key={user.id} {...user} />
-                      ))}
-                    </div>
+                    {isLoading ? (
+                      <NetworkSkeletonGrid count={4} />
+                    ) : filteredSuggestedUsers.length === 0 ? (
+                      <EmptyState 
+                        title="No Data Found"
+                        message="There are no user recommendations or suggestions available at the moment."
+                        iconType="nodata"
+                      />
+                    ) : (
+                      <div className="mhn-suggested-grid">
+                        {filteredSuggestedUsers.map((user) => (
+                          <SuggestedUserCard key={user.id} {...user} />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </>
               )}

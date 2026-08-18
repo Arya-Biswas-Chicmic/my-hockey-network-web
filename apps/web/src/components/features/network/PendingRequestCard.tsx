@@ -14,12 +14,12 @@ export interface PendingRequestProps {
 
 export const PendingRequestCard: React.FC<PendingRequestProps> = ({
   id,
-  name,
+  name = '-',
   avatarUrl = '/userPlaceholder.png',
-  roleTag,
-  teamName = 'HC Bloemendaal',
+  roleTag = '-',
+  teamName = '-',
   teamLogo = '/kcBlue.png',
-  location = 'Austria, Europe',
+  location = '-',
   onAccept,
   onIgnore
 }) => {

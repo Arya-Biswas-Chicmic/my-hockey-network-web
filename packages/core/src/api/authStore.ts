@@ -13,6 +13,11 @@ export function saveAuthSession(sessionData: OtpVerifyResponse): void {
     // 1. Set CSRF cookie if present (Web auth)
     if (sessionData.csrfToken && typeof document !== 'undefined') {
       document.cookie = `mhn_csrf=${sessionData.csrfToken}; path=/; max-age=86400; SameSite=Lax`;
+      localStorage.setItem('mhn_csrf_token', sessionData.csrfToken);
+    }
+
+    if (sessionData.accessToken) {
+      localStorage.setItem('mhn_access_token', sessionData.accessToken);
     }
 
     // 2. Persist in storage (Works in Web localStorage or Mobile storage bridge)
@@ -64,7 +69,7 @@ export function getUserProfile(): AuthMeResponse | null {
 }
 
 /**
- * Clear all auth session data on logout
+ * Clear all auth session data on logout (Complete Token & Storage Sweep)
  */
 export function clearAuthSession(): void {
   if (typeof window === 'undefined') return;
@@ -72,8 +77,17 @@ export function clearAuthSession(): void {
   try {
     localStorage.removeItem(AUTH_STORAGE_KEY);
     localStorage.removeItem(USER_PROFILE_KEY);
+    localStorage.removeItem('mhn_access_token');
+    localStorage.removeItem('mhn_refresh_token');
+    localStorage.removeItem('mhn_csrf_token');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.clear();
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.clear();
+    }
     if (typeof document !== 'undefined') {
-      document.cookie = 'mhn_csrf=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+      document.cookie = 'mhn_csrf=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
     }
   } catch (err) {
     console.warn('Failed to clear auth session:', err);

@@ -69,9 +69,22 @@ async function executeRefresh(): Promise<boolean> {
   }
 }
 
+const NGROK_BACKEND_BASE_URL = 'https://reposeful-kareen-controllingly.ngrok-free.dev/v1';
+
 // Helper to log equivalent cURL command string to browser console
 function logCurlCommand(url: string, method: string, headers: Record<string, string>, body?: any) {
-  const curlParts = [`curl -X ${method} "${url}"`];
+  let curlUrl = url;
+  if (curlUrl.startsWith('/v1')) {
+    curlUrl = `${NGROK_BACKEND_BASE_URL}${curlUrl.slice(3)}`;
+  } else if (curlUrl.includes('localhost:') && curlUrl.includes('/v1')) {
+    curlUrl = curlUrl.replace(/http:\/\/localhost:[0-9]+\/v1/, NGROK_BACKEND_BASE_URL);
+  }
+
+  const curlParts = [`curl -X ${method} "${curlUrl}"`];
+
+  if (typeof document !== 'undefined' && document.cookie) {
+    curlParts.push(`  -H "Cookie: ${document.cookie}"`);
+  }
 
   for (const [k, v] of Object.entries(headers)) {
     curlParts.push(`  -H "${k}: ${v}"`);
@@ -83,7 +96,7 @@ function logCurlCommand(url: string, method: string, headers: Record<string, str
   }
 
   const curlCommand = curlParts.join(' \\\n');
-  console.log(`%c 🌐 [API Call] ${method} ${url}`, 'color: #0091FF; font-weight: bold; font-size: 13px;');
+  console.log(`%c 🌐 [API Call] ${method} ${curlUrl}`, 'color: #0091FF; font-weight: bold; font-size: 13px;');
   console.log(`%c${curlCommand}`, 'color: #10B981; font-family: monospace; font-size: 12px;');
 }
 
@@ -108,12 +121,46 @@ export async function apiFetch<T = any>(
     headers['Content-Type'] = 'application/json';
   }
 
-  // Attach CSRF token for cookie-authenticated mutating requests
-  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-    const csrfToken = getCookie('mhn_csrf');
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
+  // Attach CSRF token header for Web
+  let csrfToken = getCookie('mhn_csrf');
+  try {
+    if (!csrfToken && typeof localStorage !== 'undefined') {
+      csrfToken = localStorage.getItem('mhn_csrf_token');
+      if (!csrfToken) {
+        const rawSession = localStorage.getItem('mhn_auth_session');
+        if (rawSession) {
+          const parsed = JSON.parse(rawSession);
+          csrfToken = parsed.csrfToken || parsed.data?.csrfToken || null;
+        }
+      }
     }
+  } catch (e) { }
+
+  if (csrfToken && !headers['X-CSRF-Token']) {
+    headers['X-CSRF-Token'] = csrfToken;
+  }
+
+  // Only attach Authorization: Bearer if token is a valid JWT (starts with 'ey')
+  let accessToken: string | null = null;
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const stored = localStorage.getItem('mhn_access_token') || localStorage.getItem('accessToken');
+      if (stored && stored.startsWith('ey')) {
+        accessToken = stored;
+      } else {
+        const rawSession = localStorage.getItem('mhn_auth_session');
+        if (rawSession) {
+          const parsed = JSON.parse(rawSession);
+          if (parsed.accessToken && typeof parsed.accessToken === 'string' && parsed.accessToken.startsWith('ey')) {
+            accessToken = parsed.accessToken;
+          }
+        }
+      }
+    }
+  } catch (e) { }
+
+  if (accessToken && !headers['Authorization']) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
   }
 
   // Log equivalent cURL command to console
@@ -153,6 +200,9 @@ export async function apiFetch<T = any>(
       // Replay request once
       return apiFetch<T>(path, options, true);
     } else {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('mhn:unauthorized', { detail: { path, message: resEnvelope.message || 'Unauthorized' } }));
+      }
       // Refresh failed -> clear session and throw 401
       throw new ApiError(401, 'TOKEN_REVOKED', resEnvelope.data);
     }
@@ -160,6 +210,9 @@ export async function apiFetch<T = any>(
 
   // 2. Handle HTTP / API errors
   if (!response.ok || !resEnvelope.success) {
+    if (response.status === 401 && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('mhn:unauthorized', { detail: { path, message: resEnvelope.message || 'Unauthorized' } }));
+    }
     throw new ApiError(
       resEnvelope.statusCode || response.status,
       resEnvelope.message || 'API request failed',

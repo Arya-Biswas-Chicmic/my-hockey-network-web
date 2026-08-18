@@ -8,4 +8,6 @@ export { MessagingPage } from './MessagingPage';
 export { NotificationsPage } from './NotificationsPage';
 export { ProfilePage } from './ProfilePage';
 export { EventDetailPage } from './EventDetailPage';
+export { SettingsPage } from './SettingsPage';
+export { SupervisionPage } from './SupervisionPage';
 

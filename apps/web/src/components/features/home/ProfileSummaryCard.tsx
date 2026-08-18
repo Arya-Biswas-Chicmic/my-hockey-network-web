@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAuth } from '../../../context/AuthContext';
 
 interface ProfileSummaryCardProps {
   name?: string;
@@ -14,17 +15,25 @@ interface ProfileSummaryCardProps {
 }
 
 export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
-  name = 'Alexander Ovechkin',
-  role = 'LW • #8',
-  avatarUrl = '/ovechkin.png',
+  name,
+  role,
+  avatarUrl,
   coverUrl = '/cover.png',
   location = 'Austria, Europe',
   teamName = 'HC Bloemendaal',
   teamLogo = '/HC.png',
-  followers = '1M',
+  followers = '-',
   following = '700',
   onPostClick
 }) => {
+  const { user } = useAuth();
+
+  const resolvedName = user?.profile?.displayName || (user as any)?.displayName || name || 'Player';
+  const resolvedRole = role || user?.primaryRole || user?.profile?.type || 'PLAYER';
+  const resolvedAvatar = user?.profile?.avatarUrl || avatarUrl || '/userPlaceholder.png';
+  const resolvedFollowers = user?.counts?.followers !== undefined ? user.counts.followers : (followers ?? 0);
+  const resolvedFollowing = user?.counts?.following !== undefined ? user.counts.following : (following ?? 0);
+
   return (
     <div className="mhn-profile-summary-stack">
       {/* Profile Card */}
@@ -32,19 +41,15 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
         {/* Card Header Banner Background */}
         <div 
           className="mhn-profile-card-banner"
-          style={{
-            backgroundImage: `url(${coverUrl})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
+          style={{ backgroundImage: `url(${coverUrl})` }}
         />
-        
-        {/* Avatar Circle */}
+
+        {/* Profile Avatar Outer Circle */}
         <div className="mhn-profile-avatar-wrapper">
           <div className="mhn-profile-avatar-circle">
             <img 
-              src={avatarUrl} 
-              alt={name} 
+              src={resolvedAvatar} 
+              alt={resolvedName} 
               className="mhn-profile-avatar-img"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/userPlaceholder.png';
@@ -53,17 +58,17 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
           </div>
         </div>
 
-        {/* User Info */}
+        {/* User Identity Details */}
         <div className="mhn-profile-info">
-          <h3 className="mhn-profile-name">{name}</h3>
-          <p className="mhn-profile-role">{role}</p>
+          <h3 className="mhn-profile-name">{resolvedName}</h3>
+          <p className="mhn-profile-role">{resolvedRole}</p>
 
           {/* Location Line */}
           {location && (
             <div className="mhn-profile-location-row">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
               </svg>
               <span>{location}</span>
             </div>
@@ -80,12 +85,12 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
           {/* Followers & Following Stats Row */}
           <div className="mhn-profile-stats-divider-row">
             <div className="mhn-profile-stat-col">
-              <span className="mhn-stat-num">{followers}</span>
+              <span className="mhn-stat-num">{resolvedFollowers}</span>
               <span className="mhn-stat-label">Followers</span>
             </div>
             <div className="mhn-profile-stat-divider" />
             <div className="mhn-profile-stat-col">
-              <span className="mhn-stat-num">{following}</span>
+              <span className="mhn-stat-num">{resolvedFollowing}</span>
               <span className="mhn-stat-label">Following</span>
             </div>
           </div>

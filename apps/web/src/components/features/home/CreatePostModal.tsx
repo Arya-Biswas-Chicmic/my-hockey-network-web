@@ -1,9 +1,11 @@
 import React, { useState, useRef } from 'react';
+import { useAuth } from '../../../context/AuthContext';
 
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (content: string, postImage?: string, privacySettings?: { audience: string; shareWith?: string; dontShareWith?: string }) => void;
+  onSubmit: (content: string, postImage?: string, privacySettings?: { audience: string; shareWith?: string; dontShareWith?: string; locationTag?: string }) => void;
+  isLoading?: boolean;
   userName?: string;
   userAvatar?: string;
 }
@@ -12,9 +14,14 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
-  userName = 'Alexander Ovechkin',
-  userAvatar = '/ovechkin.png',
+  isLoading = false,
+  userName,
+  userAvatar,
 }) => {
+  const { user } = useAuth();
+  const resolvedName = user?.profile?.displayName || (user as any)?.displayName || userName || 'Player';
+  const resolvedAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl || userAvatar || '/userPlaceholder.png';
+
   const [screen, setScreen] = useState<'create' | 'audience' | 'custom'>('create');
   const [content, setContent] = useState('');
   const [audience, setAudience] = useState<'Everyone' | 'Groups' | 'Custom'>('Everyone');
@@ -41,18 +48,14 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim() && !postImage) return;
+    if ((!content.trim() && !postImage) || isLoading) return;
 
     onSubmit(content.trim(), postImage || undefined, {
       audience,
       shareWith: shareWithEmails || undefined,
       dontShareWith: dontShareWithEmails || undefined,
+      locationTag: locationTag || undefined,
     });
-    setContent('');
-    setPostImage(null);
-    setLocationTag(null);
-    setScreen('create');
-    onClose();
   };
 
   const handleAudienceOptionClick = (opt: 'Everyone' | 'Groups' | 'Custom') => {
@@ -83,15 +86,15 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
             {/* User Author & Audience Row */}
             <div className="mhn-modal-user-row">
               <img
-                src={userAvatar}
-                alt={userName}
+                src={resolvedAvatar}
+                alt={resolvedName}
                 className="mhn-modal-user-avatar"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/userPlaceholder.png';
                 }}
               />
               <div className="mhn-modal-user-meta">
-                <span className="mhn-modal-user-name">{userName}</span>
+                <span className="mhn-modal-user-name">{resolvedName}</span>
                 <button
                   type="button"
                   className="mhn-audience-pill"
@@ -190,10 +193,20 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               <div className="mhn-modal-submit-row">
                 <button
                   type="submit"
-                  disabled={!content.trim() && !postImage}
-                  className={`mhn-modal-submit-btn ${content.trim() || postImage ? 'active' : 'disabled'}`}
+                  disabled={(!content.trim() && !postImage) || isLoading}
+                  className={`mhn-modal-submit-btn ${(content.trim() || postImage) && !isLoading ? 'active' : 'disabled'}`}
                 >
-                  Post
+                  {isLoading ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                      <svg className="mhn-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                        <path d="M12 2a10 10 0 0 1 10 10" fill="currentColor" />
+                      </svg>
+                      Posting...
+                    </span>
+                  ) : (
+                    'Post'
+                  )}
                 </button>
               </div>
             </form>
