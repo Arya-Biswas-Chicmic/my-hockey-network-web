@@ -232,7 +232,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
             <aside className="mhn-network-col-left">
               {currentView === 'groups' ? (
                 <ProfileSummaryCard 
-                  coverUrl={user?.profile?.coverImageUrl || "/cover.png"}
+                  coverUrl={(user?.profile as any)?.coverImageUrl || "/cover.png"}
                   location={user?.profile?.city || "Toronto, ON"}
                   teamName="HC Bloemendaal"
                   teamLogo="/HC.png"
@@ -242,7 +242,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                 />
               ) : (
                 <ManageNetworkCard 
-                  bannerUrl={user?.profile?.coverImageUrl || "/cover.png"}
+                  bannerUrl={(user?.profile as any)?.coverImageUrl || "/cover.png"}
                   location={user?.profile?.city || "Toronto, ON"}
                   teamName="HC Bloemendaal"
                   teamLogo="/HC.png"

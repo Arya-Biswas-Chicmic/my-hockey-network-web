@@ -204,7 +204,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     // Validate all fields before submitting
     const newErrors: Record<string, string> = {};
     (Object.keys(formData) as Array<keyof EditProfileFormData>).forEach((key) => {
-      const err = validateField(key, formData[key]);
+      const err = validateField(key, formData[key] || '');
       if (err) newErrors[key] = err;
     });
 

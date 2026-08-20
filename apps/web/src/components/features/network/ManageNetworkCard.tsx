@@ -33,7 +33,7 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
   const resolvedRole = user?.primaryRole || user?.profile?.type || role || 'PLAYER';
   const rawAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl || avatarUrl;
   const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
-  const rawBanner = user?.profile?.coverImageUrl || (user as any)?.coverImageUrl || bannerUrl;
+  const rawBanner = (user?.profile as any)?.coverImageUrl || (user as any)?.coverImageUrl || bannerUrl;
   const resolvedBanner = resolveCoverUrl(rawBanner, '/cover.png');
   const resolvedFollowers = user?.counts?.followers !== undefined ? user.counts.followers : (followersCount ?? 0);
   const resolvedFollowing = user?.counts?.following !== undefined ? user.counts.following : (followingCount ?? 0);

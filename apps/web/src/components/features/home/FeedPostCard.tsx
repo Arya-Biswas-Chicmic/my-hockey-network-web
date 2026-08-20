@@ -250,7 +250,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
 
     try {
       if (prevFollowing) {
-        const targetIdOrEntity = relationshipId || { type: 'PROFILE', id: targetKey };
+        const targetIdOrEntity = relationshipId || { type: 'PROFILE' as const, id: targetKey };
         console.log(`🚀 [FeedPostCard] Unfollowing: Calling DELETE /v1/relationships/...`, targetIdOrEntity);
         await unfollowUser(targetIdOrEntity);
         console.log(`✅ [FeedPostCard] Unfollowed ${authorName} successfully (edge REVOKED)`);

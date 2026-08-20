@@ -99,7 +99,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const liveName = user?.profile?.displayName || (user as any)?.displayName || 'Player';
   const rawAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl;
   const liveAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
-  const rawCover = user?.profile?.coverImageUrl || (user as any)?.coverImageUrl;
+  const rawCover = (user?.profile as any)?.coverImageUrl || (user as any)?.coverImageUrl;
   const liveCoverImage = resolveCoverUrl(rawCover, '/cover.png');
   const liveRole = user?.primaryRole || user?.profile?.type || 'PLAYER';
 
@@ -752,12 +752,8 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       userReaction={post.userReaction}
                       isSelf={true}
                       onDeleteSuccess={(deletedId, msg) => {
-                        console.log(`🗑️ [ProfilePage] Post ${deletedId} deleted. Refreshing user posts...`);
+                        console.log(`🗑️ [ProfilePage] Post ${deletedId} deleted.`);
                         setToast({ message: msg || 'Post deleted successfully!', type: 'success' });
-                        setUserPosts((prev) => prev.filter((p) => p.id !== deletedId));
-                        if (profileData?.id) {
-                          getUserPosts(profileData.id).then((res) => setUserPosts(res.items || []));
-                        }
                       }}
                     />
                   );
@@ -1686,7 +1682,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         <div style={{ position: 'relative' }}>
                           <input
                             type="text"
-                            value={user?.profile?.publicRef || 'HKY-B5E3EMET'}
+                            value={(user?.profile as any)?.publicRef || 'HKY-B5E3EMET'}
                             disabled
                             className="mhn-about-input-box mhn-about-input-disabled"
                           />
