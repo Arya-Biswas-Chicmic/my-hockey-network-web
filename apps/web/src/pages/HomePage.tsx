@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header } from '../components/common/Header';
 import { PendingBanner } from '../components/common/PendingBanner';
 import { Toast } from '../components/common/Toast';
@@ -10,7 +10,7 @@ import { InviteGrowWidget } from '../components/features/home/InviteGrowWidget';
 import { CreatePostModal } from '../components/features/home/CreatePostModal';
 import { Spinner } from '../components/common/Spinner';
 import { EmptyState } from '../components/features/network/EmptyState';
-import { HomeSkeletonLoader } from '../components/features/home/HomeSkeletonLoader';
+import { HomeSkeletonLoader, FeedPostSkeleton } from '../components/features/home/HomeSkeletonLoader';
 import { getAuthMe, saveUserProfile, AuthMeResponse, createPost, getFeed } from '@my-hockey-network/core';
 import { useAuth } from '../context/AuthContext';
 
@@ -20,6 +20,7 @@ interface PageProps {
 }
 
 export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
+  const { user, setUserProfile, loadAuthMe } = useAuth();
   const [activeNavTab, setActiveNavTab] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
@@ -27,64 +28,131 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [userSession, setUserSession] = useState<AuthMeResponse | null>(null);
   const [isPageLoading, setIsPageLoading] = useState<boolean>(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [feedPosts, setFeedPosts] = useState<FeedPostProps[]>([]);
+  const [sortBy, setSortBy] = useState<'RECENT' | 'POPULAR' | 'TRENDING'>('RECENT');
+  const [feedError, setFeedError] = useState<{ isServerError: boolean; message?: string; statusCode?: number } | null>(null);
+  const [isFeedRefreshing, setIsFeedRefreshing] = useState<boolean>(false);
 
-  const { setUserProfile } = useAuth();
+  const currentUserName = user?.profile?.displayName || userSession?.profile?.displayName || (userSession as any)?.displayName || 'Player';
+  const currentUserAvatar = user?.profile?.avatarUrl || userSession?.profile?.avatarUrl || (userSession as any)?.avatarUrl || '/userPlaceholder.png';
 
-  // Hit GET /v1/auth/me & GET /v1/feed on Home page mount
+  const fetchFeedPosts = async (
+    currentProfileId?: string,
+    queryTerm?: string,
+    sortTerm: 'RECENT' | 'POPULAR' | 'TRENDING' = 'RECENT',
+    silent: boolean = false
+  ) => {
+    if (!silent) {
+      setIsFeedRefreshing(true);
+    }
+    try {
+      const q = queryTerm !== undefined ? queryTerm : searchQuery;
+      const s = sortTerm !== undefined ? sortTerm : sortBy;
+      console.log(`🚀 [HomePage] Fetching GET /v1/feed (query: "${q}", sortBy: "${s}", silent: ${silent})...`);
+
+      const feedResValue = await getFeed({
+        query: q && q.trim().length >= 2 ? q.trim() : undefined,
+        sortBy: s,
+        limit: 20,
+      });
+
+      const feedData = (feedResValue as any)?.data || feedResValue;
+      const itemsList = feedData?.items || (Array.isArray(feedData) ? feedData : []);
+
+      if (itemsList && itemsList.length > 0) {
+        const mappedPosts: FeedPostProps[] = itemsList.map((wrapper: any) => {
+          const postObj = wrapper.post || wrapper;
+          const reason = wrapper.reason || wrapper.postReason || '';
+          const authorProf = postObj.authorProfile || postObj.author || {};
+          const authorId = postObj.authorProfileId || authorProf.id;
+
+          const authorProfId = authorProf.id || authorProf.profileId || postObj.authorProfileId;
+          const authorUserId = authorProf.userId || authorProf.id;
+          const activeMyProfileId = currentProfileId || user?.profile?.id || user?.id || (userSession as any)?.profile?.id || (userSession as any)?.id;
+          const activeMyUserId = user?.id || (userSession as any)?.id;
+
+          const isSelfPost = reason === 'SELF' ||
+            (!!activeMyProfileId && (authorProfId === activeMyProfileId || authorProf.profileId === activeMyProfileId || postObj.authorProfileId === activeMyProfileId)) ||
+            (!!activeMyUserId && (authorUserId === activeMyUserId || authorProfId === activeMyUserId));
+
+          const roleSubtitle = authorProf.roleTag ||
+            (authorProf.teamName && authorProf.position ? `${authorProf.teamName} • ${authorProf.position}` : null) ||
+            authorProf.teamName ||
+            (authorProf.position ? `${authorProf.position}${authorProf.jerseyNumber ? ` • #${authorProf.jerseyNumber}` : ''}` : null) ||
+            authorProf.type ||
+            authorProf.primaryRole ||
+            'Official Team';
+
+          return {
+            id: postObj.id || `post_${Math.random()}`,
+            authorId: authorId || authorProf.id || authorProf.displayName,
+            authorName: authorProf.displayName || '-',
+            authorRole: roleSubtitle,
+            authorTime: postObj.publishedAt ? new Date(postObj.publishedAt).toLocaleDateString() : 'Recently',
+            authorAvatar: authorProf.avatarUrl || '/userPlaceholder.png',
+            content: postObj.body || '',
+            postImage: postObj.media?.[0]?.url,
+            likesCount: postObj.likeCount ?? postObj.reactionsCount ?? 0,
+            commentsCount: postObj.commentCount ?? postObj.commentsCount ?? 0,
+            repostCount: postObj.repostCount ?? postObj.repostsCount ?? postObj.sharesCount ?? 0,
+            isFollowing: postObj.isFollowing ?? authorProf.isFollowing ?? false,
+            isSelf: isSelfPost,
+            userReaction: postObj.userReaction || postObj.post?.userReaction || null,
+          };
+        });
+
+        setFeedPosts(mappedPosts);
+        console.log('✅ [HomePage] Feed API Response Mapped:', mappedPosts);
+      } else {
+        setFeedPosts([]);
+        console.log('ℹ️ [HomePage] Feed API returned empty items array');
+      }
+      setFeedError(null);
+    } catch (err: any) {
+      console.error('❌ [HomePage] Feed API Error (502/503/Server Error):', err);
+      if (!silent) {
+        setFeedPosts([]);
+        setFeedError({
+          isServerError: true,
+          statusCode: err?.statusCode || 502,
+          message: err?.message || 'Something went wrong while connecting to the server. Please try again.',
+        });
+      }
+    } finally {
+      if (!silent) {
+        setIsFeedRefreshing(false);
+      }
+    }
+  };
+
+  const handleFollowChange = (targetAuthorKey: string, targetFollowingState: boolean) => {
+    setFeedPosts((prevPosts) =>
+      prevPosts.map((post) => {
+        if ((post.authorId && post.authorId === targetAuthorKey) || post.authorName === targetAuthorKey) {
+          return { ...post, isFollowing: targetFollowingState };
+        }
+        return post;
+      })
+    );
+  };
+
+  const hasLoadedFeedRef = useRef<boolean>(false);
+
+  // Hit GET /v1/feed on Home page mount
   useEffect(() => {
+    if (hasLoadedFeedRef.current) return;
+    hasLoadedFeedRef.current = true;
+
     async function loadInitialData() {
       setIsPageLoading(true);
       try {
-        console.log('🚀 [HomePage Mounted] Hitting GET /v1/auth/me & GET /v1/feed APIs...');
-        const [meRes, feedRes] = await Promise.allSettled([
-          getAuthMe(),
-          getFeed(),
-        ]);
-
-        if (meRes.status === 'fulfilled' && meRes.value) {
-          setUserSession(meRes.value);
-          setUserProfile(meRes.value);
-          console.log('✅ [HomePage] Auth Me API Response:', meRes.value);
+        console.log('🚀 [HomePage Mounted] Hitting GET /v1/feed API...');
+        let currentUser = user;
+        if (!currentUser) {
+          currentUser = await loadAuthMe();
         }
-
-        if (feedRes.status === 'fulfilled' && feedRes.value) {
-          const feedData = (feedRes.value as any)?.data || feedRes.value;
-          const itemsList = feedData?.items || (Array.isArray(feedData) ? feedData : []);
-
-          if (itemsList && itemsList.length > 0) {
-            const meData = meRes.status === 'fulfilled' ? meRes.value : null;
-            const currentProfileId = meData?.profile?.id || meData?.id;
-
-            const mappedPosts: FeedPostProps[] = itemsList.map((wrapper: any) => {
-              const postObj = wrapper.post || wrapper;
-              const reason = wrapper.reason || wrapper.postReason || '';
-              const authorProf = postObj.authorProfile || postObj.author || {};
-              const authorId = postObj.authorProfileId || authorProf.id;
-
-              const isSelfPost = reason === 'SELF' || (currentProfileId && authorId === currentProfileId);
-
-              return {
-                id: postObj.id || `post_${Math.random()}`,
-                authorName: authorProf.displayName || '-',
-                authorRole: authorProf.type || authorProf.primaryRole || '-',
-                authorTime: postObj.publishedAt ? new Date(postObj.publishedAt).toLocaleDateString() : 'Recently',
-                authorAvatar: authorProf.avatarUrl || '/userPlaceholder.png',
-                content: postObj.body || '',
-                postImage: postObj.media?.[0]?.url,
-                likesCount: postObj.likeCount ?? postObj.reactionsCount ?? 0,
-                commentsCount: postObj.commentCount ?? postObj.commentsCount ?? 0,
-                isFollowing: false,
-                isSelf: isSelfPost,
-              };
-            });
-
-            setFeedPosts(mappedPosts);
-            console.log('✅ [HomePage] Feed API Response Mapped:', mappedPosts);
-          } else {
-            setFeedPosts([]);
-            console.log('ℹ️ [HomePage] Feed API returned empty items array');
-          }
-        }
+        const profileId = currentUser?.profile?.id || currentUser?.id;
+        await fetchFeedPosts(profileId, searchQuery, sortBy);
       } catch (err: any) {
         console.warn('⚠️ [HomePage] Data fetch warning:', err.message || err);
       } finally {
@@ -93,28 +161,23 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     }
 
     loadInitialData();
-  }, []);
+  }, [user]);
 
-  // Initialize feedPosts state as empty [] (no dummy posts on empty API data)
-  const [feedPosts, setFeedPosts] = useState<FeedPostProps[]>([]);
-  const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'latest'>('recent');
+  // Trigger server feed search & sort when query or sort changes
+  useEffect(() => {
+    if (!hasLoadedFeedRef.current) return;
+    // Rule: Min 2 characters required for keyword search query
+    if (searchQuery.trim().length === 1) return;
 
-  const filteredPosts = feedPosts
-    .filter((post) => {
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
-      return (
-        post.content.toLowerCase().includes(q) ||
-        post.authorName.toLowerCase().includes(q) ||
-        (post.authorRole && post.authorRole.toLowerCase().includes(q))
-      );
-    })
-    .sort((a, b) => {
-      if (sortBy === 'popular') {
-        return (b.likesCount || 0) - (a.likesCount || 0);
-      }
-      return 0;
-    });
+    const timer = setTimeout(() => {
+      const profileId = user?.profile?.id || user?.id;
+      fetchFeedPosts(profileId, searchQuery, sortBy);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, sortBy]);
+
+  const filteredPosts = feedPosts;
 
   const handleTabChange = (tab: string) => {
     setActiveNavTab(tab);
@@ -179,7 +242,6 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     }
   };
 
-  const currentUserName = userSession?.profile?.displayName || 'Player';
   const currentUserRole = userSession?.profile?.type || userSession?.primaryRole || 'PLAYER';
 
   if (isPageLoading) {
@@ -217,7 +279,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         <aside className="mhn-layout-col-left">
           <ProfileSummaryCard
             coverUrl="/cover.png"
-            location="Austria, Europe"
+            location={user?.profile?.city || "Toronto, ON"}
             teamName="HC Bloemendaal"
             teamLogo="/HC.png"
             followers="-"
@@ -250,9 +312,9 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="mhn-feed-filter-select"
               >
-                <option value="recent">Sort by</option>
-                <option value="latest">Latest</option>
-                <option value="popular">Most Popular</option>
+                <option value="RECENT">Newest First</option>
+                <option value="POPULAR">Most Popular</option>
+                <option value="TRENDING">Trending (48h)</option>
               </select>
               <svg className="mhn-feed-filter-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="6 9 12 15 18 9" />
@@ -260,7 +322,19 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             </div>
           </div>
 
-          {filteredPosts.length === 0 ? (
+          {isFeedRefreshing ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <FeedPostSkeleton />
+            </div>
+          ) : feedError?.isServerError ? (
+            <EmptyState
+              title="We’re having trouble loading your feed."
+              message="Something went wrong while connecting to the server. Please try again."
+              iconType="server-error"
+              actionLabel="Try Again"
+              onAction={() => fetchFeedPosts(userSession?.profile?.id || userSession?.id)}
+            />
+          ) : filteredPosts.length === 0 ? (
             <EmptyState
               title="No Posts Found"
               message={searchQuery ? `No posts match your search "${searchQuery}".` : "There are no posts in your feed right now. Be the first to share an update with your network!"}
@@ -274,6 +348,19 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 <FeedPostCard
                   key={post.id}
                   {...post}
+                  onFollowChange={handleFollowChange}
+                  onDeleteSuccess={(deletedId, msg) => {
+                    console.log(`🗑️ [HomePage] Post ${deletedId} deleted. Refetching feed silently...`);
+                    setToast({ message: msg || 'Post deleted successfully!', type: 'success' });
+                    setFeedPosts((prev) => prev.filter((p) => p.id !== deletedId));
+                    const profileId = userSession?.profile?.id || userSession?.id;
+                    fetchFeedPosts(profileId, searchQuery, sortBy, true);
+                  }}
+                  onRepostComplete={() => {
+                    console.log('🔄 [HomePage] Post reposted. Refetching feed silently...');
+                    const profileId = userSession?.profile?.id || userSession?.id;
+                    fetchFeedPosts(profileId, searchQuery, sortBy, true);
+                  }}
                 />
               ))}
             </div>
@@ -309,7 +396,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           onSubmit={handleCreatePost}
           isLoading={isCreatingPost}
           userName={currentUserName}
-          userAvatar="/ovechkin.png"
+          userAvatar={currentUserAvatar}
         />
       )}
 

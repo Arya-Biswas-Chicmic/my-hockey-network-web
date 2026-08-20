@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
-import { likePost, unlikePost, repostPost } from '@my-hockey-network/core';
+import React, { useState, useEffect } from 'react';
+import { likePost, unlikePost, repostPost, updatePost, deletePost, followUser, unfollowUser } from '@my-hockey-network/core';
 import { Toast } from '../../common/Toast';
+import { Spinner } from '../../common/Spinner';
+
+import { PostCommentSection } from './PostCommentSection';
 
 export interface FeedPostProps {
   id: string;
+  authorId?: string;
   authorName: string;
   authorRole?: string;
   authorTime?: string;
@@ -12,33 +16,144 @@ export interface FeedPostProps {
   postImage?: string;
   likesCount: number;
   commentsCount: number;
+  repostCount?: number;
   isFollowing?: boolean;
   isSelf?: boolean;
   userReaction?: string | null;
+
+  // Repost specific properties
+  isRepost?: boolean;
+  repostedByName?: string;
+  isSelfRepost?: boolean;
+  hasThirdPartyReposts?: boolean;
+  repostCommentary?: string;
+  originalPost?: {
+    id: string;
+    authorName: string;
+    authorRole?: string;
+    authorAvatar?: string;
+    authorTime?: string;
+    content: string;
+    postImage?: string;
+  };
+
+  onFollowChange?: (authorKey: string, isFollowing: boolean) => void;
   onShareSuccess?: (message: string) => void;
+  onRepostComplete?: () => void;
+  onDeleteSuccess?: (id: string, message?: string) => void;
+  onUpdateSuccess?: (id: string, newContent: string) => void;
 }
 
 export const FeedPostCard: React.FC<FeedPostProps> = ({
   id,
+  authorId,
   authorName,
   authorRole = 'Official Team',
   authorTime = '1d',
   authorAvatar = '/CoachTeam.png',
-  content,
+  content: initialContent,
   postImage,
   likesCount: initialLikes,
   commentsCount,
+  repostCount: initialReposts = 0,
   isFollowing: initialFollowing = false,
   isSelf = false,
+  isSelfRepost = false,
   userReaction = null,
+  onFollowChange,
   onShareSuccess,
+  onRepostComplete,
+  onDeleteSuccess,
+  onUpdateSuccess,
 }) => {
+  const [postContent, setPostContent] = useState(initialContent);
   const [likes, setLikes] = useState(initialLikes);
+  const [reposts, setReposts] = useState(initialReposts);
   const [isLiked, setIsLiked] = useState(!!userReaction);
   const [isFollowing, setIsFollowing] = useState(initialFollowing);
+  const [isFollowingLoading, setIsFollowingLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [hasReposted, setHasReposted] = useState<boolean>(isSelfRepost || false);
+  const [userRepostId, setUserRepostId] = useState<string | null>(null);
+  const [showComments, setShowComments] = useState(false);
+  const [currentCommentsCount, setCurrentCommentsCount] = useState(commentsCount);
+
+  // Sync isFollowing state when prop changes from parent
+  useEffect(() => {
+    setIsFollowing(initialFollowing);
+  }, [initialFollowing]);
+
+  // Menu & Edit/Delete States
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [editContentInput, setEditContentInput] = useState(initialContent);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
+
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  if (isDeleted) {
+    return null;
+  }
+
+  const handleConfirmDelete = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
+
+    try {
+      console.log(`🚀 [FeedPostCard] Calling DELETE /v1/posts/${id}...`);
+      await deletePost(id);
+      console.log(`✅ [FeedPostCard] Post ${id} deleted successfully`);
+      setIsDeleteModalOpen(false);
+      setToast({ message: 'Post deleted successfully!', type: 'success' });
+
+      if (onDeleteSuccess) {
+        onDeleteSuccess(id, 'Post deleted successfully!');
+      }
+      if (onShareSuccess) {
+        onShareSuccess('Post deleted successfully!');
+      }
+      if (onRepostComplete) {
+        onRepostComplete();
+      }
+
+      // Hide card after triggering callbacks and toast
+      setTimeout(() => {
+        setIsDeleted(true);
+      }, 300);
+    } catch (err: any) {
+      console.error(`❌ [FeedPostCard] Delete post error:`, err);
+      setToast({ message: err.message || 'Failed to delete post. Please try again.', type: 'error' });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (isUpdating || !editContentInput.trim()) return;
+    setIsUpdating(true);
+
+    try {
+      console.log(`🚀 [FeedPostCard] Calling PATCH /v1/posts/${id}...`);
+      await updatePost(id, { body: editContentInput.trim() });
+      console.log(`✅ [FeedPostCard] Post ${id} updated successfully`);
+      setPostContent(editContentInput.trim());
+      setIsEditModalOpen(false);
+      setToast({ message: 'Post updated successfully!', type: 'success' });
+      if (onUpdateSuccess) {
+        onUpdateSuccess(id, editContentInput.trim());
+      }
+    } catch (err: any) {
+      console.error(`❌ [FeedPostCard] Edit post error:`, err);
+      setToast({ message: err.message || 'Failed to update post. Please try again.', type: 'error' });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   const handleLike = async () => {
     if (isLiking) return;
@@ -49,26 +164,21 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
 
     // Optimistic UI update
     if (prevLiked) {
-      setLikes(prev => Math.max(0, prev - 1));
+      setLikes((prev) => Math.max(0, prev - 1));
       setIsLiked(false);
     } else {
-      setLikes(prev => prev + 1);
+      setLikes((prev) => prev + 1);
       setIsLiked(true);
     }
 
     try {
       if (prevLiked) {
-        console.log(`🚀 [FeedPostCard] Calling DELETE /v1/posts/${id}/reactions (Unlike)...`);
         await unlikePost(id);
-        console.log(`✅ [FeedPostCard] Unlike success for post ${id}`);
       } else {
-        console.log(`🚀 [FeedPostCard] Calling POST /v1/posts/${id}/reactions (Like)...`);
         await likePost(id, 'LIKE');
-        console.log(`✅ [FeedPostCard] Like success for post ${id}`);
       }
     } catch (err: any) {
       console.error(`❌ [FeedPostCard] Reaction API Error:`, err);
-      // Rollback on error
       setIsLiked(prevLiked);
       setLikes(prevLikes);
     } finally {
@@ -77,41 +187,123 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   };
 
   const handleShare = async () => {
+    if (isSharing) return;
+    setIsSharing(true);
+
     try {
-      console.log(`🚀 [FeedPostCard] Calling POST /v1/posts/${id}/repost (Share)...`);
-      await repostPost(id);
-      if (onShareSuccess) {
-        onShareSuccess('Post shared successfully');
+      if (hasReposted) {
+        const targetDeleteId = userRepostId || id;
+        console.log(`🚀 [FeedPostCard] Undoing repost... Calling DELETE /v1/posts/${targetDeleteId}`);
+        await deletePost(targetDeleteId);
+        setReposts((prev) => Math.max(0, prev - 1));
+        setHasReposted(false);
+        setUserRepostId(null);
+
+        const msg = 'Repost undone successfully!';
+        if (onShareSuccess) {
+          onShareSuccess(msg);
+        } else {
+          setToast({ message: msg, type: 'success' });
+        }
+
+        if (onRepostComplete) {
+          onRepostComplete();
+        }
       } else {
-        setToast({ message: 'Post shared successfully', type: 'success' });
+        console.log(`🚀 [FeedPostCard] Reposting post... Calling POST /v1/posts/${id}/repost`);
+        const res = await repostPost(id);
+        const createdRepostId = res?.post?.id || (res as any)?.data?.post?.id || (res as any)?.data?.id;
+
+        setReposts((prev) => prev + 1);
+        setHasReposted(true);
+        if (createdRepostId) {
+          setUserRepostId(createdRepostId);
+        }
+
+        const msg = 'Post reposted successfully!';
+        if (onShareSuccess) {
+          onShareSuccess(msg);
+        } else {
+          setToast({ message: msg, type: 'success' });
+        }
+
+        if (onRepostComplete) {
+          onRepostComplete();
+        }
       }
     } catch (err: any) {
-      console.error(`❌ [FeedPostCard] Share API Error:`, err);
-      if (onShareSuccess) {
-        onShareSuccess(err.message || 'Failed to share post');
-      } else {
-        setToast({ message: err.message || 'Failed to share post', type: 'error' });
-      }
+      console.error(`❌ [FeedPostCard] Repost/Undo Repost API Error:`, err);
+      setToast({ message: err.message || 'Failed to update repost.', type: 'error' });
+    } finally {
+      setIsSharing(false);
     }
   };
 
-  const toggleFollow = () => {
-    setIsFollowing(prev => !prev);
+  const [relationshipId, setRelationshipId] = useState<string | null>(null);
+
+  const toggleFollow = async () => {
+    if (isFollowingLoading) return;
+    setIsFollowingLoading(true);
+
+    const prevFollowing = isFollowing;
+    const targetKey = authorId || authorName;
+
+    try {
+      if (prevFollowing) {
+        const targetIdOrEntity = relationshipId || { type: 'PROFILE', id: targetKey };
+        console.log(`🚀 [FeedPostCard] Unfollowing: Calling DELETE /v1/relationships/...`, targetIdOrEntity);
+        await unfollowUser(targetIdOrEntity);
+        console.log(`✅ [FeedPostCard] Unfollowed ${authorName} successfully (edge REVOKED)`);
+
+        // Update state & notify parent to sync other buttons ONLY AFTER API SUCCESS
+        setIsFollowing(false);
+        setRelationshipId(null);
+        if (onFollowChange) {
+          onFollowChange(targetKey, false);
+        }
+
+        setToast({
+          message: `Unfollowed ${authorName}`,
+          type: 'success',
+        });
+      } else {
+        console.log(`🚀 [FeedPostCard] Following: Calling POST /v1/relationships/follow for authorProfile.id: ${targetKey}...`);
+        const res = await followUser({ type: 'PROFILE', id: targetKey });
+        console.log(`✅ [FeedPostCard] Followed ${authorName} successfully. Edge ID:`, res?.relationship?.id);
+
+        if (res?.relationship?.id) {
+          setRelationshipId(res.relationship.id);
+        }
+        setIsFollowing(true);
+        if (onFollowChange) {
+          onFollowChange(targetKey, true);
+        }
+
+        setToast({
+          message: res?.pendingGuardianApproval ? `Follow requested for ${authorName}` : `You are now following ${authorName}`,
+          type: 'success',
+        });
+      }
+    } catch (err: any) {
+      console.error(`❌ [FeedPostCard] Follow/Unfollow API Error:`, err);
+      setToast({ message: err.message || 'Failed to update follow status.', type: 'error' });
+    } finally {
+      setIsFollowingLoading(false);
+    }
   };
 
   return (
     <article className="mhn-feed-post-card">
-      {/* Post Header */}
       <div className="mhn-post-header">
         <div className="mhn-post-author-group">
           <div className="mhn-author-avatar-box">
-            <img 
-              src={authorAvatar || '/userPlaceholder.png'} 
-              alt={authorName} 
+            <img
+              src={authorAvatar || '/userPlaceholder.png'}
+              alt={authorName}
               className="mhn-author-avatar-img"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-              }} 
+              }}
             />
           </div>
           <div className="mhn-author-meta">
@@ -122,57 +314,151 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
           </div>
         </div>
 
-        <div className="mhn-post-header-actions">
+        <div className="mhn-post-header-actions" style={{ position: 'relative' }}>
           {!isSelf && (
-            <button 
-              onClick={toggleFollow} 
+            <button
+              onClick={toggleFollow}
+              disabled={isFollowingLoading}
               className={`mhn-btn-follow ${isFollowing ? 'mhn-btn-following' : ''}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                minWidth: '82px',
+                opacity: isFollowingLoading ? 0.75 : 1,
+                cursor: isFollowingLoading ? 'not-allowed' : 'pointer',
+              }}
             >
-              {isFollowing ? 'Following' : 'Follow'}
+              {isFollowingLoading ? (
+                <Spinner size="sm" color={isFollowing ? '#475569' : '#FFFFFF'} />
+              ) : isFollowing ? (
+                'Following'
+              ) : (
+                'Follow'
+              )}
             </button>
           )}
-          <button className="mhn-btn-more-options" aria-label="More options">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="5" cy="12" r="2"/>
-              <circle cx="12" cy="12" r="2"/>
-              <circle cx="19" cy="12" r="2"/>
-            </svg>
-          </button>
+
+          {isSelf && (
+            <>
+              <button
+                onClick={() => setIsMenuOpen((prev) => !prev)}
+                className="mhn-btn-more-options"
+                aria-label="More options"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="5" cy="12" r="2" />
+                  <circle cx="12" cy="12" r="2" />
+                  <circle cx="19" cy="12" r="2" />
+                </svg>
+              </button>
+
+              {isMenuOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: '36px',
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '8px',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                    border: '1px solid #E2E8F0',
+                    zIndex: 50,
+                    minWidth: '130px',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setEditContentInput(postContent);
+                      setIsEditModalOpen(true);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      textAlign: 'left',
+                      background: 'none',
+                      border: 'none',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      color: '#0F172A',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
+                    <span>Edit Post</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsDeleteModalOpen(true);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      textAlign: 'left',
+                      background: 'none',
+                      border: 'none',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      color: '#EF4444',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      borderTop: '1px solid #F1F5F9',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#FEF2F2')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                    <span>Delete Post</span>
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 
-      {/* Post Content */}
       <div className="mhn-post-content">
         <p className={`mhn-post-text ${!isExpanded ? 'mhn-post-text-truncated' : ''}`}>
-          {content}
+          {postContent}
         </p>
-        {content.length > 30 && (
-          <button 
-            onClick={() => setIsExpanded(!isExpanded)} 
+        {postContent.length > 30 && (
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
             className="mhn-post-more-btn"
           >
-            {isExpanded ? '... show less' : '... more'}
+            {isExpanded ? 'Show less' : 'More'}
           </button>
+        )}
+        {postImage && (
+          <div className="mhn-post-media-container">
+            <img
+              src={postImage}
+              alt="Post attachment"
+              className="mhn-post-media-img"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
         )}
       </div>
 
-      {/* Post Image Banner */}
-      {postImage && (
-        <div className="mhn-post-media-container">
-          <img 
-            src={postImage} 
-            alt="Post content media" 
-            className="mhn-post-media-img"
-          />
-        </div>
-      )}
-
-      {/* Post Action Footer */}
       <div className="mhn-post-footer">
         <div className="mhn-post-actions-group">
-          {/* Like Button */}
-          <button 
-            onClick={handleLike} 
+          <button
+            onClick={handleLike}
+            disabled={isLiking}
             className={`mhn-action-item ${isLiked ? 'mhn-action-liked' : ''}`}
             aria-label="Like post"
           >
@@ -186,20 +472,266 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
             <span className="mhn-action-count" style={{ color: isLiked ? '#1860C3' : undefined, fontWeight: isLiked ? 700 : undefined }}>{likes}</span>
           </button>
 
-          {/* Comment Button */}
-          <button className="mhn-action-item">
-           <img src="/comment.png" alt="" className="comment-count-icon" />
-            <span className="mhn-action-count">{commentsCount}</span>
+          <button
+            onClick={() => setShowComments((prev) => !prev)}
+            className={`mhn-action-item ${showComments ? 'mhn-action-active' : ''}`}
+            aria-label="Toggle comments"
+          >
+            <img src="/comment.png" alt="" className="comment-count-icon" />
+            <span className="mhn-action-count" style={{ color: showComments ? '#0091FF' : undefined, fontWeight: showComments ? 700 : undefined }}>
+              {currentCommentsCount}
+            </span>
           </button>
 
-          {/* Share Button */}
-          <button onClick={handleShare} className="mhn-action-item" aria-label="Share post">
-            <img src="/share.png" alt="" className="share-count-icon" />
-          </button>
+          {!isSelf && (
+            <button
+              onClick={handleShare}
+              disabled={isSharing}
+              className={`mhn-action-item ${hasReposted ? 'mhn-action-active' : ''}`}
+              aria-label="Share post"
+              title={hasReposted ? 'Undo Repost' : 'Repost update'}
+              style={{ opacity: isSharing ? 0.7 : 1, cursor: isSharing ? 'not-allowed' : 'pointer' }}
+            >
+              {isSharing ? (
+                <Spinner size="sm" color="#1860C3" />
+              ) : (
+                <img
+                  src="/share.png"
+                  alt=""
+                  className="share-count-icon"
+                  style={hasReposted ? { filter: 'hue-rotate(200deg)' } : undefined}
+                />
+              )}
+              <span
+                className="mhn-action-count"
+                style={{ color: hasReposted ? '#1860C3' : undefined, fontWeight: hasReposted ? 700 : undefined }}
+              >
+                {reposts}
+              </span>
+            </button>
+          )}
         </div>
+
+        {showComments && (
+          <PostCommentSection
+            postId={id}
+            initialCommentsCount={currentCommentsCount}
+            onCommentAdded={(newCount) => setCurrentCommentsCount(newCount)}
+          />
+        )}
       </div>
 
-      {/* Toast Notification */}
+      {isEditModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+          onClick={() => setIsEditModalOpen(false)}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '520px',
+              backgroundColor: '#FFFFFF',
+              borderRadius: '16px',
+              padding: '24px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#0F172A' }}>Edit Post</h3>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#64748B' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <textarea
+              value={editContentInput}
+              onChange={(e) => setEditContentInput(e.target.value)}
+              rows={4}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '10px',
+                border: '1px solid #CBD5E1',
+                fontSize: '14px',
+                resize: 'vertical',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  backgroundColor: '#F1F5F9',
+                  color: '#475569',
+                  border: '1px solid #CBD5E1',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={isUpdating}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: '8px',
+                  backgroundColor: '#1860C3',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                {isUpdating && <Spinner size="sm" color="#FFFFFF" />}
+                <span>Save Changes</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {isDeleteModalOpen && (
+        <div
+          className="mhn-modal-overlay"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+          onClick={() => !isDeleting && setIsDeleteModalOpen(false)}
+        >
+          <div
+            className="mhn-modal-card"
+            style={{
+              width: '100%',
+              maxWidth: '420px',
+              backgroundColor: '#FFFFFF',
+              borderRadius: '16px',
+              padding: '24px',
+              boxShadow: '0 20px 45px rgba(0, 0, 0, 0.25)',
+              border: '1px solid #E2E8F0',
+              animation: 'mhnPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#FEF2F2',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#DC2626'
+                }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                </div>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#0F172A' }}>
+                  Delete Post
+                </h3>
+              </div>
+              {!isDeleting && (
+                <button
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    fontSize: '22px',
+                    color: '#64748B',
+                    cursor: 'pointer',
+                    lineHeight: 1,
+                  }}
+                  aria-label="Close modal"
+                >
+                  &times;
+                </button>
+              )}
+            </div>
+
+            {/* Modal Body */}
+            <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.5, margin: '0 0 24px 0' }}>
+              Are you sure you want to delete this post? This action is permanent and cannot be undone.
+            </p>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px' }}>
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                disabled={isDeleting}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '8px',
+                  border: '1px solid #CBD5E1',
+                  backgroundColor: '#FFFFFF',
+                  color: '#475569',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  cursor: isDeleting ? 'not-allowed' : 'pointer',
+                  opacity: isDeleting ? 0.6 : 1,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: '#DC2626',
+                  color: '#FFFFFF',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  cursor: isDeleting ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  opacity: isDeleting ? 0.8 : 1,
+                }}
+              >
+                {isDeleting ? (
+                  <>
+                    <Spinner size="sm" color="#FFFFFF" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  'Delete Post'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && (
         <Toast
           message={toast.message}

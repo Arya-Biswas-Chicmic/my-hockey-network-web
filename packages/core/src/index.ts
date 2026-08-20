@@ -12,6 +12,7 @@ export * from './api/organizationsApi';
 export * from './api/supervisionApi';
 export * from './api/approvalsApi';
 export * from './api/alertsApi';
+export * from './api/mediaApi';
 
 export const toggleRoleSelection = (currentRoles: string[], roleId: string): string[] => {
   if (currentRoles.includes(roleId)) {

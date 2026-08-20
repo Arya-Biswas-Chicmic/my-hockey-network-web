@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../../context/AuthContext';
+import { resolveMediaUrl, resolveCoverUrl } from '../../../utils/mediaUtils';
 
 interface ManageNetworkCardProps {
   name?: string;
@@ -30,9 +31,14 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
 
   const resolvedName = user?.profile?.displayName || (user as any)?.displayName || name || 'Player';
   const resolvedRole = user?.primaryRole || user?.profile?.type || role || 'PLAYER';
-  const resolvedAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl || avatarUrl || '/userPlaceholder.png';
+  const rawAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl || avatarUrl;
+  const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
+  const rawBanner = user?.profile?.coverImageUrl || (user as any)?.coverImageUrl || bannerUrl;
+  const resolvedBanner = resolveCoverUrl(rawBanner, '/cover.png');
   const resolvedFollowers = user?.counts?.followers !== undefined ? user.counts.followers : (followersCount ?? 0);
   const resolvedFollowing = user?.counts?.following !== undefined ? user.counts.following : (followingCount ?? 0);
+
+  const resolvedLocation = user?.profile?.city || (location !== 'Austria, Europe' ? location : undefined) || 'Toronto, ON';
 
   return (
     <div className="mhn-manage-network-stack">
@@ -41,11 +47,11 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
         {/* Cover Banner */}
         <div className="mhn-network-card-banner">
           <img 
-            src={bannerUrl} 
+            src={resolvedBanner} 
             alt="Cover" 
             className="mhn-network-banner-img"
             onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
+              (e.target as HTMLImageElement).src = '/cover.png';
             }} 
           />
         </div>
@@ -70,13 +76,13 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
           <p className="mhn-network-user-role">{resolvedRole}</p>
 
           {/* Location Line */}
-          {location && (
-            <div className="mhn-profile-location-line">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          {resolvedLocation && (
+            <div className="mhn-profile-location-line" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                 <circle cx="12" cy="10" r="3"/>
               </svg>
-              <span className='location2'>{location}</span>
+              <span>{resolvedLocation}</span>
             </div>
           )}
 

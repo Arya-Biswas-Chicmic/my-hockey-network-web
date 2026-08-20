@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Spinner } from '../../common/Spinner';
+import { useAuth } from '../../../context/AuthContext';
 
 export interface PendingRequestProps {
   id: string;
@@ -8,8 +10,8 @@ export interface PendingRequestProps {
   teamName?: string;
   teamLogo?: string;
   location?: string;
-  onAccept?: (id: string) => void;
-  onIgnore?: (id: string) => void;
+  onAccept?: (id: string) => Promise<void> | void;
+  onIgnore?: (id: string) => Promise<void> | void;
 }
 
 export const PendingRequestCard: React.FC<PendingRequestProps> = ({
@@ -23,16 +25,41 @@ export const PendingRequestCard: React.FC<PendingRequestProps> = ({
   onAccept,
   onIgnore
 }) => {
+  const { loadAuthMe, showToast } = useAuth();
   const [status, setStatus] = useState<'pending' | 'accepted' | 'ignored'>('pending');
+  const [isAcceptLoading, setIsAcceptLoading] = useState(false);
+  const [isIgnoreLoading, setIsIgnoreLoading] = useState(false);
 
-  const handleAccept = () => {
-    setStatus('accepted');
-    if (onAccept) onAccept(id);
+  const handleAccept = async () => {
+    if (isAcceptLoading || isIgnoreLoading) return;
+    setIsAcceptLoading(true);
+    try {
+      if (onAccept) await onAccept(id);
+      setStatus('accepted');
+      console.log('🚀 [PendingRequestCard] Triggering silent loadAuthMe after accept...');
+      await loadAuthMe(true);
+    } catch (err: any) {
+      console.error('Accept error:', err);
+      showToast(err?.message || 'Failed to accept request.', 'error');
+    } finally {
+      setIsAcceptLoading(false);
+    }
   };
 
-  const handleIgnore = () => {
-    setStatus('ignored');
-    if (onIgnore) onIgnore(id);
+  const handleIgnore = async () => {
+    if (isAcceptLoading || isIgnoreLoading) return;
+    setIsIgnoreLoading(true);
+    try {
+      if (onIgnore) await onIgnore(id);
+      setStatus('ignored');
+      console.log('🚀 [PendingRequestCard] Triggering silent loadAuthMe after ignore...');
+      await loadAuthMe(true);
+    } catch (err: any) {
+      console.error('Ignore error:', err);
+      showToast(err?.message || 'Failed to decline request.', 'error');
+    } finally {
+      setIsIgnoreLoading(false);
+    }
   };
 
   if (status === 'accepted') {
@@ -101,15 +128,17 @@ export const PendingRequestCard: React.FC<PendingRequestProps> = ({
       <div className="mhn-request-actions-row">
         <button 
           onClick={handleIgnore} 
+          disabled={isIgnoreLoading || isAcceptLoading}
           className="mhn-btn-request-ignore"
         >
-          Ignore
+          {isIgnoreLoading ? <Spinner size="sm" color="#64748B" /> : 'Ignore'}
         </button>
         <button 
           onClick={handleAccept} 
+          disabled={isIgnoreLoading || isAcceptLoading}
           className="mhn-btn-request-accept"
         >
-          Accept
+          {isAcceptLoading ? <Spinner size="sm" color="#FFFFFF" /> : 'Accept'}
         </button>
       </div>
     </div>

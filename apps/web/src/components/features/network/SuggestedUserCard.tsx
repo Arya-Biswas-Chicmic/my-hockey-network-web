@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Spinner } from '../../common/Spinner';
+import { useAuth } from '../../../context/AuthContext';
 
 export interface SuggestedUserProps {
   id: string;
@@ -9,21 +11,45 @@ export interface SuggestedUserProps {
   teamLogo?: string;
   location: string;
   isFollowing?: boolean;
+  onFollow?: (id: string) => Promise<void> | void;
 }
 
 export const SuggestedUserCard: React.FC<SuggestedUserProps> = ({
+  id,
   name,
   avatarUrl = '/userPlaceholder.png',
   roleTag,
   teamName,
   teamLogo = '/kcBlue.png',
   location,
-  isFollowing: initialFollowing = false
+  isFollowing: initialFollowing = false,
+  onFollow,
 }) => {
+  const { loadAuthMe, showToast } = useAuth();
   const [following, setFollowing] = useState(initialFollowing);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const toggleFollow = () => {
-    setFollowing(!following);
+  const toggleFollow = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    const prevFollowing = following;
+    const targetFollowing = !following;
+
+    try {
+      if (onFollow) {
+        await onFollow(id);
+      }
+      setFollowing(targetFollowing);
+      console.log('🚀 [SuggestedUserCard] Triggering silent loadAuthMe after follow toggle...');
+      await loadAuthMe(true);
+    } catch (err: any) {
+      console.error('❌ [SuggestedUserCard] Follow failed:', err);
+      setFollowing(prevFollowing);
+      const errorMsg = err?.message || 'Unable to follow user. Please try again.';
+      showToast(errorMsg, 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -71,9 +97,14 @@ export const SuggestedUserCard: React.FC<SuggestedUserProps> = ({
       {/* Action Button */}
       <button 
         onClick={toggleFollow}
+        disabled={isLoading}
         className={`mhn-btn-suggested-follow ${following ? 'mhn-btn-suggested-following' : ''}`}
       >
-        {following ? 'Following' : 'Follow'}
+        {isLoading ? (
+          <Spinner size="sm" color={following ? "#0F172A" : "#FFFFFF"} />
+        ) : (
+          following ? 'Following' : 'Follow'
+        )}
       </button>
     </div>
   );

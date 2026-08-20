@@ -9,10 +9,15 @@ import { PendingRequestCard, PendingRequestProps } from '../components/features/
 import { SuggestedUserCard, SuggestedUserProps } from '../components/features/network/SuggestedUserCard';
 import { NetworkSkeletonGrid } from '../components/features/network/NetworkSkeletonLoader';
 import { EmptyState } from '../components/features/network/EmptyState';
+import { useDebounce } from '../hooks/useDebounce';
+import { useAuth } from '../context/AuthContext';
 import {
   getRelationships,
   getPeopleYouMayKnow,
   getSuggestedPeople,
+  acceptRelationship,
+  declineRelationship,
+  followUser,
   RelationshipItem,
 } from '@my-hockey-network/core';
 
@@ -22,101 +27,126 @@ interface PageProps {
 }
 
 export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
+  const { user, loadAuthMe } = useAuth();
   const [activeNavTab, setActiveNavTab] = useState('network');
   const [currentView, setCurrentView] = useState<'network' | 'connections' | 'groups' | 'group-detail'>('network');
   const [selectedGroupId, setSelectedGroupId] = useState('g1');
   const [activeFilterTab, setActiveFilterTab] = useState('Invitations');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [livePendingRequests, setLivePendingRequests] = useState<PendingRequestProps[]>([]);
   const [liveSuggestedUsers, setLiveSuggestedUsers] = useState<SuggestedUserProps[]>([]);
   const [apiErrorMsg, setApiErrorMsg] = useState<string | null>(null);
 
-  // Fetch API network data on mount
-  useEffect(() => {
-    async function loadNetworkData() {
-      setIsLoading(true);
-      setApiErrorMsg(null);
+  const loadNetworkData = async (queryTerm?: string) => {
+    setIsLoading(true);
+    setApiErrorMsg(null);
 
-      // 1. Pending Requests (GET /v1/relationships)
-      try {
-        console.log('🚀 [MyNetworkPage] Fetching GET /v1/relationships...');
-        const res = await getRelationships({ direction: 'incoming', status: 'PENDING' });
+    const qParam = queryTerm && queryTerm.trim().length >= 2 ? queryTerm.trim() : undefined;
 
-        if (res?.items && Array.isArray(res.items)) {
-          console.log('✅ [MyNetworkPage] Relationships items count:', res.items.length);
-          const mapped: PendingRequestProps[] = res.items.map((item: RelationshipItem) => {
-            const cp = item.counterparty;
-            
-            let formattedRole = cp?.roleTag || '';
-            if (!formattedRole) {
-              if (cp?.position && cp?.jerseyNumber) {
-                formattedRole = `${cp.position} • #${cp.jerseyNumber}`;
-              } else if (cp?.position) {
-                formattedRole = cp.position;
-              } else if (cp?.primaryRole || cp?.profileType) {
-                formattedRole = cp.primaryRole || cp.profileType || '-';
-              } else if (item.requestReason) {
-                formattedRole = item.requestReason;
-              } else {
-                formattedRole = '-';
-              }
+    // 1. Pending Requests (GET /v1/relationships)
+    try {
+      console.log(`🚀 [MyNetworkPage] Fetching GET /v1/relationships (query: "${qParam || ''}")...`);
+      const res = await getRelationships({ direction: 'incoming', status: 'PENDING', query: qParam });
+
+      if (res?.items && Array.isArray(res.items)) {
+        console.log('✅ [MyNetworkPage] Relationships items count:', res.items.length);
+        const mapped: PendingRequestProps[] = res.items.map((item: RelationshipItem) => {
+          const cp = item.counterparty;
+          
+          let formattedRole = cp?.roleTag || '';
+          if (!formattedRole) {
+            if (cp?.position && cp?.jerseyNumber) {
+              formattedRole = `${cp.position} • #${cp.jerseyNumber}`;
+            } else if (cp?.position) {
+              formattedRole = cp.position;
+            } else if (cp?.primaryRole || cp?.profileType) {
+              formattedRole = cp.primaryRole || cp.profileType || '-';
+            } else if (item.requestReason) {
+              formattedRole = item.requestReason;
+            } else {
+              formattedRole = '-';
             }
+          }
 
-            return {
-              id: item.id,
-              name: cp?.displayName || (item.source as any)?.displayName || '-',
-              avatarUrl: cp?.avatarUrl || (item.source as any)?.avatarUrl || '/userPlaceholder.png',
-              roleTag: formattedRole,
-              teamName: cp?.teamName || '-',
-              teamLogo: cp?.teamLogo || '/kcBlue.png',
-              location: cp?.location || '-',
-            };
-          });
-          setLivePendingRequests(mapped);
-        } else {
-          setLivePendingRequests([]);
-        }
-      } catch (err: any) {
-        console.warn('⚠️ [MyNetworkPage] Relationships API Error (e.g. 502):', err.message || err);
+          return {
+            id: item.id,
+            name: cp?.displayName || (item.source as any)?.displayName || '-',
+            avatarUrl: cp?.avatarUrl || (item.source as any)?.avatarUrl || '/userPlaceholder.png',
+            roleTag: formattedRole,
+            teamName: cp?.teamName || '-',
+            teamLogo: cp?.teamLogo || '/kcBlue.png',
+            location: cp?.location || '-',
+          };
+        });
+        setLivePendingRequests(mapped);
+      } else {
         setLivePendingRequests([]);
-        if (err.statusCode === 502 || String(err.message).includes('502')) {
-          setApiErrorMsg('Backend service unavailable (HTTP 502 Bad Gateway). Please try again later.');
-        } else {
-          setApiErrorMsg(err.message || 'Failed to load network requests.');
-        }
       }
-
-      // 2. People You May Know (GET /v1/recommendations/people)
-      try {
-        console.log('🚀 [MyNetworkPage] Fetching GET /v1/recommendations/people...');
-        const peopleRes = await getPeopleYouMayKnow(10);
-        if (peopleRes?.items && Array.isArray(peopleRes.items)) {
-          const mapped: SuggestedUserProps[] = peopleRes.items.map((item: any) => ({
-            id: item.id || item.userId || `rec_${Math.random()}`,
-            name: item.displayName || item.name || '-',
-            avatarUrl: item.avatarUrl || '/userPlaceholder.png',
-            roleTag: item.roleTag || item.position || item.primaryRole || '-',
-            teamName: item.teamName || '-',
-            teamLogo: item.teamLogo || '/kcBlue.png',
-            location: item.location || '-',
-            isFollowing: false,
-          }));
-          setLiveSuggestedUsers(mapped);
-        } else {
-          setLiveSuggestedUsers([]);
-        }
-      } catch (err: any) {
-        console.warn('⚠️ [MyNetworkPage] People Recommendations Warning:', err.message || err);
-        setLiveSuggestedUsers([]);
-      } finally {
-        setIsLoading(false);
+    } catch (err: any) {
+      console.warn('⚠️ [MyNetworkPage] Relationships API Error (e.g. 502):', err.message || err);
+      setLivePendingRequests([]);
+      if (err.statusCode === 502 || String(err.message).includes('502')) {
+        setApiErrorMsg('Backend service unavailable (HTTP 502 Bad Gateway). Please try again later.');
+      } else {
+        setApiErrorMsg(err.message || 'Failed to load network requests.');
       }
     }
 
-    loadNetworkData();
-  }, []);
+    // 2. People You May Know (GET /v1/recommendations/people)
+    try {
+      console.log(`🚀 [MyNetworkPage] Fetching GET /v1/recommendations/people (query: "${qParam || ''}")...`);
+      const peopleRes = await getPeopleYouMayKnow({ limit: 10, query: qParam });
+      if (peopleRes?.items && Array.isArray(peopleRes.items)) {
+        const mapped: SuggestedUserProps[] = peopleRes.items.map((item: any) => {
+          const prof = item.profile || item;
+          
+          let formattedRole = prof.roleTag || '';
+          if (!formattedRole) {
+            if (prof.position && prof.jerseyNumber) {
+              formattedRole = `${prof.position} • #${prof.jerseyNumber}`;
+            } else if (prof.position) {
+              formattedRole = prof.position;
+            } else {
+              formattedRole = prof.primaryRole || prof.profileType || '-';
+            }
+          }
+
+          return {
+            id: prof.id || prof.profileId || `rec_${Math.random()}`,
+            name: prof.displayName || prof.name || '-',
+            avatarUrl: prof.avatarUrl || '/userPlaceholder.png',
+            roleTag: formattedRole,
+            teamName: prof.teamName || '-',
+            teamLogo: prof.teamLogo || '/kcBlue.png',
+            location: prof.location || '-',
+            isFollowing: false,
+          };
+        });
+        setLiveSuggestedUsers(mapped);
+      } else {
+        setLiveSuggestedUsers([]);
+      }
+    } catch (err: any) {
+      console.warn('⚠️ [MyNetworkPage] People Recommendations Warning:', err.message || err);
+      setLiveSuggestedUsers([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch API network data on mount & debounced search query change
+  useEffect(() => {
+    if (searchQuery.trim().length === 1) return;
+
+    const timer = setTimeout(() => {
+      loadNetworkData(debouncedSearchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [debouncedSearchQuery]);
 
   const handleTabChange = (tab: string) => {
     setActiveNavTab(tab);
@@ -128,21 +158,55 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
     }
   };
 
+  const handleAcceptRequest = async (id: string) => {
+    try {
+      console.log(`🚀 [MyNetworkPage] Accepting relationship request (POST /v1/relationships/${id}/accept)...`);
+      await acceptRelationship(id);
+      setLivePendingRequests((prev) => prev.filter((r) => r.id !== id));
+      await loadAuthMe(true);
+    } catch (err: any) {
+      console.error('❌ [MyNetworkPage] Accept request error:', err);
+    }
+  };
+
+  const handleIgnoreRequest = async (id: string) => {
+    try {
+      console.log(`🚀 [MyNetworkPage] Declining relationship request (POST /v1/relationships/${id}/decline)...`);
+      await declineRelationship(id);
+      setLivePendingRequests((prev) => prev.filter((r) => r.id !== id));
+      await loadAuthMe(true);
+    } catch (err: any) {
+      console.error('❌ [MyNetworkPage] Ignore request error:', err);
+    }
+  };
+
+  const handleFollowUser = async (id: string) => {
+    try {
+      console.log(`🚀 [MyNetworkPage] Following user profile (POST /v1/relationships/follow) with id: ${id}...`);
+      await followUser({ type: 'PROFILE', id });
+      console.log('✅ [MyNetworkPage] Followed user. Triggering silent loadAuthMe refresh...');
+      await loadAuthMe(true);
+    } catch (err: any) {
+      console.error('❌ [MyNetworkPage] Follow user error:', err);
+      throw err;
+    }
+  };
+
   const filterTabs = [
     { id: 'Invitations', label: 'Invitations' },
     { id: 'People you may know', label: 'People you may know' }
   ];
 
   const filteredPendingRequests = livePendingRequests.filter((r) =>
-    r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.roleTag.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (r.teamName && r.teamName.toLowerCase().includes(searchQuery.toLowerCase()))
+    r.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+    r.roleTag.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+    (r.teamName && r.teamName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()))
   );
 
   const filteredSuggestedUsers = liveSuggestedUsers.filter((u) =>
-    u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.roleTag.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (u.teamName && u.teamName.toLowerCase().includes(searchQuery.toLowerCase()))
+    u.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+    u.roleTag.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+    (u.teamName && u.teamName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()))
   );
 
   return (
@@ -168,8 +232,8 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
             <aside className="mhn-network-col-left">
               {currentView === 'groups' ? (
                 <ProfileSummaryCard 
-                  coverUrl="/cover.png"
-                  location="Austria, Europe"
+                  coverUrl={user?.profile?.coverImageUrl || "/cover.png"}
+                  location={user?.profile?.city || "Toronto, ON"}
                   teamName="HC Bloemendaal"
                   teamLogo="/HC.png"
                   onPostClick={() => {
@@ -178,8 +242,8 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                 />
               ) : (
                 <ManageNetworkCard 
-                  bannerUrl="/cover.png"
-                  location="Austria, Europe"
+                  bannerUrl={user?.profile?.coverImageUrl || "/cover.png"}
+                  location={user?.profile?.city || "Toronto, ON"}
                   teamName="HC Bloemendaal"
                   teamLogo="/HC.png"
                   followersCount="-"
@@ -315,7 +379,12 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                       ) : (
                         <div className="mhn-pending-requests-grid">
                           {filteredPendingRequests.map((request) => (
-                            <PendingRequestCard key={request.id} {...request} />
+                            <PendingRequestCard
+                              key={request.id}
+                              {...request}
+                              onAccept={handleAcceptRequest}
+                              onIgnore={handleIgnoreRequest}
+                            />
                           ))}
                         </div>
                       )}
@@ -344,7 +413,11 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                     ) : (
                       <div className="mhn-suggested-grid">
                         {filteredSuggestedUsers.map((user) => (
-                          <SuggestedUserCard key={user.id} {...user} />
+                          <SuggestedUserCard
+                            key={user.id}
+                            {...user}
+                            onFollow={handleFollowUser}
+                          />
                         ))}
                       </div>
                     )}

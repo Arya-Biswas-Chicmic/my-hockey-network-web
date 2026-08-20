@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../../../context/AuthContext';
+import { resolveMediaUrl } from '../../../utils/mediaUtils';
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -20,7 +21,8 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 }) => {
   const { user } = useAuth();
   const resolvedName = user?.profile?.displayName || (user as any)?.displayName || userName || 'Player';
-  const resolvedAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl || userAvatar || '/userPlaceholder.png';
+  const rawAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl || userAvatar;
+  const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
 
   const [screen, setScreen] = useState<'create' | 'audience' | 'custom'>('create');
   const [content, setContent] = useState('');

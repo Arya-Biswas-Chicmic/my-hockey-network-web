@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { Toast } from '../components/common/Toast';
 import {
   AuthMeResponse,
   OtpVerifyResponse,
@@ -11,6 +12,11 @@ import {
   logout as logoutApi,
 } from '@my-hockey-network/core';
 
+export interface AuthToastConfig {
+  message: string;
+  type?: 'success' | 'error' | 'info';
+}
+
 interface AuthContextType {
   user: AuthMeResponse | null;
   session: OtpVerifyResponse | null;
@@ -19,9 +25,10 @@ interface AuthContextType {
   toastMessage: string | null;
   setUserProfile: (profile: AuthMeResponse) => void;
   setAuthSession: (sessionData: OtpVerifyResponse) => void;
-  loadAuthMe: () => Promise<AuthMeResponse | null>;
+  loadAuthMe: (silent?: boolean) => Promise<AuthMeResponse | null>;
   handleLogout: () => Promise<void>;
   hideToast: () => void;
+  showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,6 +41,11 @@ export const AuthProvider: React.FC<{ children: ReactNode; onNavigateToAuth?: ()
   const [session, setSession] = useState<OtpVerifyResponse | null>(() => getAuthSession());
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastConfig, setToastConfig] = useState<AuthToastConfig | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'error') => {
+    setToastConfig({ message, type });
+  };
 
   const isLoggingOutRef = useRef<boolean>(false);
 
@@ -45,13 +57,14 @@ export const AuthProvider: React.FC<{ children: ReactNode; onNavigateToAuth?: ()
   const setAuthSession = (sessionData: OtpVerifyResponse) => {
     setSession(sessionData);
     saveAuthSession(sessionData);
+    loadAuthMe();
   };
 
-  const loadAuthMe = async (): Promise<AuthMeResponse | null> => {
+  const loadAuthMe = async (silent: boolean = false): Promise<AuthMeResponse | null> => {
     if (isLoggingOutRef.current) return null;
-    setIsLoading(true);
+    if (!silent) setIsLoading(true);
     try {
-      console.log('🚀 [AuthContext] Fetching live GET /v1/auth/me...');
+      console.log(`🚀 [AuthContext] Fetching live GET /v1/auth/me (silent: ${silent})...`);
       const res = await getAuthMe();
       if (res) {
         setUserProfile(res);
@@ -63,7 +76,7 @@ export const AuthProvider: React.FC<{ children: ReactNode; onNavigateToAuth?: ()
       console.warn('⚠️ [AuthContext] Fetch Auth Me Notice:', err.message || err);
       return null;
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
@@ -93,10 +106,14 @@ export const AuthProvider: React.FC<{ children: ReactNode; onNavigateToAuth?: ()
     }
   };
 
+  const hasLoadedAuthRef = useRef<boolean>(false);
+
   // Automatically fetch live profile data on mount if valid session exists
   useEffect(() => {
+    if (hasLoadedAuthRef.current) return;
     const hasToken = typeof localStorage !== 'undefined' && (localStorage.getItem('mhn_access_token') || localStorage.getItem('mhn_auth_session'));
     if (hasToken && !isLoggingOutRef.current) {
+      hasLoadedAuthRef.current = true;
       loadAuthMe();
     }
   }, []);
@@ -134,9 +151,19 @@ export const AuthProvider: React.FC<{ children: ReactNode; onNavigateToAuth?: ()
         loadAuthMe,
         handleLogout,
         hideToast,
+        showToast,
       }}
     >
       {children}
+
+      {/* Global Dynamic Toast Notification */}
+      {toastConfig && (
+        <Toast
+          message={toastConfig.message}
+          type={toastConfig.type || 'error'}
+          onClose={() => setToastConfig(null)}
+        />
+      )}
 
       {/* Global 401 Unauthorized Toast Notification */}
       {toastMessage && (

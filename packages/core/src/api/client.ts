@@ -155,6 +155,8 @@ export async function apiFetch<T = any>(
     'X-Client-Type': clientType,
     'Accept-Language': 'en',
     'ngrok-skip-browser-warning': 'true',
+    'Bypass-Tunnel-Reminder': 'true',
+    'localtunnel-skip-warning': 'true',
     ...(options.headers as Record<string, string> || {}),
   };
 

@@ -58,6 +58,78 @@ export async function followUser(target: TargetEntity, clientType: 'web' | 'mobi
 }
 
 /**
+ * Recover the relationship edge ID for a target profile ID (Step 2 in Tarun's backend spec)
+ */
+export async function findRelationshipEdgeId(
+  targetProfileId: string,
+  clientType: 'web' | 'mobile' = 'web'
+): Promise<string | null> {
+  try {
+    const res = await getRelationships({ type: 'FOLLOW', direction: 'outgoing' }, clientType);
+    const items = res?.items || (res as any)?.data?.items || [];
+
+    const found = items.find((item: any) => {
+      const targetId = item.targetId || item.target?.id;
+      const counterpartyId = item.counterparty?.id || item.counterpartyId;
+      const sourceId = item.sourceId || item.source?.id;
+      return (
+        targetId === targetProfileId ||
+        counterpartyId === targetProfileId ||
+        sourceId === targetProfileId ||
+        item.id === targetProfileId
+      );
+    });
+
+    return found?.id || null;
+  } catch (err) {
+    console.warn('⚠️ [relationshipsApi] Edge ID lookup warning:', err);
+    return null;
+  }
+}
+
+/**
+ * Remove / Revoke a relationship via DELETE /v1/relationships/:id (unfollow / remove)
+ */
+export async function removeRelationship(relationshipId: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ message?: string; success?: boolean }> {
+  return apiFetch<{ message?: string; success?: boolean }>(`${API_ENDPOINTS.RELATIONSHIPS.BASE}/${relationshipId}`, {
+    method: 'DELETE',
+  }, clientType);
+}
+
+/**
+ * Unfollow a user, profile, or group:
+ * 1. If edge ID is known, call DELETE /v1/relationships/:edgeId directly.
+ * 2. If profile ID is provided, look up edge ID via GET /v1/relationships?type=FOLLOW&direction=outgoing, then call DELETE /v1/relationships/:edgeId.
+ */
+export async function unfollowUser(
+  targetOrRelationshipId: string | TargetEntity,
+  clientType: 'web' | 'mobile' = 'web'
+): Promise<{ message?: string; success?: boolean }> {
+  const targetId = typeof targetOrRelationshipId === 'string'
+    ? targetOrRelationshipId
+    : targetOrRelationshipId.id;
+
+  try {
+    console.log(`🚀 [relationshipsApi] Looking up relationship edge ID for target profile: ${targetId}...`);
+    const recoveredEdgeId = await findRelationshipEdgeId(targetId, clientType);
+    const finalEdgeId = recoveredEdgeId || targetId;
+
+    console.log(`🚀 [relationshipsApi] Executing Step 3: DELETE /v1/relationships/${finalEdgeId}...`);
+    return await removeRelationship(finalEdgeId, clientType);
+  } catch (err: any) {
+    console.warn('⚠️ [relationshipsApi] DELETE edge failed, falling back to follow toggle:', err);
+    const targetObj = typeof targetOrRelationshipId === 'string'
+      ? { type: 'PROFILE', id: targetId }
+      : targetOrRelationshipId;
+
+    return await apiFetch<{ message?: string; success?: boolean }>(API_ENDPOINTS.RELATIONSHIPS.FOLLOW, {
+      method: 'POST',
+      body: JSON.stringify({ target: targetObj }),
+    }, clientType);
+  }
+}
+
+/**
  * Send connection request
  */
 export async function sendConnectionRequest(target: TargetEntity, reason?: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ relationship: RelationshipItem }> {
@@ -70,13 +142,22 @@ export async function sendConnectionRequest(target: TargetEntity, reason?: strin
 /**
  * Fetch relationship lists (Followers, Connections, Pending Requests)
  */
-export async function getRelationships(params?: { type?: string; status?: string; direction?: 'outgoing' | 'incoming' }, clientType: 'web' | 'mobile' = 'web'): Promise<{ items: RelationshipItem[] }> {
-  const query = new URLSearchParams();
-  if (params?.type) query.set('type', params.type);
-  if (params?.status) query.set('status', params.status);
-  if (params?.direction) query.set('direction', params.direction);
+export async function getRelationships(
+  params?: { type?: string; status?: string; direction?: 'outgoing' | 'incoming'; query?: string; q?: string },
+  clientType: 'web' | 'mobile' = 'web'
+): Promise<{ items: RelationshipItem[] }> {
+  const queryParams = new URLSearchParams();
+  if (params?.type) queryParams.set('type', params.type);
+  if (params?.status) queryParams.set('status', params.status);
+  if (params?.direction) queryParams.set('direction', params.direction);
 
-  return apiFetch<{ items: RelationshipItem[] }>(`${API_ENDPOINTS.RELATIONSHIPS.BASE}?${query.toString()}`, { method: 'GET' }, clientType);
+  const searchTerm = params?.query || params?.q;
+  if (searchTerm && searchTerm.trim().length >= 2) {
+    queryParams.set('query', searchTerm.trim());
+    queryParams.set('q', searchTerm.trim());
+  }
+
+  return apiFetch<{ items: RelationshipItem[] }>(`${API_ENDPOINTS.RELATIONSHIPS.BASE}?${queryParams.toString()}`, { method: 'GET' }, clientType);
 }
 
 /**
@@ -204,8 +285,24 @@ export async function unblockUser(blockId: string, clientType: 'web' | 'mobile' 
 /**
  * Fetch People You May Know recommendations
  */
-export async function getPeopleYouMayKnow(limit = 10, clientType: 'web' | 'mobile' = 'web'): Promise<{ items: any[] }> {
-  return apiFetch<{ items: any[] }>(`${API_ENDPOINTS.RECOMMENDATIONS.PEOPLE}?limit=${limit}`, { method: 'GET' }, clientType);
+export async function getPeopleYouMayKnow(
+  params?: number | { limit?: number; query?: string; q?: string },
+  clientType: 'web' | 'mobile' = 'web'
+): Promise<{ items: any[] }> {
+  const queryParams = new URLSearchParams();
+  let limitVal = 10;
+  if (typeof params === 'number') {
+    limitVal = params;
+  } else if (params && typeof params === 'object') {
+    limitVal = params.limit || 10;
+    const searchTerm = params.query || params.q;
+    if (searchTerm && searchTerm.trim().length >= 2) {
+      queryParams.set('query', searchTerm.trim());
+      queryParams.set('q', searchTerm.trim());
+    }
+  }
+  queryParams.set('limit', String(limitVal));
+  return apiFetch<{ items: any[] }>(`${API_ENDPOINTS.RECOMMENDATIONS.PEOPLE}?${queryParams.toString()}`, { method: 'GET' }, clientType);
 }
 
 /**

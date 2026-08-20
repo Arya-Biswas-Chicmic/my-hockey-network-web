@@ -3,7 +3,7 @@ import React from 'react';
 interface EmptyStateProps {
   title?: string;
   message?: string;
-  iconType?: 'invitations' | 'people' | 'connections' | 'search' | 'nodata' | 'posts' | 'events';
+  iconType?: 'invitations' | 'people' | 'connections' | 'search' | 'nodata' | 'posts' | 'events' | 'server-error';
   actionLabel?: string;
   onAction?: () => void;
 }
@@ -17,13 +17,27 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
   const renderIcon = () => {
     switch (iconType) {
+      case 'server-error':
+        return (
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+            <line x1="6" y1="6" x2="6.01" y2="6" />
+            <line x1="6" y1="18" x2="6.01" y2="18" />
+            <line x1="12" y1="6" x2="18" y2="6" />
+            <line x1="12" y1="18" x2="18" y2="18" />
+            <circle cx="18" cy="12" r="3" fill="#FEE2E2" stroke="#DC2626" strokeWidth="1.5" />
+            <line x1="18" y1="11" x2="18" y2="12.5" stroke="#DC2626" strokeWidth="1.5" />
+            <line x1="18" y1="13.5" x2="18" y2="13.6" stroke="#DC2626" strokeWidth="2" />
+          </svg>
+        );
       case 'connections':
       case 'people':
         return (
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1860C3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
             <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M23 21v-2a4 4 0 0 3-3.87" />
             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
         );
@@ -71,6 +85,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     }
   };
 
+  const isServerError = iconType === 'server-error';
   const isNoData = iconType === 'nodata';
 
   return (
@@ -78,7 +93,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       className="mhn-empty-state-card"
       style={{
         backgroundColor: '#FFFFFF',
-        border: '1px dashed #CBD5E1',
+        border: isServerError ? '1px solid #FECACA' : '1px dashed #CBD5E1',
         borderRadius: '16px',
         padding: '32px 24px',
         display: 'flex',
@@ -98,8 +113,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           width: '56px',
           height: '56px',
           borderRadius: '50%',
-          backgroundColor: isNoData ? '#F1F5F9' : '#EFF6FF',
-          border: isNoData ? '1px solid #E2E8F0' : '1px solid #DBEAFE',
+          backgroundColor: isServerError ? '#FEF2F2' : isNoData ? '#F1F5F9' : '#EFF6FF',
+          border: isServerError ? '1px solid #FECACA' : isNoData ? '1px solid #E2E8F0' : '1px solid #DBEAFE',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

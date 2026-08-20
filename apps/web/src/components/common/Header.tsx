@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { LogoutModal } from './LogoutModal';
+import { resolveMediaUrl } from '../../utils/mediaUtils';
 
 interface HeaderProps {
   activeTab?: string;
@@ -25,13 +26,15 @@ export const Header: React.FC<HeaderProps> = ({
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const resolvedName = user?.profile?.displayName || (user as any)?.displayName || userName || 'Player';
-  const resolvedAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl || userAvatar || '/userPlaceholder.png';
+  const rawAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl || userAvatar;
+  const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
   const [activeUser, setActiveUser] = useState({ name: resolvedName, avatar: resolvedAvatar });
 
   React.useEffect(() => {
     if (user) {
       const name = user.profile?.displayName || (user as any)?.displayName || userName || 'Player';
-      const avatar = user.profile?.avatarUrl || (user as any)?.avatarUrl || userAvatar || '/userPlaceholder.png';
+      const av = user.profile?.avatarUrl || (user as any)?.avatarUrl || userAvatar;
+      const avatar = resolveMediaUrl(av, '/userPlaceholder.png');
       setActiveUser({ name, avatar });
     }
   }, [user, userName, userAvatar]);
@@ -208,7 +211,14 @@ export const Header: React.FC<HeaderProps> = ({
                 {/* View Profile */}
                 <button className="mhn-dropdown-item" onClick={handleViewProfile}>
                   <div className="mhn-dropdown-item-left">
-                    <img src={activeUser.avatar} alt={activeUser.name} className="mhn-dropdown-avatar-img" />
+                    <img 
+                      src={activeUser.avatar} 
+                      alt={activeUser.name} 
+                      className="mhn-dropdown-avatar-img" 
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/userPlaceholder.png';
+                      }}
+                    />
                     <span className="mhn-dropdown-item-text">View Profile</span>
                   </div>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -37,21 +37,43 @@ export interface FeedResponse {
   nextCursor?: string | null;
 }
 
+export interface GetFeedParams {
+  query?: string;
+  sortBy?: 'RECENT' | 'POPULAR' | 'TRENDING';
+  cursor?: string;
+  limit?: number;
+}
+
 /**
  * Fetch Home Feed Posts
  */
-export async function getFeed(cursor?: string, limit = 20, clientType: 'web' | 'mobile' = 'web'): Promise<FeedResponse> {
-  const query = new URLSearchParams({ limit: String(limit) });
-  if (cursor) query.set('cursor', cursor);
+export async function getFeed(
+  paramsOrCursor?: GetFeedParams | string,
+  limit = 20,
+  clientType: 'web' | 'mobile' = 'web'
+): Promise<FeedResponse> {
+  let opts: GetFeedParams = {};
+  if (typeof paramsOrCursor === 'string') {
+    opts = { cursor: paramsOrCursor, limit };
+  } else if (paramsOrCursor && typeof paramsOrCursor === 'object') {
+    opts = paramsOrCursor;
+  }
+
+  const queryParams = new URLSearchParams();
+  queryParams.set('limit', String(opts.limit || limit));
+  if (opts.cursor) queryParams.set('cursor', opts.cursor);
+  if (opts.sortBy) queryParams.set('sortBy', opts.sortBy);
+  if (opts.query && opts.query.trim().length >= 2) {
+    queryParams.set('query', opts.query.trim());
+  }
 
   try {
-    return await apiFetch<FeedResponse>(`${API_ENDPOINTS.POSTS.FEED_HOME}?${query.toString()}`, { method: 'GET' }, clientType);
+    return await apiFetch<FeedResponse>(`${API_ENDPOINTS.POSTS.FEED_HOME}?${queryParams.toString()}`, { method: 'GET' }, clientType);
   } catch (err: any) {
-    try {
-      return await apiFetch<FeedResponse>(`/posts/feed?${query.toString()}`, { method: 'GET' }, clientType);
-    } catch {
-      return { items: [] };
+    if (err?.statusCode === 404) {
+      return await apiFetch<FeedResponse>(`/posts/feed?${queryParams.toString()}`, { method: 'GET' }, clientType);
     }
+    throw err;
   }
 }
 
@@ -118,17 +140,27 @@ export async function unlikePost(postId: string, clientType: 'web' | 'mobile' = 
  * Get comments for a Post
  */
 export async function getComments(postId: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ items: any[] }> {
-  return apiFetch<{ items: any[] }>(API_ENDPOINTS.POSTS.COMMENTS(postId), { method: 'GET' }, clientType);
+  try {
+    const res = await apiFetch<any>(API_ENDPOINTS.POSTS.COMMENTS(postId), { method: 'GET' }, clientType);
+    const payload = res?.data || res;
+    const items = payload?.items || (Array.isArray(payload) ? payload : []);
+    return { items };
+  } catch (err: any) {
+    console.warn(`⚠️ [getComments] API Warning for post ${postId}:`, err.message || err);
+    return { items: [] };
+  }
 }
 
 /**
  * Add comment to a Post
  */
-export async function addComment(postId: string, text: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ comment: any }> {
-  return apiFetch<{ comment: any }>(API_ENDPOINTS.POSTS.COMMENTS(postId), {
+export async function addComment(postId: string, text: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ comment: any; message?: string }> {
+  const res = await apiFetch<any>(API_ENDPOINTS.POSTS.COMMENTS(postId), {
     method: 'POST',
     body: JSON.stringify({ body: text }),
   }, clientType);
+  const comment = res?.data?.comment || res?.data || res?.comment || res;
+  return { comment, message: res?.message };
 }
 
 export interface RepostDTO {
@@ -143,5 +175,36 @@ export async function repostPost(postId: string, dto: RepostDTO = {}, clientType
   return apiFetch<{ success: boolean; post: any }>(API_ENDPOINTS.POSTS.REPOST(postId), {
     method: 'POST',
     body: JSON.stringify(dto || {}),
+  }, clientType);
+}
+
+export interface UpdatePostDTO {
+  body?: string;
+  content?: string;
+  mediaUrls?: string[];
+  audience?: 'PUBLIC' | 'CONNECTIONS' | 'GROUP' | 'CUSTOM';
+  placeName?: string;
+}
+
+/**
+ * Update / Edit a Post (PATCH /v1/posts/:id)
+ */
+export async function updatePost(postId: string, dto: UpdatePostDTO, clientType: 'web' | 'mobile' = 'web'): Promise<{ success: boolean; data?: any; message?: string }> {
+  const payload = {
+    ...dto,
+    body: dto.body ?? dto.content,
+  };
+  return apiFetch<{ success: boolean; data?: any; message?: string }>(API_ENDPOINTS.POSTS.GET_POST(postId), {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  }, clientType);
+}
+
+/**
+ * Delete a Post (DELETE /v1/posts/:id)
+ */
+export async function deletePost(postId: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ success: boolean; message?: string }> {
+  return apiFetch<{ success: boolean; message?: string }>(API_ENDPOINTS.POSTS.DELETE_POST(postId), {
+    method: 'DELETE',
   }, clientType);
 }

@@ -3,10 +3,13 @@ import { Header } from '../components/common/Header';
 import { PendingBanner } from '../components/common/PendingBanner';
 import { FeedPostCard } from '../components/features/home/FeedPostCard';
 import { CreatePostModal } from '../components/features/home/CreatePostModal';
-import { EditProfileModal, EditProfileFormData } from '../components/features/profile';
+import { EditProfileModal, EditProfileFormData, ProfileSkeletonLoader } from '../components/features/profile';
 import { FeedPostSkeleton } from '../components/features/home/HomeSkeletonLoader';
+import { Spinner } from '../components/common/Spinner';
+import { Toast } from '../components/common/Toast';
 import { useAuth } from '../context/AuthContext';
-import { createPost, getUserPosts, updateAuthProfile } from '@my-hockey-network/core';
+import { resolveMediaUrl, resolveCoverUrl } from '../utils/mediaUtils';
+import { createPost, getUserPosts, updateAuthProfile, uploadMediaFile } from '@my-hockey-network/core';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -14,26 +17,102 @@ interface PageProps {
 }
 
 export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
-  const { user, setUserProfile } = useAuth();
+  const { user, setUserProfile, loadAuthMe } = useAuth();
+  const coverFileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isUploadingCover, setIsUploadingCover] = useState<boolean>(false);
+  const [coverUploadMsg, setCoverUploadMsg] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const handleEditCoverClick = () => {
+    coverFileInputRef.current?.click();
+  };
+
+  const handleCoverFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingCover(true);
+    setCoverUploadMsg(null);
+
+    try {
+      console.log('🚀 [ProfilePage] Uploading cover image file (purpose: COVER)...');
+      const uploadRes = await uploadMediaFile(file, 'COVER');
+      if (uploadRes?.storageKey) {
+        console.log('✅ [ProfilePage] Cover file uploaded to storage. Key:', uploadRes.storageKey);
+        const updated = await updateAuthProfile({ coverImageKey: uploadRes.storageKey });
+        if (updated) {
+          setUserProfile(updated);
+        }
+        await loadAuthMe();
+        setCoverUploadMsg('Cover image updated successfully!');
+        setTimeout(() => setCoverUploadMsg(null), 3000);
+      }
+    } catch (err: any) {
+      console.error('❌ [ProfilePage] Cover image upload error:', err);
+      alert(err.message || 'Failed to upload cover image. Please try again.');
+    } finally {
+      setIsUploadingCover(false);
+      if (e.target) {
+        e.target.value = '';
+      }
+    }
+  };
+
+  const avatarFileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState<boolean>(false);
+
+  const handleEditAvatarClick = () => {
+    avatarFileInputRef.current?.click();
+  };
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingAvatar(true);
+
+    try {
+      console.log('🚀 [ProfilePage] Uploading avatar image file (purpose: AVATAR)...');
+      const uploadRes = await uploadMediaFile(file, 'AVATAR');
+      if (uploadRes?.storageKey) {
+        console.log('✅ [ProfilePage] Avatar uploaded to storage. Key:', uploadRes.storageKey);
+        const updated = await updateAuthProfile({ avatarKey: uploadRes.storageKey });
+        if (updated) {
+          setUserProfile(updated);
+        }
+        await loadAuthMe();
+      }
+    } catch (err: any) {
+      console.error('❌ [ProfilePage] Avatar upload error:', err);
+      alert(err.message || 'Failed to upload profile picture. Please try again.');
+    } finally {
+      setIsUploadingAvatar(false);
+      if (e.target) {
+        e.target.value = '';
+      }
+    }
+  };
   const [activeNavTab, setActiveNavTab] = useState('profile');
   const [activeProfileTab, setActiveProfileTab] = useState<'posts' | 'media' | 'stats' | 'about'>('about');
   const [activeAboutSection, setActiveAboutSection] = useState<'intro' | 'career' | 'details'>('intro');
 
   const liveName = user?.profile?.displayName || (user as any)?.displayName || 'Player';
-  const liveAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl || '/userPlaceholder.png';
+  const rawAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl;
+  const liveAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
+  const rawCover = user?.profile?.coverImageUrl || (user as any)?.coverImageUrl;
+  const liveCoverImage = resolveCoverUrl(rawCover, '/cover.png');
   const liveRole = user?.primaryRole || user?.profile?.type || 'PLAYER';
 
   // Live profile field fallbacks from GET /v1/auth/me
   const liveBio = user?.profile?.bio || 'Competitive ice hockey player focused on teamwork, discipline, and continuous improvement on and off the ice.';
   const livePosition = user?.profile?.position || 'Center';
   const liveJersey = user?.profile?.jerseyNumber !== null && user?.profile?.jerseyNumber !== undefined ? String(user.profile.jerseyNumber) : '97';
-  const liveCity = user?.profile?.city || 'Austria, Europe';
-  const liveDob = user?.profile?.dateOfBirth ? new Date(user.profile.dateOfBirth).toLocaleDateString() : '01-01-2001';
+  const liveCity = user?.profile?.city || 'Toronto, ON';
+  const liveDob = user?.profile?.dateOfBirth ? new Date(user?.profile?.dateOfBirth).toLocaleDateString() : '01-01-2001';
   const liveGender = user?.profile?.genderCategory || 'Male';
 
   // Intro Form States matching Image 11
   const [bioText, setBioText] = useState(liveBio);
-  const [selectedRole, setSelectedRole] = useState('Player');
   const [positionText, setPositionText] = useState(livePosition);
   const [jerseyText, setJerseyText] = useState(liveJersey);
 
@@ -41,6 +120,73 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [locationText, setLocationText] = useState(liveCity);
   const [dobText, setDobText] = useState(liveDob);
   const [genderText, setGenderText] = useState(liveGender);
+
+  const [isSavingIntro, setIsSavingIntro] = useState(false);
+  const [isSavingDetails, setIsSavingDetails] = useState(false);
+  const [introSaveMsg, setIntroSaveMsg] = useState<string | null>(null);
+  const [detailsSaveMsg, setDetailsSaveMsg] = useState<string | null>(null);
+
+  // Synchronize inputs with live user profile data
+  React.useEffect(() => {
+    if (user?.profile) {
+      setBioText(user.profile.bio || '');
+      setPositionText(user.profile.position || '');
+      setJerseyText(user.profile.jerseyNumber !== null && user.profile.jerseyNumber !== undefined ? String(user.profile.jerseyNumber) : '');
+      setLocationText(user.profile.city || '');
+      setDobText(user.profile.dateOfBirth ? user.profile.dateOfBirth.split('T')[0] : '');
+      setGenderText(user.profile.genderCategory || '');
+    }
+  }, [user]);
+
+  const handleSaveIntro = async () => {
+    setIsSavingIntro(true);
+    setIntroSaveMsg(null);
+    try {
+      const dto = {
+        bio: bioText || undefined,
+        position: positionText || undefined,
+        jerseyNumber: jerseyText !== '' ? Number(jerseyText) : undefined,
+      };
+      console.log('🚀 [ProfilePage] Saving Intro Tab via PATCH /v1/auth/profile:', dto);
+      const res = await updateAuthProfile(dto);
+      if (res) {
+        setUserProfile(res);
+      }
+      await loadAuthMe();
+      setIntroSaveMsg('Intro saved successfully!');
+      setTimeout(() => setIntroSaveMsg(null), 3000);
+    } catch (err: any) {
+      console.error('❌ Save Intro error:', err);
+      alert(err.message || 'Failed to save intro details');
+    } finally {
+      setIsSavingIntro(false);
+    }
+  };
+
+  const handleSaveDetails = async () => {
+    setIsSavingDetails(true);
+    setDetailsSaveMsg(null);
+    try {
+      const dto = {
+        city: locationText || undefined,
+        dateOfBirth: dobText || undefined,
+        genderCategory: genderText || undefined,
+      };
+      console.log('🚀 [ProfilePage] Saving Personal Details via PATCH /v1/auth/profile:', dto);
+      const res = await updateAuthProfile(dto);
+      if (res) {
+        setUserProfile(res);
+      }
+      await loadAuthMe();
+      setDetailsSaveMsg('Personal details saved successfully!');
+      setTimeout(() => setDetailsSaveMsg(null), 3000);
+    } catch (err: any) {
+      console.error('❌ Save Details error:', err);
+      alert(err.message || 'Failed to save personal details');
+    } finally {
+      setIsSavingDetails(false);
+    }
+  };
 
   const [selectedSeason, setSelectedSeason] = useState('2025-26');
   const [selectedSeasonType, setSelectedSeasonType] = useState('Regular Season');
@@ -63,7 +209,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         .then((res) => {
           if (res?.items && Array.isArray(res.items)) {
             console.log(`✅ [ProfilePage] User posts fetched: ${res.items.length} posts`);
-            setLiveUserPosts(res.items);
+            setLiveUserPosts(res?.items);
           }
         })
         .finally(() => {
@@ -76,30 +222,34 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
   const handleSaveProfile = async (data: EditProfileFormData) => {
     console.log('🚀 [ProfilePage] Hitting PATCH /v1/auth/profile API with payload:', data);
-    
+
     // Format dateOfBirth as YYYY-MM-DD (e.g., "2004-03-11") matching backend payload
-    let formattedDob = data.dateOfBirth;
+    let formattedDob = data?.dateOfBirth;
     if (formattedDob && formattedDob.includes('T')) {
       formattedDob = formattedDob.split('T')[0];
     }
 
-    // Only send avatarUrl key if a new/custom image or URL was uploaded (omit key if placeholder/empty)
+    // Rule from media-uploads.md: Sending both avatarKey and avatarUrl returns 400.
+    // If avatarKey is present (uploaded via Step 1 & Step 2), send avatarKey and omit avatarUrl.
+    let avatarKeyToSend: string | undefined = data?.avatarKey;
     let avatarUrlToSend: string | undefined = undefined;
-    if (data.avatarUrl && data.avatarUrl !== '/userPlaceholder.png' && !data.avatarUrl.includes('userPlaceholder.png')) {
-      avatarUrlToSend = data.avatarUrl;
+
+    if (!avatarKeyToSend && data?.avatarUrl && data?.avatarUrl !== '/userPlaceholder.png' && !data?.avatarUrl.includes('userPlaceholder.png') && !data?.avatarUrl.startsWith('blob:')) {
+      avatarUrlToSend = data?.avatarUrl;
     }
 
     const dto = {
-      displayName: data.displayName || undefined,
-      firstName: data.firstName || undefined,
-      lastName: data.lastName || undefined,
-      bio: data.bio || undefined,
-      city: data.city || undefined,
+      displayName: data?.displayName || undefined,
+      firstName: data?.firstName || undefined,
+      lastName: data?.lastName || undefined,
+      bio: data?.bio || undefined,
+      city: data?.city || undefined,
       dateOfBirth: formattedDob || undefined,
-      position: data.position || undefined,
-      shootsCatches: data.shootsCatches || undefined,
-      jerseyNumber: data.jerseyNumber !== '' && data.jerseyNumber !== null && data.jerseyNumber !== undefined ? Number(data.jerseyNumber) : undefined,
-      genderCategory: data.genderCategory || undefined,
+      position: data?.position || undefined,
+      shootsCatches: data?.shootsCatches || undefined,
+      jerseyNumber: data?.jerseyNumber !== '' && data?.jerseyNumber !== null && data?.jerseyNumber !== undefined ? Number(data?.jerseyNumber) : undefined,
+      genderCategory: data?.genderCategory || undefined,
+      avatarKey: avatarKeyToSend,
       avatarUrl: avatarUrlToSend,
     };
 
@@ -117,12 +267,12 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     }
 
     // Update local preview state
-    if (data.position) setPositionText(data.position);
-    if (data.jerseyNumber) setJerseyText(data.jerseyNumber);
-    if (data.bio) setBioText(data.bio);
-    if (data.city) setLocationText(data.city);
-    if (data.genderCategory) setGenderText(data.genderCategory);
-    if (data.dateOfBirth) setDobText(data.dateOfBirth);
+    if (data?.position) setPositionText(data?.position);
+    if (data?.jerseyNumber) setJerseyText(data?.jerseyNumber);
+    if (data?.bio) setBioText(data?.bio);
+    if (data?.city) setLocationText(data?.city);
+    if (data?.genderCategory) setGenderText(data?.genderCategory);
+    if (data?.dateOfBirth) setDobText(data?.dateOfBirth);
   };
 
   const handleTabChange = (tab: string) => {
@@ -277,18 +427,18 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         prev.map((t) =>
           t.id === editingTeamId
             ? {
-                ...t,
-                name: teamNameInput,
-                position: teamPositionInput,
-                city: teamCityInput,
-                isCurrent: isCurrentPlayingInput,
-                startMonth: startMonthInput,
-                startYear: startYearInput,
-                endMonth: endMonthInput,
-                endYear: endYearInput,
-                description: teamDescInput,
-                subtitle: subtitleText,
-              }
+              ...t,
+              name: teamNameInput,
+              position: teamPositionInput,
+              city: teamCityInput,
+              isCurrent: isCurrentPlayingInput,
+              startMonth: startMonthInput,
+              startYear: startYearInput,
+              endMonth: endMonthInput,
+              endYear: endYearInput,
+              description: teamDescInput,
+              subtitle: subtitleText,
+            }
             : t
         )
       );
@@ -346,26 +496,102 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       />
 
       {/* Main Centered Content Container */}
-      <main className="mhn-profile-main-container">
+      {!user || isPostsLoading ? (
+        <ProfileSkeletonLoader />
+      ) : (
+        <main className="mhn-profile-main-container">
         {/* Profile Hero Card */}
         <div className="mhn-profile-hero-card">
           {/* Cover Banner Area */}
           <div
             className="mhn-profile-cover-banner"
             style={{
-              backgroundImage: 'url(/cover.png)',
+              backgroundImage: `url(${liveCoverImage})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
+              position: 'relative',
+              overflow: 'hidden',
             }}
           >
+            <input
+              type="file"
+              ref={coverFileInputRef}
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleCoverFileChange}
+            />
+
+            {/* Full Cover Banner Uploading Overlay */}
+            {isUploadingCover && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundColor: 'rgba(15, 23, 42, 0.65)',
+                  backdropFilter: 'blur(4px)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  color: '#FFFFFF',
+                  zIndex: 5,
+                }}
+              >
+                <Spinner size="lg" color="#38BDF8" />
+                <span style={{ fontSize: '14px', fontWeight: 600, letterSpacing: '0.3px' }}>
+                  Uploading cover image...
+                </span>
+              </div>
+            )}
+
             {/* Edit Cover Pencil Button */}
-            <button className="mhn-btn-edit-cover" aria-label="Edit cover photo">
-              <img src="/edit2.png" className="edit2-icon" alt="edit-icon" />
+            <button 
+              className="mhn-btn-edit-cover" 
+              aria-label="Edit cover photo"
+              onClick={handleEditCoverClick}
+              disabled={isUploadingCover}
+              title="Upload new cover image"
+              style={{ zIndex: 6 }}
+            >
+              {isUploadingCover ? (
+                <Spinner size="sm" color="#1860C3" />
+              ) : (
+                <img src="/edit2.png" className="edit2-icon" alt="edit-icon" />
+              )}
             </button>
+
+            {coverUploadMsg && (
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '12px',
+                  left: '16px',
+                  backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                  color: '#FFFFFF',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  zIndex: 10,
+                }}
+              >
+                ✅ {coverUploadMsg}
+              </div>
+            )}
           </div>
 
           {/* Profile Header Content Row */}
           <div className="mhn-profile-header-content">
+            {/* Hidden Avatar File Input */}
+            <input
+              type="file"
+              ref={avatarFileInputRef}
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleAvatarFileChange}
+            />
+
             {/* Overlapping Avatar Circle */}
             <div className="mhn-profile-avatar-outer">
               <div className="mhn-profile-avatar-inner">
@@ -378,6 +604,25 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   }}
                 />
               </div>
+
+              {/* Profile Picture Edit Badge Button */}
+              <button
+                type="button"
+                className="mhn-avatar-edit-badge"
+                onClick={handleEditAvatarClick}
+                disabled={isUploadingAvatar}
+                title="Change profile picture"
+                aria-label="Change profile picture"
+              >
+                {isUploadingAvatar ? (
+                  <Spinner size="sm" color="#FFFFFF" />
+                ) : (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                )}
+              </button>
             </div>
 
             {/* User Meta & Action Buttons */}
@@ -391,12 +636,12 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 <p className="mhn-profile-hero-role" style={{ marginTop: '4px' }}>
                   {liveRole} • @HC Bloemendaal
                 </p>
-                <div className="mhn-profile-location-line" style={{ marginTop: '4px' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div className="mhn-profile-location-line" style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                     <circle cx="12" cy="10" r="3" />
                   </svg>
-                  <span style={{ fontSize: '13px', color: '#64748B' }}>Austria, Europe</span>
+                  <span style={{ fontSize: '13px', color: '#64748B' }}>{liveCity}</span>
                 </div>
               </div>
 
@@ -460,104 +705,64 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 <button className="mhn-btn-create-post" onClick={() => setIsCreatePostOpen(true)}>Create Post</button>
               </div>
 
-              {/* Dynamic Live Posts Grid from API or Shimmer Skeleton */}
-              {isPostsLoading ? (
-                <div className="mhn-posts-grid-wrapper">
-                  <FeedPostSkeleton />
-                  <FeedPostSkeleton />
-                </div>
-              ) : (
-                <div className="mhn-posts-grid-wrapper">
-                  {(liveUserPosts.length > 0 ? liveUserPosts : [
-                    {
-                      id: 'post-1',
-                      body: "First tournament of the season! Let's go!",
-                      likeCount: 13,
-                      commentCount: 2,
-                      repostCount: 0,
-                      createdAt: "2026-08-17T11:39:39.830Z",
-                      media: [{ url: "/playHockey.png" }],
-                      authorProfile: { displayName: liveName, avatarUrl: liveAvatar, position: "C", jerseyNumber: 97 }
-                    },
-                    {
-                      id: 'post-2',
-                      body: "🏒 FINAL MATCH DAY! 🏆 Everything we've trained for comes down to this. The ice is ready, and we're ready. #IceHockey #FinalMatch #GameDay",
-                      likeCount: 24,
-                      commentCount: 5,
-                      repostCount: 1,
-                      createdAt: "2026-08-17T11:43:09.856Z",
-                      media: [{ url: "/mhnStars.png" }],
-                      authorProfile: { displayName: liveName, avatarUrl: liveAvatar, position: "C", jerseyNumber: 97 }
-                    }
-                  ]).map((post: any) => {
-                    const author = post.authorProfile || post.author || {};
-                    const postName = author.displayName || liveName;
-                    const postAvatar = author.avatarUrl || liveAvatar;
-                    const postRole = author.position && author.jerseyNumber ? `${author.position} • #${author.jerseyNumber}` : `${liveRole} • #${jerseyText}`;
-                    const mediaUrl = post.media && post.media.length > 0 ? post.media[0].url : null;
-                    const formattedDate = post.createdAt ? new Date(post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '1 Aug';
+              {/* Dynamic Live Posts Grid from API if available */}
+              <div className="mhn-posts-grid-wrapper">
+                {(liveUserPosts.length > 0 ? liveUserPosts : [
+                  {
+                    id: 'post-1',
+                    body: "First tournament of the season! Let's go!",
+                    likeCount: 13,
+                    commentCount: 2,
+                    repostCount: 0,
+                    createdAt: "2026-08-17T11:39:39.830Z",
+                    media: [{ url: "/playHockey.png" }],
+                    authorProfile: { displayName: liveName, avatarUrl: liveAvatar, position: "C", jerseyNumber: 97 }
+                  },
+                  {
+                    id: 'post-2',
+                    body: "🏒 FINAL MATCH DAY! 🏆 Everything we've trained for comes down to this. The ice is ready, and we're ready. #IceHockey #FinalMatch #GameDay",
+                    likeCount: 24,
+                    commentCount: 5,
+                    repostCount: 1,
+                    createdAt: "2026-08-17T11:43:09.856Z",
+                    media: [{ url: "/mhnStars.png" }],
+                    authorProfile: { displayName: liveName, avatarUrl: liveAvatar, position: "C", jerseyNumber: 97 }
+                  }
+                ]).map((post: any) => {
+                  const author = post.authorProfile || post.author || {};
+                  const postName = author.displayName || liveName;
+                  const postAvatar = author.avatarUrl || liveAvatar;
+                  const postRole = author.position && author.jerseyNumber ? `${author.position} • #${author.jerseyNumber}` : `${liveRole} • #${jerseyText}`;
+                  const mediaUrl = post.media && post.media.length > 0 ? post.media[0].url : null;
+                  const formattedDate = post.createdAt ? new Date(post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '1 Aug';
 
-                    return (
-                      <div
-                        key={post.id}
-                        className="mhn-post-figma-card"
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <div>
-                          <div className="mhn-post-figma-header">
-                            <div className="mhn-post-figma-author">
-                              <img
-                                src={postAvatar}
-                                alt={postName}
-                                className="mhn-post-figma-avatar"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-                                }}
-                              />
-                              <div className="mhn-post-figma-meta">
-                                <h4 className="mhn-post-figma-author-name">{postName}</h4>
-                                <span className="mhn-post-figma-subtitle">{postRole} • {formattedDate}</span>
-                              </div>
-                            </div>
-                            <button className="mhn-post-figma-more-btn" aria-label="More">
-                              <img src='/threeDots.png' className='three-dots-icon' alt='three-dots' />
-                            </button>
-                          </div>
-
-                          {post.body && (
-                            <p className="mhn-post-figma-text">
-                              {post.body}
-                            </p>
-                          )}
-
-                          {mediaUrl && (
-                            <div className="mhn-post-figma-image-box">
-                              <img src={mediaUrl} alt="Post media" className="mhn-post-figma-image" />
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="mhn-post-figma-footer">
-                          <div className="mhn-post-figma-action">
-                            <img src="/like.png" alt="Like" className="like-count-icon" />
-                            <span>{post.likeCount ?? post.reactionsCount ?? 0}</span>
-                          </div>
-
-                          <div className="mhn-post-figma-action">
-                            <img src="/comment.png" alt="Comment" className="comment-count-icon" />
-                            <span>{post.commentCount ?? post.commentsCount ?? 0}</span>
-                          </div>
-
-                          <div className="mhn-post-figma-action">
-                            <img src="/share.png" alt="Share" className="share-count-icon" />
-                            <span>{post.repostCount ?? 0}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                  return (
+                    <FeedPostCard
+                      key={post.id}
+                      id={post.id}
+                      authorName={postName}
+                      authorRole={postRole}
+                      authorTime={formattedDate}
+                      authorAvatar={postAvatar}
+                      content={post.body || ''}
+                      postImage={mediaUrl || undefined}
+                      likesCount={post.likeCount ?? post.reactionsCount ?? 0}
+                      commentsCount={post.commentCount ?? post.commentsCount ?? 0}
+                      repostCount={post.repostCount ?? post.repostsCount ?? 0}
+                      userReaction={post.userReaction}
+                      isSelf={true}
+                      onDeleteSuccess={(deletedId, msg) => {
+                        console.log(`🗑️ [ProfilePage] Post ${deletedId} deleted. Refreshing user posts...`);
+                        setToast({ message: msg || 'Post deleted successfully!', type: 'success' });
+                        setUserPosts((prev) => prev.filter((p) => p.id !== deletedId));
+                        if (profileData?.id) {
+                          getUserPosts(profileData.id).then((res) => setUserPosts(res.items || []));
+                        }
+                      }}
+                    />
+                  );
+                })}
+              </div>
 
               {/* Bottom Show All Button */}
               <div className="mhn-posts-show-all-divider">
@@ -947,52 +1152,24 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                             onChange={(e) => setBioText(e.target.value)}
                             className="mhn-about-input-box mhn-about-textarea-box"
                             rows={3}
-                          />
-                          <img
-                            src="/edit2.png"
-                            alt="Edit bio"
-                            className="mhn-about-edit-icon"
+                            placeholder="Write something about yourself..."
                           />
                         </div>
                       </div>
 
-                      {/* Role */}
+                      {/* Primary Role (Read-Only / System Managed) */}
                       <div className="mhn-about-field-group">
-                        <label className="mhn-about-field-label">Role</label>
-                        <div className="mhn-about-select-wrapper">
-                          <select
-                            value={selectedRole}
-                            onChange={(e) => setSelectedRole(e.target.value)}
-                            className="mhn-about-select-box"
-                          >
-                            <option value="Player">Player</option>
-                            <option value="Parent / Guardian">Parent / Guardian</option>
-                            <option value="Coach / Team Staff">Coach / Team Staff</option>
-                          </select>
-                          <span className="mhn-about-select-arrow">▼</span>
-                        </div>
-
-                        {/* Cancel / Save Action Buttons */}
-                        <div className="mhn-about-role-actions">
-                          <button
-                            type="button"
-                            className="mhn-about-btn-cancel"
-                            onClick={() => {
-                              setBioText("Competitive ice hockey player focused on teamwork, discipline, and continuous improvement on and off the ice.");
-                              setSelectedRole("Player");
-                              setPositionText("Center");
-                              setJerseyText("97");
-                            }}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            className="mhn-about-btn-save"
+                        <label className="mhn-about-field-label">
+                          Role <span style={{ fontSize: '12px', fontWeight: 400, color: '#64748B' }}>(Managed by system)</span>
+                        </label>
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            type="text"
+                            value={liveRole}
                             disabled
-                          >
-                            Save
-                          </button>
+                            className="mhn-about-input-box mhn-about-input-disabled"
+                            title="Role cannot be changed"
+                          />
                         </div>
                       </div>
 
@@ -1005,11 +1182,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                             value={positionText}
                             onChange={(e) => setPositionText(e.target.value)}
                             className="mhn-about-input-box"
-                          />
-                          <img
-                            src="/edit2.png"
-                            alt="Edit position"
-                            className="mhn-about-edit-icon"
+                            placeholder="e.g. Center, Winger, Goalie"
                           />
                         </div>
                       </div>
@@ -1019,17 +1192,67 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         <label className="mhn-about-field-label">Jersey Number</label>
                         <div style={{ position: 'relative' }}>
                           <input
-                            type="text"
+                            type="number"
                             value={jerseyText}
                             onChange={(e) => setJerseyText(e.target.value)}
                             className="mhn-about-input-box"
-                          />
-                          <img
-                            src="/edit2.png"
-                            alt="Edit jersey number"
-                            className="mhn-about-edit-icon"
+                            placeholder="e.g. 97"
                           />
                         </div>
+                      </div>
+
+                      {/* Save & Feedback Row */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
+                        <button
+                          type="button"
+                          className="mhn-about-btn-save"
+                          style={{
+                            height: '38px',
+                            padding: '0 24px',
+                            backgroundColor: '#1860C3',
+                            color: '#FFFFFF',
+                            borderRadius: '8px',
+                            fontWeight: 600,
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                          }}
+                          onClick={handleSaveIntro}
+                          disabled={isSavingIntro}
+                        >
+                          {isSavingIntro && <Spinner size="sm" color="#FFFFFF" />}
+                          <span>Save Changes</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="mhn-about-btn-cancel"
+                          style={{
+                            height: '38px',
+                            padding: '0 16px',
+                            backgroundColor: '#F1F5F9',
+                            color: '#475569',
+                            borderRadius: '8px',
+                            fontWeight: 600,
+                            border: '1px solid #CBD5E1',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() => {
+                            if (user?.profile) {
+                              setBioText(user.profile.bio || '');
+                              setPositionText(user.profile.position || '');
+                              setJerseyText(user.profile.jerseyNumber !== null && user.profile.jerseyNumber !== undefined ? String(user.profile.jerseyNumber) : '');
+                            }
+                          }}
+                        >
+                          Cancel
+                        </button>
+                        {introSaveMsg && (
+                          <span style={{ fontSize: '13px', color: '#16A34A', fontWeight: 600 }}>
+                            ✅ {introSaveMsg}
+                          </span>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1414,24 +1637,17 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
                   {activeAboutSection === 'details' && (
                     <div className="mhn-about-section-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                      {/* Location */}
+                      {/* Location / City */}
                       <div className="mhn-about-field-group">
-                        <label className="mhn-about-field-label">Location</label>
+                        <label className="mhn-about-field-label">Location (City)</label>
                         <div style={{ position: 'relative' }}>
                           <input
                             type="text"
                             value={locationText}
                             onChange={(e) => setLocationText(e.target.value)}
                             className="mhn-about-input-box"
+                            placeholder="e.g. Toronto, ON"
                           />
-                          <button
-                            type="button"
-                            className="mhn-about-team-edit-btn"
-                            style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)' }}
-                            aria-label="Edit location"
-                          >
-                            <img src="/edit3.png" alt="Edit location" className="edit3" />
-                          </button>
                         </div>
                       </div>
 
@@ -1440,23 +1656,15 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         <label className="mhn-about-field-label">Date of Birth</label>
                         <div style={{ position: 'relative' }}>
                           <input
-                            type="text"
+                            type="date"
                             value={dobText}
                             onChange={(e) => setDobText(e.target.value)}
                             className="mhn-about-input-box"
                           />
-                          <button
-                            type="button"
-                            className="mhn-about-team-edit-btn"
-                            style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)' }}
-                            aria-label="Edit date of birth"
-                          >
-                            <img src="/edit3.png" alt="Edit date of birth" className="edit3" />
-                          </button>
                         </div>
                       </div>
 
-                      {/* Gender */}
+                      {/* Gender Category */}
                       <div className="mhn-about-field-group">
                         <label className="mhn-about-field-label">Gender</label>
                         <div style={{ position: 'relative' }}>
@@ -1465,16 +1673,93 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                             value={genderText}
                             onChange={(e) => setGenderText(e.target.value)}
                             className="mhn-about-input-box"
+                            placeholder="e.g. Male, Female, Other"
                           />
-                          <button
-                            type="button"
-                            className="mhn-about-team-edit-btn"
-                            style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)' }}
-                            aria-label="Edit gender"
-                          >
-                            <img src="/edit3.png" alt="Edit gender" className="edit3" />
-                          </button>
                         </div>
+                      </div>
+
+                      {/* Public Reference ID (Read-Only) */}
+                      <div className="mhn-about-field-group">
+                        <label className="mhn-about-field-label">
+                          Public Reference ID <span style={{ fontSize: '12px', fontWeight: 400, color: '#64748B' }}>(Read-Only)</span>
+                        </label>
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            type="text"
+                            value={user?.profile?.publicRef || 'HKY-B5E3EMET'}
+                            disabled
+                            className="mhn-about-input-box mhn-about-input-disabled"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Account Status (Read-Only) */}
+                      <div className="mhn-about-field-group">
+                        <label className="mhn-about-field-label">
+                          Account Status <span style={{ fontSize: '12px', fontWeight: 400, color: '#64748B' }}>(Read-Only)</span>
+                        </label>
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            type="text"
+                            value={user?.status || 'ACTIVE'}
+                            disabled
+                            className="mhn-about-input-box mhn-about-input-disabled"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Save & Feedback Row */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
+                        <button
+                          type="button"
+                          className="mhn-about-btn-save"
+                          style={{
+                            height: '38px',
+                            padding: '0 24px',
+                            backgroundColor: '#1860C3',
+                            color: '#FFFFFF',
+                            borderRadius: '8px',
+                            fontWeight: 600,
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                          }}
+                          onClick={handleSaveDetails}
+                          disabled={isSavingDetails}
+                        >
+                          {isSavingDetails && <Spinner size="sm" color="#FFFFFF" />}
+                          <span>Save Details</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="mhn-about-btn-cancel"
+                          style={{
+                            height: '38px',
+                            padding: '0 16px',
+                            backgroundColor: '#F1F5F9',
+                            color: '#475569',
+                            borderRadius: '8px',
+                            fontWeight: 600,
+                            border: '1px solid #CBD5E1',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() => {
+                            if (user?.profile) {
+                              setLocationText(user.profile.city || '');
+                              setDobText(user.profile.dateOfBirth ? user.profile.dateOfBirth.split('T')[0] : '');
+                              setGenderText(user.profile.genderCategory || '');
+                            }
+                          }}
+                        >
+                          Cancel
+                        </button>
+                        {detailsSaveMsg && (
+                          <span style={{ fontSize: '13px', color: '#16A34A', fontWeight: 600 }}>
+                            ✅ {detailsSaveMsg}
+                          </span>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1484,6 +1769,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           )}
         </div>
       </main>
+      )}
 
       {/* Create Post Modal */}
       {isCreatePostOpen && (
@@ -1503,6 +1789,15 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           isOpen={isEditProfileOpen}
           onClose={() => setIsEditProfileOpen(false)}
           onSave={handleSaveProfile}
+        />
+      )}
+
+      {/* Global Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
     </div>

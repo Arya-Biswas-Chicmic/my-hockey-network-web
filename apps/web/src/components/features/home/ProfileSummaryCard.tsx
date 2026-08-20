@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../../context/AuthContext';
+import { resolveMediaUrl, resolveCoverUrl } from '../../../utils/mediaUtils';
 
 interface ProfileSummaryCardProps {
   name?: string;
@@ -30,9 +31,14 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
 
   const resolvedName = user?.profile?.displayName || (user as any)?.displayName || name || 'Player';
   const resolvedRole = role || user?.primaryRole || user?.profile?.type || 'PLAYER';
-  const resolvedAvatar = user?.profile?.avatarUrl || avatarUrl || '/userPlaceholder.png';
+  const rawAvatar = user?.profile?.avatarUrl || avatarUrl;
+  const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
+  const rawCover = user?.profile?.coverImageUrl || (user as any)?.coverImageUrl || coverUrl;
+  const resolvedCover = resolveCoverUrl(rawCover, '/cover.png');
   const resolvedFollowers = user?.counts?.followers !== undefined ? user.counts.followers : (followers ?? 0);
   const resolvedFollowing = user?.counts?.following !== undefined ? user.counts.following : (following ?? 0);
+
+  const resolvedLocation = user?.profile?.city || (location !== 'Austria, Europe' ? location : undefined) || 'Toronto, ON';
 
   return (
     <div className="mhn-profile-summary-stack">
@@ -41,7 +47,7 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
         {/* Card Header Banner Background */}
         <div 
           className="mhn-profile-card-banner"
-          style={{ backgroundImage: `url(${coverUrl})` }}
+          style={{ backgroundImage: `url(${resolvedCover})` }}
         />
 
         {/* Profile Avatar Outer Circle */}
@@ -64,13 +70,13 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
           <p className="mhn-profile-role">{resolvedRole}</p>
 
           {/* Location Line */}
-          {location && (
-            <div className="mhn-profile-location-row">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          {resolvedLocation && (
+            <div className="mhn-profile-location-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                 <circle cx="12" cy="10" r="3"/>
               </svg>
-              <span>{location}</span>
+              <span>{resolvedLocation}</span>
             </div>
           )}
 

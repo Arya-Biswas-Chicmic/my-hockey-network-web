@@ -4,12 +4,14 @@ import { RoleSelectionForm } from './RoleSelectionForm';
 import { CreateAccountForm, VerifyEmailForm, LoginForm } from '../auth';
 import { DEFAULT_ROLE_OPTIONS, DEFAULT_SELECTED_ROLE_IDS } from '../../../constants/onboarding';
 import { requestOtp, verifyOtp, submitOnboarding, saveAuthSession, UserRole } from '@my-hockey-network/core';
+import { useAuth } from '../../../context/AuthContext';
 
 interface OnboardingModalProps {
   onComplete?: (data: { selectedRoles: string[]; accountData?: { fullName: string; email: string; dob: string }; onboardingResult?: any }) => void;
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) => {
+  const { setAuthSession } = useAuth();
   const [authMode, setAuthMode] = useState<'signup' | 'login'>('login');
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loginStep, setLoginStep] = useState<1 | 2>(1);
@@ -99,7 +101,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
       });
 
       if (verifyRes) {
-        saveAuthSession(verifyRes);
+        setAuthSession(verifyRes);
       }
 
       const apiRoles: UserRole[] = selectedRoles.map((r) => {
@@ -171,7 +173,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
       });
 
       if (verifyRes) {
-        saveAuthSession(verifyRes);
+        setAuthSession(verifyRes);
       }
 
       if (onComplete) {

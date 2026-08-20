@@ -62,6 +62,8 @@ export interface UpdateProfileDTO {
   jerseyNumber?: number;
   genderCategory?: string;
   avatarUrl?: string;
+  avatarKey?: string;
+  coverImageKey?: string;
 }
 
 /**

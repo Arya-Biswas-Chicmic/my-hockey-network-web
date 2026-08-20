@@ -73,6 +73,8 @@ export const API_ENDPOINTS = {
   },
   MEDIA: {
     UPLOAD: '/media/upload',
+    UPLOAD_URL: '/media/upload-url',
+    COMPLETE: (mediaId: string) => `/media/${mediaId}/complete`,
   },
   RECOMMENDATIONS: {
     PEOPLE: '/recommendations/people',

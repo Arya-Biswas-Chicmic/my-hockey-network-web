@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { Spinner } from '../../common/Spinner';
+import { uploadMediaFile } from '@my-hockey-network/core';
+import { resolveMediaUrl } from '../../../utils/mediaUtils';
 
 export interface EditProfileFormData {
   firstName: string;
@@ -17,6 +19,7 @@ export interface EditProfileFormData {
   preferredLanguage: string;
   defaultVisibility: string;
   avatarUrl: string;
+  avatarKey?: string;
 }
 
 interface EditProfileModalProps {
@@ -67,6 +70,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 }) => {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
 
   const extractInitialValues = (): EditProfileFormData => {
     const prof = user?.profile;
@@ -93,7 +97,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       genderCategory: prof?.genderCategory || 'Male',
       preferredLanguage: prof?.preferredLanguage || 'en',
       defaultVisibility: prof?.defaultVisibility || 'CONNECTIONS',
-      avatarUrl: prof?.avatarUrl || '/userPlaceholder.png',
+      avatarUrl: resolveMediaUrl(prof?.avatarUrl, '/userPlaceholder.png'),
     };
   };
 
@@ -113,6 +117,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       setErrors({});
       setSaveSuccessMsg(null);
       setShowDiscardConfirm(false);
+      setSelectedAvatarFile(null);
     }
   }, [isOpen, user]);
 
@@ -122,7 +127,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const userPrimaryRole = user?.primaryRole || user?.profile?.type || 'PLAYER';
 
   // Compute dirty state
-  const isFormDirty = JSON.stringify(initialForm) !== JSON.stringify(formData);
+  const isFormDirty = JSON.stringify(initialForm) !== JSON.stringify(formData) || !!selectedAvatarFile;
 
   const validateField = (name: keyof EditProfileFormData, value: string): string | null => {
     if (name === 'displayName') {
@@ -161,14 +166,27 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (uploadEvent) => {
-        const result = uploadEvent.target?.result as string;
-        if (result) {
-          handleChange('avatarUrl', result);
-        }
-      };
-      reader.readAsDataURL(file);
+      // Validate MIME type as per media-uploads.md: jpeg, png, webp (max 10MB)
+      const validMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!validMimeTypes.includes(file.type.toLowerCase())) {
+        setErrors((prev) => ({
+          ...prev,
+          form: 'Unsupported image format. Please select a JPG, PNG, or WebP photo (HEIC/SVG/GIF not supported).',
+        }));
+        return;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        setErrors((prev) => ({
+          ...prev,
+          form: 'File size exceeds 10 MB limit. Please select a smaller photo.',
+        }));
+        return;
+      }
+
+      setSelectedAvatarFile(file);
+      const previewUrl = URL.createObjectURL(file);
+      handleChange('avatarUrl', previewUrl);
     }
   };
 
@@ -196,12 +214,40 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     }
 
     setIsSubmitting(true);
+    setErrors({});
+
+    let uploadedAvatarKey: string | undefined = undefined;
+
+    // Step 1 & 2: If user selected a new photo file, request upload slot and upload raw bytes to storage
+    if (selectedAvatarFile) {
+      try {
+        console.log('🚀 [EditProfileModal] Step 1: Requesting upload slot (POST /v1/media/upload-url, purpose: AVATAR)...');
+        console.log('🚀 [EditProfileModal] Step 2: Uploading file bytes straight to storage via PUT...');
+        const uploadRes = await uploadMediaFile(selectedAvatarFile, 'AVATAR');
+        uploadedAvatarKey = uploadRes.storageKey;
+        console.log('✅ [EditProfileModal] Step 1 & 2 completed successfully. storageKey:', uploadedAvatarKey);
+      } catch (uploadErr: any) {
+        console.error('❌ [EditProfileModal] Avatar Storage Upload Failed:', uploadErr);
+        setErrors({ form: uploadErr.message || 'Failed to upload photo to storage. Please try again.' });
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    // Step 3: Save profile changes (PATCH /v1/auth/profile) sending avatarKey
     try {
       if (onSave) {
-        await onSave(formData);
+        await onSave({
+          ...formData,
+          avatarKey: uploadedAvatarKey,
+        });
       }
-      setSaveSuccessMsg('Profile changes saved successfully! (Ready for backend API update)');
-      setInitialForm(formData);
+      setSaveSuccessMsg('Profile updated successfully!');
+      setInitialForm({
+        ...formData,
+        avatarKey: uploadedAvatarKey,
+      });
+      setSelectedAvatarFile(null);
       setTimeout(() => {
         setSaveSuccessMsg(null);
         onClose();
