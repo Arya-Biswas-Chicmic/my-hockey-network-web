@@ -1,5 +1,6 @@
 import React from 'react';
 import { AppRoute } from '../enums/routes';
+import { UserRole } from '../enums/role';
 import { paths } from '../constants/paths';
 import { 
   HomePage, 
@@ -22,6 +23,7 @@ export interface RouteDefinition {
   key: AppRoute;
   path: string;
   isProtected: boolean;
+  allowedRoles?: UserRole[];
   component: React.ComponentType<any>;
 }
 
@@ -72,6 +74,7 @@ export const ROUTE_MAP: Record<AppRoute, RouteDefinition> = {
     key: AppRoute.SUPERVISION,
     path: paths.supervision,
     isProtected: true,
+    allowedRoles: [UserRole.PARENT],
     component: SupervisionPage,
   },
   [AppRoute.EVENT_DETAIL]: {

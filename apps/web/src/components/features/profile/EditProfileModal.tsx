@@ -8,7 +8,6 @@ export interface EditProfileFormData {
   firstName: string;
   lastName: string;
   displayName: string;
-  phone: string;
   bio: string;
   city: string;
   dateOfBirth: string;
@@ -87,7 +86,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       firstName: prof?.firstName || '',
       lastName: prof?.lastName || '',
       displayName: prof?.displayName || (user as any)?.displayName || '',
-      phone: user?.phone || '',
       bio: prof?.bio || '',
       city: prof?.city || '',
       dateOfBirth: dobFormatted,
@@ -138,12 +136,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       const num = Number(value);
       if (isNaN(num) || num < 0 || num > 99 || !Number.isInteger(num)) {
         return 'Jersey Number must be an integer between 0 and 99.';
-      }
-    }
-    if (name === 'phone' && value.trim()) {
-      const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/;
-      if (!phoneRegex.test(value.trim())) {
-        return 'Please enter a valid phone number.';
       }
     }
     return null;
@@ -626,8 +618,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               </div>
             </div>
 
-            {/* Date of Birth, Gender, Phone Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px', marginTop: '16px' }}>
+            {/* Date of Birth & Gender Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginTop: '16px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                   Date of Birth
@@ -672,32 +664,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Phone Number
-                </label>
-                <input
-                  type="text"
-                  value={formData.phone}
-                  onChange={(e) => handleChange('phone', e.target.value)}
-                  placeholder="+1 (555) 000-0000"
-                  style={{
-                    width: '100%',
-                    height: '44px',
-                    borderRadius: '8px',
-                    border: errors.phone ? '1px solid #DC2626' : '1px solid #CBD5E1',
-                    padding: '0 12px',
-                    fontSize: '14px',
-                    outline: 'none',
-                  }}
-                />
-                {errors.phone && (
-                  <span style={{ fontSize: '12px', color: '#DC2626', marginTop: '4px', display: 'block' }}>
-                    {errors.phone}
-                  </span>
-                )}
               </div>
             </div>
           </div>

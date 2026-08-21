@@ -8968,3 +8968,105 @@
   color: #DC2626;
   border: 1px solid #FECACA;
 }
+
+/* Supervision Page Utility Classes */
+.mhn-form-actions-narrow {
+  max-width: 320px;
+  margin: 24px auto 0 auto;
+}
+
+.mhn-input-error-msg {
+  color: #DC2626;
+  font-size: 13px;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.mhn-flow-title-large {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  color: #0C1014;
+}
+
+.mhn-flow-subtitle-wide {
+  max-width: 440px;
+  margin: 0 auto 32px auto;
+  font-size: 15px;
+  color: #5E6670;
+  line-height: 1.6;
+}
+
+.mhn-flow-button-container {
+  max-width: 340px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.mhn-supervision-requests-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mhn-supervision-code-card {
+  background-color: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.mhn-notice-banner {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 12px 0;
+}
+
+.mhn-notice-success {
+  background-color: #F0FDF4;
+  color: #15803D;
+  border: 1px solid #BBF7D0;
+}
+
+.mhn-supervision-code-input-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  max-width: 480px;
+}
+
+.mhn-supervision-code-input {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #CBD5E1;
+  font-size: 15px;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.mhn-supervision-code-btn {
+  padding: 10px 20px;
+  background-color: #0B66C2;
+  color: #FFFFFF;
+  border-radius: 8px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.mhn-supervision-code-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.mhn-supervision-section-subtitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 12px;
+}

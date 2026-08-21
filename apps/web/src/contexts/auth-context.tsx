@@ -48,36 +48,50 @@ export const AuthProvider: React.FC<{ children: ReactNode; onNavigateToAuth?: ()
   };
 
   const isLoggingOutRef = useRef<boolean>(false);
+  const authMePromiseRef = useRef<Promise<AuthMeResponse | null> | null>(null);
 
   const setUserProfile = (profile: AuthMeResponse) => {
     setUser(profile);
     saveUserProfile(profile);
   };
 
+  const loadAuthMe = React.useCallback(async (silent: boolean = false): Promise<AuthMeResponse | null> => {
+    if (isLoggingOutRef.current) return null;
+    
+    // Return ongoing in-flight promise if /v1/auth/me is currently pending
+    if (authMePromiseRef.current) {
+      return authMePromiseRef.current;
+    }
+
+    if (!silent) setIsLoading(true);
+
+    authMePromiseRef.current = (async () => {
+      try {
+        console.log(`🚀 [AuthContext] Fetching live GET /v1/auth/me (silent: ${silent})...`);
+        const res = await getAuthMe();
+        if (res) {
+          setUser(res);
+          saveUserProfile(res);
+          console.log('✅ [AuthContext] Live Auth Me Data Loaded:', res);
+          return res;
+        }
+        return null;
+      } catch (err: any) {
+        console.warn('⚠️ [AuthContext] Fetch Auth Me Notice:', err.message || err);
+        return null;
+      } finally {
+        authMePromiseRef.current = null;
+        if (!silent) setIsLoading(false);
+      }
+    })();
+
+    return authMePromiseRef.current;
+  }, []);
+
   const setAuthSession = (sessionData: OtpVerifyResponse) => {
     setSession(sessionData);
     saveAuthSession(sessionData);
     loadAuthMe();
-  };
-
-  const loadAuthMe = async (silent: boolean = false): Promise<AuthMeResponse | null> => {
-    if (isLoggingOutRef.current) return null;
-    if (!silent) setIsLoading(true);
-    try {
-      console.log(`🚀 [AuthContext] Fetching live GET /v1/auth/me (silent: ${silent})...`);
-      const res = await getAuthMe();
-      if (res) {
-        setUserProfile(res);
-        console.log('✅ [AuthContext] Live Auth Me Data Loaded:', res);
-        return res;
-      }
-      return null;
-    } catch (err: any) {
-      console.warn('⚠️ [AuthContext] Fetch Auth Me Notice:', err.message || err);
-      return null;
-    } finally {
-      if (!silent) setIsLoading(false);
-    }
   };
 
   const handleLogout = async () => {

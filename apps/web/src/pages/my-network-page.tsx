@@ -11,6 +11,7 @@ import { NetworkSkeletonGrid } from '../components/features/network/NetworkSkele
 import { EmptyState } from '../components/features/network/EmptyState';
 import { useDebounce } from '../hooks/use-debounce';
 import { useAuth } from '../hooks/use-auth';
+import { resolveCoverUrl } from '../utils/mediaUtils';
 import {
   getRelationships,
   getPeopleYouMayKnow,
@@ -232,8 +233,8 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
             <aside className="mhn-network-col-left">
               {currentView === 'groups' ? (
                 <ProfileSummaryCard 
-                  coverUrl={(user?.profile as any)?.coverImageUrl || "/cover.png"}
-                  location={user?.profile?.city || "Toronto, ON"}
+                  coverUrl={resolveCoverUrl((user?.profile as any)?.coverImageUrl || (user?.profile as any)?.coverUrl, "/cover.png")}
+                  location={user?.profile?.city || "-"}
                   teamName="HC Bloemendaal"
                   teamLogo="/HC.png"
                   onPostClick={() => {
@@ -242,8 +243,8 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                 />
               ) : (
                 <ManageNetworkCard 
-                  bannerUrl={(user?.profile as any)?.coverImageUrl || "/cover.png"}
-                  location={user?.profile?.city || "Toronto, ON"}
+                  bannerUrl={resolveCoverUrl((user?.profile as any)?.coverImageUrl || (user?.profile as any)?.coverUrl, "/cover.png")}
+                  location={user?.profile?.city || "-"}
                   teamName="HC Bloemendaal"
                   teamLogo="/HC.png"
                   followersCount="-"

@@ -33,12 +33,18 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
   const resolvedRole = role || user?.primaryRole || user?.profile?.type || 'PLAYER';
   const rawAvatar = user?.profile?.avatarUrl || avatarUrl;
   const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
-  const rawCover = (user?.profile as any)?.coverImageUrl || (user as any)?.coverImageUrl || coverUrl;
+  const rawCover =
+    (user?.profile as any)?.coverImageUrl ||
+    (user?.profile as any)?.coverUrl ||
+    (user?.profile as any)?.coverImageKey ||
+    (user as any)?.coverImageUrl ||
+    (user as any)?.coverUrl ||
+    coverUrl;
   const resolvedCover = resolveCoverUrl(rawCover, '/cover.png');
   const resolvedFollowers = user?.counts?.followers !== undefined ? user.counts.followers : (followers ?? 0);
   const resolvedFollowing = user?.counts?.following !== undefined ? user.counts.following : (following ?? 0);
 
-  const resolvedLocation = user?.profile?.city || (location !== 'Austria, Europe' ? location : undefined) || 'Toronto, ON';
+  const resolvedLocation = user?.profile?.city || (location !== 'Austria, Europe' ? location : undefined) || '-';
 
   return (
     <div className="mhn-profile-summary-stack">

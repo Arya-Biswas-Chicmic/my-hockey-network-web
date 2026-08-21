@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from '../components/common/Header';
+import { NoDataFound } from '../components/common/no-data-found';
 import { NetworkSkeletonCard } from '../components/features/network/NetworkSkeletonLoader';
 import {
   getNotificationSettings,
@@ -317,6 +318,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                       <div style={{ width: '48px', height: '26px', borderRadius: '13px', background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%)', backgroundSize: '200% 100%', animation: 'mhnShimmer 1.5s infinite linear' }} />
                     </div>
                   ))
+                ) : filteredNotificationItems.length === 0 ? (
+                  <NoDataFound
+                    title="No Settings Found"
+                    description={`No notification settings match "${searchQuery}".`}
+                  />
                 ) : (
                   filteredNotificationItems.map((item) => (
                     <div key={item.id} className="mhn-notification-setting-row">
@@ -394,9 +400,20 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                     ))}
                   </div>
                 ) : filteredBlockedUsers.length === 0 ? (
-                  <p className="mhn-settings-empty-notice">
-                    {searchQuery ? `No blocked users match "${searchQuery}".` : "No blocked users found."}
-                  </p>
+                  <NoDataFound
+                    title="No Blocked Users"
+                    description={
+                      searchQuery
+                        ? `No blocked users match "${searchQuery}".`
+                        : "You haven't blocked any users yet."
+                    }
+                    icon={(
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                      </svg>
+                    )}
+                  />
                 ) : (
                   <div className="mhn-blocked-users-grid">
                     {filteredBlockedUsers.map((user) => (

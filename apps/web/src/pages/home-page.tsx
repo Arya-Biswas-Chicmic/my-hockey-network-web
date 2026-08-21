@@ -8,8 +8,10 @@ import { InviteGrowWidget } from '../components/features/home/InviteGrowWidget';
 import { CreatePostModal } from '../components/features/home/CreatePostModal';
 import { EmptyState } from '../components/features/network/EmptyState';
 import { HomeSkeletonLoader, FeedPostSkeleton } from '../components/features/home/HomeSkeletonLoader';
-import { saveUserProfile, AuthMeResponse, createPost, getFeed } from '@my-hockey-network/core';
+import { saveUserProfile, AuthMeResponse, createPost, getFeed, uploadMediaFile, completeMediaUpload } from '@my-hockey-network/core';
 import { useAuth } from '../hooks/use-auth';
+
+import { resolveCoverUrl } from '../utils/mediaUtils';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -175,7 +177,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     }
   };
 
-  const handleCreatePost = async (content: string, postImage?: string, privacySettings?: any) => {
+  const handleCreatePost = async (content: string, postImage?: string, privacySettings?: any, imageFile?: File) => {
     let audienceEnum: 'PUBLIC' | 'CONNECTIONS' | 'GROUP' | 'CUSTOM' = 'PUBLIC';
     if (privacySettings?.audience === 'Groups') {
       audienceEnum = 'GROUP';
@@ -188,16 +190,35 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       return input.split(/[, \n]+/).map(e => e.trim()).filter(e => e.length > 0 && e.includes('@'));
     };
 
-    const dto = {
-      body: content,
-      audience: audienceEnum,
-      placeName: privacySettings?.locationTag || undefined,
-      shareWithEmails: parseEmails(privacySettings?.shareWith),
-      hideFromEmails: parseEmails(privacySettings?.dontShareWith),
-    };
-
     setIsCreatingPost(true);
     try {
+      let mediaIds: string[] | undefined = undefined;
+
+      // Execute media upload pipeline if an image file was selected
+      if (imageFile) {
+        console.log('🚀 [MediaUpload] Uploading post image file to storage slot...');
+        const uploadRes = await uploadMediaFile(imageFile, 'POST_IMAGE');
+        const mediaId = uploadRes.mediaId || uploadRes.storageKey;
+        if (mediaId) {
+          mediaIds = [mediaId];
+          try {
+            await completeMediaUpload(mediaId);
+            console.log('✅ [MediaUpload] Media upload completed for UUID:', mediaId);
+          } catch (compErr) {
+            console.warn('Media complete notice:', compErr);
+          }
+        }
+      }
+
+      const dto = {
+        body: content,
+        audience: audienceEnum,
+        mediaIds,
+        placeName: privacySettings?.locationTag || undefined,
+        shareWithEmails: parseEmails(privacySettings?.shareWith),
+        hideFromEmails: parseEmails(privacySettings?.dontShareWith),
+      };
+
       const res = await createPost(dto);
       const isPendingApproval = res?.message === 'POST_PENDING_APPROVAL' || res?.data?.pendingGuardianApproval || res?.pendingGuardianApproval;
 
@@ -259,8 +280,8 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       <main className="mhn-home-main-layout">
         <aside className="mhn-layout-col-left">
           <ProfileSummaryCard
-            coverUrl="/cover.png"
-            location={user?.profile?.city || "Toronto, ON"}
+            coverUrl={resolveCoverUrl((user?.profile as any)?.coverImageUrl || (user?.profile as any)?.coverUrl, "/cover.png")}
+            location={user?.profile?.city || "-"}
             teamName="HC Bloemendaal"
             teamLogo="/HC.png"
             followers="-"

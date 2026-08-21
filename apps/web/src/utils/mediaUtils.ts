@@ -3,7 +3,7 @@
  */
 
 export function resolveMediaUrl(url?: string | null, fallback: string = '/userPlaceholder.png'): string {
-  if (!url || !url.trim()) return fallback;
+  if (!url || typeof url !== 'string' || !url.trim() || url === 'null' || url === 'undefined') return fallback;
   const trimmed = url.trim();
 
   // If URL uses backend localhost address (e.g. http://localhost:3000 or http://localhost:5175),
@@ -16,7 +16,16 @@ export function resolveMediaUrl(url?: string | null, fallback: string = '/userPl
 }
 
 export function resolveCoverUrl(url?: string | null, fallback: string = '/cover.png'): string {
-  if (!url || !url.trim()) return fallback;
+  if (
+    !url ||
+    typeof url !== 'string' ||
+    !url.trim() ||
+    url === 'null' ||
+    url === 'undefined' ||
+    url.includes('placeholder')
+  ) {
+    return fallback;
+  }
   const trimmed = url.trim();
 
   if (trimmed.includes('localhost:3000') || trimmed.includes('localhost:5175')) {

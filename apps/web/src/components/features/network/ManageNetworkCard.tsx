@@ -33,12 +33,18 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
   const resolvedRole = user?.primaryRole || user?.profile?.type || role || 'PLAYER';
   const rawAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl || avatarUrl;
   const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
-  const rawBanner = (user?.profile as any)?.coverImageUrl || (user as any)?.coverImageUrl || bannerUrl;
+  const rawBanner =
+    (user?.profile as any)?.coverImageUrl ||
+    (user?.profile as any)?.coverUrl ||
+    (user?.profile as any)?.coverImageKey ||
+    (user as any)?.coverImageUrl ||
+    (user as any)?.coverUrl ||
+    bannerUrl;
   const resolvedBanner = resolveCoverUrl(rawBanner, '/cover.png');
   const resolvedFollowers = user?.counts?.followers !== undefined ? user.counts.followers : (followersCount ?? 0);
   const resolvedFollowing = user?.counts?.following !== undefined ? user.counts.following : (followingCount ?? 0);
 
-  const resolvedLocation = user?.profile?.city || (location !== 'Austria, Europe' ? location : undefined) || 'Toronto, ON';
+  const resolvedLocation = user?.profile?.city || (location !== 'Austria, Europe' ? location : undefined) || '-';
 
   return (
     <div className="mhn-manage-network-stack">

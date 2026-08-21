@@ -26,18 +26,20 @@ export const Header: React.FC<HeaderProps> = ({
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const resolvedName = user?.profile?.displayName || (user as any)?.displayName || userName || 'Player';
-  const rawAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl || userAvatar;
+  const rawAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl;
   const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
   const [activeUser, setActiveUser] = useState({ name: resolvedName, avatar: resolvedAvatar });
 
   React.useEffect(() => {
-    if (user) {
-      const name = user.profile?.displayName || (user as any)?.displayName || userName || 'Player';
-      const av = user.profile?.avatarUrl || (user as any)?.avatarUrl || userAvatar;
-      const avatar = resolveMediaUrl(av, '/userPlaceholder.png');
-      setActiveUser({ name, avatar });
-    }
-  }, [user, userName, userAvatar]);
+    setCurrentTab(activeTab);
+  }, [activeTab]);
+
+  React.useEffect(() => {
+    const name = user?.profile?.displayName || (user as any)?.displayName || userName || 'Player';
+    const av = user?.profile?.avatarUrl || (user as any)?.avatarUrl;
+    const avatar = resolveMediaUrl(av, '/userPlaceholder.png');
+    setActiveUser({ name, avatar });
+  }, [user, userName]);
 
   const handleTabClick = (tabId: string) => {
     setCurrentTab(tabId);

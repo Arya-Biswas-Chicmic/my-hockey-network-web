@@ -206,7 +206,17 @@ export async function apiFetch<T = any>(
     }
   }
 
-  // 2. Handle HTTP / API errors
+  // 2. Handle 502/503/5xx Server Downtime Errors
+  if (response.status >= 500 && response.status <= 504 && typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('mhn:server-down', {
+      detail: {
+        statusCode: response.status,
+        message: resEnvelope?.message || 'Server is currently undergoing maintenance or unavailable.',
+      },
+    }));
+  }
+
+  // 3. Handle HTTP / API errors
   if (!response.ok || !resEnvelope.success) {
     if (response.status === 401 && typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('mhn:unauthorized', { detail: { path, message: resEnvelope.message || 'Unauthorized' } }));

@@ -5,7 +5,12 @@ import { resolveMediaUrl } from '../../../utils/mediaUtils';
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (content: string, postImage?: string, privacySettings?: { audience: string; shareWith?: string; dontShareWith?: string; locationTag?: string }) => void;
+  onSubmit: (
+    content: string,
+    postImage?: string,
+    privacySettings?: { audience: string; shareWith?: string; dontShareWith?: string; locationTag?: string },
+    imageFile?: File
+  ) => void;
   isLoading?: boolean;
   userName?: string;
   userAvatar?: string;
@@ -32,6 +37,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [dontShareWithEmails, setDontShareWithEmails] = useState('');
 
   const [postImage, setPostImage] = useState<string | null>(null);
+  const [postImageFile, setPostImageFile] = useState<File | null>(null);
   const [locationTag, setLocationTag] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,6 +46,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setPostImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPostImage(reader.result as string);
@@ -50,14 +57,19 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if ((!content.trim() && !postImage) || isLoading) return;
+    if ((!content.trim() && !postImage && !postImageFile) || isLoading) return;
 
-    onSubmit(content.trim(), postImage || undefined, {
-      audience,
-      shareWith: shareWithEmails || undefined,
-      dontShareWith: dontShareWithEmails || undefined,
-      locationTag: locationTag || undefined,
-    });
+    onSubmit(
+      content.trim(),
+      postImage || undefined,
+      {
+        audience,
+        shareWith: shareWithEmails || undefined,
+        dontShareWith: dontShareWithEmails || undefined,
+        locationTag: locationTag || undefined,
+      },
+      postImageFile || undefined
+    );
   };
 
   const handleAudienceOptionClick = (opt: 'Everyone' | 'Groups' | 'Custom') => {

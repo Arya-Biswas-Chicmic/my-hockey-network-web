@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from '../components/common/Header';
+import { NoDataFound } from '../components/common/no-data-found';
+import { withRoleGuard } from '../hocs/with-role-guard';
+import { UserRole } from '../enums/role';
+import { GuardianRequestSkeleton } from '../components/supervision/guardian-request-skeleton';
 import {
   getSupervisionData,
   createManagedChild,
@@ -20,7 +24,7 @@ interface SupervisionPageProps {
   onLogout?: () => void;
 }
 
-export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, onLogout }) => {
+const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLogout }) => {
   const [activeNavTab, setActiveNavTab] = useState('supervision');
   const [selectedWardId, setSelectedWardId] = useState('w1'); // 'w1' = Steve (14), 'w2' = David (10)
   const [activeMainTab, setActiveMainTab] = useState<'permissions' | 'requests' | 'logs'>('permissions');
@@ -42,6 +46,7 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
 
   // Live Pending Guardian Requests & Approval Code State
   const [livePendingRequests, setLivePendingRequests] = useState<any[]>([]);
+  const [isRequestsLoading, setIsRequestsLoading] = useState<boolean>(false);
   const [approvalCodeInput, setApprovalCodeInput] = useState('');
   const [requestActionLoading, setRequestActionLoading] = useState(false);
   const [requestNotice, setRequestNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -50,6 +55,7 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
   useEffect(() => {
     async function loadPendingRequests() {
       try {
+        setIsRequestsLoading(true);
         const res = await getPendingGuardianRequests();
         const items = res?.items || (res as any)?.data?.items || [];
         if (Array.isArray(items)) {
@@ -57,6 +63,8 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
         }
       } catch (err: any) {
         console.warn('Pending requests fetch notice:', err);
+      } finally {
+        setIsRequestsLoading(false);
       }
     }
     if (activeMainTab === 'requests') {
@@ -137,9 +145,10 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
       try {
         setApiLoading(true);
         const data = await getSupervisionData();
-        if (data && data.children && data.children.length > 0) {
-          const mapped = data.children.map((c: any) => ({
-            id: c.id,
+        const children = data?.children || (data as any)?.data?.children || [];
+        if (Array.isArray(children) && children.length > 0) {
+          const mapped = children.map((c: any) => ({
+            id: c.userId || c.profileId || c.id,
             name: c.displayName || c.firstName || 'Minor Player',
             age: c.age || 12,
             avatar: c.avatarUrl || '/connor.png',
@@ -337,6 +346,11 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
   // Load live controls and logs for selected minor child
   useEffect(() => {
     if (!selectedWardId) return;
+
+    // Validate that selectedWardId is a valid 36-character UUID (skips mock IDs like 'w1')
+    const isRealUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(selectedWardId);
+    if (!isRealUuid) return;
+
     async function loadWardControlsAndLogs() {
       try {
         const controlsRes = await getSupervisionControls(selectedWardId);
@@ -728,13 +742,13 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
             {viewMode === 'create-success' && (
               <div className="mhn-flow-container mhn-flow-success-box">
                 <div className="mhn-success-circle-icon">
-                <img src='/CheckCircle.png' alt='check-circle' className='checkCircle'/>
+                  <img src='/CheckCircle.png' alt='check-circle' className='checkCircle' />
                 </div>
 
                 <h2 className="mhn-flow-title">{addedPlayerName} has been added</h2>
                 <p className="mhn-flow-subtitle">You're now managing {addedPlayerName}'s hockey profile.</p>
 
-                <div className="mhn-form-actions-stack" style={{ maxWidth: '320px', margin: '24px auto 0 auto' }}>
+                <div className="mhn-form-actions-stack mhn-form-actions-narrow">
                   <button
                     className="mhn-btn-solid-blue"
                     onClick={() => setViewMode('main')}
@@ -769,10 +783,9 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
                       }}
                       placeholder="email@example.com"
                       className={`mhn-form-input ${linkEmailError ? 'mhn-input-error' : ''}`}
-                      style={linkEmailError ? { borderColor: '#EF4444', backgroundColor: '#FEF2F2' } : {}}
                     />
                     {linkEmailError && (
-                      <div style={{ color: '#DC2626', fontSize: '13px', marginTop: '6px', fontWeight: 500 }}>
+                      <div className="mhn-input-error-msg">
                         {linkEmailError}
                       </div>
                     )}
@@ -807,15 +820,15 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
             {viewMode === 'link-sent' && (
               <div className="mhn-flow-container mhn-flow-success-box">
                 <div className="mhn-request-sent-icon-wrapper">
-                 <img alt='request-sent' src='/emailSent.png'/>
+                  <img alt='request-sent' src='/emailSent.png' />
                 </div>
 
-                <h2 className="mhn-flow-title" style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 12px 0', color: '#0C1014' }}>Request Sent!</h2>
-                <p className="mhn-flow-subtitle" style={{ maxWidth: '440px', margin: '0 auto 32px auto', fontSize: '15px', color: '#5E6670', lineHeight: '1.6' }}>
+                <h2 className="mhn-flow-title mhn-flow-title-large">Request Sent!</h2>
+                <p className="mhn-flow-subtitle mhn-flow-subtitle-wide">
                   We've emailed your child. Once they approve, you'll have full access to their MyHockey Network. You can explore some public content in the meantime.
                 </p>
 
-                <div style={{ maxWidth: '340px', width: '100%', margin: '0 auto' }}>
+                <div className="mhn-flow-button-container">
                   <button
                     className="mhn-btn-solid-blue"
                     onClick={() => {
@@ -1235,176 +1248,133 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
 
                   {/* Content for Requests Tab */}
                   {activeMainTab === 'requests' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div className="mhn-supervision-requests-stack">
                       {/* 1. Enter 6-digit Approval Code Card */}
-                      <div
-                        style={{
-                          backgroundColor: '#FFFFFF',
-                          border: '1px solid #E2E8F0',
-                          borderRadius: '12px',
-                          padding: '20px',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                          <div
-                            style={{
-                              width: '36px',
-                              height: '36px',
-                              borderRadius: '8px',
-                              backgroundColor: '#EFF6FF',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B66C2" strokeWidth="2">
-                              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0F172A' }}>
-                              Approve Child via 6-Digit Code
-                            </h3>
-                            <p style={{ margin: 0, fontSize: '13px', color: '#64748B' }}>
-                              Enter the 6-digit verification code received by email or from your child to approve their Coach or Player account.
-                            </p>
-                          </div>
-                        </div>
+                      <div className="mhn-supervision-code-card">
+                        <h3 className="mhn-supervision-section-subtitle">Enter Guardian Approval Code</h3>
+                        <p style={{ fontSize: '13px', color: '#64748B', margin: '4px 0 12px 0' }}>
+                          Enter the 6-digit approval code sent via email or provided by the minor player to approve supervision.
+                        </p>
 
                         {requestNotice && (
-                          <div
-                            style={{
-                              padding: '10px 14px',
-                              borderRadius: '8px',
-                              fontSize: '13px',
-                              fontWeight: 600,
-                              margin: '12px 0',
-                              backgroundColor: requestNotice.type === 'success' ? '#F0FDF4' : '#FEF2F2',
-                              color: requestNotice.type === 'success' ? '#15803D' : '#DC2626',
-                              border: requestNotice.type === 'success' ? '1px solid #BBF7D0' : '1px solid #FCA5A5',
-                            }}
-                          >
+                          <div className={`mhn-notice-banner ${requestNotice.type === 'success' ? 'mhn-notice-success' : 'mhn-notice-error'}`}>
                             {requestNotice.message}
                           </div>
                         )}
 
-                        <div style={{ display: 'flex', gap: '12px', marginTop: '12px', maxWidth: '480px' }}>
+                        <div className="mhn-supervision-code-input-group">
                           <input
                             type="text"
-                            placeholder="Enter 6-digit code (e.g. 977518)"
-                            value={approvalCodeInput}
-                            onChange={(e) => setApprovalCodeInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            className="mhn-supervision-code-input"
+                            placeholder="e.g. 123456"
                             maxLength={6}
-                            style={{
-                              flex: 1,
-                              padding: '10px 14px',
-                              borderRadius: '8px',
-                              border: '1px solid #CBD5E1',
-                              fontSize: '15px',
-                              letterSpacing: '1px',
-                              fontWeight: 600,
-                            }}
+                            value={approvalCodeInput}
+                            onChange={(e) => setApprovalCodeInput(e.target.value.replace(/\D/g, ''))}
                           />
                           <button
                             type="button"
-                            onClick={() => handleApproveCodeSubmit()}
+                            className="mhn-supervision-code-btn"
                             disabled={requestActionLoading || approvalCodeInput.length !== 6}
-                            style={{
-                              padding: '10px 20px',
-                              backgroundColor: '#0B66C2',
-                              color: '#FFFFFF',
-                              borderRadius: '8px',
-                              border: 'none',
-                              fontWeight: 700,
-                              cursor: approvalCodeInput.length === 6 ? 'pointer' : 'not-allowed',
-                              opacity: approvalCodeInput.length === 6 && !requestActionLoading ? 1 : 0.6,
-                            }}
+                            onClick={() => handleApproveCodeSubmit()}
                           >
-                            {requestActionLoading ? 'Approving...' : 'Approve Child'}
+                            {requestActionLoading ? 'Submitting...' : 'Approve Player'}
                           </button>
                         </div>
                       </div>
 
                       {/* 2. Pending Requests List */}
                       <div>
-                        <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#334155', marginBottom: '12px' }}>
-                          Pending Minor Approval Requests ({livePendingRequests.length > 0 ? livePendingRequests.length : sampleSupervisionRequests.length})
+                        <h3 className="mhn-supervision-section-subtitle">
+                          Pending Minor Approval Requests ({livePendingRequests.length})
                         </h3>
 
-                        <div className="mhn-supervision-requests-grid">
-                          {(livePendingRequests.length > 0 ? livePendingRequests : sampleSupervisionRequests).map((req: any, idx: number) => {
-                            const reqId = req.id || `req_${idx}`;
-                            const displayName = req.child?.displayName || req.name || 'Minor Athlete';
-                            const roleTag = req.child?.primaryRole || req.roleTag || 'Player / Coach';
-                            const code = req.code || req.inviteCode;
+                        {isRequestsLoading ? (
+                          <GuardianRequestSkeleton />
+                        ) : livePendingRequests.length === 0 ? (
+                          <NoDataFound
+                            title="No Pending Approval Requests"
+                            description="There are currently no pending minor approval requests."
+                          />
+                        ) : (
+                          <div className="mhn-supervision-requests-grid">
+                            {livePendingRequests.map((req: any, idx: number) => {
+                              const reqId = req.id || `req_${idx}`;
+                              const child = req.child || {};
+                              const displayName = child.displayName || req.displayName || req.name || 'Minor Athlete';
+                              const avatarUrl = child.avatarUrl || req.avatarUrl || '/connor.png';
+                              const roleTag = child.roleTag || child.primaryRole || child.profileType || req.roleTag || 'PLAYER';
+                              const teamName = child.teamName || req.teamName || 'Youth Hockey Team';
+                              const teamLogo = child.teamLogo || req.teamLogo || '/kcBlue.png';
+                              const location = child.location || req.location || 'Parent Supervision Approval';
+                              const code = req.code || req.inviteCode;
 
-                            return (
-                              <div key={reqId} className="mhn-supervision-req-card">
-                                <div className="mhn-supervision-req-avatar-wrapper">
-                                  <img
-                                    src={req.avatarUrl || '/connor.png'}
-                                    alt={displayName}
-                                    className="mhn-supervision-req-avatar"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-                                    }}
-                                  />
-                                </div>
-                                <h4 className="mhn-supervision-req-name">{displayName}</h4>
-                                <p className="mhn-supervision-req-role">{roleTag}</p>
+                              return (
+                                <div key={reqId} className="mhn-supervision-req-card">
+                                  <div className="mhn-supervision-req-avatar-wrapper">
+                                    <img
+                                      src={avatarUrl}
+                                      alt={displayName}
+                                      className="mhn-supervision-req-avatar"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).src = '/userPlaceholder.png';
+                                      }}
+                                    />
+                                  </div>
+                                  <h4 className="mhn-supervision-req-name">{displayName}</h4>
+                                  <p className="mhn-supervision-req-role">{roleTag}</p>
 
-                                <div className="mhn-supervision-req-team-pill">
-                                  <img
-                                    src={req.teamLogo || '/kcBlue.png'}
-                                    alt="Team"
-                                    className="mhn-supervision-req-team-logo"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).src = '/HC.png';
-                                    }}
-                                  />
-                                  <span>{req.teamName || 'Youth Hockey Team'}</span>
-                                </div>
+                                  <div className="mhn-supervision-req-team-pill">
+                                    <img
+                                      src={teamLogo}
+                                      alt="Team"
+                                      className="mhn-supervision-req-team-logo"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).src = '/HC.png';
+                                      }}
+                                    />
+                                    <span>{teamName}</span>
+                                  </div>
 
-                                <div className="mhn-supervision-req-location">
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2">
-                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                                    <circle cx="12" cy="10" r="3" />
-                                  </svg>
-                                  <span>{req.location || 'Parent Supervision Approval'}</span>
-                                </div>
+                                  <div className="mhn-supervision-req-location">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2">
+                                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                      <circle cx="12" cy="10" r="3" />
+                                    </svg>
+                                    <span>{location}</span>
+                                  </div>
 
-                                <div className="mhn-supervision-req-actions">
-                                  <button
-                                    type="button"
-                                    className="mhn-supervision-btn-ignore"
-                                    disabled={requestActionLoading}
-                                    onClick={() => handleDeclineCodeSubmit(code || reqId)}
-                                  >
-                                    Decline
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="mhn-supervision-btn-accept"
-                                    disabled={requestActionLoading}
-                                    onClick={() => {
-                                      if (code) {
-                                        handleApproveCodeSubmit(code);
-                                      } else {
-                                        const userInputCode = prompt(`Enter 6-digit approval code for ${displayName}:`);
-                                        if (userInputCode) {
-                                          handleApproveCodeSubmit(userInputCode);
+                                  <div className="mhn-supervision-req-actions">
+                                    <button
+                                      type="button"
+                                      className="mhn-supervision-btn-ignore"
+                                      disabled={requestActionLoading}
+                                      onClick={() => handleDeclineCodeSubmit(code || reqId)}
+                                    >
+                                      Decline
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="mhn-supervision-btn-accept"
+                                      disabled={requestActionLoading}
+                                      onClick={() => {
+                                        if (code) {
+                                          handleApproveCodeSubmit(code);
+                                        } else {
+                                          const userInputCode = prompt(`Enter 6-digit approval code for ${displayName}:`);
+                                          if (userInputCode) {
+                                            handleApproveCodeSubmit(userInputCode);
+                                          }
                                         }
-                                      }
-                                    }}
-                                  >
-                                    Accept & Supervise
-                                  </button>
+                                      }}
+                                    >
+                                      Approve
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1510,3 +1480,5 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
     </div>
   );
 };
+
+export const SupervisionPage = withRoleGuard(SupervisionPageBase, [UserRole.PARENT]);

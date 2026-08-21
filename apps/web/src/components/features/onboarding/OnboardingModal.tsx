@@ -326,7 +326,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
           {step === 4 && (
             <GuardianApprovalModal
               onSendRequest={handleSendGuardianRequest}
-              onSkip={handleSkipGuardian}
               onSignOut={handleSwitchToLogin}
               loading={loading}
             />

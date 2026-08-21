@@ -22,21 +22,36 @@ export interface NetworkGroupItem {
   isMember?: boolean;
 }
 
+export interface GuardianChildProfile {
+  userId: string;
+  profileId?: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  age?: number;
+  isMinor?: boolean;
+  accessLevel?: string;
+  profileType?: string;
+  primaryRole?: string;
+  roles?: string[];
+  position?: string | null;
+  jerseyNumber?: number | string | null;
+  roleTag?: string | null;
+  teamName?: string | null;
+  teamLogo?: string | null;
+  ageGroup?: string | null;
+  location?: string | null;
+}
+
 export interface GuardianRequestItem {
   id: string;
-  code?: string;
-  status: RelationshipStatus;
-  createdAt: string;
-  expiresAt: string;
   expired: boolean;
-  child?: {
-    userId: string;
-    displayName: string;
-    email?: string;
-    roleTag?: string;
-    teamName?: string;
-    location?: string;
-  };
+  expiresAt: string;
+  createdAt: string;
+  attemptsRemaining?: number;
+  childSetupComplete?: boolean;
+  code?: string;
+  status?: RelationshipStatus;
+  child?: GuardianChildProfile;
 }
 
 export interface PendingGuardianRequestsResponse {

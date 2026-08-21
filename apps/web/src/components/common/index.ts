@@ -6,3 +6,4 @@ export * from './Spinner';
 export * from './Toast';
 export * from './no-data-found';
 export * from './server-down';
+export * from './server-down-screen';
