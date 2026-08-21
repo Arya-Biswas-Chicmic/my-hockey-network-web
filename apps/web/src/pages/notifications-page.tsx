@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Header } from '../components/common/Header';
 import { PendingBanner } from '../components/common/PendingBanner';
+import { NoDataFound } from '../components/common/no-data-found';
 import { NotificationCard, NotificationItemProps } from '../components/features/notifications/NotificationCard';
 
 interface PageProps {
@@ -91,9 +92,16 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
 
           {/* Notifications List */}
           <div className="mhn-notifications-list">
-            {filteredNotifications.map((item) => (
-              <NotificationCard key={item.id} {...item} />
-            ))}
+            {filteredNotifications.length === 0 ? (
+              <NoDataFound
+                title="No Notifications"
+                description="You're all caught up! There are no notifications to display right now."
+              />
+            ) : (
+              filteredNotifications.map((item) => (
+                <NotificationCard key={item.id} {...item} />
+              ))
+            )}
           </div>
         </div>
       </main>

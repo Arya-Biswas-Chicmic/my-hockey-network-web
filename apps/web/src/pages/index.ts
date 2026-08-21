@@ -1,13 +1,14 @@
-export { GuardianApprovalPage } from './GuardianApprovalPage';
-export { RequestSentPage } from './RequestSentPage';
-export { OnboardingPage } from './OnboardingPage';
-export { HomePage } from './HomePage';
-export { MyNetworkPage } from './MyNetworkPage';
-export { EventsPage } from './EventsPage';
-export { MessagingPage } from './MessagingPage';
-export { NotificationsPage } from './NotificationsPage';
-export { ProfilePage } from './ProfilePage';
-export { EventDetailPage } from './EventDetailPage';
-export { SettingsPage } from './SettingsPage';
-export { SupervisionPage } from './SupervisionPage';
+// Central export for all Web Pages (using clean kebab-case source files)
 
+export * from './home-page';
+export * from './my-network-page';
+export * from './events-page';
+export * from './event-detail-page';
+export * from './messaging-page';
+export * from './notifications-page';
+export * from './profile-page';
+export * from './settings-page';
+export * from './supervision-page';
+export * from './onboarding-page';
+export * from './guardian-approval-page';
+export * from './request-sent-page';

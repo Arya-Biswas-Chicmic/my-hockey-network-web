@@ -1,1 +1,1 @@
-export * from '@my-hockey-network/core';
+export * from '../services';

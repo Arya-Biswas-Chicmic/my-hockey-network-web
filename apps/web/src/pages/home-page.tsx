@@ -1,18 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Header } from '../components/common/Header';
-import { PendingBanner } from '../components/common/PendingBanner';
-import { Toast } from '../components/common/Toast';
+import { Header, PendingBanner, Toast, NoDataFound, ServerDown } from '../components/common';
 import { ProfileSummaryCard } from '../components/features/home/ProfileSummaryCard';
 import { FeedPostCard, FeedPostProps } from '../components/features/home/FeedPostCard';
 import { MatchesWidget } from '../components/features/home/MatchesWidget';
 import { UpcomingEventsWidget } from '../components/features/home/UpcomingEventsWidget';
 import { InviteGrowWidget } from '../components/features/home/InviteGrowWidget';
 import { CreatePostModal } from '../components/features/home/CreatePostModal';
-import { Spinner } from '../components/common/Spinner';
 import { EmptyState } from '../components/features/network/EmptyState';
 import { HomeSkeletonLoader, FeedPostSkeleton } from '../components/features/home/HomeSkeletonLoader';
-import { getAuthMe, saveUserProfile, AuthMeResponse, createPost, getFeed } from '@my-hockey-network/core';
-import { useAuth } from '../context/AuthContext';
+import { saveUserProfile, AuthMeResponse, createPost, getFeed } from '@my-hockey-network/core';
+import { useAuth } from '../hooks/use-auth';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -20,12 +17,12 @@ interface PageProps {
 }
 
 export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
-  const { user, setUserProfile, loadAuthMe } = useAuth();
+  const { user, loadAuthMe } = useAuth();
   const [activeNavTab, setActiveNavTab] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [isCreatingPost, setIsCreatingPost] = useState<boolean>(false);
-  const [userSession, setUserSession] = useState<AuthMeResponse | null>(null);
+  const [userSession] = useState<AuthMeResponse | null>(null);
   const [isPageLoading, setIsPageLoading] = useState<boolean>(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [feedPosts, setFeedPosts] = useState<FeedPostProps[]>([]);
@@ -48,7 +45,6 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     try {
       const q = queryTerm !== undefined ? queryTerm : searchQuery;
       const s = sortTerm !== undefined ? sortTerm : sortBy;
-      console.log(`🚀 [HomePage] Fetching GET /v1/feed (query: "${q}", sortBy: "${s}", silent: ${silent})...`);
 
       const feedResValue = await getFeed({
         query: q && q.trim().length >= 2 ? q.trim() : undefined,
@@ -102,14 +98,11 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         });
 
         setFeedPosts(mappedPosts);
-        console.log('✅ [HomePage] Feed API Response Mapped:', mappedPosts);
       } else {
         setFeedPosts([]);
-        console.log('ℹ️ [HomePage] Feed API returned empty items array');
       }
       setFeedError(null);
     } catch (err: any) {
-      console.error('❌ [HomePage] Feed API Error (502/503/Server Error):', err);
       if (!silent) {
         setFeedPosts([]);
         setFeedError({
@@ -138,7 +131,6 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
   const hasLoadedFeedRef = useRef<boolean>(false);
 
-  // Hit GET /v1/feed on Home page mount
   useEffect(() => {
     if (hasLoadedFeedRef.current) return;
     hasLoadedFeedRef.current = true;
@@ -146,7 +138,6 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     async function loadInitialData() {
       setIsPageLoading(true);
       try {
-        console.log('🚀 [HomePage Mounted] Hitting GET /v1/feed API...');
         let currentUser = user;
         if (!currentUser) {
           currentUser = await loadAuthMe();
@@ -154,7 +145,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         const profileId = currentUser?.profile?.id || currentUser?.id;
         await fetchFeedPosts(profileId, searchQuery, sortBy);
       } catch (err: any) {
-        console.warn('⚠️ [HomePage] Data fetch warning:', err.message || err);
+        console.warn('HomePage data fetch notice:', err.message || err);
       } finally {
         setIsPageLoading(false);
       }
@@ -163,10 +154,8 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     loadInitialData();
   }, [user]);
 
-  // Trigger server feed search & sort when query or sort changes
   useEffect(() => {
     if (!hasLoadedFeedRef.current) return;
-    // Rule: Min 2 characters required for keyword search query
     if (searchQuery.trim().length === 1) return;
 
     const timer = setTimeout(() => {
@@ -209,10 +198,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
     setIsCreatingPost(true);
     try {
-      console.log('🚀 [HomePage] Creating post API call (POST /v1/posts)...', dto);
       const res = await createPost(dto);
-      console.log('✅ [HomePage] Create Post API Success:', res);
-
       const isPendingApproval = res?.message === 'POST_PENDING_APPROVAL' || res?.data?.pendingGuardianApproval || res?.pendingGuardianApproval;
 
       if (isPendingApproval) {
@@ -235,7 +221,6 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       }
       setIsCreatePostOpen(false);
     } catch (err: any) {
-      console.error('❌ [HomePage] Create Post Error:', err);
       setToast({ message: err.message || 'Failed to create post. Please try again.', type: 'error' });
     } finally {
       setIsCreatingPost(false);
@@ -259,23 +244,19 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
   return (
     <div className="mhn-home-page-root">
-      {/* Top Navigation Bar Header */}
       <Header
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}
       />
 
-      {/* Pending Guardian Notice Banner */}
       <PendingBanner
         message="Guardian invitation pending. Your guardian has not yet accepted your request to connect."
         actionText="Manage Invitations"
         onActionClick={() => alert('Manage invitations clicked')}
       />
 
-      {/* Main 3-Column Content Layout */}
       <main className="mhn-home-main-layout">
-        {/* Left Column: Profile Summary & Post Action */}
         <aside className="mhn-layout-col-left">
           <ProfileSummaryCard
             coverUrl="/cover.png"
@@ -288,9 +269,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           />
         </aside>
 
-        {/* Center Column: Feed Posts */}
         <section className="mhn-layout-col-center">
-          {/* Top Search Bar & Filter Dropdown above posts */}
           <div className="mhn-feed-header-bar">
             <div className="mhn-feed-search-wrapper">
               <svg className="mhn-feed-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -327,18 +306,16 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               <FeedPostSkeleton />
             </div>
           ) : feedError?.isServerError ? (
-            <EmptyState
-              title="We’re having trouble loading your feed."
-              message="Something went wrong while connecting to the server. Please try again."
-              iconType="server-error"
-              actionLabel="Try Again"
-              onAction={() => fetchFeedPosts(userSession?.profile?.id || userSession?.id)}
+            <ServerDown
+              title="We’re having trouble loading your feed"
+              description={feedError.message || "Something went wrong while connecting to the server. Please try again."}
+              statusCode={feedError.statusCode || 502}
+              onRetry={() => fetchFeedPosts(userSession?.profile?.id || userSession?.id)}
             />
           ) : filteredPosts.length === 0 ? (
-            <EmptyState
+            <NoDataFound
               title="No Posts Found"
-              message={searchQuery ? `No posts match your search "${searchQuery}".` : "There are no posts in your feed right now. Be the first to share an update with your network!"}
-              iconType="posts"
+              description={searchQuery ? `No posts match your search "${searchQuery}".` : "There are no posts in your feed right now. Be the first to share an update with your network!"}
               actionLabel="Create Post"
               onAction={() => setIsCreatePostOpen(true)}
             />
@@ -350,14 +327,12 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   {...post}
                   onFollowChange={handleFollowChange}
                   onDeleteSuccess={(deletedId, msg) => {
-                    console.log(`🗑️ [HomePage] Post ${deletedId} deleted. Refetching feed silently...`);
                     setToast({ message: msg || 'Post deleted successfully!', type: 'success' });
                     setFeedPosts((prev) => prev.filter((p) => p.id !== deletedId));
                     const profileId = userSession?.profile?.id || userSession?.id;
                     fetchFeedPosts(profileId, searchQuery, sortBy, true);
                   }}
                   onRepostComplete={() => {
-                    console.log('🔄 [HomePage] Post reposted. Refetching feed silently...');
                     const profileId = userSession?.profile?.id || userSession?.id;
                     fetchFeedPosts(profileId, searchQuery, sortBy, true);
                   }}
@@ -367,20 +342,16 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           )}
         </section>
 
-        {/* Right Column: Widgets */}
         <aside className="mhn-layout-col-right">
-          {/* Matches Schedule Widget */}
           <MatchesWidget
             onViewAll={() => alert('View all matches')}
           />
 
-          {/* Upcoming Events Widget */}
           <UpcomingEventsWidget
             onViewAll={() => handleTabChange('events')}
             onEventClick={() => handleTabChange('event-detail')}
           />
 
-          {/* Invite & Grow Widget */}
           <InviteGrowWidget
             onInviteClick={() => alert('Invite members modal')}
             illustrationUrl="/player.png"
@@ -388,7 +359,6 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         </aside>
       </main>
 
-      {/* Create Post Modal */}
       {isCreatePostOpen && (
         <CreatePostModal
           isOpen={isCreatePostOpen}
@@ -400,7 +370,6 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         />
       )}
 
-      {/* Global Toast Notification */}
       {toast && (
         <Toast
           message={toast.message}

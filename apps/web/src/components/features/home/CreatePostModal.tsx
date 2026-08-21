@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useAuth } from '../../../context/AuthContext';
+import { useAuth } from '../../../hooks/use-auth';
 import { resolveMediaUrl } from '../../../utils/mediaUtils';
 
 interface CreatePostModalProps {

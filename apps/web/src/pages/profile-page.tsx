@@ -7,7 +7,7 @@ import { EditProfileModal, EditProfileFormData, ProfileSkeletonLoader } from '..
 import { FeedPostSkeleton } from '../components/features/home/HomeSkeletonLoader';
 import { Spinner } from '../components/common/Spinner';
 import { Toast } from '../components/common/Toast';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/use-auth';
 import { resolveMediaUrl, resolveCoverUrl } from '../utils/mediaUtils';
 import { createPost, getUserPosts, updateAuthProfile, uploadMediaFile } from '@my-hockey-network/core';
 

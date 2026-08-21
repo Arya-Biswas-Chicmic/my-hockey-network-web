@@ -1,0 +1,13 @@
+export enum UserRole {
+  PLAYER = 'PLAYER',
+  PARENT = 'PARENT',
+  COACH = 'COACH',
+  STAFF = 'STAFF',
+}
+
+export enum AccessLevel {
+  LIMITED = 'LIMITED',
+  SUPERVISED = 'SUPERVISED',
+  PARENT_MANAGED = 'PARENT_MANAGED',
+  INDEPENDENT = 'INDEPENDENT',
+}

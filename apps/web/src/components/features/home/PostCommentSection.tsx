@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getComments, addComment } from '@my-hockey-network/core';
-import { useAuth } from '../../../context/AuthContext';
+import { useAuth } from '../../../hooks/use-auth';
 import { Spinner } from '../../common/Spinner';
 import { resolveMediaUrl } from '../../../utils/mediaUtils';
 

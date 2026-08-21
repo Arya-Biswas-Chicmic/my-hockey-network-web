@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Header } from '../components/common/Header';
+import { Header, NoDataFound, ServerDown } from '../components/common';
 import { ManageNetworkCard } from '../components/features/network/ManageNetworkCard';
 import { ProfileSummaryCard } from '../components/features/home/ProfileSummaryCard';
 import { GroupsView } from '../components/features/network/GroupsView';
@@ -9,8 +9,8 @@ import { PendingRequestCard, PendingRequestProps } from '../components/features/
 import { SuggestedUserCard, SuggestedUserProps } from '../components/features/network/SuggestedUserCard';
 import { NetworkSkeletonGrid } from '../components/features/network/NetworkSkeletonLoader';
 import { EmptyState } from '../components/features/network/EmptyState';
-import { useDebounce } from '../hooks/useDebounce';
-import { useAuth } from '../context/AuthContext';
+import { useDebounce } from '../hooks/use-debounce';
+import { useAuth } from '../hooks/use-auth';
 import {
   getRelationships,
   getPeopleYouMayKnow,
