@@ -1,24 +1,29 @@
 import React, { useState } from 'react';
 import { OnboardingIllustration } from './OnboardingIllustration';
 import { RoleSelectionForm } from './RoleSelectionForm';
-import { CreateAccountForm, VerifyEmailForm, LoginForm } from '../auth';
+import { CreateAccountForm, VerifyEmailForm, LoginForm, GuardianApprovalModal, RequestSentCard } from '../auth';
 import { DEFAULT_ROLE_OPTIONS, DEFAULT_SELECTED_ROLE_IDS } from '../../../constants/onboarding';
-import { requestOtp, verifyOtp, submitOnboarding, saveAuthSession, UserRole } from '@my-hockey-network/core';
+import { requestOtp, verifyOtp, submitOnboarding, sendGuardianRequest, calculateAge, UserRole } from '@my-hockey-network/core';
 import { useAuth } from '../../../context/AuthContext';
 
 interface OnboardingModalProps {
-  onComplete?: (data: { selectedRoles: string[]; accountData?: { fullName: string; email: string; dob: string }; onboardingResult?: any }) => void;
+  onComplete?: (data: { selectedRoles: string[]; accountData?: { fullName: string; email: string; dob: string; parentEmail?: string }; onboardingResult?: any }) => void;
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) => {
   const { setAuthSession } = useAuth();
   const [authMode, setAuthMode] = useState<'signup' | 'login'>('login');
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1); // 1: Role, 2: CreateAccount, 3: VerifyOTP, 4: GuardianApproval, 5: RequestSent
   const [loginStep, setLoginStep] = useState<1 | 2>(1);
   const [loginEmail, setLoginEmail] = useState<string>('');
 
   const [selectedRoles, setSelectedRoles] = useState<string[]>(DEFAULT_SELECTED_ROLE_IDS);
-  const [accountData, setAccountData] = useState<{ fullName: string; email: string; dob: string }>({
+  const [accountData, setAccountData] = useState<{
+    fullName: string;
+    email: string;
+    dob: string;
+    parentEmail?: string;
+  }>({
     fullName: '',
     email: '',
     dob: '',
@@ -54,7 +59,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
     setErrorMessage(null);
 
     try {
-      // 1. Send OTP Request to API (SIGNUP)
+      // Send OTP Request (SIGNUP)
       await requestOtp({
         channel: 'EMAIL',
         destination: data.email,
@@ -87,6 +92,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
     return dobStr;
   };
 
+  // Step 3: Verify OTP
   const handleVerifyConfirm = async (code: string) => {
     setLoading(true);
     setErrorMessage(null);
@@ -104,6 +110,29 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
         setAuthSession(verifyRes);
       }
 
+      // Check if user is minor (< 18)
+      const age = calculateAge(accountData.dob);
+      const roleUpper = (selectedRoles[0] || 'PLAYER').toUpperCase();
+      const isMinorUser = (roleUpper === 'PLAYER' || roleUpper === 'COACH' || roleUpper === 'STAFF') && age !== null && age >= 5 && age < 18;
+
+      if (isMinorUser) {
+        // Post-OTP: Move to Guardian Approval Request Screen (Image 2 left screen)
+        setStep(4);
+      } else {
+        // Adult: Complete Onboarding immediately
+        await finalizeOnboarding();
+      }
+    } catch (err: any) {
+      console.error('API Verification Error:', err);
+      setErrorMessage(err.message || 'Verification failed. Please check your code and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const finalizeOnboarding = async (parentEmail?: string) => {
+    setLoading(true);
+    try {
       const apiRoles: UserRole[] = selectedRoles.map((r) => {
         const upper = r.toUpperCase();
         if (['PLAYER', 'PARENT', 'COACH', 'STAFF'].includes(upper)) {
@@ -116,36 +145,62 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
 
       const onboardingResult = await submitOnboarding({
         roles: apiRoles.length > 0 ? apiRoles : ['PLAYER'],
-        displayName: accountData.fullName || 'Player',
+        displayName: accountData.fullName || 'User',
         dateOfBirth: isoDob,
+        parentEmail,
         preferredLanguage: 'en',
       });
 
       if (onComplete) {
-        onComplete({ selectedRoles, accountData, onboardingResult });
+        onComplete({ selectedRoles, accountData: { ...accountData, parentEmail }, onboardingResult });
       }
     } catch (err: any) {
-      console.error('API Verification Error:', err);
-      setErrorMessage(err.message || 'Verification failed. Please check your code and try again.');
+      console.error('Onboarding Submission Error:', err);
+      setErrorMessage(err.message || 'Failed to complete profile onboarding.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Login Handlers (NO ROLE SELECTION STEP NEEDED!)
+  // Step 4: Guardian Approval Modal Handlers
+  const handleSendGuardianRequest = async (parentEmail: string) => {
+    setLoading(true);
+    setErrorMessage(null);
+
+    try {
+      await sendGuardianRequest(parentEmail);
+      setAccountData((prev) => ({ ...prev, parentEmail }));
+      // Move to Step 5: Request Sent! Confirmation Card (Image 2 right screen)
+      setStep(5);
+    } catch (err: any) {
+      console.error('sendGuardianRequest Error:', err);
+      setErrorMessage(err.message || 'Failed to send guardian request. Please check email address.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSkipGuardian = async () => {
+    await finalizeOnboarding();
+  };
+
+  // Step 5: Request Sent Handlers
+  const handleRequestSentContinue = async () => {
+    await finalizeOnboarding(accountData.parentEmail);
+  };
+
+  // Login Handlers
   const handleLoginSubmit = async (email: string) => {
     setLoginEmail(email);
     setLoading(true);
     setErrorMessage(null);
 
     try {
-      // Send OTP Request to API (SIGNIN)
       await requestOtp({
         channel: 'EMAIL',
         destination: email,
         intent: 'SIGNIN',
       });
-      // Move to Step 2: OTP Verification
       setLoginStep(2);
     } catch (err: any) {
       console.error('API requestOtp Login Error:', err);
@@ -164,7 +219,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
     setErrorMessage(null);
 
     try {
-      // Verify OTP with API (SIGNIN)
       const verifyRes = await verifyOtp({
         channel: 'EMAIL',
         destination: loginEmail,
@@ -202,15 +256,19 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
     }
   };
 
+  const currentSelectedRole = selectedRoles[0] || 'player';
+
   return (
     <div className="onboarding-modal">
-      <OnboardingIllustration
-        imageSrc={
-          (authMode === 'signup' && step === 3) || (authMode === 'login' && loginStep === 2)
-            ? '/OTPbg.png'
-            : '/Welcome.png'
-        }
-      />
+      {step !== 4 && step !== 5 && (
+        <OnboardingIllustration
+          imageSrc={
+            (authMode === 'signup' && step === 3) || (authMode === 'login' && loginStep === 2)
+              ? '/OTPbg.png'
+              : '/Welcome.png'
+          }
+        />
+      )}
 
       {errorMessage && (
         <div
@@ -247,6 +305,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
           )}
           {step === 2 && (
             <CreateAccountForm
+              selectedRole={currentSelectedRole}
               onSignUp={handleSignUp}
               onGoogleSignIn={() => setStep(3)}
               onBack={() => setStep(1)}
@@ -264,10 +323,25 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
               errorMessage={errorMessage}
             />
           )}
+          {step === 4 && (
+            <GuardianApprovalModal
+              onSendRequest={handleSendGuardianRequest}
+              onSkip={handleSkipGuardian}
+              onSignOut={handleSwitchToLogin}
+              loading={loading}
+            />
+          )}
+          {step === 5 && (
+            <RequestSentCard
+              onContinue={handleRequestSentContinue}
+              onSelectTournament={handleRequestSentContinue}
+              onSelectCommunity={handleRequestSentContinue}
+            />
+          )}
         </>
       )}
 
-      {/* LOGIN FLOW (NO ROLE SELECTION!) */}
+      {/* LOGIN FLOW */}
       {authMode === 'login' && (
         <>
           {loginStep === 1 && (

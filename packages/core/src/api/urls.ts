@@ -80,4 +80,8 @@ export const API_ENDPOINTS = {
     PEOPLE: '/recommendations/people',
     SUGGESTED: '/recommendations/suggested',
   },
+  SETTINGS: {
+    NOTIFICATIONS: '/settings/notifications',
+    BLOCKED: '/settings/blocked',
+  },
 } as const;

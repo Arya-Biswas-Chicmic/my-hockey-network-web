@@ -1,9 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { CREATE_ACCOUNT_STRINGS } from '@my-hockey-network/shared';
+import { calculateAge, validateSignUpAgeAndApproval } from '@my-hockey-network/core';
 import { Spinner } from '../../../common/Spinner';
 
 interface CreateAccountFormProps {
-  onSignUp?: (data: { fullName: string; email: string; dob: string; password?: string }) => void;
+  selectedRole?: string;
+  onSignUp?: (data: { fullName: string; email: string; dob: string }) => void;
   onGoogleSignIn?: () => void;
   onBack?: () => void;
   onSignInClick?: () => void;
@@ -11,6 +13,7 @@ interface CreateAccountFormProps {
 }
 
 export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
+  selectedRole = 'player',
   onSignUp,
   onGoogleSignIn,
   onBack,
@@ -20,7 +23,11 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [dob, setDob] = useState('');
+  const [localError, setLocalError] = useState<string | null>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
+
+  // Compute real-time age
+  const currentAge = useMemo(() => calculateAge(dob), [dob]);
 
   // Smart DOB auto-formatter: e.g. 10042020 -> 10/04/2020
   const formatDobInput = (val: string) => {
@@ -38,6 +45,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
     const rawVal = e.target.value;
     const formatted = formatDobInput(rawVal);
     setDob(formatted);
+    setLocalError(null);
   };
 
   const handleCalendarClick = () => {
@@ -57,14 +65,51 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
       if (parts.length === 3) {
         const [yyyy, mm, dd] = parts;
         setDob(`${dd}/${mm}/${yyyy}`);
+        setLocalError(null);
       }
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setLocalError(null);
+
+    // Validate Sign Up Age Rules
+    const validation = validateSignUpAgeAndApproval(selectedRole, dob);
+    
+    // Allow minor age check to pass here; parent email is collected post-OTP
+    if (currentAge !== null) {
+      const roleUpper = selectedRole.toUpperCase();
+      if (roleUpper === 'PARENT') {
+        if (currentAge < 18) {
+          setLocalError('Parent account holders must be at least 18 years old.');
+          return;
+        }
+        if (currentAge > 100) {
+          setLocalError('Maximum age limit is 100 years.');
+          return;
+        }
+      } else {
+        if (currentAge < 5) {
+          setLocalError(`Minimum age for ${selectedRole.toLowerCase()}s is 5 years.`);
+          return;
+        }
+        if (currentAge > 100) {
+          setLocalError('Maximum age limit is 100 years.');
+          return;
+        }
+      }
+    } else if (dob) {
+      setLocalError('Please enter a valid date of birth.');
+      return;
+    }
+
     if (onSignUp) {
-      onSignUp({ fullName, email, dob });
+      onSignUp({
+        fullName,
+        email,
+        dob,
+      });
     }
   };
 
@@ -98,6 +143,23 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
         <h1 className="onboarding-title">{CREATE_ACCOUNT_STRINGS.title}</h1>
         <p className="onboarding-subtitle">{CREATE_ACCOUNT_STRINGS.subtitle}</p>
       </div>
+
+      {localError && (
+        <div
+          style={{
+            backgroundColor: '#FEF2F2',
+            color: '#DC2626',
+            padding: '10px 14px',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: 600,
+            marginBottom: '16px',
+            border: '1px solid #FCA5A5',
+          }}
+        >
+          {localError}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="auth-form-stack">
         <div className="auth-form-group">
@@ -135,9 +197,16 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
         </div>
 
         <div className="auth-form-group">
-          <label className="auth-label" htmlFor="dob">
-            {CREATE_ACCOUNT_STRINGS.dobLabel}
-          </label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <label className="auth-label" htmlFor="dob">
+              {CREATE_ACCOUNT_STRINGS.dobLabel}
+            </label>
+            {currentAge !== null && (
+              <span style={{ fontSize: '12px', fontWeight: 600, color: currentAge < 18 ? '#D97706' : '#4B5563' }}>
+                Age: {currentAge} yrs {currentAge < 18 ? '(Under 18)' : ''}
+              </span>
+            )}
+          </div>
           <div className="auth-input-wrapper" style={{ position: 'relative' }}>
             <input
               id="dob"
@@ -147,6 +216,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
               value={dob}
               onChange={handleDobChange}
               maxLength={10}
+              required
             />
             <img
               src="/calendar.png"

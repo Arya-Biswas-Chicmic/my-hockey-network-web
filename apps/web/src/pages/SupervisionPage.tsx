@@ -3,7 +3,13 @@ import { Header } from '../components/common/Header';
 import {
   getSupervisionData,
   createManagedChild,
+  getSupervisionControls,
+  updateSupervisionControls,
+  getSupervisionLogs,
   sendGuardianInvite,
+  getPendingGuardianRequests,
+  acceptGuardianRequest,
+  declineGuardianRequest,
   getApprovals,
   approveRequest,
   declineRequest,
@@ -33,6 +39,97 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
 
   const [apiLoading, setApiLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+
+  // Live Pending Guardian Requests & Approval Code State
+  const [livePendingRequests, setLivePendingRequests] = useState<any[]>([]);
+  const [approvalCodeInput, setApprovalCodeInput] = useState('');
+  const [requestActionLoading, setRequestActionLoading] = useState(false);
+  const [requestNotice, setRequestNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Load live pending requests when tab is opened
+  useEffect(() => {
+    async function loadPendingRequests() {
+      try {
+        const res = await getPendingGuardianRequests();
+        const items = res?.items || (res as any)?.data?.items || [];
+        if (Array.isArray(items)) {
+          setLivePendingRequests(items);
+        }
+      } catch (err: any) {
+        console.warn('Pending requests fetch notice:', err);
+      }
+    }
+    if (activeMainTab === 'requests') {
+      loadPendingRequests();
+    }
+  }, [activeMainTab]);
+
+  const handleApproveCodeSubmit = async (codeToSubmit?: string) => {
+    const code = (codeToSubmit || approvalCodeInput).trim();
+    if (!code || code.length !== 6) {
+      setRequestNotice({ type: 'error', message: 'Please enter a valid 6-digit approval code.' });
+      return;
+    }
+
+    setRequestActionLoading(true);
+    setRequestNotice(null);
+
+    try {
+      const res = await acceptGuardianRequest(code);
+      setRequestNotice({
+        type: 'success',
+        message: res.message || 'Player approval accepted! You are now supervising this player.',
+      });
+      setApprovalCodeInput('');
+
+      // Refresh supervision list & pending requests
+      const supData = await getSupervisionData();
+      if (supData?.children && supData.children.length > 0) {
+        const mapped = supData.children.map((c: any) => ({
+          id: c.id,
+          name: c.displayName || c.firstName || 'Minor Player',
+          age: c.age || 12,
+          avatar: c.avatarUrl || '/connor.png',
+        }));
+        setWards(mapped);
+      }
+
+      const reqRes = await getPendingGuardianRequests();
+      setLivePendingRequests(reqRes?.items || (reqRes as any)?.data?.items || []);
+    } catch (err: any) {
+      console.error('Accept Request Error:', err);
+      if (err.key === 'GUARDIAN_REQUEST_CHILD_SETUP_INCOMPLETE' || err.message?.includes('setup')) {
+        setRequestNotice({
+          type: 'error',
+          message: "This player hasn't finished setting up their profile yet — try again shortly.",
+        });
+      } else {
+        setRequestNotice({
+          type: 'error',
+          message: err.message || 'Failed to approve request. Please verify the code and try again.',
+        });
+      }
+    } finally {
+      setRequestActionLoading(false);
+    }
+  };
+
+  const handleDeclineCodeSubmit = async (codeToDecline: string) => {
+    if (!codeToDecline) return;
+    setRequestActionLoading(true);
+    setRequestNotice(null);
+
+    try {
+      await declineGuardianRequest(codeToDecline);
+      setRequestNotice({ type: 'success', message: 'Guardian request declined.' });
+      const reqRes = await getPendingGuardianRequests();
+      setLivePendingRequests(reqRes?.items || (reqRes as any)?.data?.items || []);
+    } catch (err: any) {
+      setRequestNotice({ type: 'error', message: err.message || 'Failed to decline request.' });
+    } finally {
+      setRequestActionLoading(false);
+    }
+  };
 
   // Load live supervision wards on mount
   useEffect(() => {
@@ -235,6 +332,52 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
     },
   ];
 
+  const [liveLogs, setLiveLogs] = useState<any[]>([]);
+
+  // Load live controls and logs for selected minor child
+  useEffect(() => {
+    if (!selectedWardId) return;
+    async function loadWardControlsAndLogs() {
+      try {
+        const controlsRes = await getSupervisionControls(selectedWardId);
+        const controls = controlsRes?.controls || (controlsRes as any)?.data?.controls;
+        if (Array.isArray(controls)) {
+          controls.forEach((c: any) => {
+            if (c.control === 'VIEW_FEED') setHomePermissions((prev) => ({ ...prev, viewFeed: !!c.value }));
+            if (c.control === 'CREATE_POST') setHomePermissions((prev) => ({ ...prev, createPosts: !!c.value }));
+            if (c.control === 'COMMENT_ON_POSTS') setHomePermissions((prev) => ({ ...prev, commentOnPosts: !!c.value }));
+            if (c.control === 'REACT_TO_POSTS') setHomePermissions((prev) => ({ ...prev, reactToPosts: !!c.value }));
+            if (c.control === 'SHARE_POSTS') setHomePermissions((prev) => ({ ...prev, sharePosts: !!c.value }));
+            if (c.control === 'FOLLOW_OTHERS') setNetworkPermissions((prev) => ({ ...prev, followOthers: !!c.value }));
+            if (c.control === 'ACCEPT_CONNECTIONS') setNetworkPermissions((prev) => ({ ...prev, acceptRequests: !!c.value }));
+            if (c.control === 'WHO_CAN_FOLLOW') setNetworkPermissions((prev) => ({ ...prev, whoCanFollowThem: String(c.value) }));
+            if (c.control === 'WHO_CAN_SEND_CONNECTION_REQUESTS') setNetworkPermissions((prev) => ({ ...prev, whoCanSendRequests: String(c.value) }));
+            if (c.control === 'SEND_MESSAGES') setMessagingPermissions((prev) => ({ ...prev, sendMessages: !!c.value }));
+            if (c.control === 'RECEIVE_MESSAGES') setMessagingPermissions((prev) => ({ ...prev, receiveMessages: !!c.value }));
+            if (c.control === 'CREATE_GROUP_CHATS') setMessagingPermissions((prev) => ({ ...prev, createGroupChats: !!c.value }));
+            if (c.control === 'WHO_CAN_MESSAGE_THEM') setMessagingPermissions((prev) => ({ ...prev, whoCanMessageThem: String(c.value) }));
+          });
+        }
+
+        const logsRes = await getSupervisionLogs(selectedWardId);
+        const logItems = logsRes?.items || (logsRes as any)?.data?.items;
+        if (Array.isArray(logItems) && logItems.length > 0) {
+          const mappedLogs = logItems.map((l: any) => ({
+            id: l.id,
+            dateTime: new Date(l.createdAt).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            activity: l.summary || l.type || 'Supervision activity log',
+            initiatedBy: l.actorRoleLabel || 'Parent',
+            actionText: 'View',
+          }));
+          setLiveLogs(mappedLogs);
+        }
+      } catch (err: any) {
+        console.warn('❌ [SupervisionPage] Controls/Logs load notice:', err?.message || err);
+      }
+    }
+    loadWardControlsAndLogs();
+  }, [selectedWardId]);
+
   const handleTabChange = (tab: string) => {
     setActiveNavTab(tab);
     if (onNavigate) {
@@ -242,19 +385,38 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
     }
   };
 
-  const handleCreatePlayerSubmit = () => {
+  const handleCreatePlayerSubmit = async () => {
     const nameToUse = newPlayer.fullName.trim() || 'Noah';
     setAddedPlayerName(nameToUse);
 
-    // Add new ward to sidebar list
-    const newWardItem = {
-      id: `w_${Date.now()}`,
-      name: nameToUse,
-      age: 12,
-      avatar: '/connor.png',
-    };
-    setWards([...wards, newWardItem]);
-    setSelectedWardId(newWardItem.id);
+    const nameParts = nameToUse.split(' ');
+    const firstName = nameParts[0] || 'Minor';
+    const lastName = nameParts.slice(1).join(' ') || 'Player';
+
+    try {
+      const res = await createManagedChild({
+        displayName: nameToUse,
+        firstName,
+        lastName,
+        dateOfBirth: newPlayer.dob || '2015-05-15',
+        guardianRelation: (newPlayer.relationship.toUpperCase() as any) || 'FATHER',
+      });
+
+      const childProfile = res?.child || (res as any)?.data?.profile;
+      if (childProfile) {
+        const newWardItem = {
+          id: childProfile.id,
+          name: childProfile.displayName || nameToUse,
+          age: 12,
+          avatar: childProfile.avatarUrl || '/connor.png',
+        };
+        setWards((prev) => [...prev, newWardItem]);
+        setSelectedWardId(newWardItem.id);
+      }
+    } catch (err: any) {
+      console.warn('❌ [SupervisionPage] createManagedChild notice:', err?.message || err);
+    }
+
     setViewMode('create-success');
   };
 
@@ -1071,50 +1233,179 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
                     </div>
                   )}
 
-                  {/* Content for Requests Tab matching Figma Image 33 */}
+                  {/* Content for Requests Tab */}
                   {activeMainTab === 'requests' && (
-                    <div className="mhn-supervision-requests-grid">
-                      {sampleSupervisionRequests.map((req) => (
-                        <div key={req.id} className="mhn-supervision-req-card">
-                          <div className="mhn-supervision-req-avatar-wrapper">
-                            <img
-                              src={req.avatarUrl}
-                              alt={req.name}
-                              className="mhn-supervision-req-avatar"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-                              }}
-                            />
-                          </div>
-                          <h4 className="mhn-supervision-req-name">{req.name}</h4>
-                          <p className="mhn-supervision-req-role">{req.roleTag}</p>
-
-                          <div className="mhn-supervision-req-team-pill">
-                            <img
-                              src={req.teamLogo}
-                              alt={req.teamName}
-                              className="mhn-supervision-req-team-logo"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = '/HC.png';
-                              }}
-                            />
-                            <span>{req.teamName}</span>
-                          </div>
-
-                          <div className="mhn-supervision-req-location">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2">
-                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                              <circle cx="12" cy="10" r="3" />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      {/* 1. Enter 6-digit Approval Code Card */}
+                      <div
+                        style={{
+                          backgroundColor: '#FFFFFF',
+                          border: '1px solid #E2E8F0',
+                          borderRadius: '12px',
+                          padding: '20px',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                          <div
+                            style={{
+                              width: '36px',
+                              height: '36px',
+                              borderRadius: '8px',
+                              backgroundColor: '#EFF6FF',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B66C2" strokeWidth="2">
+                              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                             </svg>
-                            <span>{req.location}</span>
                           </div>
-
-                          <div className="mhn-supervision-req-actions">
-                            <button className="mhn-supervision-btn-ignore">Ignore</button>
-                            <button className="mhn-supervision-btn-accept">Accept</button>
+                          <div>
+                            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0F172A' }}>
+                              Approve Child via 6-Digit Code
+                            </h3>
+                            <p style={{ margin: 0, fontSize: '13px', color: '#64748B' }}>
+                              Enter the 6-digit verification code received by email or from your child to approve their Coach or Player account.
+                            </p>
                           </div>
                         </div>
-                      ))}
+
+                        {requestNotice && (
+                          <div
+                            style={{
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              fontSize: '13px',
+                              fontWeight: 600,
+                              margin: '12px 0',
+                              backgroundColor: requestNotice.type === 'success' ? '#F0FDF4' : '#FEF2F2',
+                              color: requestNotice.type === 'success' ? '#15803D' : '#DC2626',
+                              border: requestNotice.type === 'success' ? '1px solid #BBF7D0' : '1px solid #FCA5A5',
+                            }}
+                          >
+                            {requestNotice.message}
+                          </div>
+                        )}
+
+                        <div style={{ display: 'flex', gap: '12px', marginTop: '12px', maxWidth: '480px' }}>
+                          <input
+                            type="text"
+                            placeholder="Enter 6-digit code (e.g. 977518)"
+                            value={approvalCodeInput}
+                            onChange={(e) => setApprovalCodeInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            maxLength={6}
+                            style={{
+                              flex: 1,
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid #CBD5E1',
+                              fontSize: '15px',
+                              letterSpacing: '1px',
+                              fontWeight: 600,
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleApproveCodeSubmit()}
+                            disabled={requestActionLoading || approvalCodeInput.length !== 6}
+                            style={{
+                              padding: '10px 20px',
+                              backgroundColor: '#0B66C2',
+                              color: '#FFFFFF',
+                              borderRadius: '8px',
+                              border: 'none',
+                              fontWeight: 700,
+                              cursor: approvalCodeInput.length === 6 ? 'pointer' : 'not-allowed',
+                              opacity: approvalCodeInput.length === 6 && !requestActionLoading ? 1 : 0.6,
+                            }}
+                          >
+                            {requestActionLoading ? 'Approving...' : 'Approve Child'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* 2. Pending Requests List */}
+                      <div>
+                        <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#334155', marginBottom: '12px' }}>
+                          Pending Minor Approval Requests ({livePendingRequests.length > 0 ? livePendingRequests.length : sampleSupervisionRequests.length})
+                        </h3>
+
+                        <div className="mhn-supervision-requests-grid">
+                          {(livePendingRequests.length > 0 ? livePendingRequests : sampleSupervisionRequests).map((req: any, idx: number) => {
+                            const reqId = req.id || `req_${idx}`;
+                            const displayName = req.child?.displayName || req.name || 'Minor Athlete';
+                            const roleTag = req.child?.primaryRole || req.roleTag || 'Player / Coach';
+                            const code = req.code || req.inviteCode;
+
+                            return (
+                              <div key={reqId} className="mhn-supervision-req-card">
+                                <div className="mhn-supervision-req-avatar-wrapper">
+                                  <img
+                                    src={req.avatarUrl || '/connor.png'}
+                                    alt={displayName}
+                                    className="mhn-supervision-req-avatar"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = '/userPlaceholder.png';
+                                    }}
+                                  />
+                                </div>
+                                <h4 className="mhn-supervision-req-name">{displayName}</h4>
+                                <p className="mhn-supervision-req-role">{roleTag}</p>
+
+                                <div className="mhn-supervision-req-team-pill">
+                                  <img
+                                    src={req.teamLogo || '/kcBlue.png'}
+                                    alt="Team"
+                                    className="mhn-supervision-req-team-logo"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = '/HC.png';
+                                    }}
+                                  />
+                                  <span>{req.teamName || 'Youth Hockey Team'}</span>
+                                </div>
+
+                                <div className="mhn-supervision-req-location">
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                    <circle cx="12" cy="10" r="3" />
+                                  </svg>
+                                  <span>{req.location || 'Parent Supervision Approval'}</span>
+                                </div>
+
+                                <div className="mhn-supervision-req-actions">
+                                  <button
+                                    type="button"
+                                    className="mhn-supervision-btn-ignore"
+                                    disabled={requestActionLoading}
+                                    onClick={() => handleDeclineCodeSubmit(code || reqId)}
+                                  >
+                                    Decline
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="mhn-supervision-btn-accept"
+                                    disabled={requestActionLoading}
+                                    onClick={() => {
+                                      if (code) {
+                                        handleApproveCodeSubmit(code);
+                                      } else {
+                                        const userInputCode = prompt(`Enter 6-digit approval code for ${displayName}:`);
+                                        if (userInputCode) {
+                                          handleApproveCodeSubmit(userInputCode);
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    Accept & Supervise
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   )}
 
@@ -1186,7 +1477,7 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
                             </tr>
                           </thead>
                           <tbody>
-                            {sampleLogs.map((log) => (
+                            {(liveLogs.length > 0 ? liveLogs : sampleLogs).map((log) => (
                               <tr key={log.id}>
                                 <td className="mhn-td-date">{log.dateTime}</td>
                                 <td className="mhn-td-activity">{log.activity}</td>

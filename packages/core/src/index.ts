@@ -13,6 +13,8 @@ export * from './api/supervisionApi';
 export * from './api/approvalsApi';
 export * from './api/alertsApi';
 export * from './api/mediaApi';
+export * from './api/settingsApi';
+export * from './api/signUpRules';
 
 export const toggleRoleSelection = (currentRoles: string[], roleId: string): string[] => {
   if (currentRoles.includes(roleId)) {

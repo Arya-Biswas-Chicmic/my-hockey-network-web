@@ -1,5 +1,6 @@
 import { apiFetch } from './client';
 import { API_ENDPOINTS } from './urls';
+export * from './signUpRules';
 import type {
   OtpRequestDTO,
   OtpRequestResponse,

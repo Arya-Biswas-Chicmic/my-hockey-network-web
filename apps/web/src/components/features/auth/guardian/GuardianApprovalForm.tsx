@@ -6,20 +6,24 @@ import { GuardianActionButtons } from './GuardianActionButtons';
 interface GuardianApprovalFormProps {
   onSendRequest?: (email: string) => void;
   onSignOut?: () => void;
+  onSkip?: () => void;
   onContactSupport?: () => void;
+  loading?: boolean;
 }
 
 export const GuardianApprovalForm: React.FC<GuardianApprovalFormProps> = ({
   onSendRequest,
   onSignOut,
+  onSkip,
   onContactSupport,
+  loading = false,
 }) => {
   const [email, setEmail] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSendRequest) {
-      onSendRequest(email);
+    if (onSendRequest && email.trim()) {
+      onSendRequest(email.trim());
     }
   };
 
@@ -45,7 +49,7 @@ export const GuardianApprovalForm: React.FC<GuardianApprovalFormProps> = ({
           </div>
         </div>
 
-        <GuardianActionButtons onSignOut={onSignOut} />
+        <GuardianActionButtons onSignOut={onSignOut} onSkip={onSkip} loading={loading} />
       </form>
 
       <div className="guardian-footer-text">

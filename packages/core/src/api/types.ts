@@ -44,6 +44,8 @@ export interface OnboardingDTO {
   dateOfBirth?: string; // YYYY-MM-DD format
   city?: string;
   preferredLanguage?: string;
+  parentEmail?: string;
+  requiresParentApproval?: boolean;
 }
 
 export interface OnboardingResponse {
@@ -51,6 +53,16 @@ export interface OnboardingResponse {
   roles: UserRole[];
   primaryRole: string;
   isMinor: boolean;
+  requiresParentApproval?: boolean;
+  guardianRequestId?: string;
+}
+
+export interface SignUpValidationResult {
+  isValid: boolean;
+  age?: number;
+  isMinor: boolean;
+  requiresParentApproval: boolean;
+  error?: string;
 }
 
 export interface AuthMeResponse {
