@@ -49,8 +49,8 @@ const OnboardingScreen = ({ navigation }: Props) => {
   const [selectedRoles, setSelectedRoles] = useState<string[]>(['player']);
 
   const toggleRole = (id: string) => {
-    setSelectedRoles((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    setSelectedRoles(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id],
     );
   };
 
@@ -77,7 +77,7 @@ const OnboardingScreen = ({ navigation }: Props) => {
           <Text style={styles.subtitleText}>{ONBOARDING_STRINGS.subtitle}</Text>
 
           <View style={styles.optionsList}>
-            {ROLE_OPTIONS.map((role) => {
+            {ROLE_OPTIONS.map(role => {
               const isSelected = selectedRoles.includes(role.id);
               return (
                 <Pressable

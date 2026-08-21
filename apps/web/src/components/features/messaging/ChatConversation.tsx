@@ -1,3 +1,5 @@
+import { Button } from '../../common/Button';
+import { Input } from '../../common/FormControls';
 import React, { useState } from 'react';
 
 export interface ReactionItem {
@@ -97,24 +99,24 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
         </div>
 
         <div className="mhn-conv-header-actions">
-          <button className="mhn-conv-action-btn" aria-label="Search messages">
+          <Button className="mhn-conv-action-btn" aria-label="Search messages">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-          </button>
-          <button className="mhn-conv-action-btn" aria-label="Settings">
+          </Button>
+          <Button className="mhn-conv-action-btn" aria-label="Settings">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3" />
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
             </svg>
-          </button>
-          <button className="mhn-btn-conv-plus" aria-label="Add members">
+          </Button>
+          <Button className="mhn-btn-conv-plus" aria-label="Add members">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -206,7 +208,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
       {/* Message Input Footer Bar */}
       <div className="mhn-chat-input-footer">
         <div className="mhn-chat-input-pill-wrapper">
-          <input
+          <Input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
@@ -217,39 +219,39 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
 
           <div className="mhn-chat-input-right-actions">
             {/* Emoji Icon Button */}
-            <button type="button" className="mhn-chat-input-action-btn" aria-label="Add emoji">
+            <Button type="button" className="mhn-chat-input-action-btn" aria-label="Add emoji">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M8 14s1.5 2 4 2 4-2 4-2" />
                 <line x1="9" y1="9" x2="9.01" y2="9" />
                 <line x1="15" y1="9" x2="15.01" y2="9" />
               </svg>
-            </button>
+            </Button>
 
             {/* GIF Icon Button */}
-            <button type="button" className="mhn-chat-input-action-btn mhn-chat-gif-btn" aria-label="Add GIF">
+            <Button type="button" className="mhn-chat-input-action-btn mhn-chat-gif-btn" aria-label="Add GIF">
               GIF
-            </button>
+            </Button>
 
             {/* Upload Icon Button */}
-            <button type="button" className="mhn-chat-input-action-btn" aria-label="Upload file">
+            <Button type="button" className="mhn-chat-input-action-btn" aria-label="Upload file">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
                 <polyline points="7 9 12 4 17 9" />
                 <line x1="12" y1="4" x2="12" y2="16" />
               </svg>
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Circular Send Button */}
-        <button
+        <Button
           onClick={handleSendMessage}
           className="mhn-btn-chat-send"
           aria-label="Send message"
         >
           <img src="/send.png" alt="Send message" />
-        </button>
+        </Button>
       </div>
     </div>
   );

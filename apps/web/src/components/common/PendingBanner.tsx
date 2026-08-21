@@ -1,3 +1,4 @@
+import { Button } from './Button';
 import React from 'react';
 
 interface PendingBannerProps {
@@ -19,12 +20,12 @@ export const PendingBanner: React.FC<PendingBannerProps> = ({
         </div>
         <span className="mhn-pending-banner-text">{message}</span>
       </div>
-      <button 
+      <Button
         onClick={onActionClick}
         className="mhn-pending-banner-action"
       >
         {actionText}
-      </button>
+      </Button>
     </div>
   );
 };

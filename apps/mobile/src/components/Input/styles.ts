@@ -14,6 +14,8 @@ const styles = (Colors: ThemeColors) =>
       fontSize: _scaleText(13),
     },
     inputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
       borderWidth: 1,
       borderColor: Colors.border,
       backgroundColor: Colors.surface,
@@ -31,6 +33,7 @@ const styles = (Colors: ThemeColors) =>
       opacity: 0.6,
     },
     input: {
+      flex: 1,
       color: Colors.text,
       fontSize: _scaleText(15),
       padding: 0,

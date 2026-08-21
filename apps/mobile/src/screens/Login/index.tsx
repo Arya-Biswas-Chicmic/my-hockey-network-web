@@ -16,15 +16,10 @@ import useStyles from '@hooks/useStyles';
 import { ROUTES } from '../../navigation/constants';
 import { RootStackParamList } from '../../navigation/types';
 import { loginUser } from '@redux/CommonReducer';
-import { useLoginMutation } from '@redux/ApiReducer';
 import { useAppDispatch } from '@redux/store';
 import { FONT } from '@utils/constants';
-import {
-  isValidEmail,
-  sanitizeEmail,
-  sanitizePassword,
-  validatePassword,
-} from '@utils/validation';
+import { isValidEmail, sanitizeEmail } from '@utils/validation';
+import { mobileAuth } from '../../platform/auth-service';
 
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -35,14 +30,14 @@ type Props = NativeStackScreenProps<RootStackParamList, ROUTES.LOGIN>;
 const LoginScreen = ({ navigation }: Props) => {
   const { dynamicStyles, Layout, Colors } = useStyles(styles);
   const dispatch = useAppDispatch();
-  const [login, { isLoading }] = useLoginMutation();
-
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpRequested, setOtpRequested] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | undefined>(undefined);
   const [touched, setTouched] = useState<{
     email?: boolean;
-    password?: boolean;
+    otp?: boolean;
   }>({});
 
   const emailError = useMemo(() => {
@@ -53,36 +48,46 @@ const LoginScreen = ({ navigation }: Props) => {
     return undefined;
   }, [email, touched.email]);
 
-  const passwordError = useMemo(() => {
-    if (!touched.password) return undefined;
-    const p = sanitizePassword(password);
-    if (!p) return 'Password is required.';
-    return validatePassword(p);
-  }, [password, touched.password]);
-
   const canSubmit = useMemo(() => {
     const e = sanitizeEmail(email);
-    const p = sanitizePassword(password);
-    return !!e && isValidEmail(e) && !!p && !validatePassword(p);
-  }, [email, password]);
+    return (
+      !!e && isValidEmail(e) && (!otpRequested || /^\d{4,8}$/.test(otp.trim()))
+    );
+  }, [email, otp, otpRequested]);
 
   const onSubmit = async () => {
     Keyboard.dismiss();
     setSubmitError(undefined);
-    setTouched({ email: true, password: true });
+    setTouched({ email: true, otp: otpRequested });
     if (!canSubmit || isLoading) return;
 
     const e = sanitizeEmail(email);
-    const p = sanitizePassword(password);
-
+    setIsLoading(true);
     try {
-      const res = await login({ email: e, password: p }).unwrap();
-      dispatch(loginUser({ token: res.token, user: res.user }));
+      if (!otpRequested) {
+        await mobileAuth.requestOtp({
+          channel: 'EMAIL',
+          destination: e,
+          intent: 'SIGNIN',
+        });
+        setOtpRequested(true);
+        return;
+      }
+      await mobileAuth.verifyOtp({
+        channel: 'EMAIL',
+        destination: e,
+        code: otp.trim(),
+        intent: 'SIGNIN',
+      });
+      const user = await mobileAuth.getMe();
+      dispatch(loginUser({ user }));
     } catch (err) {
       const message =
         (err as { message?: string })?.message ||
         'Unable to login. Please try again.';
       setSubmitError(message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -129,22 +134,28 @@ const LoginScreen = ({ navigation }: Props) => {
                 placeholder="you@example.com"
               />
 
-              <Input
-                accessibilityLabel="Password"
-                label="Password"
-                value={password}
-                onChangeText={text => {
-                  setPassword(text);
-                  setSubmitError(undefined);
-                }}
-                onBlur={() => setTouched(t => ({ ...t, password: true }))}
-                secureTextEntry
-                textContentType="password"
-                autoComplete="password"
-                returnKeyType="done"
-                error={passwordError}
-                placeholder="Your password"
-              />
+              {otpRequested && (
+                <Input
+                  accessibilityLabel="Verification code"
+                  label="Verification code"
+                  value={otp}
+                  onChangeText={text => {
+                    setOtp(text);
+                    setSubmitError(undefined);
+                  }}
+                  onBlur={() => setTouched(t => ({ ...t, otp: true }))}
+                  keyboardType="number-pad"
+                  textContentType="oneTimeCode"
+                  autoComplete="sms-otp"
+                  returnKeyType="done"
+                  error={
+                    touched.otp && !/^\d{4,8}$/.test(otp.trim())
+                      ? 'Enter a valid verification code.'
+                      : undefined
+                  }
+                  placeholder="Code sent to your email"
+                />
+              )}
 
               {!!submitError && (
                 <Text
@@ -156,7 +167,9 @@ const LoginScreen = ({ navigation }: Props) => {
               )}
 
               <Button
-                title="Login"
+                title={
+                  otpRequested ? 'Verify & sign in' : 'Send verification code'
+                }
                 onPress={onSubmit}
                 loading={isLoading}
                 disabled={!canSubmit}

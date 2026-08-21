@@ -1,3 +1,5 @@
+import { Button } from '../../common/Button';
+import { Input } from '../../common/FormControls';
 import React, { useState } from 'react';
 import { EmptyState } from './EmptyState';
 import { NetworkSkeletonGrid } from './NetworkSkeletonLoader';
@@ -189,7 +191,7 @@ export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <input
+        <Input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -219,7 +221,7 @@ export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick
           gap: '0',
         }}
       >
-        <button
+        <Button
           onClick={() => setActiveTab('followers')}
           style={{
             flex: 1,
@@ -237,9 +239,9 @@ export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick
           }}
         >
           Followers
-        </button>
+        </Button>
 
-        <button
+        <Button
           onClick={() => setActiveTab('following')}
           style={{
             flex: 1,
@@ -257,7 +259,7 @@ export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick
           }}
         >
           Following
-        </button>
+        </Button>
       </div>
 
       {/* 4. 4-Column Grid of Connection Cards matching Figma */}
@@ -386,7 +388,7 @@ export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick
               </div>
 
               {/* Primary Action Button: Message */}
-              <button
+              <Button
                 type="button"
                 onClick={() => onMessageClick && onMessageClick(member)}
                 style={{
@@ -410,7 +412,7 @@ export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick
                 }}
               >
                 Message
-              </button>
+              </Button>
             </div>
           ))}
         </div>

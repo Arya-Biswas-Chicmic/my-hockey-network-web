@@ -1,3 +1,5 @@
+import { Button } from '../../common/Button';
+import { Input } from '../../common/FormControls';
 import React, { useState, useEffect } from 'react';
 import { getComments, addComment } from '@my-hockey-network/core';
 import { useAuth } from '../../../hooks/use-auth';
@@ -64,9 +66,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
     setErrorMsg(null);
 
     try {
-      console.log(`🚀 [PostCommentSection] Fetching GET /v1/posts/${postId}/comments...`);
       const res = await getComments(postId);
-      console.log(`✅ [PostCommentSection] Comments received for post ${postId}:`, res);
       
       const itemsList = res?.items || [];
       setComments(itemsList);
@@ -88,9 +88,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
     setStatusNotice(null);
 
     try {
-      console.log(`🚀 [PostCommentSection] Hitting POST /v1/posts/${postId}/comments API with body:`, text);
       const res = await addComment(postId, text);
-      console.log(`✅ [PostCommentSection] Add comment API response:`, res);
 
       const isPendingApproval =
         res?.message === 'COMMENT_PENDING_APPROVAL' ||
@@ -180,7 +178,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
           }}
         />
         <div className="mhn-comment-input-wrapper">
-          <input
+          <Input
             type="text"
             value={newCommentText}
             onChange={(e) => setNewCommentText(e.target.value)}
@@ -188,7 +186,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
             className="mhn-comment-input-field"
             disabled={isSubmitting}
           />
-          <button
+          <Button
             type="submit"
             disabled={!newCommentText.trim() || isSubmitting}
             className="mhn-comment-send-btn"
@@ -206,7 +204,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
                 <polygon points="22 2 15 22 11 13 2 9 22 2" />
               </svg>
             )}
-          </button>
+          </Button>
         </div>
       </form>
 
@@ -239,9 +237,9 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
         /* 3. Error State */
         <div className="mhn-comment-error-box">
           <p>{errorMsg || 'Failed to load comments.'}</p>
-          <button type="button" onClick={fetchPostComments} className="mhn-comment-retry-btn">
+          <Button type="button" onClick={fetchPostComments} className="mhn-comment-retry-btn">
             Retry
-          </button>
+          </Button>
         </div>
       ) : comments.length === 0 ? (
         /* 4. Empty State */
@@ -288,17 +286,17 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
 
                   {/* Comment Action Footer (Like / Reply) */}
                   <div className="mhn-comment-actions-bar">
-                    <button
+                    <Button
                       type="button"
                       onClick={() => toggleCommentLike(item.id, item.likeCount || 0)}
                       className={`mhn-comment-action-btn ${likeInfo.isLiked ? 'mhn-comment-liked' : ''}`}
                     >
                       {likeInfo.isLiked ? 'Liked' : 'Like'} {likeInfo.count > 0 && `(${likeInfo.count})`}
-                    </button>
+                    </Button>
                     <span className="mhn-comment-dot">•</span>
-                    <button type="button" className="mhn-comment-action-btn">
+                    <Button type="button" className="mhn-comment-action-btn">
                       Reply
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>

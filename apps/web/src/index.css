@@ -9070,3 +9070,9 @@
   color: #334155;
   margin-bottom: 12px;
 }
+ .route-loader {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+}

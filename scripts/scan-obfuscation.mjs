@@ -274,13 +274,13 @@ const SIGNATURES = [
     category: "hidden-source",
     severity: SEVERITY.CRITICAL,
     name: "bidirectional control character (Trojan Source)",
-    re: /[‪-‮⁦-⁩]/
+    re: /[\u202A-\u202E\u2066-\u2069]/
   },
   {
     category: "hidden-source",
     severity: SEVERITY.HIGH,
     name: "zero-width character in source",
-    re: /[​-‍⁠﻿]/
+    re: /[\u200B-\u200D\u2060\uFEFF]/
   },
 
   // ── Dynamic code execution ───────────────────────────────────────────────

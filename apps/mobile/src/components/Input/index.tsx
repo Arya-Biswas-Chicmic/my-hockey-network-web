@@ -1,4 +1,5 @@
 import { forwardRef, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 
 import {
   AccessibilityProps,
@@ -25,11 +26,20 @@ export type InputProps = Omit<
     error?: string;
     containerStyle?: StyleProp<ViewStyle>;
     inputStyle?: StyleProp<TextStyle>;
+    rightAccessory?: ReactNode;
   };
 
 const Input = forwardRef<TextInput, InputProps>(
   (
-    { label, error, containerStyle, inputStyle, editable = true, ...props },
+    {
+      label,
+      error,
+      containerStyle,
+      inputStyle,
+      rightAccessory,
+      editable = true,
+      ...props
+    },
     ref,
   ) => {
     const { dynamicStyles, Colors } = useStyles(styles);
@@ -85,6 +95,7 @@ const Input = forwardRef<TextInput, InputProps>(
               inputStyle,
             ]}
           />
+          {rightAccessory}
         </View>
         {!!error && (
           <Text

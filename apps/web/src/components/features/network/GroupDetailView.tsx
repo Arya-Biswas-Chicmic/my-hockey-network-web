@@ -1,3 +1,5 @@
+import { Button } from '../../common/Button';
+import { Input } from '../../common/FormControls';
 import React, { useState } from 'react';
 import { useAuth } from '../../../hooks/use-auth';
 import { FeedPostCard, FeedPostProps } from '../home/FeedPostCard';
@@ -89,12 +91,12 @@ export const GroupDetailView: React.FC<GroupDetailViewProps> = ({
           </div>
 
           {/* Post in Group Button */}
-          <button 
+          <Button
             className="mhn-btn-post-in-group"
             onClick={() => setIsPostModalOpen(true)}
           >
             Post in Group
-          </button>
+          </Button>
         </aside>
 
         {/* Right Main Column */}
@@ -115,24 +117,24 @@ export const GroupDetailView: React.FC<GroupDetailViewProps> = ({
                 </div>
 
                 <div className="mhn-group-action-btns">
-                  <button className="mhn-btn-group-outline">
+                  <Button className="mhn-btn-group-outline">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <line x1="12" y1="5" x2="12" y2="19" />
                       <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
                     <span>Invite</span>
-                  </button>
+                  </Button>
 
-                  <button className="mhn-btn-group-outline">
+                  <Button className="mhn-btn-group-outline">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
                       <polyline points="16 6 12 2 8 6" />
                       <line x1="12" y1="2" x2="12" y2="15" />
                     </svg>
                     <span>Share</span>
-                  </button>
+                  </Button>
 
-                  <button 
+                  <Button
                     className={`mhn-btn-group-joined ${isJoined ? 'joined' : ''}`}
                     onClick={() => setIsJoined(!isJoined)}
                   >
@@ -142,21 +144,21 @@ export const GroupDetailView: React.FC<GroupDetailViewProps> = ({
                         <polyline points="6 9 12 15 18 9" />
                       </svg>
                     )}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               {/* Sub-navigation Tabs */}
               <div className="mhn-group-subnav-tabs">
                 {(['posts', 'about', 'people', 'media', 'files'] as const).map((tab) => (
-                  <button
+                  <Button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
                     className={`mhn-group-subnav-tab ${activeTab === tab ? 'active' : ''}`}
                   >
                     <span>{tab.charAt(0).toUpperCase() + tab.slice(1)}</span>
                     {activeTab === tab && <div className="mhn-group-tab-active-line" />}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -182,7 +184,7 @@ export const GroupDetailView: React.FC<GroupDetailViewProps> = ({
                     <circle cx="11" cy="11" r="8"/>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                   </svg>
-                  <input
+                  <Input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -218,7 +220,7 @@ export const GroupDetailView: React.FC<GroupDetailViewProps> = ({
                     <div className="mhn-suggested-group-info">
                       <h4 className="mhn-suggested-group-name">San Jose Sharks</h4>
                       <span className="mhn-suggested-group-members">1M members</span>
-                      <button className="mhn-btn-suggested-join">Join</button>
+                      <Button className="mhn-btn-suggested-join">Join</Button>
                     </div>
                   </div>
 
@@ -228,7 +230,7 @@ export const GroupDetailView: React.FC<GroupDetailViewProps> = ({
                     <div className="mhn-suggested-group-info">
                       <h4 className="mhn-suggested-group-name">New York Rangers</h4>
                       <span className="mhn-suggested-group-members">750k members</span>
-                      <button className="mhn-btn-suggested-join">Join</button>
+                      <Button className="mhn-btn-suggested-join">Join</Button>
                     </div>
                   </div>
                 </div>

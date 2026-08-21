@@ -1,9 +1,10 @@
+import { API_BASE_URL } from './load-api-base-url.mjs';
+
 async function verifyAuthMe() {
-  const BASE_URL = 'https://reposeful-kareen-controllingly.ngrok-free.dev/v1';
   console.log('🚀 [Verification Script] Hitting GET /v1/auth/me...');
   
   try {
-    const res = await fetch(`${BASE_URL}/auth/me`, {
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

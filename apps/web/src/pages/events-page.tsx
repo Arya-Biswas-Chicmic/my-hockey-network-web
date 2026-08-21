@@ -1,3 +1,5 @@
+import { Button } from '../components/common/Button';
+import { Input } from '../components/common/FormControls';
 import React, { useState } from 'react';
 import { Header } from '../components/common/Header';
 import { PendingBanner } from '../components/common/PendingBanner';
@@ -110,7 +112,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 <circle cx="11" cy="11" r="8" />
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
-              <input
+              <Input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -125,7 +127,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         <div className="mhn-events-controls-row">
           {/* View Mode Switcher Toggle: List vs Calendar */}
           <div className="mhn-view-switcher-pill">
-            <button
+            <Button
               onClick={() => setViewMode('list')}
               className={`mhn-view-pill-btn ${viewMode === 'list' ? 'mhn-view-pill-btn-active' : ''}`}
               title="List View"
@@ -139,9 +141,9 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 <line x1="3" y1="12" x2="3.01" y2="12" />
                 <line x1="3" y1="18" x2="3.01" y2="18" />
               </svg>
-            </button>
+            </Button>
             <div className="mhn-view-pill-divider" />
-            <button
+            <Button
               onClick={() => setViewMode('calendar')}
               className={`mhn-view-pill-btn ${viewMode === 'calendar' ? 'mhn-view-pill-btn-active' : ''}`}
               title="Calendar View"
@@ -156,29 +158,29 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 <circle cx="12" cy="14" r="1" fill={viewMode === 'calendar' ? '#1860C3' : '#64748B'} />
                 <circle cx="16" cy="14" r="1" fill={viewMode === 'calendar' ? '#1860C3' : '#64748B'} />
               </svg>
-            </button>
+            </Button>
           </div>
 
           {/* Filter Pills Row */}
           <div className="mhn-events-filter-pills-row">
             {/* Main Filter Dropdown Button */}
-            <button className="mhn-filter-btn-main">
+            <Button className="mhn-filter-btn-main">
               <img src="/filters.png" alt="Filters" className="mhn-filter-icon-img" />
               <span>Filters</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
-            </button>
+            </Button>
 
             {/* Quick Filter Pill Buttons */}
             {filterPills.map((pill) => (
-              <button
+              <Button
                 key={pill.id}
                 onClick={() => setActiveFilterPill(activeFilterPill === pill.id ? null : pill.id)}
                 className={`mhn-filter-pill ${activeFilterPill === pill.id ? 'mhn-filter-pill-active' : ''}`}
               >
                 {pill.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

@@ -1,3 +1,5 @@
+import { Button } from '../../common/Button';
+import { Input } from '../../common/FormControls';
 import React, { useState } from 'react';
 
 export interface GroupItem {
@@ -72,7 +74,7 @@ export const GroupsView: React.FC<GroupsViewProps> = ({ onViewGroup }) => {
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <input
+          <Input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -84,20 +86,20 @@ export const GroupsView: React.FC<GroupsViewProps> = ({ onViewGroup }) => {
 
       {/* Navigation Filter Tabs */}
       <div className="mhn-groups-tabs-bar">
-        <button
+        <Button
           onClick={() => setActiveTab('your-groups')}
           className={`mhn-groups-tab-btn ${activeTab === 'your-groups' ? 'active' : ''}`}
         >
           <span>Your Groups</span>
           {activeTab === 'your-groups' && <div className="mhn-groups-tab-line" />}
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => setActiveTab('discover')}
           className={`mhn-groups-tab-btn ${activeTab === 'discover' ? 'active' : ''}`}
         >
           <span>Discover</span>
           {activeTab === 'discover' && <div className="mhn-groups-tab-line" />}
-        </button>
+        </Button>
       </div>
 
       {/* Groups Grid */}
@@ -107,13 +109,13 @@ export const GroupsView: React.FC<GroupsViewProps> = ({ onViewGroup }) => {
             {/* Banner Image with 3-dots */}
             <div className="mhn-group-card-banner">
               <img src={group.bannerImage} alt={group.name} className="mhn-group-banner-img" />
-              <button className="mhn-group-dots-btn" aria-label="More options">
+              <Button className="mhn-group-dots-btn" aria-label="More options">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <circle cx="12" cy="5" r="2" />
                   <circle cx="12" cy="12" r="2" />
                   <circle cx="12" cy="19" r="2" />
                 </svg>
-              </button>
+              </Button>
             </div>
 
             {/* Group Content */}
@@ -121,12 +123,12 @@ export const GroupsView: React.FC<GroupsViewProps> = ({ onViewGroup }) => {
               <h3 className="mhn-group-title">{group.name}</h3>
               <p className="mhn-group-members">{group.membersCount}</p>
 
-              <button
+              <Button
                 className="mhn-btn-view-group"
                 onClick={() => onViewGroup && onViewGroup(group.id)}
               >
                 Join Group
-              </button>
+              </Button>
             </div>
           </div>
         ))}

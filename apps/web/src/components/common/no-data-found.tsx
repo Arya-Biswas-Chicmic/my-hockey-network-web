@@ -1,3 +1,4 @@
+import { Button } from './Button';
 import React from 'react';
 
 export interface NoDataFoundProps {
@@ -77,7 +78,7 @@ export const NoDataFound: React.FC<NoDataFoundProps> = ({
       </p>
 
       {actionLabel && onAction && (
-        <button
+        <Button
           onClick={onAction}
           style={{
             backgroundColor: '#0091FF',
@@ -97,7 +98,7 @@ export const NoDataFound: React.FC<NoDataFoundProps> = ({
           onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#0091FF')}
         >
           {actionLabel}
-        </button>
+        </Button>
       )}
     </div>
   );

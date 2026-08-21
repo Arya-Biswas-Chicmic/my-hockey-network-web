@@ -19,31 +19,11 @@ export default defineConfig({
     headers: {
       'Access-Control-Allow-Origin': '*',
     },
-    proxy: {
-      '/v1': {
-        target: 'https://reposeful-kareen-controllingly.ngrok-free.dev',
-        changeOrigin: true,
-        secure: false,
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-        },
-      },
-    },
   },
   preview: {
     host: '0.0.0.0',
     port: 5174,
     allowedHosts: true,
-    proxy: {
-      '/v1': {
-        target: 'https://reposeful-kareen-controllingly.ngrok-free.dev',
-        changeOrigin: true,
-        secure: false,
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-        },
-      },
-    },
   },
   resolve: {
     alias: {

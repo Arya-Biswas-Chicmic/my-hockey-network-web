@@ -1,67 +1,79 @@
-import React from 'react';
-import { ROUTE_MAP, AppRoute } from '../config/routes';
-import { useAppNavigation } from '../hooks/use-app-navigation';
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import { AppRoute, ROUTE_MAP } from '../config/routes';
+import { UserRole } from '../enums/role';
+import { AuthGuard } from '../guards/auth-guard';
+import { GuestGuard } from '../guards/guest-guard';
 import { RoleGuard } from '../guards/role-guard';
+import {
+  EventDetailPage,
+  EventsPage,
+  GuardianApprovalPage,
+  HomePage,
+  MessagingPage,
+  MyNetworkPage,
+  NotificationsPage,
+  OnboardingPage,
+  ProfilePage,
+  RequestSentPage,
+  SettingsPage,
+  SupervisionPage,
+} from '../pages';
+import { useAuth } from '../hooks/use-auth';
 
-export const AppRouter: React.FC = () => {
-  const { currentRoute, navigate, logout, handleOnboardingComplete } = useAppNavigation();
-
-  const routeDef = ROUTE_MAP[currentRoute] || ROUTE_MAP[AppRoute.HOME];
-  const ActiveComponent = routeDef.component;
-
-  // Compute props cleanly per screen requirements using AppRoute enum
-  const getScreenProps = () => {
-    switch (currentRoute) {
-      case AppRoute.ONBOARDING:
-        return { onComplete: handleOnboardingComplete };
-      case AppRoute.GUARDIAN:
-        return {
-          onSendSuccess: () => navigate(AppRoute.SENT),
-          onSignOut: logout,
-        };
-      case AppRoute.SENT:
-        return { onComplete: () => navigate(AppRoute.HOME) };
-      case AppRoute.EVENT_DETAIL:
-        return {
-          onNavigate: navigate,
-          onLogout: logout,
-          onBack: () => navigate(AppRoute.PROFILE),
-        };
-      default:
-        return {
-          onNavigate: navigate,
-          onLogout: logout,
-        };
-    }
+function RouteTree() {
+  const navigate = useNavigate();
+  const { handleLogout } = useAuth();
+  const navigateTo = (route: AppRoute | string) => {
+    const definition = ROUTE_MAP[route as AppRoute];
+    navigate(definition?.path ?? `/${String(route).replace(/^\//, '')}`);
   };
-
-  const content = <ActiveComponent {...getScreenProps()} />;
+  const logout = async () => {
+    await handleLogout();
+    navigate(ROUTE_MAP[AppRoute.ONBOARDING].path, { replace: true });
+  };
+  const pageProps = { onNavigate: navigateTo, onLogout: logout };
 
   return (
     <div className="app-viewport">
-      {routeDef.allowedRoles && routeDef.allowedRoles.length > 0 ? (
-        <RoleGuard
-          allowedRoles={routeDef.allowedRoles}
-          redirectTo={AppRoute.HOME}
-          onAccessDenied={(message) => {
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(
-                new CustomEvent('mhn:toast', {
-                  detail: {
-                    message: message || 'Supervision access is available only to parent accounts.',
-                    type: 'error',
-                  },
-                })
-              );
-            }
-            navigate(AppRoute.HOME);
-          }}
-        >
-          {content}
-        </RoleGuard>
-      ) : (
-        content
-      )}
+      <Routes>
+        <Route element={<GuestGuard />}>
+          <Route
+            path={ROUTE_MAP[AppRoute.ONBOARDING].path}
+            element={<OnboardingPage onComplete={() => navigateTo(AppRoute.HOME)} />}
+          />
+        </Route>
+
+        <Route element={<AuthGuard />}>
+          <Route path={ROUTE_MAP[AppRoute.HOME].path} element={<HomePage {...pageProps} />} />
+          <Route path={ROUTE_MAP[AppRoute.NETWORK].path} element={<MyNetworkPage {...pageProps} />} />
+          <Route path={ROUTE_MAP[AppRoute.EVENTS].path} element={<EventsPage {...pageProps} />} />
+          <Route path={ROUTE_MAP[AppRoute.MESSAGING].path} element={<MessagingPage {...pageProps} />} />
+          <Route path={ROUTE_MAP[AppRoute.NOTIFICATIONS].path} element={<NotificationsPage {...pageProps} />} />
+          <Route path={ROUTE_MAP[AppRoute.PROFILE].path} element={<ProfilePage {...pageProps} />} />
+          <Route path={ROUTE_MAP[AppRoute.SETTINGS].path} element={<SettingsPage {...pageProps} />} />
+          <Route
+            path={ROUTE_MAP[AppRoute.EVENT_DETAIL].path}
+            element={<EventDetailPage {...pageProps} onBack={() => navigateTo(AppRoute.EVENTS)} />}
+          />
+          <Route
+            path={ROUTE_MAP[AppRoute.GUARDIAN].path}
+            element={<GuardianApprovalPage onSendSuccess={() => navigateTo(AppRoute.SENT)} onSignOut={logout} />}
+          />
+          <Route
+            path={ROUTE_MAP[AppRoute.SENT].path}
+            element={<RequestSentPage onComplete={() => navigateTo(AppRoute.HOME)} />}
+          />
+          <Route element={<RoleGuard allowedRoles={[UserRole.PARENT]} />}>
+            <Route path={ROUTE_MAP[AppRoute.SUPERVISION].path} element={<SupervisionPage {...pageProps} />} />
+          </Route>
+        </Route>
+
+        <Route path="*" element={<Navigate replace to={ROUTE_MAP[AppRoute.HOME].path} />} />
+      </Routes>
     </div>
   );
-};
+}
+
+export function AppRouter() {
+  return <BrowserRouter><RouteTree /></BrowserRouter>;
+}

@@ -1,3 +1,4 @@
+import { Button } from '../../common/Button';
 import React, { useState } from 'react';
 
 interface EventItem {
@@ -161,7 +162,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onEventClick }) => {
             {monthNames[currentMonth]}, {currentYear}
           </h3>
           <div className="mhn-calendar-nav-buttons">
-            <button
+            <Button
               onClick={handlePrevMonth}
               className="mhn-calendar-nav-btn"
               aria-label="Previous month"
@@ -169,8 +170,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onEventClick }) => {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleNextMonth}
               className="mhn-calendar-nav-btn"
               aria-label="Next month"
@@ -178,7 +179,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onEventClick }) => {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
-            </button>
+            </Button>
           </div>
         </div>
 

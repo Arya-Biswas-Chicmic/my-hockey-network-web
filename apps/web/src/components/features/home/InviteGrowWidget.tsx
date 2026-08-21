@@ -1,3 +1,4 @@
+import { Button } from '../../common/Button';
 import React from 'react';
 
 interface InviteGrowWidgetProps {
@@ -16,9 +17,9 @@ export const InviteGrowWidget: React.FC<InviteGrowWidgetProps> = ({
         <p className="mhn-invite-grow-desc">
           Invite players, coaches, and families to grow your hockey network.
         </p>
-        <button onClick={onInviteClick} className="mhn-btn-invite-now">
+        <Button onClick={onInviteClick} className="mhn-btn-invite-now">
           Invite Now
-        </button>
+        </Button>
       </div>
 
       <div className="mhn-invite-grow-illustration">

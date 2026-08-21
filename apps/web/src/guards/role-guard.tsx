@@ -1,62 +1,27 @@
-import React, { ReactNode, useEffect } from 'react';
+import type { ReactNode } from 'react';
+import { Navigate, Outlet } from 'react-router-dom';
+import { hasAnyRole } from '@my-hockey-network/domain';
+import type { UserRole } from '@my-hockey-network/contracts';
 import { useAuth } from '../hooks/use-auth';
-import { UserRole } from '../enums/role';
-import { AppRoute } from '../enums/routes';
 import { Spinner } from '../components/common/Spinner';
+import { paths } from '../constants/paths';
 
 export interface RoleGuardProps {
-  children: ReactNode;
-  allowedRoles: UserRole[] | string[];
-  redirectTo?: AppRoute;
-  deniedToastMessage?: string;
-  onAccessDenied?: (message: string, redirectRoute: AppRoute) => void;
+  children?: ReactNode;
+  allowedRoles: readonly (UserRole | string)[];
 }
 
-export const RoleGuard: React.FC<RoleGuardProps> = ({
+export function RoleGuard({
   children,
   allowedRoles,
-  redirectTo = AppRoute.HOME,
-  deniedToastMessage = 'Supervision access is available only to parent accounts.',
-  onAccessDenied,
-}) => {
-  const { user, isLoading } = useAuth();
+}: Readonly<RoleGuardProps>) {
+  const { user, isLoading, hasBootstrapped } = useAuth();
 
-  const userRole = (
-    user?.primaryRole ||
-    (user as any)?.profile?.type ||
-    (user as any)?.profile?.primaryRole ||
-    'PLAYER'
-  ).toUpperCase();
-
-  const isAuthorized = allowedRoles.some(
-    (role) => role.toUpperCase() === userRole
-  );
-
-  useEffect(() => {
-    if (!isLoading && !isAuthorized) {
-      if (onAccessDenied) {
-        onAccessDenied(deniedToastMessage, redirectTo);
-      } else if (typeof window !== 'undefined') {
-        window.dispatchEvent(
-          new CustomEvent('mhn:toast', {
-            detail: { message: deniedToastMessage, type: 'error' },
-          })
-        );
-      }
-    }
-  }, [isLoading, isAuthorized, deniedToastMessage, redirectTo, onAccessDenied]);
-
-  if (isLoading) {
-    return (
-      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
-        <Spinner size="lg" color="#0B66C2" />
-      </div>
-    );
+  if (isLoading || !hasBootstrapped) {
+    return <div className="route-loader"><Spinner size="lg" color="#0B66C2" /></div>;
   }
-
-  if (!isAuthorized) {
-    return null;
+  if (!hasAnyRole(user, allowedRoles)) {
+    return <Navigate replace to={paths.home} />;
   }
-
-  return <>{children}</>;
-};
+  return children ? <>{children}</> : <Outlet />;
+}

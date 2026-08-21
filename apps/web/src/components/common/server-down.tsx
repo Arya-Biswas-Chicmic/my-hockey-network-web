@@ -1,3 +1,4 @@
+import { Button } from './Button';
 import React from 'react';
 
 export interface ServerDownProps {
@@ -96,7 +97,7 @@ export const ServerDown: React.FC<ServerDownProps> = ({
       </p>
 
       {onRetry && (
-        <button
+        <Button
           onClick={onRetry}
           style={{
             backgroundColor: '#DC2626',
@@ -120,7 +121,7 @@ export const ServerDown: React.FC<ServerDownProps> = ({
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
           </svg>
           Retry Connection
-        </button>
+        </Button>
       )}
     </div>
   );

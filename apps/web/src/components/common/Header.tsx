@@ -1,3 +1,4 @@
+import { Button } from './Button';
 import React, { useState } from 'react';
 import { useAuth } from '../../hooks/use-auth';
 import { LogoutModal } from './LogoutModal';
@@ -92,7 +93,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Center: Navigation Menu */}
         <nav className="mhn-header-nav">
           {/* Home */}
-          <button
+          <Button
             onClick={() => handleTabClick('home')}
             className={`mhn-nav-item ${currentTab === 'home' ? 'mhn-nav-item-active' : ''}`}
           >
@@ -104,10 +105,10 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <span className="mhn-nav-label">Home</span>
             {currentTab === 'home' && <div className="mhn-nav-active-bar" />}
-          </button>
+          </Button>
 
           {/* My Network */}
-          <button
+          <Button
             onClick={() => handleTabClick('network')}
             className={`mhn-nav-item ${currentTab === 'network' ? 'mhn-nav-item-active' : ''}`}
           >
@@ -121,10 +122,10 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <span className="mhn-nav-label">My Network</span>
             {currentTab === 'network' && <div className="mhn-nav-active-bar" />}
-          </button>
+          </Button>
 
           {/* Events */}
-          <button
+          <Button
             onClick={() => handleTabClick('events')}
             className={`mhn-nav-item ${currentTab === 'events' ? 'mhn-nav-item-active' : ''}`}
           >
@@ -139,10 +140,10 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <span className="mhn-nav-label">Events</span>
             {currentTab === 'events' && <div className="mhn-nav-active-bar" />}
-          </button>
+          </Button>
 
           {/* Messaging */}
-          <button
+          <Button
             onClick={() => handleTabClick('messaging')}
             className={`mhn-nav-item ${currentTab === 'messaging' ? 'mhn-nav-item-active' : ''}`}
           >
@@ -153,10 +154,10 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <span className="mhn-nav-label">Messaging</span>
             {currentTab === 'messaging' && <div className="mhn-nav-active-bar" />}
-          </button>
+          </Button>
 
           {/* Notifications */}
-          <button
+          <Button
             onClick={() => handleTabClick('notifications')}
             className={`mhn-nav-item ${currentTab === 'notifications' ? 'mhn-nav-item-active' : ''}`}
           >
@@ -168,7 +169,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <span className="mhn-nav-label">Notifications</span>
             {currentTab === 'notifications' && <div className="mhn-nav-active-bar" />}
-          </button>
+          </Button>
         </nav>
 
         {/* Right: User Profile Dropdown */}
@@ -211,7 +212,7 @@ export const Header: React.FC<HeaderProps> = ({
 
               <div className="mhn-profile-dropdown">
                 {/* View Profile */}
-                <button className="mhn-dropdown-item" onClick={handleViewProfile}>
+                <Button className="mhn-dropdown-item" onClick={handleViewProfile}>
                   <div className="mhn-dropdown-item-left">
                     <img 
                       src={activeUser.avatar} 
@@ -226,7 +227,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
-                </button>
+                </Button>
 
                 {/* Family (2) Box */}
                 <div className="mhn-dropdown-family-box">
@@ -282,7 +283,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
 
                 {/* Settings & Privacy */}
-                <button className="mhn-dropdown-item" onClick={() => { setIsProfileOpen(false); handleTabClick('settings'); }}>
+                <Button className="mhn-dropdown-item" onClick={() => { setIsProfileOpen(false); handleTabClick('settings'); }}>
                   <div className="mhn-dropdown-item-left">
                     <div className="mhn-dropdown-icon-box">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1860C3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -295,10 +296,10 @@ export const Header: React.FC<HeaderProps> = ({
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
-                </button>
+                </Button>
 
                 {/* Supervision */}
-                <button className="mhn-dropdown-item" onClick={() => { setIsProfileOpen(false); handleTabClick('supervision'); }}>
+                <Button className="mhn-dropdown-item" onClick={() => { setIsProfileOpen(false); handleTabClick('supervision'); }}>
                   <div className="mhn-dropdown-item-left">
                     <div className="mhn-dropdown-icon-box">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1860C3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -311,10 +312,10 @@ export const Header: React.FC<HeaderProps> = ({
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
-                </button>
+                </Button>
 
                 {/* Help & Support */}
-                <button className="mhn-dropdown-item" onClick={() => setIsProfileOpen(false)}>
+                <Button className="mhn-dropdown-item" onClick={() => setIsProfileOpen(false)}>
                   <div className="mhn-dropdown-item-left">
                     <div className="mhn-dropdown-icon-box">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1860C3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -328,12 +329,12 @@ export const Header: React.FC<HeaderProps> = ({
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
-                </button>
+                </Button>
 
                 <div className="mhn-dropdown-divider" />
 
                 {/* Logout Button */}
-                <button className="mhn-dropdown-logout-btn" onClick={handleLogoutClick}>
+                <Button className="mhn-dropdown-logout-btn" onClick={handleLogoutClick}>
                   <div className="mhn-logout-icon-box">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -342,7 +343,7 @@ export const Header: React.FC<HeaderProps> = ({
                     </svg>
                   </div>
                   <span className="mhn-logout-text">Logout</span>
-                </button>
+                </Button>
               </div>
             </>
           )}

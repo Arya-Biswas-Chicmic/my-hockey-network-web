@@ -1,3 +1,4 @@
+import { Button } from '../components/common/Button';
 import React, { useState } from 'react';
 import { Header } from '../components/common/Header';
 
@@ -47,13 +48,13 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
       <main className="mhn-event-detail-main">
         {/* Title Bar with Back Arrow */}
         <div className="mhn-event-title-bar">
-          <button
+          <Button
             onClick={handleBackClick}
             className="mhn-btn-back-arrow"
             aria-label="Back"
           >
             <img src="/back.png" alt="back" className='back' />
-          </button>
+          </Button>
           <h1 className="mhn-event-page-title">{eventTitle}</h1>
         </div>
 
@@ -105,7 +106,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
               teammates, families, and fans. Whether you're following the season closely or joining
               us for your first game, this is a matchup you won't want to miss!
             </p>
-            <button
+            <Button
               onClick={() => setIsReadMore(!isReadMore)}
               className="mhn-btn-read-more"
             >
@@ -122,7 +123,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
                   transition: 'transform 0.2s ease',
                 }}
               />
-            </button>
+            </Button>
 
             {/* Things to know */}
             <div className="mhn-things-to-know-section">
@@ -208,11 +209,11 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
                   <h4 className="mhn-location-title">Princess Auto Stadium - Winrip...</h4>
                   <span className="mhn-location-sub">52.3 km away</span>
                 </div>
-                <button className="mhn-location-arrow-btn" aria-label="Location details">
+                <Button className="mhn-location-arrow-btn" aria-label="Location details">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
-                </button>
+                </Button>
               </div>
 
               {/* Item 2: Date & Time */}
@@ -224,11 +225,11 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
                   <h4 className="mhn-location-title">Oct 25, 2026</h4>
                   <span className="mhn-location-sub">5:00 PM - 7:00 PM</span>
                 </div>
-                <button className="mhn-location-arrow-btn" aria-label="Date details">
+                <Button className="mhn-location-arrow-btn" aria-label="Date details">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
-                </button>
+                </Button>
               </div>
             </div>
           </div>

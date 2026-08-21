@@ -1,3 +1,4 @@
+import { Button } from '../../common/Button';
 import React from 'react';
 
 export interface MatchItem {
@@ -44,9 +45,9 @@ export const MatchesWidget: React.FC<MatchesWidgetProps> = ({
     <div className="mhn-sidebar-card">
       <div className="mhn-sidebar-card-header">
         <h3 className="mhn-sidebar-card-title">Matches</h3>
-        <button onClick={onViewAll} className="mhn-sidebar-view-all">
+        <Button onClick={onViewAll} className="mhn-sidebar-view-all">
           View All
-        </button>
+        </Button>
       </div>
 
       <div className="mhn-matches-list">

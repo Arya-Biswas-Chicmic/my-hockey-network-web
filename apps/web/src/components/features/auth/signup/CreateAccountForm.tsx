@@ -1,3 +1,5 @@
+import { Button } from '../../../common/Button';
+import { Input } from '../../../common/FormControls';
 import React, { useState, useRef, useMemo } from 'react';
 import { CREATE_ACCOUNT_STRINGS } from '@my-hockey-network/shared';
 import { calculateAge, validateSignUpAgeAndApproval } from '@my-hockey-network/core';
@@ -116,7 +118,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
   return (
     <div className="onboarding-form">
       {onBack && (
-        <button
+        <Button
           type="button"
           onClick={onBack}
           style={{
@@ -137,7 +139,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
           <span>Back</span>
-        </button>
+        </Button>
       )}
       <div className="header-wrapper">
         <h1 className="onboarding-title">{CREATE_ACCOUNT_STRINGS.title}</h1>
@@ -167,7 +169,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
             {CREATE_ACCOUNT_STRINGS.fullNameLabel}
           </label>
           <div className="auth-input-wrapper">
-            <input
+            <Input
               id="fullName"
               type="text"
               className="auth-input"
@@ -184,7 +186,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
             {CREATE_ACCOUNT_STRINGS.emailLabel}
           </label>
           <div className="auth-input-wrapper">
-            <input
+            <Input
               id="email"
               type="email"
               className="auth-input"
@@ -208,7 +210,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
             )}
           </div>
           <div className="auth-input-wrapper" style={{ position: 'relative' }}>
-            <input
+            <Input
               id="dob"
               type="text"
               className="auth-input"
@@ -225,7 +227,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
               onClick={handleCalendarClick}
               style={{ cursor: 'pointer' }}
             />
-            <input
+            <Input
               type="date"
               ref={dateInputRef}
               onChange={handleDatePickerChange}
@@ -243,7 +245,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
           </div>
         </div>
 
-        <button type="submit" className="btn-submit" disabled={loading} style={{ opacity: loading ? 0.75 : 1 }}>
+        <Button type="submit" className="btn-submit" disabled={loading} style={{ opacity: loading ? 0.75 : 1 }}>
           {loading ? (
             <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               <Spinner size="sm" color="#FFFFFF" />
@@ -252,10 +254,10 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
           ) : (
             CREATE_ACCOUNT_STRINGS.submitButton
           )}
-        </button>
+        </Button>
       </form>
 
-      <button
+      <Button
         type="button"
         className="btn-google"
         onClick={onGoogleSignIn}
@@ -279,27 +281,27 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
           />
         </svg>
         <span>{CREATE_ACCOUNT_STRINGS.googleButton}</span>
-      </button>
+      </Button>
 
       {onBack && (
-        <button
+        <Button
           type="button"
           className="auth-back-link"
           onClick={onBack}
         >
           {CREATE_ACCOUNT_STRINGS.backButton}
-        </button>
+        </Button>
       )}
 
       <div className="auth-footer-text">
         <span>{CREATE_ACCOUNT_STRINGS.alreadyHaveAccount}</span>
-        <button
+        <Button
           type="button"
           className="auth-primary-link"
           onClick={onSignInClick}
         >
           {CREATE_ACCOUNT_STRINGS.signInLink}
-        </button>
+        </Button>
       </div>
     </div>
   );

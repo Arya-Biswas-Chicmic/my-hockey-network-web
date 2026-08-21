@@ -1,3 +1,5 @@
+import { Button } from '../../common/Button';
+import { Textarea } from '../../common/FormControls';
 import React, { useState, useEffect } from 'react';
 import { likePost, unlikePost, repostPost, updatePost, deletePost, followUser, unfollowUser } from '@my-hockey-network/core';
 import { Toast } from '../../common/Toast';
@@ -93,6 +95,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
+  const [relationshipId, setRelationshipId] = useState<string | null>(null);
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -105,9 +108,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
     setIsDeleting(true);
 
     try {
-      console.log(`🚀 [FeedPostCard] Calling DELETE /v1/posts/${id}...`);
       await deletePost(id);
-      console.log(`✅ [FeedPostCard] Post ${id} deleted successfully`);
       setIsDeleteModalOpen(false);
       setToast({ message: 'Post deleted successfully!', type: 'success' });
 
@@ -138,9 +139,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
     setIsUpdating(true);
 
     try {
-      console.log(`🚀 [FeedPostCard] Calling PATCH /v1/posts/${id}...`);
       await updatePost(id, { body: editContentInput.trim() });
-      console.log(`✅ [FeedPostCard] Post ${id} updated successfully`);
       setPostContent(editContentInput.trim());
       setIsEditModalOpen(false);
       setToast({ message: 'Post updated successfully!', type: 'success' });
@@ -193,7 +192,6 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
     try {
       if (hasReposted) {
         const targetDeleteId = userRepostId || id;
-        console.log(`🚀 [FeedPostCard] Undoing repost... Calling DELETE /v1/posts/${targetDeleteId}`);
         await deletePost(targetDeleteId);
         setReposts((prev) => Math.max(0, prev - 1));
         setHasReposted(false);
@@ -210,7 +208,6 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
           onRepostComplete();
         }
       } else {
-        console.log(`🚀 [FeedPostCard] Reposting post... Calling POST /v1/posts/${id}/repost`);
         const res = await repostPost(id);
         const createdRepostId = res?.post?.id || (res as any)?.data?.post?.id || (res as any)?.data?.id;
 
@@ -239,8 +236,6 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
     }
   };
 
-  const [relationshipId, setRelationshipId] = useState<string | null>(null);
-
   const toggleFollow = async () => {
     if (isFollowingLoading) return;
     setIsFollowingLoading(true);
@@ -251,9 +246,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
     try {
       if (prevFollowing) {
         const targetIdOrEntity = relationshipId || { type: 'PROFILE' as const, id: targetKey };
-        console.log(`🚀 [FeedPostCard] Unfollowing: Calling DELETE /v1/relationships/...`, targetIdOrEntity);
         await unfollowUser(targetIdOrEntity);
-        console.log(`✅ [FeedPostCard] Unfollowed ${authorName} successfully (edge REVOKED)`);
 
         // Update state & notify parent to sync other buttons ONLY AFTER API SUCCESS
         setIsFollowing(false);
@@ -267,9 +260,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
           type: 'success',
         });
       } else {
-        console.log(`🚀 [FeedPostCard] Following: Calling POST /v1/relationships/follow for authorProfile.id: ${targetKey}...`);
         const res = await followUser({ type: 'PROFILE', id: targetKey });
-        console.log(`✅ [FeedPostCard] Followed ${authorName} successfully. Edge ID:`, res?.relationship?.id);
 
         if (res?.relationship?.id) {
           setRelationshipId(res.relationship.id);
@@ -316,7 +307,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
 
         <div className="mhn-post-header-actions" style={{ position: 'relative' }}>
           {!isSelf && (
-            <button
+            <Button
               onClick={toggleFollow}
               disabled={isFollowingLoading}
               className={`mhn-btn-follow ${isFollowing ? 'mhn-btn-following' : ''}`}
@@ -337,12 +328,12 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
               ) : (
                 'Follow'
               )}
-            </button>
+            </Button>
           )}
 
           {isSelf && (
             <>
-              <button
+              <Button
                 onClick={() => setIsMenuOpen((prev) => !prev)}
                 className="mhn-btn-more-options"
                 aria-label="More options"
@@ -352,7 +343,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                   <circle cx="12" cy="12" r="2" />
                   <circle cx="19" cy="12" r="2" />
                 </svg>
-              </button>
+              </Button>
 
               {isMenuOpen && (
                 <div
@@ -369,7 +360,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                     overflow: 'hidden',
                   }}
                 >
-                  <button
+                  <Button
                     onClick={() => {
                       setIsMenuOpen(false);
                       setEditContentInput(postContent);
@@ -394,8 +385,8 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
                     <span>Edit Post</span>
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => {
                       setIsMenuOpen(false);
                       setIsDeleteModalOpen(true);
@@ -420,7 +411,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                     <span>Delete Post</span>
-                  </button>
+                  </Button>
                 </div>
               )}
             </>
@@ -433,12 +424,12 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
           {postContent}
         </p>
         {postContent.length > 30 && (
-          <button
+          <Button
             onClick={() => setIsExpanded(!isExpanded)}
             className="mhn-post-more-btn"
           >
             {isExpanded ? 'Show less' : 'More'}
-          </button>
+          </Button>
         )}
         {postImage && (
           <div className="mhn-post-media-container">
@@ -456,7 +447,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
 
       <div className="mhn-post-footer">
         <div className="mhn-post-actions-group">
-          <button
+          <Button
             onClick={handleLike}
             disabled={isLiking}
             className={`mhn-action-item ${isLiked ? 'mhn-action-liked' : ''}`}
@@ -470,9 +461,9 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
               <img src="/like.png" alt="" className="like-count-icon" />
             )}
             <span className="mhn-action-count" style={{ color: isLiked ? '#1860C3' : undefined, fontWeight: isLiked ? 700 : undefined }}>{likes}</span>
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={() => setShowComments((prev) => !prev)}
             className={`mhn-action-item ${showComments ? 'mhn-action-active' : ''}`}
             aria-label="Toggle comments"
@@ -481,10 +472,10 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
             <span className="mhn-action-count" style={{ color: showComments ? '#0091FF' : undefined, fontWeight: showComments ? 700 : undefined }}>
               {currentCommentsCount}
             </span>
-          </button>
+          </Button>
 
           {!isSelf && (
-            <button
+            <Button
               onClick={handleShare}
               disabled={isSharing}
               className={`mhn-action-item ${hasReposted ? 'mhn-action-active' : ''}`}
@@ -508,7 +499,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
               >
                 {reposts}
               </span>
-            </button>
+            </Button>
           )}
         </div>
 
@@ -549,15 +540,15 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#0F172A' }}>Edit Post</h3>
-              <button
+              <Button
                 onClick={() => setIsEditModalOpen(false)}
                 style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#64748B' }}
               >
                 ✕
-              </button>
+              </Button>
             </div>
 
-            <textarea
+            <Textarea
               value={editContentInput}
               onChange={(e) => setEditContentInput(e.target.value)}
               rows={4}
@@ -574,7 +565,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
             />
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
-              <button
+              <Button
                 onClick={() => setIsEditModalOpen(false)}
                 style={{
                   padding: '8px 16px',
@@ -587,8 +578,8 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                 }}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleSaveEdit}
                 disabled={isUpdating}
                 style={{
@@ -606,7 +597,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
               >
                 {isUpdating && <Spinner size="sm" color="#FFFFFF" />}
                 <span>Save Changes</span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -657,7 +648,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                 </h3>
               </div>
               {!isDeleting && (
-                <button
+                <Button
                   onClick={() => setIsDeleteModalOpen(false)}
                   style={{
                     background: 'transparent',
@@ -670,7 +661,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                   aria-label="Close modal"
                 >
                   &times;
-                </button>
+                </Button>
               )}
             </div>
 
@@ -681,7 +672,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
 
             {/* Action Buttons */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px' }}>
-              <button
+              <Button
                 type="button"
                 onClick={() => setIsDeleteModalOpen(false)}
                 disabled={isDeleting}
@@ -698,8 +689,8 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                 }}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={isDeleting}
@@ -726,7 +717,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                 ) : (
                   'Delete Post'
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

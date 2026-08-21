@@ -1,7 +1,5 @@
 import { API_BASE_URL } from '@utils/constants';
 
-import { RootState } from '../store';
-
 import {
   BaseQueryFn,
   createApi,
@@ -12,11 +10,7 @@ import {
 // your real baseQuery (wrapped for 401 handling)
 const baseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
-  prepareHeaders: (headers, { getState }) => {
-    const token = (getState() as RootState).common.userToken;
-    if (token) headers.set('authorization', `${token}`);
-    return headers;
-  },
+  prepareHeaders: headers => headers,
 });
 
 const baseQueryWithInterceptor: BaseQueryFn<
@@ -29,8 +23,7 @@ const baseQueryWithInterceptor: BaseQueryFn<
   if ('error' in result) {
     const status = result?.error?.status;
     const errorData = result?.error?.data as
-      | { message?: string; error?: string }
-      | undefined;
+      { message?: string; error?: string } | undefined;
 
     if (status === 401) {
       // Handle unauthorized access

@@ -1,3 +1,4 @@
+import { Button } from '../../common/Button';
 import React from 'react';
 
 interface EmptyStateProps {
@@ -138,7 +139,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         </p>
       </div>
       {actionLabel && onAction && (
-        <button
+        <Button
           onClick={onAction}
           className="mhn-empty-state-btn"
           style={{
@@ -154,7 +155,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           }}
         >
           {actionLabel}
-        </button>
+        </Button>
       )}
     </div>
   );

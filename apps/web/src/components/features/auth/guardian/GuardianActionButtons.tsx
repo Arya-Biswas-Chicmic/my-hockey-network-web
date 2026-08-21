@@ -1,3 +1,4 @@
+import { Button } from '../../../common/Button';
 import React from 'react';
 import { GUARDIAN_APPROVAL_STRINGS } from '@my-hockey-network/shared';
 
@@ -10,12 +11,12 @@ interface GuardianActionButtonsProps {
 export const GuardianActionButtons: React.FC<GuardianActionButtonsProps> = ({ onSignOut, onSkip, loading }) => {
   return (
     <div className="guardian-button-stack">
-      <button type="submit" className="btn-guardian-primary" disabled={loading} style={{ opacity: loading ? 0.75 : 1 }}>
+      <Button type="submit" className="btn-guardian-primary" disabled={loading} style={{ opacity: loading ? 0.75 : 1 }}>
         {loading ? 'Sending Invitation...' : GUARDIAN_APPROVAL_STRINGS.sendRequestButton}
-      </button>
+      </Button>
 
       {onSkip ? (
-        <button
+        <Button
           type="button"
           className="btn-guardian-secondary"
           onClick={onSkip}
@@ -32,15 +33,15 @@ export const GuardianActionButtons: React.FC<GuardianActionButtonsProps> = ({ on
           }}
         >
           Skip
-        </button>
+        </Button>
       ) : (
-        <button
+        <Button
           type="button"
           className="btn-guardian-secondary"
           onClick={onSignOut}
         >
           {GUARDIAN_APPROVAL_STRINGS.signOutButton}
-        </button>
+        </Button>
       )}
     </div>
   );

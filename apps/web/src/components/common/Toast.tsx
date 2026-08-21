@@ -1,3 +1,4 @@
+import { Button } from './Button';
 import React, { useEffect } from 'react';
 
 interface ToastProps {
@@ -51,9 +52,9 @@ export const Toast: React.FC<ToastProps> = ({
     <div className={`mhn-toast-container mhn-toast-${type}`}>
       <div className="mhn-toast-icon">{getIcon()}</div>
       <span className="mhn-toast-message">{message}</span>
-      <button className="mhn-toast-close-btn" onClick={onClose} aria-label="Close notification">
+      <Button className="mhn-toast-close-btn" onClick={onClose} aria-label="Close notification">
         &times;
-      </button>
+      </Button>
     </div>
   );
 };

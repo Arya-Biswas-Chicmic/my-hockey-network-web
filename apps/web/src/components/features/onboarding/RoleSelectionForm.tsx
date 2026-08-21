@@ -18,7 +18,7 @@ export const RoleSelectionForm: React.FC<ExtendedRoleSelectionFormProps> = ({
   return (
     <div className="onboarding-form">
       {onBack && (
-        <button
+        <Button
           type="button"
           onClick={onBack}
           style={{
@@ -39,7 +39,7 @@ export const RoleSelectionForm: React.FC<ExtendedRoleSelectionFormProps> = ({
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
           <span>Back to Sign In</span>
-        </button>
+        </Button>
       )}
 
       <OnboardingHeader
@@ -58,7 +58,7 @@ export const RoleSelectionForm: React.FC<ExtendedRoleSelectionFormProps> = ({
         ))}
       </div>
 
-      <Button onClick={onContinue}>
+      <Button variant="primary" fullWidth onClick={onContinue}>
         Continue
       </Button>
     </div>

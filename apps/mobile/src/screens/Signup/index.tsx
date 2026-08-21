@@ -2,11 +2,9 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   Image,
   ScrollView,
-  SafeAreaView,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
@@ -15,9 +13,17 @@ import { RFValue } from 'react-native-responsive-fontsize';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAppDispatch } from '@redux/store';
 import { loginUser } from '@redux/CommonReducer';
-import { BRAND_COLORS, CREATE_ACCOUNT_STRINGS } from '@my-hockey-network/shared';
+import {
+  BRAND_COLORS,
+  CREATE_ACCOUNT_STRINGS,
+} from '@my-hockey-network/shared';
 import { ROUTES } from '../../navigation/constants';
 import { RootStackParamList } from '../../navigation/types';
+import { mobileAuth } from '../../platform/auth-service';
+import { emailSchema, otpSchema } from '@my-hockey-network/validation';
+import Button from '@components/Button';
+import Input from '@components/Input';
+import ScreenWrapper from '@components/ScreenWrapper';
 
 type Props = NativeStackScreenProps<RootStackParamList, ROUTES.SIGNUP>;
 
@@ -26,15 +32,73 @@ const SignupScreen = ({ navigation }: Props) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [dob, setDob] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpRequested, setOtpRequested] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSignUp = () => {
-    dispatch(loginUser({ token: 'user_auth_token' }));
+  const handleSignUp = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
+    const emailResult = emailSchema.safeParse(normalizedEmail);
+    if (!fullName.trim()) {
+      setError('Full name is required.');
+      return;
+    }
+    if (!emailResult.success) {
+      setError(emailResult.error.issues[0]?.message ?? 'Enter a valid email.');
+      return;
+    }
+    if (!dob.trim()) {
+      setError('Date of birth is required.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      if (!otpRequested) {
+        await mobileAuth.requestOtp({
+          channel: 'EMAIL',
+          destination: normalizedEmail,
+          intent: 'SIGNUP',
+        });
+        setOtpRequested(true);
+        return;
+      }
+      const otpResult = otpSchema.safeParse(otp);
+      if (!otpResult.success) {
+        setError(
+          otpResult.error.issues[0]?.message ??
+            'Enter a valid verification code.',
+        );
+        return;
+      }
+      await mobileAuth.verifyOtp({
+        channel: 'EMAIL',
+        destination: normalizedEmail,
+        code: otp,
+        intent: 'SIGNUP',
+      });
+      await mobileAuth.submitOnboarding({
+        roles: ['PLAYER'],
+        displayName: fullName.trim(),
+        dateOfBirth: dob.trim(),
+      });
+      const user = await mobileAuth.getMe();
+      dispatch(loginUser({ user }));
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Unable to create account.',
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ScreenWrapper showHeader={false} style={styles.safeArea}>
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -53,58 +117,73 @@ const SignupScreen = ({ navigation }: Props) => {
 
           <View style={styles.formContainer}>
             <Text style={styles.titleText}>{CREATE_ACCOUNT_STRINGS.title}</Text>
-            <Text style={styles.subtitleText}>{CREATE_ACCOUNT_STRINGS.subtitle}</Text>
+            <Text style={styles.subtitleText}>
+              {CREATE_ACCOUNT_STRINGS.subtitle}
+            </Text>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.inputLabel}>{CREATE_ACCOUNT_STRINGS.fullNameLabel}</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder={CREATE_ACCOUNT_STRINGS.fullNamePlaceholder}
-                placeholderTextColor="#BFBFBF"
-                value={fullName}
-                onChangeText={setFullName}
-                autoCapitalize="words"
-              />
-            </View>
+            <Input
+              containerStyle={styles.formGroup}
+              label={CREATE_ACCOUNT_STRINGS.fullNameLabel}
+              placeholder={CREATE_ACCOUNT_STRINGS.fullNamePlaceholder}
+              value={fullName}
+              onChangeText={setFullName}
+              autoCapitalize="words"
+            />
 
-            <View style={styles.formGroup}>
-              <Text style={styles.inputLabel}>{CREATE_ACCOUNT_STRINGS.emailLabel}</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder={CREATE_ACCOUNT_STRINGS.emailPlaceholder}
-                placeholderTextColor="#BFBFBF"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
+            <Input
+              containerStyle={styles.formGroup}
+              label={CREATE_ACCOUNT_STRINGS.emailLabel}
+              placeholder={CREATE_ACCOUNT_STRINGS.emailPlaceholder}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
 
-            <View style={styles.formGroup}>
-              <Text style={styles.inputLabel}>{CREATE_ACCOUNT_STRINGS.dobLabel}</Text>
-              <View style={styles.inputWithIconWrapper}>
-                <TextInput
-                  style={styles.textInputWithIcon}
-                  placeholder={CREATE_ACCOUNT_STRINGS.dobPlaceholder}
-                  placeholderTextColor="#BFBFBF"
-                  value={dob}
-                  onChangeText={setDob}
-                />
+            <Input
+              containerStyle={styles.formGroup}
+              label={CREATE_ACCOUNT_STRINGS.dobLabel}
+              placeholder={CREATE_ACCOUNT_STRINGS.dobPlaceholder}
+              value={dob}
+              onChangeText={setDob}
+              rightAccessory={
                 <Image
                   source={require('../../../assets/images/calendar.png')}
                   style={styles.inputIconImage}
                   resizeMode="contain"
                 />
-              </View>
-            </View>
+              }
+            />
 
-            <Pressable style={styles.signUpButton} onPress={handleSignUp}>
-              <Text style={styles.signUpButtonText}>
-                {CREATE_ACCOUNT_STRINGS.submitButton}
-              </Text>
-            </Pressable>
+            {otpRequested && (
+              <Input
+                containerStyle={styles.formGroup}
+                label="Verification code"
+                placeholder="Enter the code sent to your email"
+                value={otp}
+                onChangeText={setOtp}
+                keyboardType="number-pad"
+              />
+            )}
 
-            <Pressable style={styles.googleButton} onPress={handleSignUp}>
+            {error && <Text style={styles.errorText}>{error}</Text>}
+
+            <Button
+              style={styles.signUpButton}
+              title={
+                otpRequested
+                  ? 'Verify & create account'
+                  : CREATE_ACCOUNT_STRINGS.submitButton
+              }
+              onPress={handleSignUp}
+              loading={isLoading}
+              disabled={isLoading}
+            />
+
+            <Pressable
+              style={styles.googleButton}
+              onPress={() => setError('Google sign-in is not configured yet.')}
+            >
               <Image
                 source={require('../../../assets/images/social.png')}
                 style={styles.googleIconImage}
@@ -137,7 +216,7 @@ const SignupScreen = ({ navigation }: Props) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 
@@ -240,6 +319,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 2,
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: RFValue(12),
+    marginBottom: 8,
   },
   signUpButtonText: {
     fontSize: RFValue(15),

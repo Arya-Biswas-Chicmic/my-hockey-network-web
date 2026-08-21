@@ -1,3 +1,5 @@
+import { Button } from '../../../common/Button';
+import { Input } from '../../../common/FormControls';
 import React, { useState } from 'react';
 import { Spinner } from '../../../common/Spinner';
 
@@ -91,7 +93,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             Email Address
           </label>
           <div className="auth-input-wrapper">
-            <input
+            <Input
               id="loginEmail"
               type="text"
               className="auth-input"
@@ -178,7 +180,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           )}
         </div>
 
-        <button
+        <Button
           type="submit"
           className="btn-submit"
           disabled={loading}
@@ -192,10 +194,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           ) : (
             'Sign In'
           )}
-        </button>
+        </Button>
       </form>
 
-      <button
+      <Button
         type="button"
         className="btn-google"
         onClick={onGoogleSignIn}
@@ -220,17 +222,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           />
         </svg>
         <span>Continue with Google</span>
-      </button>
+      </Button>
 
       <div className="auth-footer-text" style={{ marginTop: '24px' }}>
         <span>Don't have an account? </span>
-        <button
+        <Button
           type="button"
           className="auth-primary-link"
           onClick={onSignUpClick}
         >
           Sign Up
-        </button>
+        </Button>
       </div>
     </div>
   );

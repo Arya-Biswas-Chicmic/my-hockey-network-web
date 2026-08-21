@@ -1,4 +1,4 @@
-const BASE_URL = 'https://reposeful-kareen-controllingly.ngrok-free.dev/v1';
+import { API_BASE_URL as BASE_URL } from './load-api-base-url.mjs';
 
 async function runSupervisionTests() {
   console.log('🚀 Starting Supervision API endpoints test...\n');

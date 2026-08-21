@@ -1,3 +1,5 @@
+import { Button } from '../../../common/Button';
+import { Input } from '../../../common/FormControls';
 import React, { useState, useRef, useEffect } from 'react';
 import { Spinner } from '../../../common/Spinner';
 
@@ -104,7 +106,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
   return (
     <div className="onboarding-form verify-email-form-container">
       {onChangeEmail && (
-        <button
+        <Button
           type="button"
           onClick={onChangeEmail}
           style={{
@@ -125,7 +127,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
           <span>Back</span>
-        </button>
+        </Button>
       )}
 
       <div className="header-wrapper verify-email-header-wrapper">
@@ -160,7 +162,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
         {/* 6 Digit Input Row */}
         <div className="otp-inputs-row" style={{ position: 'relative' }}>
           {code.map((digit, idx) => (
-            <input
+            <Input
               key={idx}
               ref={(el) => { inputRefs.current[idx] = el; }}
               type="text"
@@ -246,7 +248,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
           </div>
         )}
 
-        <button
+        <Button
           type="submit"
           className="btn-submit btn-confirm-otp"
           disabled={loading}
@@ -260,23 +262,23 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
           ) : (
             'Confirm'
           )}
-        </button>
+        </Button>
       </form>
 
       {/* Change Email */}
-      <button
+      <Button
         type="button"
         onClick={onChangeEmail}
         className="auth-back-link btn-change-email"
         style={{ marginTop: '16px' }}
       >
         Change Email
-      </button>
+      </Button>
 
       {/* Resend Code Footer */}
       <div className="auth-footer-text verify-email-footer" style={{ marginTop: '16px' }}>
         <span>Don’t Receive the code? </span>
-        <button
+        <Button
           type="button"
           onClick={handleResendClick}
           disabled={resendCooldown > 0}
@@ -284,7 +286,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
           style={{ opacity: resendCooldown > 0 ? 0.6 : 1, cursor: resendCooldown > 0 ? 'not-allowed' : 'pointer' }}
         >
           {resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : 'Resend Code'}
-        </button>
+        </Button>
       </div>
     </div>
   );

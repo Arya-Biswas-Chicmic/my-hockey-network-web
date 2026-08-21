@@ -110,11 +110,9 @@ export async function unfollowUser(
     : targetOrRelationshipId.id;
 
   try {
-    console.log(`🚀 [relationshipsApi] Looking up relationship edge ID for target profile: ${targetId}...`);
     const recoveredEdgeId = await findRelationshipEdgeId(targetId, clientType);
     const finalEdgeId = recoveredEdgeId || targetId;
 
-    console.log(`🚀 [relationshipsApi] Executing Step 3: DELETE /v1/relationships/${finalEdgeId}...`);
     return await removeRelationship(finalEdgeId, clientType);
   } catch (err: any) {
     console.warn('⚠️ [relationshipsApi] DELETE edge failed, falling back to follow toggle:', err);

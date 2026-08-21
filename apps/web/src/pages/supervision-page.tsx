@@ -1,3 +1,5 @@
+import { Button } from '../components/common/Button';
+import { Input, Select } from '../components/common/FormControls';
 import React, { useState, useEffect } from 'react';
 import { Header } from '../components/common/Header';
 import { NoDataFound } from '../components/common/no-data-found';
@@ -454,18 +456,18 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
           <aside className="mhn-supervision-sidebar">
             <div className="mhn-supervision-sidebar-header">
               <h2 className="mhn-supervision-sidebar-title">Supervision</h2>
-              <button
+              <Button
                 className="mhn-supervision-add-btn"
                 onClick={() => setViewMode('choice')}
                 title="Add Minor Account"
               >
                 <img src='/add4.png' className='add4' />
-              </button>
+              </Button>
             </div>
 
             <div className="mhn-supervision-wards-list">
               {wards.map((ward) => (
-                <button
+                <Button
                   key={ward.id}
                   onClick={() => {
                     setSelectedWardId(ward.id);
@@ -484,7 +486,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                   <span className="mhn-ward-name-label">
                     {ward.name} <span className="mhn-ward-age">({ward.age})</span>
                   </span>
-                </button>
+                </Button>
               ))}
             </div>
           </aside>
@@ -499,7 +501,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                 </h2>
                 <div className="mhn-flow-options-stack">
                   {/* Option 1: Create a new player profile */}
-                  <button
+                  <Button
                     className="mhn-flow-card-option mhn-flow-option-active"
                     onClick={() => setViewMode('create-details')}
                   >
@@ -513,10 +515,10 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B66C2" strokeWidth="2" strokeLinecap="round">
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
-                  </button>
+                  </Button>
 
                   {/* Option 2: Link an existing player */}
-                  <button
+                  <Button
                     className="mhn-flow-card-option"
                     onClick={() => setViewMode('link-existing')}
                   >
@@ -530,7 +532,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round">
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -544,7 +546,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                 <div className="mhn-form-fields-stack">
                   <div className="mhn-form-field-group">
                     <label className="mhn-form-field-label">Full Name</label>
-                    <input
+                    <Input
                       type="text"
                       value={newPlayer.fullName}
                       onChange={(e) => setNewPlayer({ ...newPlayer, fullName: e.target.value })}
@@ -556,7 +558,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                   <div className="mhn-form-field-group">
                     <label className="mhn-form-field-label">DOB</label>
                     <div className="mhn-form-date-input-wrapper">
-                      <input
+                      <Input
                         type="text"
                         value={newPlayer.dob}
                         onChange={(e) => setNewPlayer({ ...newPlayer, dob: e.target.value })}
@@ -574,7 +576,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
                   <div className="mhn-form-field-group">
                     <label className="mhn-form-field-label">Relationship to player</label>
-                    <select
+                    <Select
                       value={newPlayer.relationship}
                       onChange={(e) => setNewPlayer({ ...newPlayer, relationship: e.target.value })}
                       className="mhn-form-select"
@@ -583,12 +585,12 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                       <option value="Parent">Parent</option>
                       <option value="Guardian">Guardian</option>
                       <option value="Coach">Coach</option>
-                    </select>
+                    </Select>
                   </div>
 
                   <div className="mhn-form-field-group">
                     <label className="mhn-form-field-label">Email</label>
-                    <input
+                    <Input
                       type="email"
                       value={newPlayer.email}
                       onChange={(e) => setNewPlayer({ ...newPlayer, email: e.target.value })}
@@ -599,18 +601,18 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                 </div>
 
                 <div className="mhn-form-actions-stack">
-                  <button
+                  <Button
                     className="mhn-btn-solid-blue"
                     onClick={() => setViewMode('create-protect')}
                   >
                     Continue
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     className="mhn-btn-outline"
                     onClick={() => setViewMode('choice')}
                   >
                     Back
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -628,7 +630,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                       className={`mhn-protect-radio-card ${newPlayer.visibility === 'private' ? 'mhn-radio-selected' : ''}`}
                       onClick={() => setNewPlayer({ ...newPlayer, visibility: 'private' })}
                     >
-                      <input
+                      <Input
                         type="radio"
                         name="visibility"
                         checked={newPlayer.visibility === 'private'}
@@ -645,7 +647,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                       className={`mhn-protect-radio-card ${newPlayer.visibility === 'network' ? 'mhn-radio-selected' : ''}`}
                       onClick={() => setNewPlayer({ ...newPlayer, visibility: 'network' })}
                     >
-                      <input
+                      <Input
                         type="radio"
                         name="visibility"
                         checked={newPlayer.visibility === 'network'}
@@ -668,13 +670,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                         <h4 className="mhn-protect-toggle-heading">Adult contact requests</h4>
                         <p className="mhn-protect-toggle-sub">Require my approval</p>
                       </div>
-                      <button
+                      <Button
                         type="button"
                         onClick={() => setNewPlayer(p => ({ ...p, adultRequests: !p.adultRequests }))}
                         className={`mhn-toggle-switch ${newPlayer.adultRequests ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                       >
                         <div className="mhn-toggle-handle" />
-                      </button>
+                      </Button>
                     </div>
 
                     <div className="mhn-protect-toggle-row">
@@ -682,13 +684,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                         <h4 className="mhn-protect-toggle-heading">Connections</h4>
                         <p className="mhn-protect-toggle-sub">Require my approval</p>
                       </div>
-                      <button
+                      <Button
                         type="button"
                         onClick={() => setNewPlayer(p => ({ ...p, connections: !p.connections }))}
                         className={`mhn-toggle-switch ${newPlayer.connections ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                       >
                         <div className="mhn-toggle-handle" />
-                      </button>
+                      </Button>
                     </div>
 
                     <div className="mhn-protect-toggle-row">
@@ -696,13 +698,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                         <h4 className="mhn-protect-toggle-heading">Team invitations</h4>
                         <p className="mhn-protect-toggle-sub">Require my approval</p>
                       </div>
-                      <button
+                      <Button
                         type="button"
                         onClick={() => setNewPlayer(p => ({ ...p, teamInvitations: !p.teamInvitations }))}
                         className={`mhn-toggle-switch ${newPlayer.teamInvitations ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                       >
                         <div className="mhn-toggle-handle" />
-                      </button>
+                      </Button>
                     </div>
 
                     <div className="mhn-protect-toggle-row">
@@ -710,30 +712,30 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                         <h4 className="mhn-protect-toggle-heading">Media visibility</h4>
                         <p className="mhn-protect-toggle-sub">Require my approval</p>
                       </div>
-                      <button
+                      <Button
                         type="button"
                         onClick={() => setNewPlayer(p => ({ ...p, mediaVisibility: !p.mediaVisibility }))}
                         className={`mhn-toggle-switch ${newPlayer.mediaVisibility ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                       >
                         <div className="mhn-toggle-handle" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
 
                 <div className="mhn-form-actions-stack">
-                  <button
+                  <Button
                     className="mhn-btn-solid-blue"
                     onClick={handleCreatePlayerSubmit}
                   >
                     Create Player Profile
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     className="mhn-btn-outline"
                     onClick={() => setViewMode('create-details')}
                   >
                     Back
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -749,18 +751,18 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                 <p className="mhn-flow-subtitle">You're now managing {addedPlayerName}'s hockey profile.</p>
 
                 <div className="mhn-form-actions-stack mhn-form-actions-narrow">
-                  <button
+                  <Button
                     className="mhn-btn-solid-blue"
                     onClick={() => setViewMode('main')}
                   >
                     Go to {addedPlayerName}'s Profile
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     className="mhn-btn-outline"
                     onClick={() => setViewMode('choice')}
                   >
                     Add Another Player
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -774,7 +776,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                 <div className="mhn-form-fields-stack">
                   <div className="mhn-form-field-group">
                     <label className="mhn-form-field-label">Child Email Address</label>
-                    <input
+                    <Input
                       type="email"
                       value={linkChildEmail}
                       onChange={(e) => {
@@ -793,18 +795,18 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                 </div>
 
                 <div className="mhn-form-actions-stack">
-                  <button
+                  <Button
                     className="mhn-btn-solid-blue"
                     onClick={handleSendLinkInvitation}
                   >
                     Send Invitation
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     className="mhn-btn-outline"
                     onClick={() => setViewMode('choice')}
                   >
                     Back
-                  </button>
+                  </Button>
                 </div>
 
                 <div className="mhn-trouble-footer">
@@ -829,7 +831,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                 </p>
 
                 <div className="mhn-flow-button-container">
-                  <button
+                  <Button
                     className="mhn-btn-solid-blue"
                     onClick={() => {
                       setLinkChildEmail('');
@@ -837,7 +839,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                     }}
                   >
                     Continue
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -847,24 +849,24 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
               <>
                 {/* Top Sub-Tabs Navigation */}
                 <div className="mhn-supervision-tabs-row">
-                  <button
+                  <Button
                     onClick={() => setActiveMainTab('permissions')}
                     className={`mhn-supervision-tab-btn ${activeMainTab === 'permissions' ? 'mhn-tab-active' : ''}`}
                   >
                     Permissions
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => setActiveMainTab('requests')}
                     className={`mhn-supervision-tab-btn ${activeMainTab === 'requests' ? 'mhn-tab-active' : ''}`}
                   >
                     Requests
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => setActiveMainTab('logs')}
                     className={`mhn-supervision-tab-btn ${activeMainTab === 'logs' ? 'mhn-tab-active' : ''}`}
                   >
                     Logs
-                  </button>
+                  </Button>
                 </div>
 
                 <div className="mhn-supervision-tab-body">
@@ -902,13 +904,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">View feed</h4>
                                 <p className="mhn-permission-subtitle">Can see posts from their network</p>
                               </div>
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => setHomePermissions(p => ({ ...p, viewFeed: !p.viewFeed }))}
                                 className={`mhn-toggle-switch ${homePermissions.viewFeed ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                               >
                                 <div className="mhn-toggle-handle" />
-                              </button>
+                              </Button>
                             </div>
 
                             {/* Create posts */}
@@ -917,13 +919,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Create posts</h4>
                                 <p className="mhn-permission-subtitle">Can publish posts to their network</p>
                               </div>
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => setHomePermissions(p => ({ ...p, createPosts: !p.createPosts }))}
                                 className={`mhn-toggle-switch ${homePermissions.createPosts ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                               >
                                 <div className="mhn-toggle-handle" />
-                              </button>
+                              </Button>
                             </div>
 
                             {/* Comment on posts */}
@@ -932,13 +934,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Comment on posts</h4>
                                 <p className="mhn-permission-subtitle">Can leave comments on others' posts</p>
                               </div>
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => setHomePermissions(p => ({ ...p, commentOnPosts: !p.commentOnPosts }))}
                                 className={`mhn-toggle-switch ${homePermissions.commentOnPosts ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                               >
                                 <div className="mhn-toggle-handle" />
-                              </button>
+                              </Button>
                             </div>
 
                             {/* React to posts */}
@@ -947,13 +949,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">React to posts</h4>
                                 <p className="mhn-permission-subtitle">Can like, celebrate, or react to content</p>
                               </div>
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => setHomePermissions(p => ({ ...p, reactToPosts: !p.reactToPosts }))}
                                 className={`mhn-toggle-switch ${homePermissions.reactToPosts ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                               >
                                 <div className="mhn-toggle-handle" />
-                              </button>
+                              </Button>
                             </div>
 
                             {/* Share posts */}
@@ -962,13 +964,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Share posts</h4>
                                 <p className="mhn-permission-subtitle">Can reshare content to their feed</p>
                               </div>
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => setHomePermissions(p => ({ ...p, sharePosts: !p.sharePosts }))}
                                 className={`mhn-toggle-switch ${homePermissions.sharePosts ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                               >
                                 <div className="mhn-toggle-handle" />
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         )}
@@ -1005,13 +1007,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Follow others</h4>
                                 <p className="mhn-permission-subtitle">Can follow people and pages</p>
                               </div>
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => setNetworkPermissions(p => ({ ...p, followOthers: !p.followOthers }))}
                                 className={`mhn-toggle-switch ${networkPermissions.followOthers ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                               >
                                 <div className="mhn-toggle-handle" />
-                              </button>
+                              </Button>
                             </div>
 
                             {/* Who can follow them */}
@@ -1020,7 +1022,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Who can follow them</h4>
                                 <p className="mhn-permission-subtitle">Controls who can subscribe to their updates</p>
                               </div>
-                              <select
+                              <Select
                                 value={networkPermissions.whoCanFollowThem}
                                 onChange={(e) => setNetworkPermissions(p => ({ ...p, whoCanFollowThem: e.target.value }))}
                                 className="mhn-permission-select"
@@ -1028,7 +1030,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <option value="Everyone">Everyone</option>
                                 <option value="Connections Only">Connections Only</option>
                                 <option value="Nobody">Nobody</option>
-                              </select>
+                              </Select>
                             </div>
 
                             {/* Who can send connection requests */}
@@ -1037,7 +1039,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Who can send connection requests</h4>
                                 <p className="mhn-permission-subtitle">Limits incoming connection requests</p>
                               </div>
-                              <select
+                              <Select
                                 value={networkPermissions.whoCanSendRequests}
                                 onChange={(e) => setNetworkPermissions(p => ({ ...p, whoCanSendRequests: e.target.value }))}
                                 className="mhn-permission-select"
@@ -1045,7 +1047,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <option value="Everyone">Everyone</option>
                                 <option value="Connections Only">Connections Only</option>
                                 <option value="Nobody">Nobody</option>
-                              </select>
+                              </Select>
                             </div>
 
                             {/* Accept connection requests */}
@@ -1054,13 +1056,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Accept connection requests</h4>
                                 <p className="mhn-permission-subtitle">Can accept incoming requests from others</p>
                               </div>
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => setNetworkPermissions(p => ({ ...p, acceptRequests: !p.acceptRequests }))}
                                 className={`mhn-toggle-switch ${networkPermissions.acceptRequests ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                               >
                                 <div className="mhn-toggle-handle" />
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         )}
@@ -1097,13 +1099,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Send messages</h4>
                                 <p className="mhn-permission-subtitle">Can initiate and reply to conversations</p>
                               </div>
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => setMessagingPermissions(p => ({ ...p, sendMessages: !p.sendMessages }))}
                                 className={`mhn-toggle-switch ${messagingPermissions.sendMessages ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                               >
                                 <div className="mhn-toggle-handle" />
-                              </button>
+                              </Button>
                             </div>
 
                             {/* Receive messages */}
@@ -1112,13 +1114,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Receive messages</h4>
                                 <p className="mhn-permission-subtitle">Others can send them messages</p>
                               </div>
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => setMessagingPermissions(p => ({ ...p, receiveMessages: !p.receiveMessages }))}
                                 className={`mhn-toggle-switch ${messagingPermissions.receiveMessages ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                               >
                                 <div className="mhn-toggle-handle" />
-                              </button>
+                              </Button>
                             </div>
 
                             {/* Create group chats */}
@@ -1127,13 +1129,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Create group chats</h4>
                                 <p className="mhn-permission-subtitle">Can start group conversations</p>
                               </div>
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => setMessagingPermissions(p => ({ ...p, createGroupChats: !p.createGroupChats }))}
                                 className={`mhn-toggle-switch ${messagingPermissions.createGroupChats ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                               >
                                 <div className="mhn-toggle-handle" />
-                              </button>
+                              </Button>
                             </div>
 
                             {/* Who can message them */}
@@ -1142,7 +1144,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Who can message them</h4>
                                 <p className="mhn-permission-subtitle">Controls who can start a conversation</p>
                               </div>
-                              <select
+                              <Select
                                 value={messagingPermissions.whoCanMessageThem}
                                 onChange={(e) => setMessagingPermissions(p => ({ ...p, whoCanMessageThem: e.target.value }))}
                                 className="mhn-permission-select"
@@ -1150,7 +1152,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <option value="Connections Only">Connections Only</option>
                                 <option value="Everyone">Everyone</option>
                                 <option value="Nobody">Nobody</option>
-                              </select>
+                              </Select>
                             </div>
                           </div>
                         )}
@@ -1187,13 +1189,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Message notifications</h4>
                                 <p className="mhn-permission-subtitle">Get notified when they receive a message</p>
                               </div>
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => setNotificationPermissions(p => ({ ...p, messageNotifications: !p.messageNotifications }))}
                                 className={`mhn-toggle-switch ${notificationPermissions.messageNotifications ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                               >
                                 <div className="mhn-toggle-handle" />
-                              </button>
+                              </Button>
                             </div>
 
                             {/* Connection request notifications */}
@@ -1202,13 +1204,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Connection request notifications</h4>
                                 <p className="mhn-permission-subtitle">Get notified about incoming requests</p>
                               </div>
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => setNotificationPermissions(p => ({ ...p, connectionNotifications: !p.connectionNotifications }))}
                                 className={`mhn-toggle-switch ${notificationPermissions.connectionNotifications ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                               >
                                 <div className="mhn-toggle-handle" />
-                              </button>
+                              </Button>
                             </div>
 
                             {/* Activity notifications */}
@@ -1217,13 +1219,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Activity notifications</h4>
                                 <p className="mhn-permission-subtitle">Reactions, comments on their posts</p>
                               </div>
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => setNotificationPermissions(p => ({ ...p, activityNotifications: !p.activityNotifications }))}
                                 className={`mhn-toggle-switch ${notificationPermissions.activityNotifications ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                               >
                                 <div className="mhn-toggle-handle" />
-                              </button>
+                              </Button>
                             </div>
 
                             {/* Mention notifications */}
@@ -1232,13 +1234,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Mention notifications</h4>
                                 <p className="mhn-permission-subtitle">Get notified when someone mentions them</p>
                               </div>
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => setNotificationPermissions(p => ({ ...p, mentionNotifications: !p.mentionNotifications }))}
                                 className={`mhn-toggle-switch ${notificationPermissions.mentionNotifications ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
                               >
                                 <div className="mhn-toggle-handle" />
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         )}
@@ -1263,7 +1265,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                         )}
 
                         <div className="mhn-supervision-code-input-group">
-                          <input
+                          <Input
                             type="text"
                             className="mhn-supervision-code-input"
                             placeholder="e.g. 123456"
@@ -1271,14 +1273,14 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                             value={approvalCodeInput}
                             onChange={(e) => setApprovalCodeInput(e.target.value.replace(/\D/g, ''))}
                           />
-                          <button
+                          <Button
                             type="button"
                             className="mhn-supervision-code-btn"
                             disabled={requestActionLoading || approvalCodeInput.length !== 6}
                             onClick={() => handleApproveCodeSubmit()}
                           >
                             {requestActionLoading ? 'Submitting...' : 'Approve Player'}
-                          </button>
+                          </Button>
                         </div>
                       </div>
 
@@ -1344,15 +1346,15 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                   </div>
 
                                   <div className="mhn-supervision-req-actions">
-                                    <button
+                                    <Button
                                       type="button"
                                       className="mhn-supervision-btn-ignore"
                                       disabled={requestActionLoading}
                                       onClick={() => handleDeclineCodeSubmit(code || reqId)}
                                     >
                                       Decline
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
                                       type="button"
                                       className="mhn-supervision-btn-accept"
                                       disabled={requestActionLoading}
@@ -1368,7 +1370,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                       }}
                                     >
                                       Approve
-                                    </button>
+                                    </Button>
                                   </div>
                                 </div>
                               );
@@ -1389,14 +1391,14 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                             <circle cx="11" cy="11" r="8" />
                             <line x1="21" y1="21" x2="16.65" y2="16.65" />
                           </svg>
-                          <input
+                          <Input
                             type="text"
                             placeholder="Search Logs"
                             className="mhn-logs-search-input"
                           />
                         </div>
 
-                        <button className="mhn-logs-filter-btn">
+                        <Button className="mhn-logs-filter-btn">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2">
                             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
                           </svg>
@@ -1404,7 +1406,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2">
                             <polyline points="6 9 12 15 18 9" />
                           </svg>
-                        </button>
+                        </Button>
                       </div>
 
                       {/* Table Data Container */}
@@ -1453,7 +1455,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <td className="mhn-td-activity">{log.activity}</td>
                                 <td className="mhn-td-initiated">{log.initiatedBy}</td>
                                 <td className="mhn-td-action">
-                                  <button className="mhn-log-action-link">{log.actionText}</button>
+                                  <Button className="mhn-log-action-link">{log.actionText}</Button>
                                 </td>
                               </tr>
                             ))}
@@ -1465,8 +1467,8 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                       <div className="mhn-logs-pagination-footer">
                         <span className="mhn-logs-count-info">1 - 5 of 5 items</span>
                         <div className="mhn-logs-pagination-buttons">
-                          <button className="mhn-page-btn" disabled>Previous</button>
-                          <button className="mhn-page-btn">Next</button>
+                          <Button className="mhn-page-btn" disabled>Previous</Button>
+                          <Button className="mhn-page-btn">Next</Button>
                         </div>
                       </div>
                     </div>

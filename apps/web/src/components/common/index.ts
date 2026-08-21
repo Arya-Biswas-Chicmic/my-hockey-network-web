@@ -1,4 +1,5 @@
 export * from './Button';
+export * from './FormControls';
 export * from './Header';
 export * from './LogoutModal';
 export * from './PendingBanner';

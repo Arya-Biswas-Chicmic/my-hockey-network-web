@@ -2,8 +2,6 @@
  * Centralized API URLs and Endpoints Catalog for My Hockey Network
  */
 
-export const API_BASE_URL_DEFAULT = 'https://reposeful-kareen-controllingly.ngrok-free.dev/v1';
-
 export const API_ENDPOINTS = {
   AUTH: {
     OTP_REQUEST: '/auth/otp/request',

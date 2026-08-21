@@ -1,3 +1,5 @@
+import { Button } from '../../../common/Button';
+import { Input } from '../../../common/FormControls';
 import React, { useState } from 'react';
 import { GUARDIAN_APPROVAL_STRINGS } from '@my-hockey-network/shared';
 import { GuardianFormHeader } from './GuardianFormHeader';
@@ -37,7 +39,7 @@ export const GuardianApprovalForm: React.FC<GuardianApprovalFormProps> = ({
             {GUARDIAN_APPROVAL_STRINGS.emailLabel}
           </label>
           <div className="auth-input-wrapper">
-            <input
+            <Input
               id="guardianEmail"
               type="email"
               className="guardian-input"
@@ -54,13 +56,13 @@ export const GuardianApprovalForm: React.FC<GuardianApprovalFormProps> = ({
 
       <div className="guardian-footer-text">
         <span className="trouble-footer">{GUARDIAN_APPROVAL_STRINGS.havingTrouble}</span>
-        <button
+        <Button
           type="button"
           className="guardian-support-link"
           onClick={onContactSupport}
         >
           {GUARDIAN_APPROVAL_STRINGS.contactSupport}
-        </button>
+        </Button>
       </div>
     </div>
   );

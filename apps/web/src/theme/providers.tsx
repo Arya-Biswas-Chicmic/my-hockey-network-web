@@ -8,10 +8,9 @@ import type { ThemePreference } from './theme-cookie';
 interface ProvidersProps {
   children: ReactNode;
   defaultTheme?: ThemePreference;
-  onNavigateToAuth?: () => void;
 }
 
-export function Providers({ children, defaultTheme, onNavigateToAuth }: ProvidersProps) {
+export function Providers({ children, defaultTheme }: ProvidersProps) {
   const [serverDownState, setServerDownState] = useState<{
     isDown: boolean;
     statusCode: number;
@@ -28,7 +27,6 @@ export function Providers({ children, defaultTheme, onNavigateToAuth }: Provider
 
   useEffect(() => {
     const handleServerDown = (event: CustomEvent) => {
-      console.warn('🚨 [502/503 Server Down Intercepted]:', event.detail);
       setServerDownState({
         isDown: true,
         statusCode: event.detail?.statusCode || 502,
@@ -37,7 +35,6 @@ export function Providers({ children, defaultTheme, onNavigateToAuth }: Provider
     };
 
     const handleToast = (event: CustomEvent) => {
-      console.log('🔔 [Toast Event Intercepted]:', event.detail);
       if (event.detail && event.detail.message) {
         setToastState({
           message: event.detail.message,
@@ -61,7 +58,7 @@ export function Providers({ children, defaultTheme, onNavigateToAuth }: Provider
 
   return (
     <ThemeProvider defaultTheme={defaultTheme}>
-      <AuthProvider onNavigateToAuth={onNavigateToAuth}>
+      <AuthProvider>
         {children}
 
         {toastState && (
@@ -83,4 +80,3 @@ export function Providers({ children, defaultTheme, onNavigateToAuth }: Provider
     </ThemeProvider>
   );
 }
-

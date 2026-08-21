@@ -1,3 +1,4 @@
+import { Button } from '../components/common/Button';
 import React, { useState } from 'react';
 import { Header } from '../components/common/Header';
 import { PendingBanner } from '../components/common/PendingBanner';
@@ -65,29 +66,29 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
           {/* Header Bar */}
           <div className="mhn-notifications-card-header">
             <h2 className="mhn-notifications-title">Notifications</h2>
-            <button className="mhn-notifications-more-btn" aria-label="Notification options">
+            <Button className="mhn-notifications-more-btn" aria-label="Notification options">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <circle cx="5" cy="12" r="2" />
                 <circle cx="12" cy="12" r="2" />
                 <circle cx="19" cy="12" r="2" />
               </svg>
-            </button>
+            </Button>
           </div>
 
           {/* Filter Pills Bar */}
           <div className="mhn-notifications-pills-bar">
-            <button
+            <Button
               onClick={() => setActiveFilterTab('all')}
               className={`mhn-notif-pill ${activeFilterTab === 'all' ? 'mhn-notif-pill-active' : ''}`}
             >
               All
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setActiveFilterTab('unread')}
               className={`mhn-notif-pill ${activeFilterTab === 'unread' ? 'mhn-notif-pill-active' : ''}`}
             >
               Unread
-            </button>
+            </Button>
           </div>
 
           {/* Notifications List */}

@@ -1,3 +1,4 @@
+import { Button } from '../../common/Button';
 import React from 'react';
 import { useAuth } from '../../../hooks/use-auth';
 import { resolveMediaUrl, resolveCoverUrl } from '../../../utils/mediaUtils';
@@ -128,7 +129,7 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
 
         <div className="mhn-manage-menu-list">
           {/* Connectors */}
-          <button 
+          <Button
             onClick={() => onMenuItemClick && onMenuItemClick('connectors')}
             className="mhn-manage-menu-item"
           >
@@ -136,10 +137,10 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
               <img src="/connections.png" alt="Connections" className='small-icon'/>
             </div>
             <span className="mhn-manage-menu-text">Connections</span>
-          </button>
+          </Button>
 
           {/* Groups */}
-          <button 
+          <Button
             onClick={() => onMenuItemClick && onMenuItemClick('groups')}
             className="mhn-manage-menu-item"
           >
@@ -148,10 +149,10 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
             </div>
             <span className="mhn-manage-menu-text">Groups</span>
             <span className="mhn-manage-menu-badge">1</span>
-          </button>
+          </Button>
 
           {/* Events */}
-          <button 
+          <Button
             onClick={() => onMenuItemClick && onMenuItemClick('events')}
             className="mhn-manage-menu-item"
           >
@@ -160,10 +161,9 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
             </div>
             <span className="mhn-manage-menu-text">Events</span>
             <span className="mhn-manage-menu-badge">1</span>
-          </button>
+          </Button>
         </div>
       </div>
     </div>
   );
 };
-

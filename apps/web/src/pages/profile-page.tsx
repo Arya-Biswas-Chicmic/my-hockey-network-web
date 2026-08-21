@@ -1,3 +1,5 @@
+import { Button } from '../components/common/Button';
+import { Input, Select, Textarea } from '../components/common/FormControls';
 import React, { useState } from 'react';
 import { Header } from '../components/common/Header';
 import { PendingBanner } from '../components/common/PendingBanner';
@@ -35,10 +37,8 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     setCoverUploadMsg(null);
 
     try {
-      console.log('🚀 [ProfilePage] Uploading cover image file (purpose: COVER)...');
       const uploadRes = await uploadMediaFile(file, 'COVER');
       if (uploadRes?.storageKey) {
-        console.log('✅ [ProfilePage] Cover file uploaded to storage. Key:', uploadRes.storageKey);
         const updated = await updateAuthProfile({ coverImageKey: uploadRes.storageKey });
         if (updated) {
           setUserProfile(updated);
@@ -72,10 +72,8 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     setIsUploadingAvatar(true);
 
     try {
-      console.log('🚀 [ProfilePage] Uploading avatar image file (purpose: AVATAR)...');
       const uploadRes = await uploadMediaFile(file, 'AVATAR');
       if (uploadRes?.storageKey) {
-        console.log('✅ [ProfilePage] Avatar uploaded to storage. Key:', uploadRes.storageKey);
         const updated = await updateAuthProfile({ avatarKey: uploadRes.storageKey });
         if (updated) {
           setUserProfile(updated);
@@ -153,7 +151,6 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         position: positionText || undefined,
         jerseyNumber: jerseyText !== '' ? Number(jerseyText) : undefined,
       };
-      console.log('🚀 [ProfilePage] Saving Intro Tab via PATCH /v1/auth/profile:', dto);
       const res = await updateAuthProfile(dto);
       if (res) {
         setUserProfile(res);
@@ -178,7 +175,6 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         dateOfBirth: dobText || undefined,
         genderCategory: genderText || undefined,
       };
-      console.log('🚀 [ProfilePage] Saving Personal Details via PATCH /v1/auth/profile:', dto);
       const res = await updateAuthProfile(dto);
       if (res) {
         setUserProfile(res);
@@ -209,12 +205,10 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   React.useEffect(() => {
     const profileId = user?.profile?.id || user?.id;
     if (profileId) {
-      console.log(`🚀 [ProfilePage] Fetching user posts for authorProfileId: ${profileId}...`);
       setIsPostsLoading(true);
       getUserPosts(profileId)
         .then((res) => {
           if (res?.items && Array.isArray(res.items)) {
-            console.log(`✅ [ProfilePage] User posts fetched: ${res.items.length} posts`);
             setLiveUserPosts(res?.items);
           }
         })
@@ -227,7 +221,6 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   }, [user]);
 
   const handleSaveProfile = async (data: EditProfileFormData) => {
-    console.log('🚀 [ProfilePage] Hitting PATCH /v1/auth/profile API with payload:', data);
 
     // Format dateOfBirth as YYYY-MM-DD (e.g., "2004-03-11") matching backend payload
     let formattedDob = data?.dateOfBirth;
@@ -237,7 +230,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
     // Rule from media-uploads.md: Sending both avatarKey and avatarUrl returns 400.
     // If avatarKey is present (uploaded via Step 1 & Step 2), send avatarKey and omit avatarUrl.
-    let avatarKeyToSend: string | undefined = data?.avatarKey;
+    const avatarKeyToSend: string | undefined = data?.avatarKey;
     let avatarUrlToSend: string | undefined = undefined;
 
     if (!avatarKeyToSend && data?.avatarUrl && data?.avatarUrl !== '/userPlaceholder.png' && !data?.avatarUrl.includes('userPlaceholder.png') && !data?.avatarUrl.startsWith('blob:')) {
@@ -259,11 +252,9 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       avatarUrl: avatarUrlToSend,
     };
 
-    console.log('📤 [PATCH /v1/auth/profile Payload Sent]:', JSON.stringify(dto, null, 2));
 
     try {
       const res = await updateAuthProfile(dto);
-      console.log('✅ [ProfilePage] Profile updated successfully via API:', res);
       if (res) {
         setUserProfile(res);
       }
@@ -312,7 +303,6 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
     setIsCreatingPost(true);
     try {
-      console.log('🚀 [ProfilePage] Creating post API call...', dto);
       await createPost(dto);
       setIsCreatePostOpen(false);
     } catch (err: any) {
@@ -519,7 +509,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 overflow: 'hidden',
               }}
             >
-              <input
+              <Input
                 type="file"
                 ref={coverFileInputRef}
                 accept="image/*"
@@ -552,7 +542,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               )}
 
               {/* Edit Cover Pencil Button */}
-              <button
+              <Button
                 className="mhn-btn-edit-cover"
                 aria-label="Edit cover photo"
                 onClick={handleEditCoverClick}
@@ -565,7 +555,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 ) : (
                   <img src="/edit2.png" className="edit2-icon" alt="edit-icon" />
                 )}
-              </button>
+              </Button>
 
               {coverUploadMsg && (
                 <div
@@ -590,7 +580,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             {/* Profile Header Content Row */}
             <div className="mhn-profile-header-content">
               {/* Hidden Avatar File Input */}
-              <input
+              <Input
                 type="file"
                 ref={avatarFileInputRef}
                 accept="image/*"
@@ -612,7 +602,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 </div>
 
                 {/* Profile Picture Edit Badge Button */}
-                <button
+                <Button
                   type="button"
                   className="mhn-avatar-edit-badge"
                   onClick={handleEditAvatarClick}
@@ -628,7 +618,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       <circle cx="12" cy="13" r="4" />
                     </svg>
                   )}
-                </button>
+                </Button>
               </div>
 
               {/* User Meta & Action Buttons */}
@@ -652,52 +642,52 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 </div>
 
                 <div className="mhn-profile-action-buttons">
-                  <button
+                  <Button
                     onClick={() => alert('Share profile link copied!')}
                     className="mhn-btn-share-profile"
                   >
                     <div className="share-profile-text">Share Profile</div>
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => setIsEditProfileOpen(true)}
                     className="mhn-btn-edit-profile"
                   >
                     <div className="edit-profile-text">Edit Profile</div>
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
 
             {/* Profile Content Navigation Tabs Bar */}
             <div className="mhn-profile-tabs-bar">
-              <button
+              <Button
                 onClick={() => setActiveProfileTab('posts')}
                 className={`mhn-profile-tab-btn ${activeProfileTab === 'posts' ? 'mhn-profile-tab-active' : ''}`}
               >
                 <span>Posts</span>
                 {activeProfileTab === 'posts' && <div className="mhn-profile-tab-indicator" />}
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setActiveProfileTab('media')}
                 className={`mhn-profile-tab-btn ${activeProfileTab === 'media' ? 'mhn-profile-tab-active' : ''}`}
               >
                 <span>Media</span>
                 {activeProfileTab === 'media' && <div className="mhn-profile-tab-indicator" />}
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setActiveProfileTab('stats')}
                 className={`mhn-profile-tab-btn ${activeProfileTab === 'stats' ? 'mhn-profile-tab-active' : ''}`}
               >
                 <span>Stats</span>
                 {activeProfileTab === 'stats' && <div className="mhn-profile-tab-indicator" />}
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setActiveProfileTab('about')}
                 className={`mhn-profile-tab-btn ${activeProfileTab === 'about' ? 'mhn-profile-tab-active' : ''}`}
               >
                 <span>About</span>
                 {activeProfileTab === 'about' && <div className="mhn-profile-tab-indicator" />}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -708,7 +698,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               <div className="mhn-posts-container-card">
                 <div className="mhn-posts-header-bar">
                   <h3 className="mhn-posts-title">Posts</h3>
-                  <button className="mhn-btn-create-post" onClick={() => setIsCreatePostOpen(true)}>Create Post</button>
+                  <Button className="mhn-btn-create-post" onClick={() => setIsCreatePostOpen(true)}>Create Post</Button>
                 </div>
 
                 {/* Dynamic Live Posts Grid from API if available */}
@@ -758,7 +748,6 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         userReaction={post.userReaction}
                         isSelf={true}
                         onDeleteSuccess={(deletedId, msg) => {
-                          console.log(`🗑️ [ProfilePage] Post ${deletedId} deleted.`);
                           setToast({ message: msg || 'Post deleted successfully!', type: 'success' });
                         }}
                       />
@@ -768,7 +757,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
                 {/* Bottom Show All Button */}
                 <div className="mhn-posts-show-all-divider">
-                  <button className="mhn-btn-show-all">Show All</button>
+                  <Button className="mhn-btn-show-all">Show All</Button>
                 </div>
               </div>
             )}
@@ -793,7 +782,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   {/* 1. Filter Dropdowns Row */}
                   <div className="mhn-stats-filters-row">
                     <div className="mhn-stats-select-wrapper">
-                      <select
+                      <Select
                         value={selectedSeason}
                         onChange={(e) => setSelectedSeason(e.target.value)}
                         onFocus={() => setActiveDropdown('season')}
@@ -802,7 +791,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       >
                         <option value="2025-26">2025-26</option>
                         <option value="2024-25">2024-25</option>
-                      </select>
+                      </Select>
                       <img
                         src="/arrowBottom.png"
                         alt="arrow"
@@ -820,7 +809,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                     </div>
 
                     <div className="mhn-stats-select-wrapper">
-                      <select
+                      <Select
                         value={selectedSeasonType}
                         onChange={(e) => setSelectedSeasonType(e.target.value)}
                         onFocus={() => setActiveDropdown('seasonType')}
@@ -829,7 +818,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       >
                         <option value="Regular Season">Regular Season</option>
                         <option value="Playoffs">Playoffs</option>
-                      </select>
+                      </Select>
                       <img
                         src="/arrowBottom.png"
                         alt="arrow"
@@ -847,7 +836,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                     </div>
 
                     <div className="mhn-stats-select-wrapper">
-                      <select
+                      <Select
                         value={selectedUnit}
                         onChange={(e) => setSelectedUnit(e.target.value)}
                         onFocus={() => setActiveDropdown('unit')}
@@ -856,7 +845,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       >
                         <option value="Miles • MI">Miles • MI</option>
                         <option value="KM • KPH">KM • KPH</option>
-                      </select>
+                      </Select>
                       <img
                         src="/arrowBottom.png"
                         alt="arrow"
@@ -1120,24 +1109,24 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                     <h3 className="mhn-about-sidebar-title">About</h3>
 
                     <nav className="mhn-about-menu-nav">
-                      <button
+                      <Button
                         onClick={() => setActiveAboutSection('intro')}
                         className={`mhn-about-menu-btn ${activeAboutSection === 'intro' ? 'mhn-about-btn-active' : ''}`}
                       >
                         Intro
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => setActiveAboutSection('career')}
                         className={`mhn-about-menu-btn ${activeAboutSection === 'career' ? 'mhn-about-btn-active' : ''}`}
                       >
                         Career
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => setActiveAboutSection('details')}
                         className={`mhn-about-menu-btn ${activeAboutSection === 'details' ? 'mhn-about-btn-active' : ''}`}
                       >
                         Personal details
-                      </button>
+                      </Button>
                     </nav>
                   </div>
 
@@ -1149,7 +1138,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         <div className="mhn-about-field-group">
                           <label className="mhn-about-field-label">Bio</label>
                           <div style={{ position: 'relative' }}>
-                            <textarea
+                            <Textarea
                               value={bioText}
                               onChange={(e) => setBioText(e.target.value)}
                               className="mhn-about-input-box mhn-about-textarea-box"
@@ -1165,7 +1154,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                             Role <span style={{ fontSize: '12px', fontWeight: 400, color: '#64748B' }}>(Managed by system)</span>
                           </label>
                           <div style={{ position: 'relative' }}>
-                            <input
+                            <Input
                               type="text"
                               value={liveRole}
                               disabled
@@ -1179,7 +1168,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         <div className="mhn-about-field-group">
                           <label className="mhn-about-field-label">Position</label>
                           <div style={{ position: 'relative' }}>
-                            <input
+                            <Input
                               type="text"
                               value={positionText}
                               onChange={(e) => setPositionText(e.target.value)}
@@ -1193,7 +1182,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         <div className="mhn-about-field-group">
                           <label className="mhn-about-field-label">Jersey Number</label>
                           <div style={{ position: 'relative' }}>
-                            <input
+                            <Input
                               type="number"
                               value={jerseyText}
                               onChange={(e) => setJerseyText(e.target.value)}
@@ -1205,7 +1194,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
                         {/* Save & Feedback Row */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
-                          <button
+                          <Button
                             type="button"
                             className="mhn-about-btn-save"
                             style={{
@@ -1226,8 +1215,8 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                           >
                             {isSavingIntro && <Spinner size="sm" color="#FFFFFF" />}
                             <span>Save Changes</span>
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
                             className="mhn-about-btn-cancel"
                             style={{
@@ -1249,7 +1238,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                             }}
                           >
                             Cancel
-                          </button>
+                          </Button>
                           {introSaveMsg && (
                             <span style={{ fontSize: '13px', color: '#16A34A', fontWeight: 600 }}>
                               ✅ {introSaveMsg}
@@ -1264,7 +1253,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         {/* Teams Header */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                           <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Teams</h4>
-                          <button
+                          <Button
                             type="button"
                             onClick={() => {
                               if (isAddTeamFormOpen && !editingTeamId) {
@@ -1289,7 +1278,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                               <line x1="12" y1="5" x2="12" y2="19" />
                               <line x1="5" y1="12" x2="19" y2="12" />
                             </svg>
-                          </button>
+                          </Button>
                         </div>
 
                         {/* Add / Edit Team Form Card matching User Screenshot */}
@@ -1311,7 +1300,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                                 Team
                               </label>
-                              <input
+                              <Input
                                 type="text"
                                 value={teamNameInput}
                                 onChange={(e) => setTeamNameInput(e.target.value)}
@@ -1333,7 +1322,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                                 Position
                               </label>
-                              <select
+                              <Select
                                 value={teamPositionInput}
                                 onChange={(e) => setTeamPositionInput(e.target.value)}
                                 style={{
@@ -1354,7 +1343,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                                 <option value="Right Wing">Right Wing</option>
                                 <option value="Defense">Defense</option>
                                 <option value="Goaltender">Goaltender</option>
-                              </select>
+                              </Select>
                             </div>
 
                             {/* City/Town Select */}
@@ -1362,7 +1351,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                                 City/Town
                               </label>
-                              <select
+                              <Select
                                 value={teamCityInput}
                                 onChange={(e) => setTeamCityInput(e.target.value)}
                                 style={{
@@ -1382,12 +1371,12 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                                 <option value="Toronto, Canada">Toronto, Canada</option>
                                 <option value="Austria, Europe">Austria, Europe</option>
                                 <option value="Boston, MA">Boston, MA</option>
-                              </select>
+                              </Select>
                             </div>
 
                             {/* Checkbox: I currently playing here */}
                             <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>
-                              <input
+                              <Input
                                 type="checkbox"
                                 checked={isCurrentPlayingInput}
                                 onChange={(e) => setIsCurrentPlayingInput(e.target.checked)}
@@ -1402,7 +1391,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                                 Start date
                               </label>
                               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <select
+                                <Select
                                   value={startMonthInput}
                                   onChange={(e) => setStartMonthInput(e.target.value)}
                                   style={{
@@ -1429,9 +1418,9 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                                   <option value="October">October</option>
                                   <option value="November">November</option>
                                   <option value="December">December</option>
-                                </select>
+                                </Select>
 
-                                <select
+                                <Select
                                   value={startYearInput}
                                   onChange={(e) => setStartYearInput(e.target.value)}
                                   style={{
@@ -1449,7 +1438,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                                   {['2026', '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016', '2015', '2010'].map((y) => (
                                     <option key={y} value={y}>{y}</option>
                                   ))}
-                                </select>
+                                </Select>
                               </div>
                             </div>
 
@@ -1460,7 +1449,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                                   End date
                                 </label>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                  <select
+                                  <Select
                                     value={endMonthInput}
                                     onChange={(e) => setEndMonthInput(e.target.value)}
                                     style={{
@@ -1487,9 +1476,9 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                                     <option value="October">October</option>
                                     <option value="November">November</option>
                                     <option value="December">December</option>
-                                  </select>
+                                  </Select>
 
-                                  <select
+                                  <Select
                                     value={endYearInput}
                                     onChange={(e) => setEndYearInput(e.target.value)}
                                     style={{
@@ -1507,7 +1496,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                                     {['2026', '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016', '2015', '2010'].map((y) => (
                                       <option key={y} value={y}>{y}</option>
                                     ))}
-                                  </select>
+                                  </Select>
                                 </div>
                               </div>
                             )}
@@ -1517,7 +1506,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                                 Description
                               </label>
-                              <textarea
+                              <Textarea
                                 rows={3}
                                 value={teamDescInput}
                                 onChange={(e) => setTeamDescInput(e.target.value)}
@@ -1537,7 +1526,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
                             {/* Buttons Row: Cancel and Save */}
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '4px' }}>
-                              <button
+                              <Button
                                 type="button"
                                 onClick={resetTeamForm}
                                 style={{
@@ -1552,8 +1541,8 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                                 }}
                               >
                                 Cancel
-                              </button>
-                              <button
+                              </Button>
+                              <Button
                                 type="button"
                                 onClick={handleSaveTeam}
                                 disabled={!teamNameInput.trim()}
@@ -1569,7 +1558,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                                 }}
                               >
                                 Save
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         )}
@@ -1614,7 +1603,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                                 </div>
                               </div>
 
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => handleEditClick(team)}
                                 style={{
@@ -1630,7 +1619,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                                 title="Edit team details"
                               >
                                 <img src="/edit3.png" alt="Edit" style={{ width: '16px', height: '16px' }} />
-                              </button>
+                              </Button>
                             </div>
                           ))}
                         </div>
@@ -1643,7 +1632,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         <div className="mhn-about-field-group">
                           <label className="mhn-about-field-label">Location (City)</label>
                           <div style={{ position: 'relative' }}>
-                            <input
+                            <Input
                               type="text"
                               value={locationText}
                               onChange={(e) => setLocationText(e.target.value)}
@@ -1657,7 +1646,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         <div className="mhn-about-field-group">
                           <label className="mhn-about-field-label">Date of Birth</label>
                           <div style={{ position: 'relative' }}>
-                            <input
+                            <Input
                               type="date"
                               value={dobText}
                               onChange={(e) => setDobText(e.target.value)}
@@ -1670,7 +1659,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         <div className="mhn-about-field-group">
                           <label className="mhn-about-field-label">Gender</label>
                           <div style={{ position: 'relative' }}>
-                            <input
+                            <Input
                               type="text"
                               value={genderText}
                               onChange={(e) => setGenderText(e.target.value)}
@@ -1686,7 +1675,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                             Public Reference ID <span style={{ fontSize: '12px', fontWeight: 400, color: '#64748B' }}>(Read-Only)</span>
                           </label>
                           <div style={{ position: 'relative' }}>
-                            <input
+                            <Input
                               type="text"
                               value={(user?.profile as any)?.publicRef || 'HKY-B5E3EMET'}
                               disabled
@@ -1701,7 +1690,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                             Account Status <span style={{ fontSize: '12px', fontWeight: 400, color: '#64748B' }}>(Read-Only)</span>
                           </label>
                           <div style={{ position: 'relative' }}>
-                            <input
+                            <Input
                               type="text"
                               value={user?.status || 'ACTIVE'}
                               disabled
@@ -1712,7 +1701,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
                         {/* Save & Feedback Row */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
-                          <button
+                          <Button
                             type="button"
                             className="mhn-about-btn-save"
                             style={{
@@ -1733,8 +1722,8 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                           >
                             {isSavingDetails && <Spinner size="sm" color="#FFFFFF" />}
                             <span>Save Details</span>
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
                             className="mhn-about-btn-cancel"
                             style={{
@@ -1756,7 +1745,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                             }}
                           >
                             Cancel
-                          </button>
+                          </Button>
                           {detailsSaveMsg && (
                             <span style={{ fontSize: '13px', color: '#16A34A', fontWeight: 600 }}>
                               ✅ {detailsSaveMsg}
@@ -1805,4 +1794,3 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     </div>
   );
 };
-

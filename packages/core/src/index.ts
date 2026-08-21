@@ -4,7 +4,6 @@ export * from './api/client';
 export * from './api/types';
 export * from './api/urls';
 export * from './api/authApi';
-export * from './api/authStore';
 export * from './api/postsApi';
 export * from './api/relationshipsApi';
 export * from './api/groupsApi';
@@ -15,6 +14,7 @@ export * from './api/alertsApi';
 export * from './api/mediaApi';
 export * from './api/settingsApi';
 export * from './api/signUpRules';
+export * from '@my-hockey-network/contracts';
 
 export const toggleRoleSelection = (currentRoles: string[], roleId: string): string[] => {
   if (currentRoles.includes(roleId)) {

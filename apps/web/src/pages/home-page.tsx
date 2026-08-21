@@ -1,3 +1,4 @@
+import { Input, Select } from '../components/common/FormControls';
 import React, { useState, useEffect, useRef } from 'react';
 import { Header, PendingBanner, Toast, NoDataFound, ServerDown } from '../components/common';
 import { ProfileSummaryCard } from '../components/features/home/ProfileSummaryCard';
@@ -8,7 +9,7 @@ import { InviteGrowWidget } from '../components/features/home/InviteGrowWidget';
 import { CreatePostModal } from '../components/features/home/CreatePostModal';
 import { EmptyState } from '../components/features/network/EmptyState';
 import { HomeSkeletonLoader, FeedPostSkeleton } from '../components/features/home/HomeSkeletonLoader';
-import { saveUserProfile, AuthMeResponse, createPost, getFeed, uploadMediaFile, completeMediaUpload } from '@my-hockey-network/core';
+import { AuthMeResponse, createPost, getFeed, uploadMediaFile, completeMediaUpload } from '@my-hockey-network/core';
 import { useAuth } from '../hooks/use-auth';
 
 import { resolveCoverUrl } from '../utils/mediaUtils';
@@ -196,14 +197,12 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
       // Execute media upload pipeline if an image file was selected
       if (imageFile) {
-        console.log('🚀 [MediaUpload] Uploading post image file to storage slot...');
         const uploadRes = await uploadMediaFile(imageFile, 'POST_IMAGE');
         const mediaId = uploadRes.mediaId || uploadRes.storageKey;
         if (mediaId) {
           mediaIds = [mediaId];
           try {
             await completeMediaUpload(mediaId);
-            console.log('✅ [MediaUpload] Media upload completed for UUID:', mediaId);
           } catch (compErr) {
             console.warn('Media complete notice:', compErr);
           }
@@ -226,7 +225,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         setToast({ message: 'Post submitted for guardian approval', type: 'info' });
       } else {
         const newPost: FeedPostProps = {
-          id: res?.data?.post?.id || res?.id || `post-${Date.now()}`,
+          id: res?.data?.post?.id || res?.id || `pending-post-${feedPosts.length + 1}`,
           authorName: userSession?.profile?.displayName || currentUserName,
           authorRole: userSession?.primaryRole || currentUserRole,
           authorTime: 'Just now',
@@ -297,7 +296,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 <circle cx="11" cy="11" r="8" />
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
-              <input
+              <Input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -307,7 +306,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             </div>
 
             <div className="mhn-feed-filter-wrapper">
-              <select
+              <Select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="mhn-feed-filter-select"
@@ -315,7 +314,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 <option value="RECENT">Newest First</option>
                 <option value="POPULAR">Most Popular</option>
                 <option value="TRENDING">Trending (48h)</option>
-              </select>
+              </Select>
               <svg className="mhn-feed-filter-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="6 9 12 15 18 9" />
               </svg>

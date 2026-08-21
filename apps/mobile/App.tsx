@@ -8,6 +8,9 @@ import { preloadImages } from '@utils/images';
 import RootNavigator from './src/navigation/RootNavigator';
 import store, { persistor } from './src/redux/store';
 import './src/localization';
+import { configureMobilePlatform } from './src/platform/api-client';
+
+configureMobilePlatform();
 
 SplashScreen.preventAutoHideAsync();
 

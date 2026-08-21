@@ -1,4 +1,4 @@
-import { apiFetch, getApiBaseUrl } from './client';
+import { apiFetch } from './client';
 import { API_ENDPOINTS } from './urls';
 
 export type UploadPurpose =
@@ -64,19 +64,7 @@ export async function uploadMediaFile(
     ...(slot.headers || {}),
   };
 
-  let targetUploadUrl = slot.uploadUrl;
-  if (typeof window !== 'undefined') {
-    if (targetUploadUrl.includes('localhost:3000') || targetUploadUrl.includes('localhost:5175')) {
-      targetUploadUrl = targetUploadUrl.replace(/^https?:\/\/localhost:(3000|5175)(\/v1)?/, '/v1');
-    }
-  } else {
-    const baseUrl = getApiBaseUrl();
-    if (targetUploadUrl.includes('localhost:3000') || targetUploadUrl.includes('localhost:5175')) {
-      targetUploadUrl = targetUploadUrl.replace(/^https?:\/\/localhost:(3000|5175)(\/v1)?/, baseUrl);
-    }
-  }
-
-  const putResponse = await fetch(targetUploadUrl, {
+  const putResponse = await fetch(slot.uploadUrl, {
     method: slot.method || 'PUT',
     headers: uploadHeaders,
     body: file,

@@ -1,3 +1,5 @@
+import { Button } from '../components/common/Button';
+import { Input } from '../components/common/FormControls';
 import React, { useState, useEffect } from 'react';
 import { Header, NoDataFound, ServerDown } from '../components/common';
 import { ManageNetworkCard } from '../components/features/network/ManageNetworkCard';
@@ -49,11 +51,9 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
 
     // 1. Pending Requests (GET /v1/relationships)
     try {
-      console.log(`🚀 [MyNetworkPage] Fetching GET /v1/relationships (query: "${qParam || ''}")...`);
       const res = await getRelationships({ direction: 'incoming', status: 'PENDING', query: qParam });
 
       if (res?.items && Array.isArray(res.items)) {
-        console.log('✅ [MyNetworkPage] Relationships items count:', res.items.length);
         const mapped: PendingRequestProps[] = res.items.map((item: RelationshipItem) => {
           const cp = item.counterparty;
           
@@ -98,7 +98,6 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
 
     // 2. People You May Know (GET /v1/recommendations/people)
     try {
-      console.log(`🚀 [MyNetworkPage] Fetching GET /v1/recommendations/people (query: "${qParam || ''}")...`);
       const peopleRes = await getPeopleYouMayKnow({ limit: 10, query: qParam });
       if (peopleRes?.items && Array.isArray(peopleRes.items)) {
         const mapped: SuggestedUserProps[] = peopleRes.items.map((item: any) => {
@@ -161,7 +160,6 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
 
   const handleAcceptRequest = async (id: string) => {
     try {
-      console.log(`🚀 [MyNetworkPage] Accepting relationship request (POST /v1/relationships/${id}/accept)...`);
       await acceptRelationship(id);
       setLivePendingRequests((prev) => prev.filter((r) => r.id !== id));
       await loadAuthMe(true);
@@ -172,7 +170,6 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
 
   const handleIgnoreRequest = async (id: string) => {
     try {
-      console.log(`🚀 [MyNetworkPage] Declining relationship request (POST /v1/relationships/${id}/decline)...`);
       await declineRelationship(id);
       setLivePendingRequests((prev) => prev.filter((r) => r.id !== id));
       await loadAuthMe(true);
@@ -183,9 +180,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
 
   const handleFollowUser = async (id: string) => {
     try {
-      console.log(`🚀 [MyNetworkPage] Following user profile (POST /v1/relationships/follow) with id: ${id}...`);
       await followUser({ type: 'PROFILE', id });
-      console.log('✅ [MyNetworkPage] Followed user. Triggering silent loadAuthMe refresh...');
       await loadAuthMe(true);
     } catch (err: any) {
       console.error('❌ [MyNetworkPage] Follow user error:', err);
@@ -310,7 +305,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                         <circle cx="11" cy="11" r="8"/>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                       </svg>
-                      <input
+                      <Input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -335,7 +330,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                     {filterTabs.map((tab) => {
                       const isActive = activeFilterTab === tab.id;
                       return (
-                        <button
+                        <Button
                           key={tab.id}
                           onClick={() => setActiveFilterTab(tab.id)}
                           style={{
@@ -354,7 +349,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                           }}
                         >
                           {tab.label}
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -365,7 +360,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                       <div className="mhn-network-section-header">
                         <h3 className="mhn-network-section-title">Pending Requests</h3>
                         {filteredPendingRequests.length > 0 && (
-                          <button className="mhn-network-view-all">View all</button>
+                          <Button className="mhn-network-view-all">View all</Button>
                         )}
                       </div>
 
@@ -399,7 +394,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                         {activeFilterTab === 'People you may know' ? 'People you may know' : 'Suggested for You'}
                       </h3>
                       {filteredSuggestedUsers.length > 0 && (
-                        <button className="mhn-network-view-all">View all</button>
+                        <Button className="mhn-network-view-all">View all</Button>
                       )}
                     </div>
 

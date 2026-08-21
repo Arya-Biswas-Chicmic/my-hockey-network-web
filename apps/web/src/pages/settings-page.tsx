@@ -1,3 +1,5 @@
+import { Button } from '../components/common/Button';
+import { Input, Select } from '../components/common/FormControls';
 import React, { useState, useEffect } from 'react';
 import { Header } from '../components/common/Header';
 import { NoDataFound } from '../components/common/no-data-found';
@@ -97,7 +99,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
     setUnblockingIds((prev) => [...prev, userId]);
 
     try {
-      console.log(`🚀 [SettingsPage] Unblocking user edge ID: ${userId}`);
       await removeRelationship(userId);
 
       // Show Toast Notification
@@ -260,7 +261,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <input
+            <Input
               type="text"
               value={searchQuery}
               onChange={(e) => {
@@ -284,24 +285,24 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
         <div className="mhn-settings-card-wrapper">
           {/* Left Sub-Navigation Menu Column */}
           <aside className="mhn-settings-sidebar">
-            <button
+            <Button
               onClick={() => setActiveSubTab('general')}
               className={`mhn-settings-subtab-btn ${activeSubTab === 'general' ? 'mhn-subtab-active' : ''}`}
             >
               General
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setActiveSubTab('notification')}
               className={`mhn-settings-subtab-btn ${activeSubTab === 'notification' ? 'mhn-subtab-active' : ''}`}
             >
               Notification
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setActiveSubTab('blocked')}
               className={`mhn-settings-subtab-btn ${activeSubTab === 'blocked' ? 'mhn-subtab-active' : ''}`}
             >
               Blocked Users
-            </button>
+            </Button>
           </aside>
 
           {/* Right Content Area */}
@@ -343,7 +344,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                             }}
                           />
                         )}
-                        <button
+                        <Button
                           type="button"
                           onClick={() => toggleNotification(item.id)}
                           disabled={updatingNotifKey === item.id}
@@ -352,7 +353,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                           style={{ opacity: updatingNotifKey === item.id ? 0.6 : 1 }}
                         >
                           <div className="mhn-toggle-handle" />
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ))
@@ -365,7 +366,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                 <h3 className="mhn-settings-section-heading">Account & General Settings</h3>
                 <div className="mhn-general-setting-field">
                   <label className="mhn-setting-label">Email Address</label>
-                  <input
+                  <Input
                     type="email"
                     value="sakshaiukym.garg@chicmicstudios.in"
                     readOnly
@@ -374,7 +375,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                 </div>
                 <div className="mhn-general-setting-field">
                   <label className="mhn-setting-label">Primary Role</label>
-                  <input
+                  <Input
                     type="text"
                     value="PLAYER"
                     readOnly
@@ -383,10 +384,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                 </div>
                 <div className="mhn-general-setting-field">
                   <label className="mhn-setting-label">Language</label>
-                  <select className="mhn-setting-select" defaultValue="en">
+                  <Select className="mhn-setting-select" defaultValue="en">
                     <option value="en">English (US)</option>
                     <option value="de">German</option>
-                  </select>
+                  </Select>
                 </div>
               </div>
             )}
@@ -442,7 +443,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                           <span>{user.location}</span>
                         </div>
 
-                        <button
+                        <Button
                           type="button"
                           onClick={() => handleUnblock(user.id)}
                           disabled={unblockingIds.includes(user.id)}
@@ -472,7 +473,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                           ) : (
                             'Unblock'
                           )}
-                        </button>
+                        </Button>
                       </div>
                     ))}
                   </div>

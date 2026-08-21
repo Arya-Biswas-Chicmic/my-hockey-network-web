@@ -33,7 +33,6 @@ const Home = () => {
         <ICONS.User width={500} height={50} color="red" />
         <Pressable
           onPress={() => {
-            console.log(i18n.language);
             i18n.changeLanguage(i18n.language === 'en' ? 'hi' : 'en');
           }}
         >

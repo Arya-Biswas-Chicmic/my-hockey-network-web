@@ -1,1 +1,24 @@
-npm run scan
+# Temporarily disable exit-on-error to allow NVM to load safely without crashing on internal checks
+set +e
+
+# Set PATH to include common macOS/Homebrew locations
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+# Load NVM if it exists
+export NVM_DIR="$HOME/.nvm"
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  . "$NVM_DIR/nvm.sh"
+fi
+
+# Re-enable exit-on-error
+set -e
+
+if command -v npm >/dev/null 2>&1; then
+  npm run check:obscure
+  npm run docs:check
+  npm run security:check
+  npm run components:check
+  npm run lint:check
+else
+  echo "Husky pre-commit: 'npm' not found. Skipping lint checks."
+fi

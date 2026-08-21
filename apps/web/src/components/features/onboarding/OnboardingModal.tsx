@@ -11,7 +11,7 @@ interface OnboardingModalProps {
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) => {
-  const { setAuthSession } = useAuth();
+  const { setAuthSession, loadAuthMe } = useAuth();
   const [authMode, setAuthMode] = useState<'signup' | 'login'>('login');
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1); // 1: Role, 2: CreateAccount, 3: VerifyOTP, 4: GuardianApproval, 5: RequestSent
   const [loginStep, setLoginStep] = useState<1 | 2>(1);
@@ -67,7 +67,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
       });
       setStep(3);
     } catch (err: any) {
-      console.error('API requestOtp Error:', err);
       if (err.statusCode === 409 || err.key === 'USER_ALREADY_EXISTS') {
         setErrorMessage('An account with this email already exists. Switching to Sign In...');
         setTimeout(() => {
@@ -123,7 +122,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
         await finalizeOnboarding();
       }
     } catch (err: any) {
-      console.error('API Verification Error:', err);
       setErrorMessage(err.message || 'Verification failed. Please check your code and try again.');
     } finally {
       setLoading(false);
@@ -151,11 +149,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
         preferredLanguage: 'en',
       });
 
+      await loadAuthMe(true);
+
       if (onComplete) {
         onComplete({ selectedRoles, accountData: { ...accountData, parentEmail }, onboardingResult });
       }
     } catch (err: any) {
-      console.error('Onboarding Submission Error:', err);
       setErrorMessage(err.message || 'Failed to complete profile onboarding.');
     } finally {
       setLoading(false);
@@ -173,7 +172,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
       // Move to Step 5: Request Sent! Confirmation Card (Image 2 right screen)
       setStep(5);
     } catch (err: any) {
-      console.error('sendGuardianRequest Error:', err);
       setErrorMessage(err.message || 'Failed to send guardian request. Please check email address.');
     } finally {
       setLoading(false);
@@ -203,7 +201,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
       });
       setLoginStep(2);
     } catch (err: any) {
-      console.error('API requestOtp Login Error:', err);
       if (err.statusCode === 404 || err.key === 'USER_NOT_FOUND') {
         setErrorMessage('No account found with this email. Please Sign Up first.');
       } else {
@@ -234,7 +231,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
         onComplete({ selectedRoles: ['PLAYER'], accountData: { fullName: 'User', email: loginEmail, dob: '' } });
       }
     } catch (err: any) {
-      console.error('API Login OTP Verification Error:', err);
       setErrorMessage(err.message || 'Verification code invalid. Please try again.');
     } finally {
       setLoading(false);

@@ -1,0 +1,17 @@
+COMMITLINT_CLI="node_modules/@commitlint/cli/cli.js"
+
+if [ ! -f "$COMMITLINT_CLI" ]; then
+  echo "Husky commit-msg: local Commitlint is not installed."
+  exit 127
+fi
+
+if command -v node >/dev/null 2>&1; then
+  exec node "$COMMITLINT_CLI" --edit "$1"
+fi
+
+if command -v bun >/dev/null 2>&1; then
+  exec bun "$COMMITLINT_CLI" --edit "$1"
+fi
+
+echo "Husky commit-msg: neither Node.js nor Bun is available."
+exit 127

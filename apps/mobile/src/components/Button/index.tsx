@@ -1,4 +1,5 @@
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 
 import useStyles from '@hooks/useStyles';
 import { FONT } from '@utils/constants';
@@ -11,6 +12,7 @@ export type ButtonProps = {
   disabled?: boolean;
   loading?: boolean;
   accessibilityLabel?: string;
+  style?: StyleProp<ViewStyle>;
 };
 
 const Button = ({
@@ -19,6 +21,7 @@ const Button = ({
   disabled = false,
   loading = false,
   accessibilityLabel,
+  style,
 }: ButtonProps) => {
   const { dynamicStyles, Colors } = useStyles(styles);
 
@@ -32,6 +35,7 @@ const Button = ({
       disabled={isDisabled}
       style={({ pressed }) => [
         dynamicStyles.button,
+        style,
         isDisabled && dynamicStyles.buttonDisabled,
         pressed && !isDisabled && dynamicStyles.buttonPressed,
       ]}

@@ -1,3 +1,4 @@
+import { Button } from '../../../common/Button';
 import React from 'react';
 import { REQUEST_SENT_STRINGS } from '@my-hockey-network/shared';
 import { RequestSentBadgeIcon, HockeyTournamentIcon, CommunityBoardIcon } from './RequestSentIcons';
@@ -40,13 +41,13 @@ export const RequestSentCard: React.FC<RequestSentCardProps> = ({
 
         {/* Continue Button */}
         <div className="request-sent-action-wrapper">
-          <button
+          <Button
             type="button"
             className="btn-request-sent-continue"
             onClick={onContinue}
           >
             {REQUEST_SENT_STRINGS.continueButton}
-          </button>
+          </Button>
         </div>
 
         {/* Public Content Feature Cards Grid */}

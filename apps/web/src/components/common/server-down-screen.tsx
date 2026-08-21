@@ -1,3 +1,4 @@
+import { Button } from './Button';
 import React, { useState } from 'react';
 
 export interface ServerDownScreenProps {
@@ -150,7 +151,7 @@ export const ServerDownScreen: React.FC<ServerDownScreenProps> = ({
         </p>
 
         {/* Interactive Retry Button */}
-        <button
+        <Button
           onClick={handleRetryClick}
           disabled={isRetrying}
           style={{
@@ -196,7 +197,7 @@ export const ServerDownScreen: React.FC<ServerDownScreenProps> = ({
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
           </svg>
           {isRetrying ? 'Reconnecting...' : 'Retry Connection'}
-        </button>
+        </Button>
       </div>
     </div>
   );

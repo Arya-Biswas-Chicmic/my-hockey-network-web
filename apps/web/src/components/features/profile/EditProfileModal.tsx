@@ -1,3 +1,5 @@
+import { Button } from '../../common/Button';
+import { Input, Select, Textarea } from '../../common/FormControls';
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../hooks/use-auth';
 import { Spinner } from '../../common/Spinner';
@@ -213,11 +215,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     // Step 1 & 2: If user selected a new photo file, request upload slot and upload raw bytes to storage
     if (selectedAvatarFile) {
       try {
-        console.log('🚀 [EditProfileModal] Step 1: Requesting upload slot (POST /v1/media/upload-url, purpose: AVATAR)...');
-        console.log('🚀 [EditProfileModal] Step 2: Uploading file bytes straight to storage via PUT...');
         const uploadRes = await uploadMediaFile(selectedAvatarFile, 'AVATAR');
         uploadedAvatarKey = uploadRes.storageKey;
-        console.log('✅ [EditProfileModal] Step 1 & 2 completed successfully. storageKey:', uploadedAvatarKey);
       } catch (uploadErr: any) {
         console.error('❌ [EditProfileModal] Avatar Storage Upload Failed:', uploadErr);
         setErrors({ form: uploadErr.message || 'Failed to upload photo to storage. Please try again.' });
@@ -307,7 +306,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             </p>
           </div>
 
-          <button
+          <Button
             onClick={handleAttemptClose}
             style={{
               background: 'none',
@@ -326,7 +325,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
-          </button>
+          </Button>
         </div>
 
         {/* Modal Scrollable Form Body */}
@@ -403,7 +402,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   ✓ Verified
                 </span>
               </div>
-              <input
+              <Input
                 type="text"
                 value={userEmail}
                 disabled
@@ -476,7 +475,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     (e.target as HTMLImageElement).src = '/userPlaceholder.png';
                   }}
                 />
-                <button
+                <Button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   style={{
@@ -497,8 +496,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   title="Upload profile photo"
                 >
                   ✎
-                </button>
-                <input
+                </Button>
+                <Input
                   type="file"
                   ref={fileInputRef}
                   onChange={handleAvatarFileChange}
@@ -508,7 +507,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               </div>
 
               <div>
-                <button
+                <Button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   style={{
@@ -524,9 +523,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   }}
                 >
                   Upload Photo
-                </button>
+                </Button>
                 {formData.avatarUrl !== '/userPlaceholder.png' && (
-                  <button
+                  <Button
                     type="button"
                     onClick={() => handleChange('avatarUrl', '/userPlaceholder.png')}
                     style={{
@@ -539,7 +538,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     }}
                   >
                     Remove
-                  </button>
+                  </Button>
                 )}
                 <p style={{ fontSize: '12px', color: '#64748B', margin: '6px 0 0 0' }}>
                   Allowed JPG, PNG or WebP. Max 5MB.
@@ -553,7 +552,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                   Display Name <span style={{ color: '#DC2626' }}>*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   value={formData.displayName}
                   onChange={(e) => handleChange('displayName', e.target.value)}
@@ -579,7 +578,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                   First Name
                 </label>
-                <input
+                <Input
                   type="text"
                   value={formData.firstName}
                   onChange={(e) => handleChange('firstName', e.target.value)}
@@ -600,7 +599,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                   Last Name
                 </label>
-                <input
+                <Input
                   type="text"
                   value={formData.lastName}
                   onChange={(e) => handleChange('lastName', e.target.value)}
@@ -624,7 +623,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                   Date of Birth
                 </label>
-                <input
+                <Input
                   type="date"
                   value={formData.dateOfBirth}
                   onChange={(e) => handleChange('dateOfBirth', e.target.value)}
@@ -644,7 +643,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                   Gender Category
                 </label>
-                <select
+                <Select
                   value={formData.genderCategory}
                   onChange={(e) => handleChange('genderCategory', e.target.value)}
                   style={{
@@ -663,7 +662,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                       {opt.label}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
             </div>
           </div>
@@ -679,7 +678,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                   Position
                 </label>
-                <select
+                <Select
                   value={formData.position}
                   onChange={(e) => handleChange('position', e.target.value)}
                   style={{
@@ -698,14 +697,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                       {opt.label}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                   Shoots / Catches
                 </label>
-                <select
+                <Select
                   value={formData.shootsCatches}
                   onChange={(e) => handleChange('shootsCatches', e.target.value)}
                   style={{
@@ -724,14 +723,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                       {opt.label}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                   Jersey Number (#)
                 </label>
-                <input
+                <Input
                   type="number"
                   min="0"
                   max="99"
@@ -760,7 +759,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                 City / Location
               </label>
-              <input
+              <Input
                 type="text"
                 value={formData.city}
                 onChange={(e) => handleChange('city', e.target.value)}
@@ -781,7 +780,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                 Player Bio
               </label>
-              <textarea
+              <Textarea
                 value={formData.bio}
                 onChange={(e) => handleChange('bio', e.target.value)}
                 placeholder="Write a brief intro about your hockey background and goals..."
@@ -817,7 +816,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
           </span>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button
+            <Button
               type="button"
               onClick={handleAttemptClose}
               style={{
@@ -832,9 +831,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               }}
             >
               Cancel
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="button"
               onClick={handleSubmit}
               disabled={isSaveDisabled}
@@ -861,7 +860,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               ) : (
                 'Save Changes'
               )}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -897,7 +896,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               You have unsaved edits in your profile. Are you sure you want to discard them?
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button
+              <Button
                 onClick={() => setShowDiscardConfirm(false)}
                 style={{
                   backgroundColor: '#F1F5F9',
@@ -911,8 +910,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 }}
               >
                 Keep Editing
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => {
                   setShowDiscardConfirm(false);
                   onClose();
@@ -929,7 +928,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 }}
               >
                 Discard
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -1,3 +1,4 @@
+import { Button } from '../../common/Button';
 import React from 'react';
 import { useAuth } from '../../../hooks/use-auth';
 import { resolveMediaUrl, resolveCoverUrl } from '../../../utils/mediaUtils';
@@ -110,9 +111,9 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
       </div>
 
       {/* Post Action Button */}
-      <button onClick={onPostClick} className="mhn-btn-post">
+      <Button onClick={onPostClick} className="mhn-btn-post">
         Post
-      </button>
+      </Button>
     </div>
   );
 };

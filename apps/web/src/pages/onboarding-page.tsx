@@ -7,7 +7,6 @@ interface OnboardingPageProps {
 
 export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) => {
   const handleOnboardingComplete = (data: { selectedRoles: string[]; accountData?: any; onboardingResult?: any }) => {
-    console.log('Onboarding & Signup Complete:', data);
     if (onComplete) {
       onComplete(data);
     }

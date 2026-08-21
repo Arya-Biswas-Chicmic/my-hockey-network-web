@@ -1,77 +1,100 @@
-# My Hockey Network — Web Application & API Integration
+# My Hockey Network user applications
 
-Production-ready web application for **My Hockey Network**, built with React 19, TypeScript 5, Vite, and centralized core architecture. Fully integrated with backend endpoints specified in `endpoints.md`, `flows.md`, and `README.md`.
+React/Vite web and Expo/React Native mobile applications in one npm-workspaces monorepo. Shared
+contracts, domain rules, validation, authentication use cases, API behavior, and design values live
+under `packages/`; UI, navigation, environment access, and credential storage remain platform-owned.
 
----
+This repository uses **npm only**. Node.js is the JavaScript runtime; npm is the package manager.
+Do not add `yarn.lock`, `pnpm-lock.yaml`, or Bun lockfiles.
 
-## 1. System Architecture & Tech Stack
+Last reviewed: 2026-08-21
 
-* **Core Framework:** React 19 + TypeScript 5
-* **Build Tool:** Vite 6 Monorepo
-* **Shared Architecture:** `packages/core` (Centralized `apiFetch`, HTTP interceptors, token refresh, and endpoint catalogs)
-* **Styling:** Vanilla CSS design system with HSL tokens, CSS variables, glassmorphism, and responsive breakpoints ([index.css](file:///Users/harpindersingh/Desktop/my-hockey-network/apps/web/src/index.css))
+## Start here
 
----
+- [Project context](PROJECT_CONTEXT.md)
+- [Architecture](docs/codebase_architecture_guide.md)
+- [Implementation status](docs/IMPLEMENTATION_STATUS.md)
+- [Security register](docs/SECURITY_REGISTER.md)
+- [Testing strategy](docs/TESTING_STRATEGY.md)
+- [Documentation policy](docs/DOCUMENTATION_POLICY.md)
+- [Environment configuration](docs/ENVIRONMENT_CONFIGURATION.md)
+- [Component catalog and reuse policy](docs/COMPONENT_CATALOG.md)
+- [Web routing and mobile navigation](docs/NAVIGATION.md)
 
-## 2. API Integration & Service Mappings
+## Prerequisites
 
-All API operations are implemented in `packages/core/src/api`:
+- Node.js 20.19.4 or newer.
+- npm 10 or newer (the repository currently pins npm 11.16.0).
+- For native mobile: Xcode and CocoaPods for iOS, or Android Studio/SDK for Android.
 
-| Module | Service File | Core Endpoints Handled |
-|---|---|---|
-| **Auth** | [authApi.ts](file:///Users/harpindersingh/Desktop/my-hockey-network/packages/core/src/api/authApi.ts) | `POST /v1/auth/otp/request`, `POST /v1/auth/otp/verify`, `POST /v1/auth/onboarding`, `GET /v1/auth/me`, `POST /v1/auth/refresh`, `POST /v1/auth/logout` |
-| **Relationships** | [relationshipsApi.ts](file:///Users/harpindersingh/Desktop/my-hockey-network/packages/core/src/api/relationshipsApi.ts) | `GET /v1/relationships`, `POST /follow`, `POST /connections`, `POST /contact-requests`, `POST /affiliations`, `POST /blocks`, `POST /guardian-invites`, `POST /guardian-requests` |
-| **Feed & Posts** | [postsApi.ts](file:///Users/harpindersingh/Desktop/my-hockey-network/packages/core/src/api/postsApi.ts) | `GET /v1/feed`, `POST /v1/posts`, `POST /v1/posts/:id/repost`, `POST /v1/posts/:id/reactions`, `POST /v1/posts/:id/comments` |
-| **Groups** | [groupsApi.ts](file:///Users/harpindersingh/Desktop/my-hockey-network/packages/core/src/api/groupsApi.ts) | `GET /v1/groups`, `POST /v1/groups`, `GET /v1/groups/:id`, `POST /v1/groups/:id/join`, `POST /v1/groups/:id/members` |
-| **Organizations** | [organizationsApi.ts](file:///Users/harpindersingh/Desktop/my-hockey-network/packages/core/src/api/organizationsApi.ts) | `GET /v1/organizations`, `POST /v1/organizations`, `GET /v1/organizations/:id` |
-| **Supervision** | [supervisionApi.ts](file:///Users/harpindersingh/Desktop/my-hockey-network/packages/core/src/api/supervisionApi.ts) | `GET /v1/supervision`, `POST /v1/supervision/children`, `GET /v1/supervision/:minorId/controls`, `PUT /v1/supervision/:minorId/controls`, `GET /v1/supervision/:minorId/logs` |
-| **Approvals** | [approvalsApi.ts](file:///Users/harpindersingh/Desktop/my-hockey-network/packages/core/src/api/approvalsApi.ts) | `GET /v1/approvals`, `GET /v1/approvals/:id`, `POST /v1/approvals/:id/approve`, `POST /v1/approvals/:id/decline` |
-| **Alerts** | [alertsApi.ts](file:///Users/harpindersingh/Desktop/my-hockey-network/packages/core/src/api/alertsApi.ts) | `GET /v1/alerts`, `GET /v1/alerts/unread-count`, `POST /v1/alerts/:id/read`, `POST /v1/alerts/read-all` |
-
----
-
-## 3. Key Screen Navigation Flows
-
-1. **Home Feed (`HomePage.tsx`):** Displays home feed posts, create post box, suggestions sidebar, and skeleton loaders.
-2. **My Network (`MyNetworkPage.tsx`):** Connections, Followers, and Pending Requests with tab switching and search filtering.
-3. **Supervision / Family Hub (`SupervisionPage.tsx`):**
-   - **Permissions Tab:** Granular permission category accordions (Home, Network, Messaging, Notifications).
-   - **Requests Tab:** Supervision request cards with Accept / Ignore CTAs.
-   - **Logs Tab:** Activity audit logs with date/time, activity summary, initiator, and action links.
-   - **Add Minor Wizard (`+`):** Multi-step wizard supporting both *Create a new player profile* and *Link an existing player profile* leading to the **Request Sent!** screen.
-4. **Settings (`SettingsPage.tsx`):** General Account settings, Notification preferences toggle, and Blocked Users unblock management with search filtering.
-5. **User Profile (`ProfilePage.tsx`):** Public player/user profile header, stats, bio, media items, and connections list.
-6. **Notifications (`NotificationsPage.tsx`):** Alerts list with unread filter and mark-as-read options.
-
----
-
-## 4. Testing Status & Quality Assurance
-
-* **TypeScript Compilation:** `npm run typecheck` passes with **0 errors**.
-* **Automated API Testing:** `node scripts/test-all-apis.mjs` executes integration tests against backend routes.
-* **Code Security:** `npm run scan` verifies no obfuscation or security issues exist.
-
----
-
-## 5. Documentation & Backend Dependencies
-
-* **[API_INTEGRATION_GUIDE.md](API_INTEGRATION_GUIDE.md):** Complete architectural breakdown, flow sequence diagrams, and endpoint catalog.
-* **[BACKEND_REQUIREMENTS.md](BACKEND_REQUIREMENTS.md):** Specification of missing backend fields (`categories` grouping on controls, initial controls on child create, counterparty nested profile expansion).
-
----
-
-## 6. Running Locally
+## First-time setup
 
 ```bash
-# Install dependencies
 npm install
-
-# Start local Vite development server
-npm run dev
-
-# Run automated API integration tests
-node scripts/test-all-apis.mjs
-
-# Execute TypeScript typecheck
-npm run typecheck
+cp apps/web/.env.example apps/web/.env.local
+cp apps/mobile/.env.example apps/mobile/.env
 ```
+
+Replace the example URL in both ignored runtime files with the API URL supplied by backend/DevOps.
+Never commit `.env`, `.env.local`, credentials, or tokens.
+
+## Run and build web
+
+```bash
+# Development server: http://localhost:5174
+npm run dev:web
+
+# Type-check and create apps/web/dist
+npm run build:web
+
+# Build, then preview production output on port 5174
+npm run preview:web
+```
+
+For hosted web environments, set `VITE_API_BASE_URL` in the provider configuration before the
+build. The API must allow requests from the deployed web origin and support credentialed CORS.
+
+## Run and build mobile
+
+```bash
+# Start Expo and choose a target interactively
+npm run start:mobile
+
+# Start directly for a local emulator/simulator
+npm run android:mobile
+npm run ios:mobile
+
+# Create Android and iOS Expo production exports in apps/mobile/dist
+npm run build:mobile
+
+# Generate native ios/android projects only when native project files are needed
+npm run native:generate:mobile
+```
+
+`build:mobile` verifies that the Expo application can produce Android and iOS production bundles.
+The separate Vite app owns web, so the Expo build intentionally does not target web. Store binaries
+still require project-specific EAS or native signing configuration, which is not committed here.
+
+## Quality commands
+
+```bash
+npm run check:obscure
+npm run security:check
+npm run components:check
+npm run test:coverage
+npm run verify
+```
+
+`npm run verify` is the completion gate: documentation freshness, security baseline, type checks,
+lint, tests with minimum 80% shared-code coverage, and the production web build. It also rejects
+non-npm lockfiles and cross-platform UI imports.
+
+## Authentication and navigation
+
+- Web uses httpOnly backend cookies, in-memory CSRF, BrowserRouter, and hydrated auth/role guards.
+- Mobile uses SecureStore credentials and React Navigation stacks/tabs; it does not use browser URL
+  routing. Mobile route-name constants are navigator screen identifiers, not web paths.
+- Both applications use the same OTP, onboarding, current-user, and logout contracts/use cases.
+- Web common components are web-only; mobile common components are mobile-only.
+- Reuse between platforms occurs in `packages/`, which contains no DOM or React Native UI.
+- Tokens must never be placed in localStorage, AsyncStorage-backed Redux state, logs, or UI props.

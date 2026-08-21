@@ -1,95 +1,81 @@
-# Staff Engineer Monorepo Architecture Guide — My Hockey Network
+# My Hockey Network frontend architecture
 
-This document presents the complete architectural specification for **My Hockey Network**, a production-grade enterprise monorepo supporting **Web (`apps/web`)** and **Mobile (`apps/mobile`)**.
+Last reviewed: 2026-08-21
 
----
+The repository is an npm-workspaces monorepo. Web and mobile share contracts, business rules,
+validation, authentication use cases, API behavior, and design values. Their UI, navigation,
+environment access, and credential storage stay platform-specific.
 
-## 1. Monorepo Directory Architecture
+Node.js runs the toolchain and npm is the only package manager. The root `package-lock.json` is the
+single dependency lockfile; workspace `package.json` files describe app/package-specific scripts and
+dependencies without creating separate installations.
 
-```
-my-hockey-network/
-├── 📄 package.json                          # Root workspace manifest (npm workspaces)
-├── 📄 tsconfig.json                         # Base TypeScript configuration
-├── 📄 .npmrc                                # Workspace peer-dependency resolution config
-├── 📁 apps/
-│   ├── 📁 web/                              # @my-hockey-network/web (React 19 + Vite + Tailwind v4)
-│   │   ├── 📄 vite.config.ts                # Vite config with package aliases
-│   │   ├── 📄 index.html                    # Single Page App shell
-│   │   ├── 📁 public/                       # Static public assets (Welcome, calendar, social)
-│   │   └── 📁 src/
-│   │       ├── 📄 main.tsx                  # Client mount entry point
-│   │       ├── 📄 App.tsx                   # Web container shell
-│   │       ├── 📄 index.css                 # Custom CSS & solid white canvas tokens
-│   │       └── 📁 components/features/     # OnboardingModal & CreateAccountModal
-│   └── 📁 mobile/                           # @my-hockey-network/mobile (Expo 54 + React Native 0.81)
-│       ├── 📄 app.config.ts                 # Expo application manifest
-│       ├── 📄 babel.config.js               # Module resolver aliases
-│       ├── 📄 metro.config.js               # Metro bundler single-instance React configuration
-│       ├── 📄 App.tsx                       # Root React Native shell (Redux Provider & PersistGate)
-│       ├── 📁 assets/images/                # Native bundled image assets
-│       └── 📁 src/
-│           ├── 📁 navigation/               # RootNavigator & MainTabs navigation stacks
-│           ├── 📁 redux/                    # Redux Toolkit store, CommonReducer, ApiReducer
-│           └── 📁 screens/                  # OnboardingScreen & SignupScreen
-├── 📁 packages/
-│   ├── 📁 types/                            # @my-hockey-network/types (DTOs, Role & Auth contracts)
-│   ├── 📁 constants/                        # @my-hockey-network/constants (Routes, Colors, Copy, Keys)
-│   ├── 📁 design-system/                    # @my-hockey-network/design-system (Color tokens, Spacing, Radius)
-│   ├── 📁 theme/                            # @my-hockey-network/theme (Light/Dark theme rules)
-│   ├── 📁 assets/                           # @my-hockey-network/assets (Asset path registries)
-│   ├── 📁 config/                           # @my-hockey-network/config (Environment & Feature flags)
-│   ├── 📁 utils/                            # @my-hockey-network/utils (Validators, Formatters, Helpers)
-│   ├── 📁 core/                             # @my-hockey-network/core (Domain rules, Transformers)
-│   ├── 📁 api/                              # @my-hockey-network/api (Axios HTTP client & Interceptors)
-│   ├── 📁 store/                            # @my-hockey-network/store (Redux Toolkit store & Slices)
-│   ├── 📁 auth/                             # @my-hockey-network/auth (Auth session logic & Permissions)
-│   ├── 📁 forms/                            # @my-hockey-network/forms (Form validation schemas)
-│   ├── 📁 hooks/                            # @my-hockey-network/hooks (Shared React hooks)
-│   ├── 📁 i18n/                             # @my-hockey-network/i18n (Shared i18next translations)
-│   ├── 📁 services/                         # @my-hockey-network/services (Analytics, Push notifications)
-│   └── 📁 ui/                               # @my-hockey-network/ui (Cross-platform component abstractions)
-└── 📁 docs/                                 # Enterprise architecture guide & package specs
+## Sharing boundary
+
+```text
+packages/
+├── contracts/       API DTOs, response types, roles and enums
+├── domain/          Platform-neutral role and permission rules
+├── api-client/      Injected fetch client, refresh serialization and errors
+├── auth/            OTP/onboarding/logout use cases
+├── validation/      Shared Zod form schemas
+├── design-tokens/   Colors, spacing and radii values
+├── core/            Compatibility APIs and existing feature use cases
+├── shared/          Existing convenience exports used by mobile UI
+└── design-system/   Existing presentation tokens
+
+apps/web/src/
+├── platform/        Vite environment, cookie auth adapter, configured API client
+├── components/      React DOM UI and BrowserRouter route tree
+├── guards/          Hydrated auth, guest and role guards
+├── pages/           Web-only screen composition
+└── theme/           Web CSS and theme provider
+
+apps/mobile/src/
+├── platform/        Expo environment, SecureStore auth adapter, configured API client
+├── navigation/      React Navigation stacks and tabs
+├── screens/         React Native presentation
+├── components/      Native UI components
+└── redux/           Mobile application/presentation state (no persisted tokens)
 ```
 
----
+## Dependency direction
 
-## 2. Package Responsibility Matrix
-
-| Package Name | Purpose & Responsibility | Key Export Symbols |
-| :--- | :--- | :--- |
-| `@my-hockey-network/types` | Central contracts for data structures, DTOs, and interface contracts. | `RoleOption`, `RoleId`, `UserProfile`, `CreateAccountDTO` |
-| `@my-hockey-network/constants` | Single source of truth for routes, color hexes, copy strings, and storage keys. | `ROUTES`, `BRAND_COLORS`, `ONBOARDING_STRINGS`, `CREATE_ACCOUNT_STRINGS` |
-| `@my-hockey-network/design-system` | Design tokens specifying spacing, typography, radii, and shadows. | `SPACING`, `RADII`, `TYPOGRAPHY`, `SHADOWS` |
-| `@my-hockey-network/utils` | Pure utility functions for validation, string formatting, and debouncing. | `isValidEmail`, `sanitizeEmail`, `validatePassword`, `debounce` |
-| `@my-hockey-network/core` | Pure domain business rules, role selection mutations, and mappers. | `toggleRoleSelection`, `formatRoleName`, `mapCreateAccountDTOToUserProfile` |
-| `@my-hockey-network/auth` | Session contracts, login/logout state management, and permission checkers. | `hasRole`, `createAuthSession`, `clearAuthSession` |
-| `@my-hockey-network/shared` | Unified barrel library re-exporting all common domain packages. | Re-exports all shared packages |
-
----
-
-## 3. Dependency & Import Flow Architecture
-
-```mermaid
-flowchart TD
-    WebApp["🌐 apps/web (React 19 / Vite)"] --> SharedPkg["🧩 @my-hockey-network/shared"]
-    MobileApp["📱 apps/mobile (Expo 54 / React Native)"] --> SharedPkg
-
-    SharedPkg --> PkgTypes["@my-hockey-network/types"]
-    SharedPkg --> PkgConstants["@my-hockey-network/constants"]
-    SharedPkg --> PkgDesignSystem["@my-hockey-network/design-system"]
-    SharedPkg --> PkgUtils["@my-hockey-network/utils"]
-    SharedPkg --> PkgCore["@my-hockey-network/core"]
-    SharedPkg --> PkgAuth["@my-hockey-network/auth"]
-
-    PkgUtils --> PkgConstants
-    PkgCore --> PkgTypes
-    PkgAuth --> PkgTypes
+```text
+contracts <- domain
+contracts <- api-client <- auth
+                      ^
+                      |
+             platform adapters
+                /           \
+          apps/web       apps/mobile
 ```
 
----
+Shared packages must not read `window`, `document`, `localStorage`, `import.meta.env`, or Expo
+globals. Each app configures the shared client in its entry point. Web relies on backend httpOnly
+session cookies and keeps CSRF only in memory. Mobile stores access, refresh, and CSRF credentials
+in Expo SecureStore; Redux contains authenticated user state, never bearer tokens.
 
-## 4. Best Practices & Design Principles
+Web common components remain under `apps/web`; mobile common components remain under `apps/mobile`.
+Cross-platform reuse is intentionally below the presentation layer. `npm run components:check`
+rejects web/native cross-imports and JSX in shared packages.
 
-1. **Single Source of Truth**: All copy, colors, and types are exported from shared packages (`@my-hockey-network/*`). Zero duplication across Web and Mobile.
-2. **SOLID & Clean Architecture**: Screens in `apps/web` and `apps/mobile` only handle rendering and user navigation. All state mutations and data validations are delegated to domain packages.
-3. **Single React Instance in Monorepos**: Metro in `apps/mobile` is configured with `extraNodeModules` and `nodeModulesPaths` pointing strictly to root `node_modules/react` to prevent duplicate React runtime errors.
+API origins are required platform environment variables. No shared package, checked-in deployment
+file, or application module supplies a default server URL.
+
+## Routing rules
+
+- Web uses `BrowserRouter`, nested `AuthGuard`, `GuestGuard`, and `RoleGuard` routes.
+- Guards wait for the single `/auth/me` bootstrap before making redirect decisions.
+- Direct URL entry, refresh, browser history, and unknown paths all flow through the router.
+- Mobile keeps React Navigation because native screen transitions and tab navigation differ.
+- Mobile has no browser URL router; its route-name constants identify navigator screens only.
+- Deep/universal linking is not configured and must be implemented explicitly if later required.
+- Navigation components are platform UI and should not be moved into shared packages.
+
+## Required checks
+
+Run `npm run verify` from this folder. It validates npm-only dependency management, documentation,
+security and component boundaries, then performs web/mobile type checks, lint checks, coverage tests,
+and the production web build. Git hooks run the same scanner before linting staged work and validate
+conventional commit messages.

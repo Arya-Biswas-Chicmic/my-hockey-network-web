@@ -1,3 +1,4 @@
+import { Button } from './Button';
 import React from 'react';
 
 interface LogoutModalProps {
@@ -36,7 +37,7 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({
             Log Out
           </h3>
           {!isLoading && (
-            <button
+            <Button
               onClick={onClose}
               style={{
                 background: 'transparent',
@@ -49,7 +50,7 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({
               aria-label="Close modal"
             >
               &times;
-            </button>
+            </Button>
           )}
         </div>
 
@@ -60,7 +61,7 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px' }}>
-          <button
+          <Button
             type="button"
             onClick={onClose}
             disabled={isLoading}
@@ -77,8 +78,8 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({
             }}
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
@@ -108,7 +109,7 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({
             ) : (
               'Log Out'
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

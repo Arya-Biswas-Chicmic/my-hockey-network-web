@@ -1,3 +1,4 @@
+import { Button } from '../../common/Button';
 import React, { useState } from 'react';
 import { Spinner } from '../../common/Spinner';
 import { useAuth } from '../../../hooks/use-auth';
@@ -40,7 +41,6 @@ export const SuggestedUserCard: React.FC<SuggestedUserProps> = ({
         await onFollow(id);
       }
       setFollowing(targetFollowing);
-      console.log('🚀 [SuggestedUserCard] Triggering silent loadAuthMe after follow toggle...');
       await loadAuthMe(true);
     } catch (err: any) {
       console.error('❌ [SuggestedUserCard] Follow failed:', err);
@@ -95,7 +95,7 @@ export const SuggestedUserCard: React.FC<SuggestedUserProps> = ({
       </div>
 
       {/* Action Button */}
-      <button 
+      <Button
         onClick={toggleFollow}
         disabled={isLoading}
         className={`mhn-btn-suggested-follow ${following ? 'mhn-btn-suggested-following' : ''}`}
@@ -105,7 +105,7 @@ export const SuggestedUserCard: React.FC<SuggestedUserProps> = ({
         ) : (
           following ? 'Following' : 'Follow'
         )}
-      </button>
+      </Button>
     </div>
   );
 };

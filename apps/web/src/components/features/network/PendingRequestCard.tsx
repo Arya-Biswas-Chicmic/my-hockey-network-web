@@ -1,3 +1,4 @@
+import { Button } from '../../common/Button';
 import React, { useState } from 'react';
 import { Spinner } from '../../common/Spinner';
 import { useAuth } from '../../../hooks/use-auth';
@@ -36,7 +37,6 @@ export const PendingRequestCard: React.FC<PendingRequestProps> = ({
     try {
       if (onAccept) await onAccept(id);
       setStatus('accepted');
-      console.log('🚀 [PendingRequestCard] Triggering silent loadAuthMe after accept...');
       await loadAuthMe(true);
     } catch (err: any) {
       console.error('Accept error:', err);
@@ -52,7 +52,6 @@ export const PendingRequestCard: React.FC<PendingRequestProps> = ({
     try {
       if (onIgnore) await onIgnore(id);
       setStatus('ignored');
-      console.log('🚀 [PendingRequestCard] Triggering silent loadAuthMe after ignore...');
       await loadAuthMe(true);
     } catch (err: any) {
       console.error('Ignore error:', err);
@@ -126,22 +125,21 @@ export const PendingRequestCard: React.FC<PendingRequestProps> = ({
 
       {/* Action Buttons Row */}
       <div className="mhn-request-actions-row">
-        <button 
+        <Button
           onClick={handleIgnore} 
           disabled={isIgnoreLoading || isAcceptLoading}
           className="mhn-btn-request-ignore"
         >
           {isIgnoreLoading ? <Spinner size="sm" color="#64748B" /> : 'Ignore'}
-        </button>
-        <button 
+        </Button>
+        <Button
           onClick={handleAccept} 
           disabled={isIgnoreLoading || isAcceptLoading}
           className="mhn-btn-request-accept"
         >
           {isAcceptLoading ? <Spinner size="sm" color="#FFFFFF" /> : 'Accept'}
-        </button>
+        </Button>
       </div>
     </div>
   );
 };
-

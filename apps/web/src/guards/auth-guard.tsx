@@ -1,26 +1,21 @@
-import React, { ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/use-auth';
 import { Spinner } from '../components/common/Spinner';
+import { paths } from '../constants/paths';
 
-interface AuthGuardProps {
-  children: ReactNode;
-  fallback?: ReactNode;
+export function AuthGuard({ children }: Readonly<{ children?: ReactNode }>) {
+  const { isAuthenticated, isLoading, hasBootstrapped, user } = useAuth();
+  const location = useLocation();
+
+  if (isLoading || !hasBootstrapped) {
+    return <div className="route-loader"><Spinner size="lg" color="#0B66C2" /></div>;
+  }
+  if (!isAuthenticated || !user) {
+    return <Navigate replace to={paths.auth.onboarding} state={{ next: location.pathname }} />;
+  }
+  if (!user.onboardingCompletedAt && !location.pathname.startsWith('/guardian') && !location.pathname.startsWith('/sent')) {
+    return <Navigate replace to={paths.auth.onboarding} />;
+  }
+  return children ? <>{children}</> : <Outlet />;
 }
-
-export const AuthGuard: React.FC<AuthGuardProps> = ({ children, fallback }) => {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
-        <Spinner size="lg" color="#0B66C2" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return fallback ? <>{fallback}</> : null;
-  }
-
-  return <>{children}</>;
-};
