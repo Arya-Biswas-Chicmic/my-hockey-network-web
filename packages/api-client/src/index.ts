@@ -1,4 +1,4 @@
-import type { ApiEnvelope, OtpVerifyResponse } from '@my-hockey-network/contracts';
+import { API_ENDPOINTS, type ApiEnvelope, type OtpVerifyResponse } from '@my-hockey-network/contracts';
 
 export type ClientType = 'web' | 'mobile';
 
@@ -74,7 +74,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     if (refreshToken) headers.set('X-Refresh-Token', refreshToken);
 
     try {
-      const response = await fetchImpl(`${options.baseUrl}/auth/refresh`, {
+      const response = await fetchImpl(`${options.baseUrl}${API_ENDPOINTS.AUTH.REFRESH}`, {
         method: 'POST',
         headers,
         body: '{}',
@@ -127,8 +127,8 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     const canRefresh =
       response.status === 401 &&
       !isRetry &&
-      !path.includes('/auth/refresh') &&
-      !path.includes('/auth/logout');
+      !path.includes(API_ENDPOINTS.AUTH.REFRESH) &&
+      !path.includes(API_ENDPOINTS.AUTH.LOGOUT);
 
     if (canRefresh) {
       refreshPromise ??= refresh().finally(() => {
@@ -136,7 +136,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
       });
       if (await refreshPromise) return request<T>(path, requestOptions, true);
       await storage.clearSession();
-      if (!path.includes('/auth/me')) await options.onUnauthorized?.();
+      if (!path.includes(API_ENDPOINTS.AUTH.ME)) await options.onUnauthorized?.();
     }
 
     if (!response.ok || !envelope.success) {

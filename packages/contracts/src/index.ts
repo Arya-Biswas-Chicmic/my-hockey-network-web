@@ -1,3 +1,5 @@
+export * from './urls';
+
 export type ChannelType = 'EMAIL' | 'SMS';
 export type AuthIntent = 'SIGNUP' | 'SIGNIN';
 export type UserRole = 'PLAYER' | 'PARENT' | 'COACH' | 'STAFF';

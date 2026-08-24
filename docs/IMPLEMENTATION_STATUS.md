@@ -25,6 +25,7 @@ Last reviewed: 2026-08-24
 - Added mandatory coding-agent instructions and explicit web-routing/mobile-navigation documentation.
 - Extended automated boundary checks to reject React Navigation in web and browser routing in mobile.
 - Updated shared API client options to support sessionStorage adapter alias and added unit test coverage.
+- Centralized API endpoint URLs into @my-hockey-network/contracts/urls.ts and updated auth/api-client services to reference API_ENDPOINTS catalog.
 
 ## Current quality gates
 

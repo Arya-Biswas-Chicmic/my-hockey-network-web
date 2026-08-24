@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ApiClient, AuthStorageAdapter } from '@my-hockey-network/api-client';
-import type { AuthMeResponse, OtpVerifyResponse } from '@my-hockey-network/contracts';
+import { API_ENDPOINTS, type AuthMeResponse, type OtpVerifyResponse } from '@my-hockey-network/contracts';
 import { clearAuthSession, createAuthService, createAuthSession, hasRole } from '../index';
 
 const session: OtpVerifyResponse = {
@@ -38,10 +38,10 @@ describe('shared auth service', () => {
     await service.getMe();
     await service.sendGuardianRequest('parent@example.com');
 
-    expect(request).toHaveBeenNthCalledWith(1, '/auth/otp/request', expect.objectContaining({ method: 'POST' }));
-    expect(request).toHaveBeenNthCalledWith(2, '/auth/onboarding', expect.objectContaining({ method: 'POST' }));
-    expect(request).toHaveBeenNthCalledWith(3, '/auth/me');
-    expect(request).toHaveBeenNthCalledWith(4, '/relationships/guardian-requests', expect.objectContaining({ method: 'POST' }));
+    expect(request).toHaveBeenNthCalledWith(1, API_ENDPOINTS.AUTH.OTP_REQUEST, expect.objectContaining({ method: 'POST' }));
+    expect(request).toHaveBeenNthCalledWith(2, API_ENDPOINTS.AUTH.ONBOARDING, expect.objectContaining({ method: 'POST' }));
+    expect(request).toHaveBeenNthCalledWith(3, API_ENDPOINTS.AUTH.ME);
+    expect(request).toHaveBeenNthCalledWith(4, API_ENDPOINTS.RELATIONSHIPS.GUARDIAN_REQUESTS, expect.objectContaining({ method: 'POST' }));
   });
 
   it('persists a verified session through the injected platform storage', async () => {

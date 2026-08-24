@@ -1,13 +1,14 @@
 import type { ApiClient, AuthStorageAdapter } from '@my-hockey-network/api-client';
-import type {
-  AuthMeResponse,
-  GuardianRequestResponse,
-  OnboardingDTO,
-  OnboardingResponse,
-  OtpRequestDTO,
-  OtpRequestResponse,
-  OtpVerifyDTO,
-  OtpVerifyResponse,
+import {
+  API_ENDPOINTS,
+  type AuthMeResponse,
+  type GuardianRequestResponse,
+  type OnboardingDTO,
+  type OnboardingResponse,
+  type OtpRequestDTO,
+  type OtpRequestResponse,
+  type OtpVerifyDTO,
+  type OtpVerifyResponse,
 } from '@my-hockey-network/contracts';
 
 export interface AuthService {
@@ -22,9 +23,9 @@ export interface AuthService {
 export function createAuthService(client: ApiClient, storage: AuthStorageAdapter): AuthService {
   return {
     requestOtp: (dto) =>
-      client.request('/auth/otp/request', { method: 'POST', body: JSON.stringify(dto) }),
+      client.request(API_ENDPOINTS.AUTH.OTP_REQUEST, { method: 'POST', body: JSON.stringify(dto) }),
     verifyOtp: async (dto) => {
-      const session = await client.request<OtpVerifyResponse>('/auth/otp/verify', {
+      const session = await client.request<OtpVerifyResponse>(API_ENDPOINTS.AUTH.OTP_VERIFY, {
         method: 'POST',
         body: JSON.stringify(dto),
       });
@@ -32,17 +33,17 @@ export function createAuthService(client: ApiClient, storage: AuthStorageAdapter
       return session;
     },
     submitOnboarding: (dto) =>
-      client.request('/auth/onboarding', { method: 'POST', body: JSON.stringify(dto) }),
-    getMe: () => client.request('/auth/me'),
+      client.request(API_ENDPOINTS.AUTH.ONBOARDING, { method: 'POST', body: JSON.stringify(dto) }),
+    getMe: () => client.request(API_ENDPOINTS.AUTH.ME),
     logout: async () => {
       try {
-        await client.request('/auth/logout', { method: 'POST' });
+        await client.request(API_ENDPOINTS.AUTH.LOGOUT, { method: 'POST' });
       } finally {
         await storage.clearSession();
       }
     },
     sendGuardianRequest: (parentEmail) =>
-      client.request('/relationships/guardian-requests', {
+      client.request(API_ENDPOINTS.RELATIONSHIPS.GUARDIAN_REQUESTS, {
         method: 'POST',
         body: JSON.stringify({ parentEmail }),
       }),
