@@ -1,6 +1,6 @@
 # Implementation status
 
-Last reviewed: 2026-08-21
+Last reviewed: 2026-08-24
 
 ## Completed
 
@@ -24,6 +24,7 @@ Last reviewed: 2026-08-21
 - Added verified Android and iOS Expo export commands without adding Expo web presentation.
 - Added mandatory coding-agent instructions and explicit web-routing/mobile-navigation documentation.
 - Extended automated boundary checks to reject React Navigation in web and browser routing in mobile.
+- Updated shared API client options to support sessionStorage adapter alias and added unit test coverage.
 
 ## Current quality gates
 
@@ -34,7 +35,7 @@ Last reviewed: 2026-08-21
 - Web/native UI ownership and npm-only dependency management checks must pass.
 
 Latest measured shared-code coverage: 94.73% statements, 88.99% branches, 100% functions, and
-95.9% lines. The suite currently contains 36 tests across six test files. The latest web, Android,
+95.9% lines. The suite currently contains 37 tests across six test files. The latest web, Android,
 and iOS production bundle commands pass.
 
 ## Maintainability backlog

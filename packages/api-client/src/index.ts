@@ -13,7 +13,8 @@ export interface AuthStorageAdapter {
 export interface ApiClientOptions {
   baseUrl: string;
   clientType: ClientType;
-  authStorage: AuthStorageAdapter;
+  authStorage?: AuthStorageAdapter;
+  sessionAdapter?: AuthStorageAdapter;
   credentials?: RequestCredentials;
   fetchImpl?: typeof fetch;
   onUnauthorized?: () => Promise<void> | void;
@@ -42,6 +43,10 @@ export interface ApiClient {
 
 export function createApiClient(options: ApiClientOptions): ApiClient {
   const fetchImpl = options.fetchImpl ?? fetch;
+  const storage = options.sessionAdapter ?? options.authStorage;
+  if (!storage) {
+    throw new Error('createApiClient requires an authStorage or sessionAdapter.');
+  }
   let refreshPromise: Promise<boolean> | null = null;
 
   const buildHeaders = async (input?: HeadersInit): Promise<Headers> => {
@@ -51,8 +56,8 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     headers.set('ngrok-skip-browser-warning', 'true');
 
     const [accessToken, csrfToken] = await Promise.all([
-      options.authStorage.getAccessToken(),
-      options.authStorage.getCsrfToken(),
+      storage.getAccessToken(),
+      storage.getCsrfToken(),
     ]);
     if (accessToken && !headers.has('Authorization')) {
       headers.set('Authorization', `Bearer ${accessToken}`);
@@ -64,7 +69,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
   };
 
   const refresh = async (): Promise<boolean> => {
-    const refreshToken = await options.authStorage.getRefreshToken();
+    const refreshToken = await storage.getRefreshToken();
     const headers = await buildHeaders({ 'Content-Type': 'application/json' });
     if (refreshToken) headers.set('X-Refresh-Token', refreshToken);
 
@@ -78,7 +83,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
       if (!response.ok) return false;
       const envelope = (await response.json()) as ApiEnvelope<OtpVerifyResponse>;
       if (!envelope.success || !envelope.data) return false;
-      await options.authStorage.saveSession(envelope.data);
+      await storage.saveSession(envelope.data);
       return true;
     } catch {
       return false;
@@ -130,7 +135,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
         refreshPromise = null;
       });
       if (await refreshPromise) return request<T>(path, requestOptions, true);
-      await options.authStorage.clearSession();
+      await storage.clearSession();
       if (!path.includes('/auth/me')) await options.onUnauthorized?.();
     }
 

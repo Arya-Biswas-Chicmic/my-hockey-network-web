@@ -196,6 +196,26 @@ describe('platform-neutral API client', () => {
     expect(init?.credentials).toBe('include');
   });
 
+  it('supports passing sessionAdapter as storage adapter and throws if missing', async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(JSON.stringify({ success: true, statusCode: 200, message: 'ok', data: true }), { status: 200 }),
+    );
+    const client = createApiClient({
+      baseUrl: 'https://api.example.test/v1',
+      clientType: 'web',
+      sessionAdapter: storage(),
+      fetchImpl,
+    });
+    await expect(client.request('/test')).resolves.toBe(true);
+
+    expect(() =>
+      createApiClient({
+        baseUrl: 'https://api.example.test/v1',
+        clientType: 'web',
+      } as any),
+    ).toThrow('createApiClient requires an authStorage or sessionAdapter.');
+  });
+
   it('builds ApiError keys from structured and plain failures', () => {
     expect(new ApiError(400, 'Bad', { key: 123 }).key).toBe('123');
     expect(new ApiError(400, 'Bad').key).toBe('Bad');
