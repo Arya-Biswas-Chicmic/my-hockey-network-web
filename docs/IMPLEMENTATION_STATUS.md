@@ -45,6 +45,8 @@ Last reviewed: 2026-08-24
 - Created `apps/web/src/utils/guardianUtils.ts` containing standardized `GUARDIAN_RELATION_OPTIONS` (`MOTHER`, `FATHER`, `LEGAL_GUARDIAN`, `GRANDPARENT`, `OTHER`), `formatDobToIso` helper, and `formatDobInput` live typing auto-formatter. Connected live typing formatting (`DD/MM/YYYY`) and native datepicker synchronization to the Supervision page DOB field, matching Sign Up.
 - Updated Header Family dropdown to display the first 3 members with a "Show More" option navigating to Supervision page, and updated the post-player-creation "Go to Profile" button to navigate directly to the newly created player's profile view.
 - Implemented production-ready live supervision permissions evaluation based on `GET /v1/supervision/me/permissions`. Updated `@my-hockey-network/domain` (`evaluateFeedPermissions`, `canCreatePost`, `canLikePost`, `canComment`, `canSharePost`, `canFollowOthers`, `canSendMessages`, `canCreateGroupChats`), normalized API response in `@my-hockey-network/core`, and integrated control checks in `useFeedPermissions` and UI components.
+- Implemented Profile Career / Teams history feature matching backend specification. Added `PROFILES` catalog to `@my-hockey-network/contracts`, created `careerApi.ts` (`getProfile`, `createCareerEntry`, `updateCareerEntry`, `deleteCareerEntry`), added unit test coverage in `career.test.ts` (5 tests), and connected real API CRUD state, privacy handling, and verified badges to ProfilePage About tab.
+- Created `DeleteCareerModal` component styled identically to `LogoutModal` (modal backdrop, pop-in animation, team name prompt, red danger delete action with loading state) for confirmation before deleting career team entries.
 
 ## Current quality gates
 

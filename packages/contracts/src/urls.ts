@@ -89,4 +89,9 @@ export const API_ENDPOINTS = {
     NOTIFICATIONS: '/settings/notifications',
     BLOCKED: '/settings/blocked',
   },
+  PROFILES: {
+    GET_PROFILE: (profileId: string) => `/profiles/${profileId}`,
+    CAREER: '/profiles/me/career',
+    CAREER_ITEM: (id: string) => `/profiles/me/career/${id}`,
+  },
 } as const;

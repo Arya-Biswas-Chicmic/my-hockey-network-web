@@ -13,6 +13,7 @@ export * from './api/approvalsApi';
 export * from './api/alertsApi';
 export * from './api/mediaApi';
 export * from './api/settingsApi';
+export * from './api/careerApi';
 export * from './api/signUpRules';
 export * from '@my-hockey-network/contracts';
 

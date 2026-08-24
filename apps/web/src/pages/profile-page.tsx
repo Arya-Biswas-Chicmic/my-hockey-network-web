@@ -10,10 +10,24 @@ import { EditProfileModal, EditProfileFormData, ProfileSkeletonLoader } from '..
 import { FeedPostSkeleton } from '../components/features/home/HomeSkeletonLoader';
 import { Spinner } from '../components/common/Spinner';
 import { Toast } from '../components/common/Toast';
+import { DeleteCareerModal } from '../components/common/DeleteCareerModal';
 import { useAuth } from '../hooks/use-auth';
 import { resolveMediaUrl, resolveCoverUrl } from '../utils/mediaUtils';
 import { ApprovalCodeModal } from '../components/supervision/ApprovalCodeModal';
-import { createPost, getUserPosts, updateAuthProfile, uploadMediaFile, getPendingGuardianRequests, acceptGuardianRequest, declineGuardianRequest } from '@my-hockey-network/core';
+import {
+  createPost,
+  getUserPosts,
+  updateAuthProfile,
+  uploadMediaFile,
+  getPendingGuardianRequests,
+  acceptGuardianRequest,
+  declineGuardianRequest,
+  getProfile,
+  createCareerEntry,
+  updateCareerEntry,
+  deleteCareerEntry,
+  CareerEntry,
+} from '@my-hockey-network/core';
 import { useFeedPermissions } from '../hooks/use-feed-permissions';
 
 interface PageProps {
@@ -420,43 +434,64 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     '/event4.png'
   ];
 
-  // About Career Teams matching user screenshot
-  const [careerTeamsList, setCareerTeamsList] = useState([
+  // Real Career Entries from API (GET /v1/profiles/:profileId)
+  const [careerEntries, setCareerEntries] = useState<CareerEntry[] | null>([
     {
       id: 't1',
-      name: 'Boston Bruins',
+      groupId: null,
+      teamName: 'Boston Bruins',
+      teamLogoUrl: '/kcBlue.png',
       position: 'Center',
-      city: 'Dagestan, Russia',
-      isCurrent: true,
-      startMonth: 'January',
-      startYear: '2024',
-      endMonth: '',
-      endYear: '',
-      description: 'Good times',
-      subtitle: 'Center · 2 January 2024 - Present · Dagestan, Russia',
-      logo: '/kcBlue.png',
+      location: 'Dagestan, Russia',
+      note: 'Good times',
+      startDate: '2024-01-02T00:00:00.000Z',
+      endDate: null,
+      verified: false,
     },
     {
       id: 't2',
-      name: 'Carolina Hurricanes',
+      groupId: '44444444-4444-4444-8444-444444444410',
+      teamName: 'Carolina Hurricanes',
+      teamLogoUrl: '/HC.png',
       position: 'Center',
-      city: 'Toronto, Canada',
-      isCurrent: false,
-      startMonth: '',
-      startYear: '2022',
-      endMonth: '',
-      endYear: '2024',
-      description: 'Good times',
-      subtitle: 'Center · 2022 - 2024 · Toronto, Canada',
-      logo: '/HC.png',
-    }
+      location: 'Toronto, Canada',
+      note: 'Good times',
+      startDate: '2022-01-01T00:00:00.000Z',
+      endDate: '2024-01-01T00:00:00.000Z',
+      verified: true,
+    },
   ]);
 
-  const [isAddTeamFormOpen, setIsAddTeamFormOpen] = useState(true);
+  const [isAddTeamFormOpen, setIsAddTeamFormOpen] = useState(false);
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [isSavingTeam, setIsSavingTeam] = useState(false);
+  const [isDeletingTeamId, setIsDeletingTeamId] = useState<string | null>(null);
+  const [deletingEntryTarget, setDeletingEntryTarget] = useState<CareerEntry | null>(null);
 
-  // Form Fields matching user screenshot
+  // Load real profile data and career entries from API
+  React.useEffect(() => {
+    let isMounted = true;
+    async function loadProfileData() {
+      const pid = user?.profile?.id || user?.id;
+      if (!pid) return;
+      try {
+        const res = await getProfile(pid);
+        if (isMounted && res?.profile) {
+          if (res.profile.careerEntries !== undefined) {
+            setCareerEntries(res.profile.careerEntries);
+          }
+        }
+      } catch (err) {
+        console.warn('Profile career entries load notice:', err);
+      }
+    }
+    loadProfileData();
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
+  // Form Fields matching specification
   const [teamNameInput, setTeamNameInput] = useState('');
   const [teamPositionInput, setTeamPositionInput] = useState('');
   const [teamCityInput, setTeamCityInput] = useState('');
@@ -481,71 +516,58 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     setIsAddTeamFormOpen(false);
   };
 
+  const getMonthNumber = (monthName: string): string => {
+    const months: Record<string, string> = {
+      January: '01', February: '02', March: '03', April: '04',
+      May: '05', June: '06', July: '07', August: '08',
+      September: '09', October: '10', November: '11', December: '12'
+    };
+    return months[monthName] || '01';
+  };
+
+  const formatIsoDateString = (year?: string, month?: string): string | null => {
+    if (!year) return null;
+    const m = month ? getMonthNumber(month) : '01';
+    return `${year}-${m}-01T00:00:00.000Z`;
+  };
+
   const handleSaveTeam = async () => {
     if (!teamNameInput.trim() || isSavingTeam) return;
 
     setIsSavingTeam(true);
-    const pos = teamPositionInput || 'Center';
-    const city = teamCityInput || 'Location';
-    const startStr = startMonthInput && startYearInput ? `${startMonthInput} ${startYearInput}` : (startYearInput || '2024');
-    const endStr = isCurrentPlayingInput ? 'Present' : (endMonthInput && endYearInput ? `${endMonthInput} ${endYearInput}` : (endYearInput || 'Present'));
-    const subtitleText = `${pos} · ${startStr} - ${endStr} · ${city}`;
-
-    const ALLOWED_POSITIONS = ['Center', 'Left Wing', 'Right Wing', 'Defense', 'Goaltender'];
-    const validPosition = ALLOWED_POSITIONS.includes(teamPositionInput) ? teamPositionInput : undefined;
 
     try {
-      // Execute API call PATCH /v1/auth/profile
-      const dto = {
-        position: validPosition,
-        city: teamCityInput || undefined,
-        bio: teamDescInput || undefined,
-      };
-      const res = await updateAuthProfile(dto);
-      if (res) {
-        setUserProfile(res);
-      }
-      await loadAuthMe(true, true);
+      const startDate = formatIsoDateString(startYearInput, startMonthInput) || undefined;
+      const endDate = !isCurrentPlayingInput ? (formatIsoDateString(endYearInput, endMonthInput) || undefined) : undefined;
 
       if (editingTeamId) {
-        setCareerTeamsList((prev) =>
-          prev.map((t) =>
-            t.id === editingTeamId
-              ? {
-                ...t,
-                name: teamNameInput,
-                position: teamPositionInput,
-                city: teamCityInput,
-                isCurrent: isCurrentPlayingInput,
-                startMonth: startMonthInput,
-                startYear: startYearInput,
-                endMonth: endMonthInput,
-                endYear: endYearInput,
-                description: teamDescInput,
-                subtitle: subtitleText,
-              }
-              : t
-          )
-        );
+        // PATCH /v1/profiles/me/career/:id
+        const updated = await updateCareerEntry(editingTeamId, {
+          teamName: teamNameInput.trim(),
+          position: teamPositionInput.trim() || undefined,
+          location: teamCityInput.trim() || undefined,
+          note: teamDescInput.trim() || undefined,
+          startDate,
+          endDate: isCurrentPlayingInput ? (null as any) : endDate,
+        });
+
+        setCareerEntries((prev) => (prev || []).map((t) => (t.id === editingTeamId ? updated : t)));
+        setToast({ message: 'Career team updated successfully!', type: 'success' });
       } else {
-        const newTeam = {
-          id: `t_${Date.now()}`,
-          name: teamNameInput,
-          position: teamPositionInput,
-          city: teamCityInput,
-          isCurrent: isCurrentPlayingInput,
-          startMonth: startMonthInput,
-          startYear: startYearInput,
-          endMonth: endMonthInput,
-          endYear: endYearInput,
-          description: teamDescInput,
-          subtitle: subtitleText,
-          logo: '/kcBlue.png',
-        };
-        setCareerTeamsList((prev) => [newTeam, ...prev]);
+        // POST /v1/profiles/me/career
+        const created = await createCareerEntry({
+          teamName: teamNameInput.trim(),
+          position: teamPositionInput.trim() || undefined,
+          location: teamCityInput.trim() || undefined,
+          note: teamDescInput.trim() || undefined,
+          startDate,
+          endDate,
+        });
+
+        setCareerEntries((prev) => [created, ...(prev || [])]);
+        setToast({ message: 'Career team created successfully!', type: 'success' });
       }
 
-      setToast({ message: 'Career team saved successfully!', type: 'success' });
       resetTeamForm();
     } catch (err: any) {
       console.error('❌ Save Career Team Error:', err);
@@ -555,17 +577,47 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     }
   };
 
-  const handleEditClick = (team: any) => {
+  const handleDeleteTeam = async (id: string) => {
+    if (isDeletingTeamId) return;
+    setIsDeletingTeamId(id);
+    try {
+      await deleteCareerEntry(id);
+      setCareerEntries((prev) => (prev || []).filter((t) => t.id !== id));
+      setToast({ message: 'Career team removed successfully.', type: 'success' });
+      if (editingTeamId === id) {
+        resetTeamForm();
+      }
+    } catch (err: any) {
+      console.error('❌ Delete Career Team Error:', err);
+      setToast({ message: err.message || 'Failed to remove career team.', type: 'error' });
+    } finally {
+      setIsDeletingTeamId(null);
+    }
+  };
+
+  const handleEditClick = (team: CareerEntry) => {
     setEditingTeamId(team.id);
-    setTeamNameInput(team.name);
-    setTeamPositionInput(team.position);
-    setTeamCityInput(team.city);
-    setIsCurrentPlayingInput(team.isCurrent);
-    setStartMonthInput(team.startMonth);
-    setStartYearInput(team.startYear);
-    setEndMonthInput(team.endMonth || '');
-    setEndYearInput(team.endYear || '');
-    setTeamDescInput(team.description);
+    setTeamNameInput(team.teamName || '');
+    setTeamPositionInput(team.position || '');
+    setTeamCityInput(team.location || '');
+    setIsCurrentPlayingInput(!team.endDate);
+    if (team.startDate) {
+      const d = new Date(team.startDate);
+      if (!isNaN(d.getTime())) {
+        setStartYearInput(String(d.getFullYear()));
+      }
+    } else {
+      setStartYearInput('');
+    }
+    if (team.endDate) {
+      const d = new Date(team.endDate);
+      if (!isNaN(d.getTime())) {
+        setEndYearInput(String(d.getFullYear()));
+      }
+    } else {
+      setEndYearInput('');
+    }
+    setTeamDescInput(team.note || '');
     setIsAddTeamFormOpen(true);
   };
 
@@ -1682,65 +1734,146 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                           </div>
                         )}
 
-                        {/* Saved Career Teams List matching user screenshot */}
+                        {/* Saved Career Teams List matching API spec */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                          {careerTeamsList.map((team) => (
-                            <div
-                              key={team.id}
-                              style={{
-                                backgroundColor: '#FFFFFF',
-                                border: '1px solid #F1F5F9',
-                                borderRadius: '10px',
-                                padding: '16px',
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                justifyContent: 'space-between',
-                                gap: '12px',
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
-                                <img
-                                  src={team.logo}
-                                  alt={team.name}
-                                  style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'contain' }}
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).src = '/kcBlue.png';
-                                  }}
-                                />
-                                <div>
-                                  <h5 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: '0 0 2px 0' }}>
-                                    {team.name}
-                                  </h5>
-                                  <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 4px 0', fontWeight: 500 }}>
-                                    {team.subtitle}
-                                  </p>
-                                  {team.description && (
-                                    <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0, fontStyle: 'italic' }}>
-                                      {team.description}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-
+                          {careerEntries === null ? (
+                            <div style={{ padding: '24px', textAlign: 'center', backgroundColor: '#F8FAFC', borderRadius: '10px', color: '#64748B', fontSize: '14px' }}>
+                              Career history is hidden based on user privacy settings.
+                            </div>
+                          ) : careerEntries.length === 0 && !isAddTeamFormOpen ? (
+                            <div style={{ padding: '32px 16px', textAlign: 'center', backgroundColor: '#F8FAFC', borderRadius: '10px', border: '1px dashed #CBD5E1' }}>
+                              <p style={{ fontSize: '14px', color: '#64748B', margin: '0 0 12px 0' }}>No career teams added yet.</p>
                               <Button
                                 type="button"
-                                onClick={() => handleEditClick(team)}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  padding: '6px',
-                                  borderRadius: '6px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
+                                onClick={() => {
+                                  resetTeamForm();
+                                  setIsAddTeamFormOpen(true);
                                 }}
-                                title="Edit team details"
+                                style={{
+                                  backgroundColor: '#1860C3',
+                                  color: '#FFFFFF',
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  padding: '8px 16px',
+                                  fontSize: '13px',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                }}
                               >
-                                <img src="/edit3.png" alt="Edit" style={{ width: '16px', height: '16px' }} />
+                                + Add a Team
                               </Button>
                             </div>
-                          ))}
+                          ) : (
+                            (careerEntries || []).map((team) => {
+                              const formatIsoReadable = (iso?: string | null) => {
+                                if (!iso) return 'Present';
+                                try {
+                                  const d = new Date(iso);
+                                  if (isNaN(d.getTime())) return iso;
+                                  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+                                } catch {
+                                  return iso;
+                                }
+                              };
+
+                              const posText = team.position ? `${team.position} · ` : '';
+                              const startText = team.startDate ? formatIsoReadable(team.startDate) : '';
+                              const endText = team.endDate ? formatIsoReadable(team.endDate) : 'Present';
+                              const dateRange = startText ? `${startText} - ${endText}` : endText;
+                              const locText = team.location ? ` · ${team.location}` : '';
+                              const subtitleStr = `${posText}${dateRange}${locText}`;
+
+                              return (
+                                <div
+                                  key={team.id}
+                                  style={{
+                                    backgroundColor: '#FFFFFF',
+                                    border: '1px solid #F1F5F9',
+                                    borderRadius: '10px',
+                                    padding: '16px',
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    justifyContent: 'space-between',
+                                    gap: '12px',
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+                                    <img
+                                      src={team.teamLogoUrl || '/kcBlue.png'}
+                                      alt={team.teamName || 'Team Logo'}
+                                      style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'contain' }}
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).src = '/kcBlue.png';
+                                      }}
+                                    />
+                                    <div>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <h5 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                                          {team.teamName || 'Team Name'}
+                                        </h5>
+                                        {team.verified && (
+                                          <span title="Verified Team on Platform" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="#0B66C2" stroke="#FFFFFF" strokeWidth="2">
+                                              <circle cx="12" cy="12" r="10" />
+                                              <path d="m9 12 2 2 4-4" />
+                                            </svg>
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p style={{ fontSize: '13px', color: '#64748B', margin: '2px 0 4px 0', fontWeight: 500 }}>
+                                        {subtitleStr}
+                                      </p>
+                                      {team.note && (
+                                        <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0, fontStyle: 'italic' }}>
+                                          {team.note}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <Button
+                                      type="button"
+                                      onClick={() => handleEditClick(team)}
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        padding: '6px',
+                                        borderRadius: '6px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                      }}
+                                      title="Edit team details"
+                                    >
+                                      <img src="/edit3.png" alt="Edit" style={{ width: '16px', height: '16px' }} />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      onClick={() => setDeletingEntryTarget(team)}
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        padding: '6px',
+                                        borderRadius: '6px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                      }}
+                                      title="Delete career entry"
+                                    >
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="3 6 5 6 21 6" />
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                      </svg>
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )}
                         </div>
                       </div>
                     )}
@@ -1979,6 +2112,20 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           onSave={handleSaveProfile}
         />
       )}
+
+      {/* Delete Career Entry Confirmation Modal matching LogoutModal styling */}
+      <DeleteCareerModal
+        isOpen={!!deletingEntryTarget}
+        teamName={deletingEntryTarget?.teamName || null}
+        onClose={() => setDeletingEntryTarget(null)}
+        isLoading={!!isDeletingTeamId}
+        onConfirm={async () => {
+          if (deletingEntryTarget) {
+            await handleDeleteTeam(deletingEntryTarget.id);
+            setDeletingEntryTarget(null);
+          }
+        }}
+      />
 
       {/* Global Toast Notification */}
       {toast && (
