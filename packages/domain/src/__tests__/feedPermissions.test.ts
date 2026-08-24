@@ -157,4 +157,30 @@ describe('Centralized Feed Permissions Matrix', () => {
     expect(res.reason).toBe('ALLOWED');
     expect(canCreatePost(user)).toBe(true);
   });
+
+  describe('Live Supervision Controls Overrides', () => {
+    it('blocks viewing feed when VIEW_FEED control is false', () => {
+      const user = makeUser();
+      const controls = { VIEW_FEED: false };
+      const res = evaluateFeedPermissions(user, controls);
+      expect(res.allowed).toBe(false);
+      expect(res.reason).toBe('SUPERVISION_CONTROL_RESTRICTED');
+      expect(res.message).toBe('Your parent/guardian has disabled viewing feed posts.');
+    });
+
+    it('blocks creating posts when CREATE_POST control is false', () => {
+      const user = makeUser();
+      const controls = { CREATE_POST: false };
+      expect(canCreatePost(user, controls)).toBe(false);
+      expect(canLikePost(user, controls)).toBe(true);
+    });
+
+    it('blocks reacting and commenting when respective controls are false', () => {
+      const user = makeUser();
+      const controls = { REACT_TO_POSTS: false, COMMENT_ON_POSTS: false };
+      expect(canLikePost(user, controls)).toBe(false);
+      expect(canComment(user, controls)).toBe(false);
+      expect(canSharePost(user, controls)).toBe(true);
+    });
+  });
 });

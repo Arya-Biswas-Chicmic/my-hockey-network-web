@@ -5,6 +5,7 @@ import { likePost, unlikePost, repostPost, updatePost, deletePost, followUser, u
 import { Toast } from '../../common/Toast';
 import { Spinner } from '../../common/Spinner';
 
+import { useAuth } from '../../../hooks/use-auth';
 import { PostCommentSection } from './PostCommentSection';
 import { useFeedPermissions } from '../../../hooks/use-feed-permissions';
 
@@ -71,6 +72,12 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   onUpdateSuccess,
   onNavigate,
 }) => {
+  const { checkSupervisionPermission, assertSupervisionPermission } = useAuth();
+  const canReact = checkSupervisionPermission('react_to_posts');
+  const canComment = checkSupervisionPermission('comment_on_posts');
+  const canShare = checkSupervisionPermission('share_posts');
+  const canFollow = checkSupervisionPermission('follow_others');
+
   const { requirePermission } = useFeedPermissions(onNavigate);
   const [postContent, setPostContent] = useState(initialContent);
   const [likes, setLikes] = useState(initialLikes);
@@ -159,7 +166,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   };
 
   const handleLike = async () => {
-    if (!requirePermission()) return;
+    if (!requirePermission('REACT_TO_POSTS')) return;
     if (isLiking) return;
     setIsLiking(true);
 
@@ -191,7 +198,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   };
 
   const handleShare = async () => {
-    if (!requirePermission()) return;
+    if (!requirePermission('SHARE_POSTS')) return;
     if (isSharing) return;
     setIsSharing(true);
 
@@ -314,9 +321,10 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         <div className="mhn-post-header-actions" style={{ position: 'relative' }}>
           {!isSelf && (
             <Button
-              onClick={toggleFollow}
+              onClick={() => assertSupervisionPermission('follow_others', toggleFollow)}
               disabled={isFollowingLoading}
               className={`mhn-btn-follow ${isFollowing ? 'mhn-btn-following' : ''}`}
+              title={!canFollow ? 'Parent did not give permission' : undefined}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -327,7 +335,15 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                 cursor: isFollowingLoading ? 'not-allowed' : 'pointer',
               }}
             >
-              {isFollowingLoading ? (
+              {!canFollow ? (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  Follow
+                </>
+              ) : isFollowingLoading ? (
                 <Spinner size="sm" color={isFollowing ? '#475569' : '#FFFFFF'} />
               ) : isFollowing ? (
                 'Following'
@@ -454,12 +470,18 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
       <div className="mhn-post-footer">
         <div className="mhn-post-actions-group">
           <Button
-            onClick={handleLike}
+            onClick={() => assertSupervisionPermission('react_to_posts', handleLike)}
             disabled={isLiking}
             className={`mhn-action-item ${isLiked ? 'mhn-action-liked' : ''}`}
             aria-label="Like post"
+            title={!canReact ? 'Parent did not give permission' : undefined}
           >
-            {isLiked ? (
+            {!canReact ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" className="like-count-icon">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            ) : isLiked ? (
               <svg width="20" height="20" viewBox="0 0 24 24" fill="#1860C3" stroke="#1860C3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="like-count-icon">
                 <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
               </svg>
@@ -470,15 +492,23 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
           </Button>
 
           <Button
-            onClick={() => {
+            onClick={() => assertSupervisionPermission('comment_on_posts', () => {
               if (requirePermission()) {
                 setShowComments((prev) => !prev);
               }
-            }}
+            })}
             className={`mhn-action-item ${showComments ? 'mhn-action-active' : ''}`}
             aria-label="Toggle comments"
+            title={!canComment ? 'Parent did not give permission' : undefined}
           >
-            <img src="/comment.png" alt="" className="comment-count-icon" />
+            {!canComment ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" className="comment-count-icon">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            ) : (
+              <img src="/comment.png" alt="" className="comment-count-icon" />
+            )}
             <span className="mhn-action-count" style={{ color: showComments ? '#0091FF' : undefined, fontWeight: showComments ? 700 : undefined }}>
               {currentCommentsCount}
             </span>
@@ -486,14 +516,19 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
 
           {!isSelf && (
             <Button
-              onClick={handleShare}
+              onClick={() => assertSupervisionPermission('share_posts', handleShare)}
               disabled={isSharing}
               className={`mhn-action-item ${hasReposted ? 'mhn-action-active' : ''}`}
               aria-label="Share post"
-              title={hasReposted ? 'Undo Repost' : 'Repost update'}
+              title={!canShare ? 'Parent did not give permission' : hasReposted ? 'Undo Repost' : 'Repost update'}
               style={{ opacity: isSharing ? 0.7 : 1, cursor: isSharing ? 'not-allowed' : 'pointer' }}
             >
-              {isSharing ? (
+              {!canShare ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" className="share-count-icon">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              ) : isSharing ? (
                 <Spinner size="sm" color="#1860C3" />
               ) : (
                 <img

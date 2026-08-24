@@ -62,6 +62,7 @@ export const API_ENDPOINTS = {
     CHILDREN: '/supervision/children',
     CONTROLS: (minorId: string) => `/supervision/${minorId}/controls`,
     LOGS: (minorId: string) => `/supervision/${minorId}/logs`,
+    MY_PERMISSIONS: '/supervision/me/permissions',
   },
   APPROVALS: {
     BASE: '/approvals',

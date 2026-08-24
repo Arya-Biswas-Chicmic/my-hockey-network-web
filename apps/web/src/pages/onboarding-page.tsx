@@ -14,7 +14,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) =>
 
   return (
     <main className="onboarding-screen" aria-label="Role Onboarding Page">
-      <OnboardingModal onComplete={handleOnboardingComplete} />
+      <OnboardingModal initialMode="login" onComplete={handleOnboardingComplete} />
     </main>
   );
 };

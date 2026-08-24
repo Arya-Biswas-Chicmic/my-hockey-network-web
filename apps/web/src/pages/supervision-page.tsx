@@ -1,14 +1,20 @@
 import { Button } from '../components/common/Button';
 import { Input, Select } from '../components/common/FormControls';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Header } from '../components/common/Header';
 import { NoDataFound } from '../components/common/no-data-found';
 import { withRoleGuard } from '../hocs/with-role-guard';
 import { UserRole } from '../enums/role';
 import { GuardianRequestSkeleton } from '../components/supervision/guardian-request-skeleton';
+import { PermissionSkeletonLoader } from '../components/supervision/permission-skeleton-loader';
+import { SidebarWardSkeleton } from '../components/supervision/sidebar-ward-skeleton';
 import { ApprovalCodeModal } from '../components/supervision/ApprovalCodeModal';
+import { ParentOnboardingModal } from '../components/features/parent';
+import { Spinner } from '../components/common/Spinner';
 import { useAuth } from '../hooks/use-auth';
 import { resolveMediaUrl } from '../utils/mediaUtils';
+import { GUARDIAN_RELATION_OPTIONS, formatDobToIso, formatDobInput } from '../utils/guardianUtils';
 import {
   getSupervisionData,
   createManagedChild,
@@ -25,15 +31,20 @@ import {
 } from '@my-hockey-network/core';
 
 interface SupervisionPageProps {
-  onNavigate?: (screen: string) => void;
+  onNavigate?: (screen: string, extraData?: any) => void;
   onLogout?: () => void;
 }
 
 const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLogout }) => {
   const { showToast } = useAuth();
+  const location = useLocation();
+  const navState = location.state as { selectedWardId?: string; childId?: string } | null;
+  const initialWardIdFromNav = navState?.selectedWardId || navState?.childId || new URLSearchParams(location.search).get('childId');
+
   const [activeNavTab, setActiveNavTab] = useState('supervision');
-  const [selectedWardId, setSelectedWardId] = useState('w1'); // 'w1' = Steve (14), 'w2' = David (10)
+  const [selectedWardId, setSelectedWardId] = useState(initialWardIdFromNav || '');
   const [activeMainTab, setActiveMainTab] = useState<'permissions' | 'requests' | 'logs'>('permissions');
+  const [isAddPlayerModalOpen, setIsAddPlayerModalOpen] = useState(false);
 
   // Interactive Flow View Mode for Add Button (+):
   // 'main' | 'choice' | 'create-details' | 'create-protect' | 'create-success' | 'link-existing' | 'link-sent'
@@ -42,13 +53,11 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
   >('main');
 
   // Supervised Wards list (Dynamic)
-  const [wards, setWards] = useState([
-    { id: 'w1', name: 'Steve', age: 14, avatar: '/jack.png' },
-    { id: 'w2', name: 'David', age: 10, avatar: '/lucas.png' },
-  ]);
+  const [wards, setWards] = useState<Array<{ id: string; name: string; age: number; avatar: string }>>([]);
 
-  const [apiLoading, setApiLoading] = useState(false);
+  const [apiLoading, setApiLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [isControlsLoading, setIsControlsLoading] = useState<boolean>(true);
 
   // Approval Code Modal State
   const [approvalModalConfig, setApprovalModalConfig] = useState<{
@@ -68,26 +77,74 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
   const [requestActionLoading, setRequestActionLoading] = useState(false);
   const [requestNotice, setRequestNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Load live pending requests when tab is opened
-  useEffect(() => {
-    async function loadPendingRequests() {
-      try {
-        setIsRequestsLoading(true);
-        const res = await getPendingGuardianRequests();
-        const items = res?.items || (res as any)?.data?.items || [];
-        if (Array.isArray(items)) {
-          setLivePendingRequests(items);
-        }
-      } catch (err: any) {
-        console.warn('Pending requests fetch notice:', err);
-      } finally {
-        setIsRequestsLoading(false);
+  // Load live pending requests when tab is opened or ward selected
+  const loadPendingRequests = async () => {
+    try {
+      setIsRequestsLoading(true);
+      let list: any[] = [];
+
+      const isRealUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(selectedWardId);
+      const approvalsRes = await getApprovals({ status: 'PENDING', minorId: isRealUuid ? selectedWardId : undefined, limit: 20 });
+      const approvalItems = approvalsRes?.items || (approvalsRes as any)?.data?.items || [];
+      if (Array.isArray(approvalItems)) {
+        list = [...list, ...approvalItems.map((i: any) => ({ ...i, isApprovalItem: true }))];
       }
+
+      const reqRes = await getPendingGuardianRequests();
+      const guardianItems = reqRes?.items || (reqRes as any)?.data?.items || [];
+      if (Array.isArray(guardianItems)) {
+        list = [...list, ...guardianItems.map((i: any) => ({ ...i, isGuardianInviteItem: true }))];
+      }
+
+      setLivePendingRequests(list);
+    } catch (err: any) {
+      console.warn('Pending requests fetch notice:', err);
+    } finally {
+      setIsRequestsLoading(false);
     }
+  };
+
+  useEffect(() => {
     if (activeMainTab === 'requests') {
       loadPendingRequests();
     }
-  }, [activeMainTab]);
+  }, [activeMainTab, selectedWardId]);
+
+  const handleApproveApprovalItem = async (approvalId: string) => {
+    setRequestActionLoading(true);
+    setRequestNotice(null);
+    try {
+      await approveRequest(approvalId, { mode: 'INDEFINITE' });
+      const successMsg = 'Request approved successfully!';
+      setRequestNotice({ type: 'success', message: successMsg });
+      showToast(successMsg, 'success');
+      loadPendingRequests();
+    } catch (err: any) {
+      const errMsg = err.message || 'Failed to approve request.';
+      setRequestNotice({ type: 'error', message: errMsg });
+      showToast(errMsg, 'error');
+    } finally {
+      setRequestActionLoading(false);
+    }
+  };
+
+  const handleDeclineApprovalItem = async (approvalId: string) => {
+    setRequestActionLoading(true);
+    setRequestNotice(null);
+    try {
+      await declineRequest(approvalId, 'Declined by parent');
+      const successMsg = 'Request declined.';
+      setRequestNotice({ type: 'success', message: successMsg });
+      showToast(successMsg, 'success');
+      loadPendingRequests();
+    } catch (err: any) {
+      const errMsg = err.message || 'Failed to decline request.';
+      setRequestNotice({ type: 'error', message: errMsg });
+      showToast(errMsg, 'error');
+    } finally {
+      setRequestActionLoading(false);
+    }
+  };
 
   const handleApproveCodeSubmit = async (codeToSubmit?: string) => {
     const code = (codeToSubmit || approvalCodeInput).trim();
@@ -110,18 +167,19 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
       // Refresh supervision list & pending requests
       const supData = await getSupervisionData();
-      if (supData?.children && supData.children.length > 0) {
-        const mapped = supData.children.map((c: any) => ({
-          id: c.id,
+      const children = supData?.children || (supData as any)?.data?.children || [];
+      if (Array.isArray(children) && children.length > 0) {
+        const mapped = children.map((c: any) => ({
+          id: c.userId || c.profileId || c.id,
           name: c.displayName || c.firstName || 'Minor Player',
           age: c.age || 12,
           avatar: resolveMediaUrl(c.avatarUrl, '/userPlaceholder.png'),
         }));
         setWards(mapped);
+        setSelectedWardId(mapped[0].id);
       }
 
-      const reqRes = await getPendingGuardianRequests();
-      setLivePendingRequests(reqRes?.items || (reqRes as any)?.data?.items || []);
+      loadPendingRequests();
     } catch (err: any) {
       console.error('Accept Request Error:', err);
       const errMsg = err.key === 'GUARDIAN_REQUEST_CHILD_SETUP_INCOMPLETE' || err.message?.includes('setup')
@@ -144,8 +202,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     try {
       await declineGuardianRequest(codeToDecline);
       setRequestNotice({ type: 'success', message: 'Guardian request declined.' });
-      const reqRes = await getPendingGuardianRequests();
-      setLivePendingRequests(reqRes?.items || (reqRes as any)?.data?.items || []);
+      loadPendingRequests();
     } catch (err: any) {
       setRequestNotice({ type: 'error', message: err.message || 'Failed to decline request.' });
     } finally {
@@ -153,37 +210,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     }
   };
 
-  // Load live supervision wards on mount
-  useEffect(() => {
-    async function loadLiveSupervision() {
-      try {
-        setApiLoading(true);
-        const data = await getSupervisionData();
-        const children = data?.children || (data as any)?.data?.children || [];
-        if (Array.isArray(children) && children.length > 0) {
-          const mapped = children.map((c: any) => ({
-            id: c.userId || c.profileId || c.id,
-            name: c.displayName || c.firstName || 'Minor Player',
-            age: c.age || 12,
-            avatar: resolveMediaUrl(c.avatarUrl, '/userPlaceholder.png'),
-          }));
-          setWards(mapped);
-          setSelectedWardId(mapped[0].id);
-        }
-      } catch (err: any) {
-        console.warn('Live supervision fetch notice:', err.message || err);
-      } finally {
-        setApiLoading(false);
-      }
-    }
-    loadLiveSupervision();
-  }, []);
+
 
   // Form States for "Create a new player profile"
   const [newPlayer, setNewPlayer] = useState({
     fullName: '',
     dob: '',
-    relationship: 'Parent',
+    relationship: 'MOTHER',
     email: '',
     visibility: 'private' as 'private' | 'network',
     adultRequests: true,
@@ -191,6 +224,19 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     teamInvitations: true,
     mediaVisibility: true,
   });
+
+  const [isCreatingPlayer, setIsCreatingPlayer] = useState(false);
+  const supervisionDateInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSupervisionCalendarClick = () => {
+    if (supervisionDateInputRef.current) {
+      if (typeof supervisionDateInputRef.current.showPicker === 'function') {
+        supervisionDateInputRef.current.showPicker();
+      } else {
+        supervisionDateInputRef.current.click();
+      }
+    }
+  };
 
   const [addedPlayerName, setAddedPlayerName] = useState('Noah');
 
@@ -245,6 +291,189 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     activityNotifications: false,
     mentionNotifications: true,
   });
+
+  const CONTROL_KEY_TO_BACKEND_ENUM: Record<string, string> = {
+    view_feed: 'VIEW_FEED',
+    viewFeed: 'VIEW_FEED',
+    create_posts: 'CREATE_POST',
+    createPosts: 'CREATE_POST',
+    comment_on_posts: 'COMMENT_ON_POSTS',
+    commentOnPosts: 'COMMENT_ON_POSTS',
+    react_to_posts: 'REACT_TO_POSTS',
+    reactToPosts: 'REACT_TO_POSTS',
+    share_posts: 'SHARE_POSTS',
+    sharePosts: 'SHARE_POSTS',
+    follow_others: 'FOLLOW_OTHERS',
+    followOthers: 'FOLLOW_OTHERS',
+    accept_requests: 'ACCEPT_CONNECTIONS',
+    acceptRequests: 'ACCEPT_CONNECTIONS',
+    who_can_follow_them: 'WHO_CAN_FOLLOW',
+    whoCanFollowThem: 'WHO_CAN_FOLLOW',
+    who_can_send_requests: 'WHO_CAN_SEND_CONNECTION_REQUESTS',
+    whoCanSendRequests: 'WHO_CAN_SEND_CONNECTION_REQUESTS',
+    send_messages: 'SEND_MESSAGES',
+    sendMessages: 'SEND_MESSAGES',
+    receive_messages: 'RECEIVE_MESSAGES',
+    receiveMessages: 'RECEIVE_MESSAGES',
+    create_group_chats: 'CREATE_GROUP_CHATS',
+    createGroupChats: 'CREATE_GROUP_CHATS',
+    who_can_message_them: 'WHO_CAN_MESSAGE_THEM',
+    whoCanMessageThem: 'WHO_CAN_MESSAGE_THEM',
+    message_notifications: 'REQUIRE_APPROVAL_ADULT_CONTACT',
+    connection_notifications: 'REQUIRE_APPROVAL_CONNECTIONS',
+    activity_notifications: 'REQUIRE_APPROVAL_TEAM_INVITES',
+    mention_notifications: 'REQUIRE_APPROVAL_MEDIA',
+  };
+
+  const fetchControlsForWard = async (wardId: string) => {
+    if (!wardId) return;
+    try {
+      const res = await getSupervisionControls(wardId);
+      const controls = res?.controls || (res as any)?.data?.controls || [];
+      if (Array.isArray(controls) && controls.length > 0) {
+        controls.forEach((c: any) => {
+          const key = c.control || c.name;
+          const val = c.value;
+          if (key === 'VIEW_FEED' || key === 'view_feed' || key === 'viewFeed') setHomePermissions((p) => ({ ...p, viewFeed: Boolean(val) }));
+          if (key === 'CREATE_POST' || key === 'create_posts' || key === 'createPosts') setHomePermissions((p) => ({ ...p, createPosts: Boolean(val) }));
+          if (key === 'COMMENT_ON_POSTS' || key === 'comment_on_posts' || key === 'commentOnPosts') setHomePermissions((p) => ({ ...p, commentOnPosts: Boolean(val) }));
+          if (key === 'REACT_TO_POSTS' || key === 'react_to_posts' || key === 'reactToPosts') setHomePermissions((p) => ({ ...p, reactToPosts: Boolean(val) }));
+          if (key === 'SHARE_POSTS' || key === 'share_posts' || key === 'sharePosts') setHomePermissions((p) => ({ ...p, sharePosts: Boolean(val) }));
+
+          if (key === 'FOLLOW_OTHERS' || key === 'follow_others' || key === 'followOthers') setNetworkPermissions((p) => ({ ...p, followOthers: Boolean(val) }));
+          if (key === 'WHO_CAN_FOLLOW' || key === 'who_can_follow_them' || key === 'whoCanFollowThem') setNetworkPermissions((p) => ({ ...p, whoCanFollowThem: String(val) }));
+          if (key === 'WHO_CAN_SEND_CONNECTION_REQUESTS' || key === 'who_can_send_requests' || key === 'whoCanSendRequests') setNetworkPermissions((p) => ({ ...p, whoCanSendRequests: String(val) }));
+          if (key === 'ACCEPT_CONNECTIONS' || key === 'accept_requests' || key === 'acceptRequests') setNetworkPermissions((p) => ({ ...p, acceptRequests: Boolean(val) }));
+
+          if (key === 'SEND_MESSAGES' || key === 'send_messages' || key === 'sendMessages') setMessagingPermissions((p) => ({ ...p, sendMessages: Boolean(val) }));
+          if (key === 'RECEIVE_MESSAGES' || key === 'receive_messages' || key === 'receiveMessages') setMessagingPermissions((p) => ({ ...p, receiveMessages: Boolean(val) }));
+          if (key === 'CREATE_GROUP_CHATS' || key === 'create_group_chats' || key === 'createGroupChats') setMessagingPermissions((p) => ({ ...p, createGroupChats: Boolean(val) }));
+          if (key === 'WHO_CAN_MESSAGE_THEM' || key === 'who_can_message_them' || key === 'whoCanMessageThem') setMessagingPermissions((p) => ({ ...p, whoCanMessageThem: String(val) }));
+
+          if (key === 'REQUIRE_APPROVAL_ADULT_CONTACT' || key === 'message_notifications' || key === 'messageNotifications') setNotificationPermissions((p) => ({ ...p, messageNotifications: Boolean(val) }));
+          if (key === 'REQUIRE_APPROVAL_CONNECTIONS' || key === 'connection_notifications' || key === 'connectionNotifications') setNotificationPermissions((p) => ({ ...p, connectionNotifications: Boolean(val) }));
+          if (key === 'REQUIRE_APPROVAL_TEAM_INVITES' || key === 'activity_notifications' || key === 'activityNotifications') setNotificationPermissions((p) => ({ ...p, activityNotifications: Boolean(val) }));
+          if (key === 'REQUIRE_APPROVAL_MEDIA' || key === 'mention_notifications' || key === 'mentionNotifications') setNotificationPermissions((p) => ({ ...p, mentionNotifications: Boolean(val) }));
+        });
+      }
+    } catch (err: any) {
+      console.warn('Supervision controls fetch notice:', err);
+    }
+  };
+
+  // Parallel simultaneous initial load on mount / when initialWardIdFromNav changes
+  useEffect(() => {
+    async function loadAllSupervisionData() {
+      setApiLoading(true);
+      setIsControlsLoading(true);
+      try {
+        const data = await getSupervisionData();
+        const children = data?.children || (data as any)?.data?.children || [];
+        if (Array.isArray(children) && children.length > 0) {
+          const mapped = children.map((c: any) => ({
+            id: c.userId || c.profileId || c.id,
+            name: c.displayName || c.firstName || 'Minor Player',
+            age: c.age || 12,
+            avatar: resolveMediaUrl(c.avatarUrl, '/userPlaceholder.png'),
+          }));
+          setWards(mapped);
+
+          let targetId = initialWardIdFromNav || mapped[0].id;
+          if (!mapped.some((w) => w.id === targetId)) {
+            targetId = mapped[0].id;
+          }
+          setSelectedWardId(targetId);
+
+          if (targetId) {
+            await fetchControlsForWard(targetId);
+          }
+        } else {
+          setWards([]);
+          setSelectedWardId('');
+        }
+      } catch (err: any) {
+        console.warn('Live supervision fetch notice:', err?.message || err);
+        setWards([]);
+        setSelectedWardId('');
+      } finally {
+        setApiLoading(false);
+        setIsControlsLoading(false);
+      }
+    }
+    loadAllSupervisionData();
+  }, [initialWardIdFromNav]);
+
+  // When parent selects a ward from the sidebar list
+  const handleSelectWard = async (wardId: string) => {
+    setSelectedWardId(wardId);
+    setIsControlsLoading(true);
+    try {
+      await fetchControlsForWard(wardId);
+    } finally {
+      setIsControlsLoading(false);
+    }
+  };
+
+  const [updatingControlKey, setUpdatingControlKey] = useState<string | null>(null);
+
+  const handleToggleControl = async (
+    controlKey: string,
+    label: string,
+    currentVal: boolean | string,
+    setter: React.Dispatch<React.SetStateAction<any>>
+  ) => {
+    if (!selectedWardId || updatingControlKey) return;
+    const newVal = typeof currentVal === 'boolean' ? !currentVal : currentVal;
+
+    const backendControl = CONTROL_KEY_TO_BACKEND_ENUM[controlKey] || controlKey.toUpperCase();
+
+    setUpdatingControlKey(controlKey);
+    setter((prev: any) => ({ ...prev, [controlKey]: newVal }));
+
+    try {
+      await updateSupervisionControls(selectedWardId, [{ control: backendControl, value: newVal }]);
+      showToast(`${label} permission updated successfully!`, 'success');
+    } catch (err: any) {
+      setter((prev: any) => ({ ...prev, [controlKey]: currentVal }));
+      showToast(err.message || `Failed to update ${label} permission.`, 'error');
+    } finally {
+      setUpdatingControlKey(null);
+    }
+  };
+
+  const renderToggleSwitch = (
+    controlKey: string,
+    label: string,
+    isOn: boolean,
+    setter: React.Dispatch<React.SetStateAction<any>>
+  ) => {
+    const isUpdating = updatingControlKey === controlKey;
+    return (
+      <Button
+        type="button"
+        onClick={() => handleToggleControl(controlKey, label, isOn, setter)}
+        disabled={isUpdating}
+        className={`mhn-toggle-switch ${isOn ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
+        style={isUpdating ? { opacity: 0.8, cursor: 'wait', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' } : undefined}
+      >
+        {isUpdating ? (
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            style={{ animation: 'mhn-spin 0.8s linear infinite', margin: 'auto' }}
+          >
+            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4" strokeDashoffset="10" fill="none" />
+          </svg>
+        ) : (
+          <div className="mhn-toggle-handle" />
+        )}
+      </Button>
+    );
+  };
 
   const sampleSupervisionRequests = [
     {
@@ -356,6 +585,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
   ];
 
   const [liveLogs, setLiveLogs] = useState<any[]>([]);
+  const [logsSearchQuery, setLogsSearchQuery] = useState('');
 
   // Load live controls and logs for selected minor child
   useEffect(() => {
@@ -406,10 +636,10 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     loadWardControlsAndLogs();
   }, [selectedWardId]);
 
-  const handleTabChange = (tab: string) => {
+  const handleTabChange = (tab: string, extraData?: any) => {
     setActiveNavTab(tab);
     if (onNavigate) {
-      onNavigate(tab);
+      onNavigate(tab, extraData);
     }
   };
 
@@ -421,13 +651,20 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     const firstName = nameParts[0] || 'Minor';
     const lastName = nameParts.slice(1).join(' ') || 'Player';
 
+    setApiLoading(true);
+    setIsControlsLoading(true);
+    setIsCreatingPlayer(true);
     try {
+      const formattedDob = formatDobToIso(newPlayer.dob) || '2015-05-15';
+      const validRelation = (newPlayer.relationship as any) || 'MOTHER';
+
       const res = await createManagedChild({
         displayName: nameToUse,
         firstName,
         lastName,
-        dateOfBirth: newPlayer.dob || '2015-05-15',
-        guardianRelation: (newPlayer.relationship.toUpperCase() as any) || 'FATHER',
+        dateOfBirth: formattedDob,
+        guardianRelation: validRelation,
+        email: newPlayer.email.trim() || undefined,
       });
 
       const childProfile = res?.child || (res as any)?.data?.profile;
@@ -436,20 +673,62 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
           id: childProfile.id,
           name: childProfile.displayName || nameToUse,
           age: 12,
-          avatar: childProfile.avatarUrl || '/connor.png',
+          avatar: resolveMediaUrl(childProfile.avatarUrl, '/userPlaceholder.png'),
         };
         setWards((prev) => [...prev, newWardItem]);
         setSelectedWardId(newWardItem.id);
       }
+      showToast(`${nameToUse} has been added successfully!`, 'success');
+      setViewMode('create-success');
     } catch (err: any) {
-      console.warn('❌ [SupervisionPage] createManagedChild notice:', err?.message || err);
+      showToast(err?.message || 'Failed to create player.', 'error');
+    } finally {
+      setApiLoading(false);
+      setIsControlsLoading(false);
+      setIsCreatingPlayer(false);
     }
-
-    setViewMode('create-success');
   };
 
-  const handleSendLinkInvitation = () => {
-    setViewMode('link-sent');
+  const handleSendLinkInvitation = async () => {
+    if (!linkChildEmail.trim() || !linkChildEmail.includes('@')) {
+      setLinkEmailError('Please enter a valid email address.');
+      return;
+    }
+
+    setApiLoading(true);
+    setIsControlsLoading(true);
+    try {
+      await sendGuardianInvite(linkChildEmail.trim());
+      showToast('Guardian invitation sent successfully!', 'success');
+      setViewMode('link-sent');
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to send invitation.', 'error');
+    } finally {
+      setApiLoading(false);
+      setIsControlsLoading(false);
+    }
+  };
+
+  const handlePlayerAddComplete = async () => {
+    setIsAddPlayerModalOpen(false);
+    showToast('Player updated successfully!', 'success');
+    try {
+      const supData = await getSupervisionData();
+      if (supData?.children && supData.children.length > 0) {
+        const mapped = supData.children.map((c: any) => ({
+          id: c.id,
+          name: c.displayName || c.firstName || 'Minor Player',
+          age: c.age || 12,
+          avatar: resolveMediaUrl(c.avatarUrl, '/userPlaceholder.png'),
+        }));
+        setWards(mapped);
+        if (mapped[0]?.id) {
+          setSelectedWardId(mapped[0].id);
+        }
+      }
+    } catch (err) {
+      console.warn('Supervision data reload notice:', err);
+    }
   };
 
   return (
@@ -478,28 +757,36 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
             </div>
 
             <div className="mhn-supervision-wards-list">
-              {wards.map((ward) => (
-                <Button
-                  key={ward.id}
-                  onClick={() => {
-                    setSelectedWardId(ward.id);
-                    setViewMode('main');
-                  }}
-                  className={`mhn-supervision-ward-item ${selectedWardId === ward.id && viewMode === 'main' ? 'mhn-ward-active' : ''}`}
-                >
-                  <img
-                    src={ward.avatar}
-                    alt={ward.name}
-                    className="mhn-ward-avatar"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/userPlaceholder.png';
+              {apiLoading ? (
+                <SidebarWardSkeleton count={2} />
+              ) : wards.length === 0 ? (
+                <div style={{ padding: '16px 12px', fontSize: '13px', color: '#64748b', textAlign: 'center' }}>
+                  No managed players found.
+                </div>
+              ) : (
+                wards.map((ward) => (
+                  <Button
+                    key={ward.id}
+                    onClick={() => {
+                      setSelectedWardId(ward.id);
+                      setViewMode('main');
                     }}
-                  />
-                  <span className="mhn-ward-name-label">
-                    {ward.name} <span className="mhn-ward-age">({ward.age})</span>
-                  </span>
-                </Button>
-              ))}
+                    className={`mhn-supervision-ward-item ${selectedWardId === ward.id && viewMode === 'main' ? 'mhn-ward-active' : ''}`}
+                  >
+                    <img
+                      src={ward.avatar}
+                      alt={ward.name}
+                      className="mhn-ward-avatar"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/userPlaceholder.png';
+                      }}
+                    />
+                    <span className="mhn-ward-name-label">
+                      {ward.name} <span className="mhn-ward-age">({ward.age})</span>
+                    </span>
+                  </Button>
+                ))
+              )}
             </div>
           </aside>
 
@@ -569,20 +856,55 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
                   <div className="mhn-form-field-group">
                     <label className="mhn-form-field-label">DOB</label>
-                    <div className="mhn-form-date-input-wrapper">
+                    <div className="mhn-form-date-input-wrapper" style={{ position: 'relative' }}>
                       <Input
                         type="text"
                         value={newPlayer.dob}
-                        onChange={(e) => setNewPlayer({ ...newPlayer, dob: e.target.value })}
+                        onChange={(e) => setNewPlayer({ ...newPlayer, dob: formatDobInput(e.target.value) })}
+                        maxLength={10}
                         placeholder="DD/MM/YYYY"
                         className="mhn-form-input"
                       />
-                      <svg className="mhn-calendar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2">
+                      <svg
+                        className="mhn-calendar-icon"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#94A3B8"
+                        strokeWidth="2"
+                        onClick={handleSupervisionCalendarClick}
+                        style={{ cursor: 'pointer', position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}
+                      >
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                         <line x1="16" y1="2" x2="16" y2="6" />
                         <line x1="8" y1="2" x2="8" y2="6" />
                         <line x1="3" y1="10" x2="21" y2="10" />
                       </svg>
+                      <Input
+                        type="date"
+                        ref={supervisionDateInputRef}
+                        onChange={(e) => {
+                          const dateVal = e.target.value;
+                          if (dateVal) {
+                            const parts = dateVal.split('-');
+                            if (parts.length === 3) {
+                              const [yyyy, mm, dd] = parts;
+                              setNewPlayer((prev) => ({ ...prev, dob: `${dd}/${mm}/${yyyy}` }));
+                            }
+                          }
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          right: '12px',
+                          width: '32px',
+                          height: '100%',
+                          opacity: 0,
+                          cursor: 'pointer',
+                          zIndex: 2,
+                        }}
+                      />
                     </div>
                   </div>
 
@@ -593,10 +915,11 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                       onChange={(e) => setNewPlayer({ ...newPlayer, relationship: e.target.value })}
                       className="mhn-form-select"
                     >
-                      <option value="Select">Select</option>
-                      <option value="Parent">Parent</option>
-                      <option value="Guardian">Guardian</option>
-                      <option value="Coach">Coach</option>
+                      {GUARDIAN_RELATION_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
                     </Select>
                   </div>
 
@@ -739,8 +1062,11 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                   <Button
                     className="mhn-btn-solid-blue"
                     onClick={handleCreatePlayerSubmit}
+                    disabled={isCreatingPlayer}
+                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   >
-                    Create Player Profile
+                    {isCreatingPlayer && <Spinner size="sm" color="#FFFFFF" />}
+                    <span>{isCreatingPlayer ? 'Creating Profile...' : 'Create Player Profile'}</span>
                   </Button>
                   <Button
                     className="mhn-btn-outline"
@@ -765,7 +1091,12 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                 <div className="mhn-form-actions-stack mhn-form-actions-narrow">
                   <Button
                     className="mhn-btn-solid-blue"
-                    onClick={() => setViewMode('main')}
+                    onClick={() => {
+                      setViewMode('main');
+                      if (onNavigate) {
+                        onNavigate('profile', { selectedWardId, childId: selectedWardId, childName: addedPlayerName });
+                      }
+                    }}
                   >
                     Go to {addedPlayerName}'s Profile
                   </Button>
@@ -884,6 +1215,9 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                 <div className="mhn-supervision-tab-body">
                   {/* Content for Permissions Tab */}
                   {activeMainTab === 'permissions' && (
+                    isControlsLoading ? (
+                      <PermissionSkeletonLoader />
+                    ) : (
                     <div className="mhn-supervision-permissions-stack">
                       {/* 1. Home Section Accordion */}
                       <div className={`mhn-supervision-accordion ${expandedCategories.home ? 'mhn-accordion-expanded' : ''}`}>
@@ -916,13 +1250,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">View feed</h4>
                                 <p className="mhn-permission-subtitle">Can see posts from their network</p>
                               </div>
-                              <Button
-                                type="button"
-                                onClick={() => setHomePermissions(p => ({ ...p, viewFeed: !p.viewFeed }))}
-                                className={`mhn-toggle-switch ${homePermissions.viewFeed ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
-                              >
-                                <div className="mhn-toggle-handle" />
-                              </Button>
+                              {renderToggleSwitch('view_feed', 'View feed', homePermissions.viewFeed, setHomePermissions)}
                             </div>
 
                             {/* Create posts */}
@@ -931,13 +1259,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Create posts</h4>
                                 <p className="mhn-permission-subtitle">Can publish posts to their network</p>
                               </div>
-                              <Button
-                                type="button"
-                                onClick={() => setHomePermissions(p => ({ ...p, createPosts: !p.createPosts }))}
-                                className={`mhn-toggle-switch ${homePermissions.createPosts ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
-                              >
-                                <div className="mhn-toggle-handle" />
-                              </Button>
+                              {renderToggleSwitch('create_posts', 'Create posts', homePermissions.createPosts, setHomePermissions)}
                             </div>
 
                             {/* Comment on posts */}
@@ -946,13 +1268,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Comment on posts</h4>
                                 <p className="mhn-permission-subtitle">Can leave comments on others' posts</p>
                               </div>
-                              <Button
-                                type="button"
-                                onClick={() => setHomePermissions(p => ({ ...p, commentOnPosts: !p.commentOnPosts }))}
-                                className={`mhn-toggle-switch ${homePermissions.commentOnPosts ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
-                              >
-                                <div className="mhn-toggle-handle" />
-                              </Button>
+                              {renderToggleSwitch('comment_on_posts', 'Comment on posts', homePermissions.commentOnPosts, setHomePermissions)}
                             </div>
 
                             {/* React to posts */}
@@ -961,13 +1277,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">React to posts</h4>
                                 <p className="mhn-permission-subtitle">Can like, celebrate, or react to content</p>
                               </div>
-                              <Button
-                                type="button"
-                                onClick={() => setHomePermissions(p => ({ ...p, reactToPosts: !p.reactToPosts }))}
-                                className={`mhn-toggle-switch ${homePermissions.reactToPosts ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
-                              >
-                                <div className="mhn-toggle-handle" />
-                              </Button>
+                              {renderToggleSwitch('react_to_posts', 'React to posts', homePermissions.reactToPosts, setHomePermissions)}
                             </div>
 
                             {/* Share posts */}
@@ -976,13 +1286,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Share posts</h4>
                                 <p className="mhn-permission-subtitle">Can reshare content to their feed</p>
                               </div>
-                              <Button
-                                type="button"
-                                onClick={() => setHomePermissions(p => ({ ...p, sharePosts: !p.sharePosts }))}
-                                className={`mhn-toggle-switch ${homePermissions.sharePosts ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
-                              >
-                                <div className="mhn-toggle-handle" />
-                              </Button>
+                              {renderToggleSwitch('share_posts', 'Share posts', homePermissions.sharePosts, setHomePermissions)}
                             </div>
                           </div>
                         )}
@@ -1019,13 +1323,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Follow others</h4>
                                 <p className="mhn-permission-subtitle">Can follow people and pages</p>
                               </div>
-                              <Button
-                                type="button"
-                                onClick={() => setNetworkPermissions(p => ({ ...p, followOthers: !p.followOthers }))}
-                                className={`mhn-toggle-switch ${networkPermissions.followOthers ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
-                              >
-                                <div className="mhn-toggle-handle" />
-                              </Button>
+                              {renderToggleSwitch('follow_others', 'Follow others', networkPermissions.followOthers, setNetworkPermissions)}
                             </div>
 
                             {/* Who can follow them */}
@@ -1036,8 +1334,9 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                               </div>
                               <Select
                                 value={networkPermissions.whoCanFollowThem}
-                                onChange={(e) => setNetworkPermissions(p => ({ ...p, whoCanFollowThem: e.target.value }))}
+                                onChange={(e) => handleToggleControl('who_can_follow_them', 'Who can follow them', e.target.value, setNetworkPermissions)}
                                 className="mhn-permission-select"
+                                disabled={updatingControlKey === 'who_can_follow_them'}
                               >
                                 <option value="Everyone">Everyone</option>
                                 <option value="Connections Only">Connections Only</option>
@@ -1053,8 +1352,9 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                               </div>
                               <Select
                                 value={networkPermissions.whoCanSendRequests}
-                                onChange={(e) => setNetworkPermissions(p => ({ ...p, whoCanSendRequests: e.target.value }))}
+                                onChange={(e) => handleToggleControl('who_can_send_requests', 'Who can send requests', e.target.value, setNetworkPermissions)}
                                 className="mhn-permission-select"
+                                disabled={updatingControlKey === 'who_can_send_requests'}
                               >
                                 <option value="Everyone">Everyone</option>
                                 <option value="Connections Only">Connections Only</option>
@@ -1068,13 +1368,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Accept connection requests</h4>
                                 <p className="mhn-permission-subtitle">Can accept incoming requests from others</p>
                               </div>
-                              <Button
-                                type="button"
-                                onClick={() => setNetworkPermissions(p => ({ ...p, acceptRequests: !p.acceptRequests }))}
-                                className={`mhn-toggle-switch ${networkPermissions.acceptRequests ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
-                              >
-                                <div className="mhn-toggle-handle" />
-                              </Button>
+                              {renderToggleSwitch('accept_requests', 'Accept connection requests', networkPermissions.acceptRequests, setNetworkPermissions)}
                             </div>
                           </div>
                         )}
@@ -1111,13 +1405,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Send messages</h4>
                                 <p className="mhn-permission-subtitle">Can initiate and reply to conversations</p>
                               </div>
-                              <Button
-                                type="button"
-                                onClick={() => setMessagingPermissions(p => ({ ...p, sendMessages: !p.sendMessages }))}
-                                className={`mhn-toggle-switch ${messagingPermissions.sendMessages ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
-                              >
-                                <div className="mhn-toggle-handle" />
-                              </Button>
+                              {renderToggleSwitch('send_messages', 'Send messages', messagingPermissions.sendMessages, setMessagingPermissions)}
                             </div>
 
                             {/* Receive messages */}
@@ -1126,13 +1414,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Receive messages</h4>
                                 <p className="mhn-permission-subtitle">Others can send them messages</p>
                               </div>
-                              <Button
-                                type="button"
-                                onClick={() => setMessagingPermissions(p => ({ ...p, receiveMessages: !p.receiveMessages }))}
-                                className={`mhn-toggle-switch ${messagingPermissions.receiveMessages ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
-                              >
-                                <div className="mhn-toggle-handle" />
-                              </Button>
+                              {renderToggleSwitch('receive_messages', 'Receive messages', messagingPermissions.receiveMessages, setMessagingPermissions)}
                             </div>
 
                             {/* Create group chats */}
@@ -1141,13 +1423,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Create group chats</h4>
                                 <p className="mhn-permission-subtitle">Can start group conversations</p>
                               </div>
-                              <Button
-                                type="button"
-                                onClick={() => setMessagingPermissions(p => ({ ...p, createGroupChats: !p.createGroupChats }))}
-                                className={`mhn-toggle-switch ${messagingPermissions.createGroupChats ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
-                              >
-                                <div className="mhn-toggle-handle" />
-                              </Button>
+                              {renderToggleSwitch('create_group_chats', 'Create group chats', messagingPermissions.createGroupChats, setMessagingPermissions)}
                             </div>
 
                             {/* Who can message them */}
@@ -1158,8 +1434,9 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                               </div>
                               <Select
                                 value={messagingPermissions.whoCanMessageThem}
-                                onChange={(e) => setMessagingPermissions(p => ({ ...p, whoCanMessageThem: e.target.value }))}
+                                onChange={(e) => handleToggleControl('who_can_message_them', 'Who can message them', e.target.value, setMessagingPermissions)}
                                 className="mhn-permission-select"
+                                disabled={updatingControlKey === 'who_can_message_them'}
                               >
                                 <option value="Connections Only">Connections Only</option>
                                 <option value="Everyone">Everyone</option>
@@ -1201,13 +1478,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Message notifications</h4>
                                 <p className="mhn-permission-subtitle">Get notified when they receive a message</p>
                               </div>
-                              <Button
-                                type="button"
-                                onClick={() => setNotificationPermissions(p => ({ ...p, messageNotifications: !p.messageNotifications }))}
-                                className={`mhn-toggle-switch ${notificationPermissions.messageNotifications ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
-                              >
-                                <div className="mhn-toggle-handle" />
-                              </Button>
+                              {renderToggleSwitch('message_notifications', 'Message notifications', notificationPermissions.messageNotifications, setNotificationPermissions)}
                             </div>
 
                             {/* Connection request notifications */}
@@ -1216,13 +1487,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Connection request notifications</h4>
                                 <p className="mhn-permission-subtitle">Get notified about incoming requests</p>
                               </div>
-                              <Button
-                                type="button"
-                                onClick={() => setNotificationPermissions(p => ({ ...p, connectionNotifications: !p.connectionNotifications }))}
-                                className={`mhn-toggle-switch ${notificationPermissions.connectionNotifications ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
-                              >
-                                <div className="mhn-toggle-handle" />
-                              </Button>
+                              {renderToggleSwitch('connection_notifications', 'Connection notifications', notificationPermissions.connectionNotifications, setNotificationPermissions)}
                             </div>
 
                             {/* Activity notifications */}
@@ -1231,13 +1496,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Activity notifications</h4>
                                 <p className="mhn-permission-subtitle">Reactions, comments on their posts</p>
                               </div>
-                              <Button
-                                type="button"
-                                onClick={() => setNotificationPermissions(p => ({ ...p, activityNotifications: !p.activityNotifications }))}
-                                className={`mhn-toggle-switch ${notificationPermissions.activityNotifications ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
-                              >
-                                <div className="mhn-toggle-handle" />
-                              </Button>
+                              {renderToggleSwitch('activity_notifications', 'Activity notifications', notificationPermissions.activityNotifications, setNotificationPermissions)}
                             </div>
 
                             {/* Mention notifications */}
@@ -1246,18 +1505,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 <h4 className="mhn-permission-title">Mention notifications</h4>
                                 <p className="mhn-permission-subtitle">Get notified when someone mentions them</p>
                               </div>
-                              <Button
-                                type="button"
-                                onClick={() => setNotificationPermissions(p => ({ ...p, mentionNotifications: !p.mentionNotifications }))}
-                                className={`mhn-toggle-switch ${notificationPermissions.mentionNotifications ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
-                              >
-                                <div className="mhn-toggle-handle" />
-                              </Button>
+                              {renderToggleSwitch('mention_notifications', 'Mention notifications', notificationPermissions.mentionNotifications, setNotificationPermissions)}
                             </div>
                           </div>
                         )}
                       </div>
                     </div>
+                  )
                   )}
 
                   {/* Content for Requests Tab */}
@@ -1342,7 +1596,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                       type="button"
                                       className="mhn-supervision-btn-ignore"
                                       disabled={requestActionLoading}
-                                      onClick={() => handleDeclineCodeSubmit(code || reqId)}
+                                      onClick={() => {
+                                        if (req.isApprovalItem) {
+                                          handleDeclineApprovalItem(reqId);
+                                        } else {
+                                          handleDeclineCodeSubmit(code || reqId);
+                                        }
+                                      }}
                                     >
                                       Decline
                                     </Button>
@@ -1351,11 +1611,15 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                       className="mhn-supervision-btn-accept"
                                       disabled={requestActionLoading}
                                       onClick={() => {
-                                        setApprovalModalConfig({
-                                          isOpen: true,
-                                          targetName: displayName,
-                                          code: code || '',
-                                        });
+                                        if (req.isApprovalItem) {
+                                          handleApproveApprovalItem(reqId);
+                                        } else {
+                                          setApprovalModalConfig({
+                                            isOpen: true,
+                                            targetName: displayName,
+                                            code: code || '',
+                                          });
+                                        }
                                       }}
                                     >
                                       Approve
@@ -1384,6 +1648,8 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                             type="text"
                             placeholder="Search Logs"
                             className="mhn-logs-search-input"
+                            value={logsSearchQuery}
+                            onChange={(e) => setLogsSearchQuery(e.target.value)}
                           />
                         </div>
 
@@ -1438,16 +1704,26 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                             </tr>
                           </thead>
                           <tbody>
-                            {(liveLogs.length > 0 ? liveLogs : sampleLogs).map((log) => (
-                              <tr key={log.id}>
-                                <td className="mhn-td-date">{log.dateTime}</td>
-                                <td className="mhn-td-activity">{log.activity}</td>
-                                <td className="mhn-td-initiated">{log.initiatedBy}</td>
-                                <td className="mhn-td-action">
-                                  <Button className="mhn-log-action-link">{log.actionText}</Button>
-                                </td>
-                              </tr>
-                            ))}
+                            {(liveLogs.length > 0 ? liveLogs : sampleLogs)
+                              .filter((log) => {
+                                if (!logsSearchQuery.trim()) return true;
+                                const q = logsSearchQuery.toLowerCase();
+                                return (
+                                  (log.activity && log.activity.toLowerCase().includes(q)) ||
+                                  (log.initiatedBy && log.initiatedBy.toLowerCase().includes(q)) ||
+                                  (log.dateTime && log.dateTime.toLowerCase().includes(q))
+                                );
+                              })
+                              .map((log) => (
+                                <tr key={log.id}>
+                                  <td className="mhn-td-date">{log.dateTime}</td>
+                                  <td className="mhn-td-activity">{log.activity}</td>
+                                  <td className="mhn-td-initiated">{log.initiatedBy}</td>
+                                  <td className="mhn-td-action">
+                                    <Button className="mhn-log-action-link">{log.actionText}</Button>
+                                  </td>
+                                </tr>
+                              ))}
                           </tbody>
                         </table>
                       </div>
@@ -1478,6 +1754,12 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
           await handleApproveCodeSubmit(enteredCode);
           setApprovalModalConfig((prev) => ({ ...prev, isOpen: false }));
         }}
+      />
+      <ParentOnboardingModal
+        isOpen={isAddPlayerModalOpen}
+        isStandaloneModal={true}
+        onClose={() => setIsAddPlayerModalOpen(false)}
+        onComplete={handlePlayerAddComplete}
       />
     </div>
   );

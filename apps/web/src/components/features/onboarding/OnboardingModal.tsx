@@ -2,20 +2,23 @@ import React, { useState } from 'react';
 import { OnboardingIllustration } from './OnboardingIllustration';
 import { RoleSelectionForm } from './RoleSelectionForm';
 import { CreateAccountForm, VerifyEmailForm, LoginForm, GuardianApprovalModal, RequestSentCard } from '../auth';
+import { ParentOnboardingModal } from '../parent';
 import { DEFAULT_ROLE_OPTIONS, DEFAULT_SELECTED_ROLE_IDS } from '../../../constants/onboarding';
 import { requestOtp, verifyOtp, submitOnboarding, sendGuardianRequest, calculateAge, UserRole } from '@my-hockey-network/core';
 import type { OtpVerifyResponse } from '@my-hockey-network/contracts';
 import { webAuthStorage } from '../../../platform/auth-storage';
 import { useAuth } from '../../../hooks/use-auth';
+import { formatDobToIso } from '../../../utils/guardianUtils';
 
 interface OnboardingModalProps {
+  initialMode?: 'signup' | 'login';
   onComplete?: (data: { selectedRoles: string[]; accountData?: { fullName: string; email: string; dob: string; parentEmail?: string }; onboardingResult?: any }) => void;
 }
 
-export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) => {
+export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 'login', onComplete }) => {
   const { setAuthSession, loadAuthMe, showToast } = useAuth();
-  const [authMode, setAuthMode] = useState<'signup' | 'login'>('signup');
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1); // 1: Role, 2: CreateAccount, 3: VerifyOTP, 4: GuardianApproval, 5: RequestSent
+  const [authMode, setAuthMode] = useState<'signup' | 'login'>(initialMode);
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1); // 1: Role, 2: CreateAccount, 3: VerifyOTP, 4: GuardianApproval, 5: RequestSent, 6: ParentOnboarding
   const [loginStep, setLoginStep] = useState<1 | 2>(1);
   const [loginEmail, setLoginEmail] = useState<string>('');
   const [resendNotice, setResendNotice] = useState<string | null>(null);
@@ -33,6 +36,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [hasCompletedPreOnboarding, setHasCompletedPreOnboarding] = useState<boolean>(false);
 
   // Mode Switch Handlers
   const handleSwitchToLogin = () => {
@@ -84,16 +88,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
     }
   };
 
-  const formatDobToIso = (dobStr: string): string | undefined => {
-    if (!dobStr) return undefined;
-    const parts = dobStr.split('/');
-    if (parts.length === 3) {
-      const [dd, mm, yyyy] = parts;
-      return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
-    }
-    return dobStr;
-  };
-
   const [verifiedSession, setVerifiedSession] = useState<OtpVerifyResponse | null>(null);
 
   // Step 3: Verify OTP
@@ -115,14 +109,37 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
         webAuthStorage.saveSession(verifyRes);
       }
 
-      // Check if user is minor (< 18)
+      // Check user role and age
       const age = calculateAge(accountData.dob);
       const roleUpper = (selectedRoles[0] || 'PLAYER').toUpperCase();
       const isMinorUser = (roleUpper === 'PLAYER' || roleUpper === 'COACH' || roleUpper === 'STAFF') && age !== null && age >= 5 && age < 18;
+      const isParentUser = roleUpper === 'PARENT';
 
       if (isMinorUser) {
         // Post-OTP: Move to Guardian Approval Request Screen
         setStep(4);
+      } else if (isParentUser) {
+        // Submit Parent Onboarding first to create Parent account & obtain mhn_at token for webAuthStorage
+        try {
+          const isoDob = formatDobToIso(accountData.dob);
+          const onboardingRes = await submitOnboarding({
+            roles: ['PARENT'],
+            displayName: accountData.fullName || 'Parent',
+            dateOfBirth: isoDob,
+            preferredLanguage: 'en',
+          });
+          if (onboardingRes) {
+            webAuthStorage.saveSession(onboardingRes as any);
+            setHasCompletedPreOnboarding(true);
+          }
+        } catch (onboardingErr: any) {
+          console.warn('Parent onboarding pre-submit notice:', onboardingErr);
+          const is409 = onboardingErr?.status === 409 || onboardingErr?.statusCode === 409 || String(onboardingErr?.message || '').toLowerCase().includes('already');
+          if (is409) {
+            setHasCompletedPreOnboarding(true);
+          }
+        }
+        setStep(6);
       } else {
         // Adult: Complete Onboarding immediately
         await finalizeOnboarding(undefined, verifyRes);
@@ -152,16 +169,29 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
 
       const isoDob = formatDobToIso(accountData.dob);
 
-      const onboardingResult = await submitOnboarding({
-        roles: apiRoles.length > 0 ? apiRoles : ['PLAYER'],
-        displayName: accountData.fullName || 'User',
-        dateOfBirth: isoDob,
-        parentEmail,
-        preferredLanguage: 'en',
-      });
+      let onboardingResult;
+      if (!hasCompletedPreOnboarding) {
+        try {
+          onboardingResult = await submitOnboarding({
+            roles: apiRoles.length > 0 ? apiRoles : ['PLAYER'],
+            displayName: accountData.fullName || 'User',
+            dateOfBirth: isoDob,
+            parentEmail,
+            preferredLanguage: 'en',
+          });
+          setHasCompletedPreOnboarding(true);
+        } catch (err: any) {
+          // If onboarding was already completed (e.g. pre-submitted in step 3 or by backend), treat 409 as success
+          const is409 = err?.status === 409 || err?.statusCode === 409 || String(err?.message || '').toLowerCase().includes('already');
+          if (!is409) {
+            throw err;
+          }
+        }
+      }
 
-      if (activeSession) {
-        setAuthSession(activeSession);
+      const sessionToSet = onboardingResult || activeSession;
+      if (sessionToSet) {
+        setAuthSession(sessionToSet as any);
       }
 
       await loadAuthMe(true, true);
@@ -239,11 +269,18 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
       });
 
       if (verifyRes) {
+        webAuthStorage.saveSession(verifyRes);
         setAuthSession(verifyRes);
       }
 
+      const profile = await loadAuthMe(true, true);
+
       if (onComplete) {
-        onComplete({ selectedRoles: ['PLAYER'], accountData: { fullName: 'User', email: loginEmail, dob: '' } });
+        onComplete({
+          selectedRoles: profile?.roleAssignments?.map((r) => r.role) || ['PLAYER'],
+          accountData: { fullName: profile?.profile?.displayName || 'User', email: loginEmail, dob: '' },
+          onboardingResult: profile,
+        });
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Verification code invalid. Please try again.');
@@ -285,9 +322,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
       {step !== 4 && step !== 5 && (
         <OnboardingIllustration
           imageSrc={
-            (authMode === 'signup' && step === 3) || (authMode === 'login' && loginStep === 2)
-              ? '/OTPbg.png'
-              : '/Welcome.png'
+            step === 6
+              ? '/empowering.png'
+              : (authMode === 'signup' && step === 3) || (authMode === 'login' && loginStep === 2)
+                ? '/OTPbg.png'
+                : '/Welcome.png'
           }
         />
       )}
@@ -358,6 +397,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
               onContinue={handleRequestSentContinue}
               onSelectTournament={handleRequestSentContinue}
               onSelectCommunity={handleRequestSentContinue}
+            />
+          )}
+          {step === 6 && (
+            <ParentOnboardingModal
+              isStandaloneModal={false}
+              onComplete={() => finalizeOnboarding()}
+              onClose={() => finalizeOnboarding()}
             />
           )}
         </>

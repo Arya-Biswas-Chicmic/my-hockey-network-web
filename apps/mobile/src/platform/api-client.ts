@@ -11,5 +11,5 @@ export const mobileApiClient = createApiClient({
 });
 
 export function configureMobilePlatform(): void {
-  configureApiClient(mobileApiClient);
+  configureApiClient(mobileApiClient, mobileAuthStorage);
 }

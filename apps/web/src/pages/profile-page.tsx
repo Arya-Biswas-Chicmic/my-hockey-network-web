@@ -3,6 +3,7 @@ import { Input, Select, Textarea } from '../components/common/FormControls';
 import React, { useState } from 'react';
 import { Header } from '../components/common/Header';
 import { PendingBanner } from '../components/common/PendingBanner';
+import { NoDataFound } from '../components/common/no-data-found';
 import { FeedPostCard } from '../components/features/home/FeedPostCard';
 import { CreatePostModal } from '../components/features/home/CreatePostModal';
 import { EditProfileModal, EditProfileFormData, ProfileSkeletonLoader } from '../components/features/profile';
@@ -11,7 +12,8 @@ import { Spinner } from '../components/common/Spinner';
 import { Toast } from '../components/common/Toast';
 import { useAuth } from '../hooks/use-auth';
 import { resolveMediaUrl, resolveCoverUrl } from '../utils/mediaUtils';
-import { createPost, getUserPosts, updateAuthProfile, uploadMediaFile } from '@my-hockey-network/core';
+import { ApprovalCodeModal } from '../components/supervision/ApprovalCodeModal';
+import { createPost, getUserPosts, updateAuthProfile, uploadMediaFile, getPendingGuardianRequests, acceptGuardianRequest, declineGuardianRequest } from '@my-hockey-network/core';
 import { useFeedPermissions } from '../hooks/use-feed-permissions';
 
 interface PageProps {
@@ -21,11 +23,17 @@ interface PageProps {
 
 export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { user, setUserProfile, loadAuthMe } = useAuth();
-  const { permissions } = useFeedPermissions(onNavigate);
+  const { permissions, requirePermission } = useFeedPermissions(onNavigate);
   const coverFileInputRef = React.useRef<HTMLInputElement>(null);
   const [isUploadingCover, setIsUploadingCover] = useState<boolean>(false);
   const [coverUploadMsg, setCoverUploadMsg] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const handleOpenCreatePost = () => {
+    if (requirePermission()) {
+      setIsCreatePostOpen(true);
+    }
+  };
 
   const handleEditCoverClick = () => {
     coverFileInputRef.current?.click();
@@ -45,13 +53,12 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         if (updated) {
           setUserProfile(updated);
         }
-        await loadAuthMe();
+        await loadAuthMe(true, true);
         setCoverUploadMsg('Cover image updated successfully!');
         setTimeout(() => setCoverUploadMsg(null), 3000);
       }
     } catch (err: any) {
-      console.error('❌ [ProfilePage] Cover image upload error:', err);
-      alert(err.message || 'Failed to upload cover image. Please try again.');
+      setToast({ message: err.message || 'Failed to upload cover image. Please try again.', type: 'error' });
     } finally {
       setIsUploadingCover(false);
       if (e.target) {
@@ -80,11 +87,10 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         if (updated) {
           setUserProfile(updated);
         }
-        await loadAuthMe();
+        await loadAuthMe(true, true);
       }
     } catch (err: any) {
-      console.error('❌ [ProfilePage] Avatar upload error:', err);
-      alert(err.message || 'Failed to upload profile picture. Please try again.');
+      setToast({ message: err.message || 'Failed to upload profile picture. Please try again.', type: 'error' });
     } finally {
       setIsUploadingAvatar(false);
       if (e.target) {
@@ -93,8 +99,65 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     }
   };
   const [activeNavTab, setActiveNavTab] = useState('profile');
-  const [activeProfileTab, setActiveProfileTab] = useState<'posts' | 'media' | 'stats' | 'about'>('about');
+  const [activeProfileTab, setActiveProfileTab] = useState<'posts' | 'media' | 'stats' | 'about' | 'guardian-requests'>('about');
   const [activeAboutSection, setActiveAboutSection] = useState<'intro' | 'career' | 'details'>('intro');
+
+  const [pendingGuardianReqs, setPendingGuardianReqs] = useState<any[]>([]);
+  const [isGuardianReqsLoading, setIsGuardianReqsLoading] = useState<boolean>(false);
+  const [guardianReqActionLoading, setGuardianReqActionLoading] = useState<boolean>(false);
+  const [guardianApprovalModalConfig, setGuardianApprovalModalConfig] = useState<{
+    isOpen: boolean;
+    targetName: string;
+    code?: string;
+  }>({ isOpen: false, targetName: '', code: '' });
+
+  const fetchPendingGuardianRequestsList = async () => {
+    try {
+      setIsGuardianReqsLoading(true);
+      const res = await getPendingGuardianRequests();
+      const items = res?.items || (res as any)?.data?.items || [];
+      setPendingGuardianReqs(Array.isArray(items) ? items : []);
+    } catch (err: any) {
+      console.warn('Pending guardian requests load notice:', err);
+    } finally {
+      setIsGuardianReqsLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (activeProfileTab === 'guardian-requests') {
+      fetchPendingGuardianRequestsList();
+    }
+  }, [activeProfileTab]);
+
+  const handleAcceptGuardianReq = async (code: string) => {
+    if (!code) return;
+    setGuardianReqActionLoading(true);
+    try {
+      const res = await acceptGuardianRequest(code);
+      setToast({ message: res.message || 'Guardian request approved successfully!', type: 'success' });
+      fetchPendingGuardianRequestsList();
+    } catch (err: any) {
+      setToast({ message: err.message || 'Failed to approve request. Please check code.', type: 'error' });
+      throw err;
+    } finally {
+      setGuardianReqActionLoading(false);
+    }
+  };
+
+  const handleDeclineGuardianReq = async (code: string) => {
+    if (!code) return;
+    setGuardianReqActionLoading(true);
+    try {
+      const res = await declineGuardianRequest(code);
+      setToast({ message: res.message || 'Guardian request declined.', type: 'success' });
+      fetchPendingGuardianRequestsList();
+    } catch (err: any) {
+      setToast({ message: err.message || 'Failed to decline request.', type: 'error' });
+    } finally {
+      setGuardianReqActionLoading(false);
+    }
+  };
 
   const liveName = user?.profile?.displayName || (user as any)?.displayName || 'Player';
   const rawAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl;
@@ -108,6 +171,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     (user as any)?.coverImageKey;
   const liveCoverImage = resolveCoverUrl(rawCover, '/cover.png');
   const liveRole = user?.primaryRole || user?.profile?.type || 'PLAYER';
+  const isPlayer = liveRole.toUpperCase() === 'PLAYER';
 
   // Live profile field fallbacks from GET /v1/auth/me
   const liveBio = user?.profile?.bio || 'Competitive ice hockey player focused on teamwork, discipline, and continuous improvement on and off the ice.';
@@ -148,21 +212,23 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     setIsSavingIntro(true);
     setIntroSaveMsg(null);
     try {
+      const ALLOWED_POSITIONS = ['Center', 'Left Wing', 'Right Wing', 'Defense', 'Goaltender'];
+      const validPosition = ALLOWED_POSITIONS.includes(positionText) ? positionText : 'Center';
       const dto = {
         bio: bioText || undefined,
-        position: positionText || undefined,
+        position: validPosition,
         jerseyNumber: jerseyText !== '' ? Number(jerseyText) : undefined,
       };
       const res = await updateAuthProfile(dto);
       if (res) {
         setUserProfile(res);
       }
-      await loadAuthMe();
+      await loadAuthMe(true, true);
       setIntroSaveMsg('Intro saved successfully!');
       setTimeout(() => setIntroSaveMsg(null), 3000);
     } catch (err: any) {
       console.error('❌ Save Intro error:', err);
-      alert(err.message || 'Failed to save intro details');
+      setToast({ message: err.message || 'Failed to save intro details', type: 'error' });
     } finally {
       setIsSavingIntro(false);
     }
@@ -181,12 +247,12 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       if (res) {
         setUserProfile(res);
       }
-      await loadAuthMe();
+      await loadAuthMe(true, true);
       setDetailsSaveMsg('Personal details saved successfully!');
       setTimeout(() => setDetailsSaveMsg(null), 3000);
     } catch (err: any) {
       console.error('❌ Save Details error:', err);
-      alert(err.message || 'Failed to save personal details');
+      setToast({ message: err.message || 'Failed to save personal details', type: 'error' });
     } finally {
       setIsSavingDetails(false);
     }
@@ -239,6 +305,9 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       avatarUrlToSend = data?.avatarUrl;
     }
 
+    const ALLOWED_POSITIONS = ['Center', 'Left Wing', 'Right Wing', 'Defense', 'Goaltender'];
+    const validPosition = data?.position && ALLOWED_POSITIONS.includes(data.position) ? data.position : 'Center';
+
     const dto = {
       displayName: data?.displayName || undefined,
       firstName: data?.firstName || undefined,
@@ -246,7 +315,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       bio: data?.bio || undefined,
       city: data?.city || undefined,
       dateOfBirth: formattedDob || undefined,
-      position: data?.position || undefined,
+      position: validPosition,
       shootsCatches: data?.shootsCatches || undefined,
       jerseyNumber: data?.jerseyNumber !== '' && data?.jerseyNumber !== null && data?.jerseyNumber !== undefined ? Number(data?.jerseyNumber) : undefined,
       genderCategory: data?.genderCategory || undefined,
@@ -261,7 +330,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         setUserProfile(res);
       }
     } catch (err: any) {
-      console.error('❌ [ProfilePage] Update Profile Error:', err);
+      console.error(' [ProfilePage] Update Profile Error:', err);
       throw err;
     }
 
@@ -385,6 +454,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
   const [isAddTeamFormOpen, setIsAddTeamFormOpen] = useState(true);
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
+  const [isSavingTeam, setIsSavingTeam] = useState(false);
 
   // Form Fields matching user screenshot
   const [teamNameInput, setTeamNameInput] = useState('');
@@ -411,54 +481,78 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     setIsAddTeamFormOpen(false);
   };
 
-  const handleSaveTeam = () => {
-    if (!teamNameInput.trim()) return;
+  const handleSaveTeam = async () => {
+    if (!teamNameInput.trim() || isSavingTeam) return;
 
-    const pos = teamPositionInput || 'Player';
+    setIsSavingTeam(true);
+    const pos = teamPositionInput || 'Center';
     const city = teamCityInput || 'Location';
     const startStr = startMonthInput && startYearInput ? `${startMonthInput} ${startYearInput}` : (startYearInput || '2024');
     const endStr = isCurrentPlayingInput ? 'Present' : (endMonthInput && endYearInput ? `${endMonthInput} ${endYearInput}` : (endYearInput || 'Present'));
     const subtitleText = `${pos} · ${startStr} - ${endStr} · ${city}`;
 
-    if (editingTeamId) {
-      setCareerTeamsList((prev) =>
-        prev.map((t) =>
-          t.id === editingTeamId
-            ? {
-              ...t,
-              name: teamNameInput,
-              position: teamPositionInput,
-              city: teamCityInput,
-              isCurrent: isCurrentPlayingInput,
-              startMonth: startMonthInput,
-              startYear: startYearInput,
-              endMonth: endMonthInput,
-              endYear: endYearInput,
-              description: teamDescInput,
-              subtitle: subtitleText,
-            }
-            : t
-        )
-      );
-    } else {
-      const newTeam = {
-        id: `t_${Date.now()}`,
-        name: teamNameInput,
-        position: teamPositionInput,
-        city: teamCityInput,
-        isCurrent: isCurrentPlayingInput,
-        startMonth: startMonthInput,
-        startYear: startYearInput,
-        endMonth: endMonthInput,
-        endYear: endYearInput,
-        description: teamDescInput,
-        subtitle: subtitleText,
-        logo: '/kcBlue.png',
-      };
-      setCareerTeamsList((prev) => [newTeam, ...prev]);
-    }
+    const ALLOWED_POSITIONS = ['Center', 'Left Wing', 'Right Wing', 'Defense', 'Goaltender'];
+    const validPosition = ALLOWED_POSITIONS.includes(teamPositionInput) ? teamPositionInput : undefined;
 
-    resetTeamForm();
+    try {
+      // Execute API call PATCH /v1/auth/profile
+      const dto = {
+        position: validPosition,
+        city: teamCityInput || undefined,
+        bio: teamDescInput || undefined,
+      };
+      const res = await updateAuthProfile(dto);
+      if (res) {
+        setUserProfile(res);
+      }
+      await loadAuthMe(true, true);
+
+      if (editingTeamId) {
+        setCareerTeamsList((prev) =>
+          prev.map((t) =>
+            t.id === editingTeamId
+              ? {
+                ...t,
+                name: teamNameInput,
+                position: teamPositionInput,
+                city: teamCityInput,
+                isCurrent: isCurrentPlayingInput,
+                startMonth: startMonthInput,
+                startYear: startYearInput,
+                endMonth: endMonthInput,
+                endYear: endYearInput,
+                description: teamDescInput,
+                subtitle: subtitleText,
+              }
+              : t
+          )
+        );
+      } else {
+        const newTeam = {
+          id: `t_${Date.now()}`,
+          name: teamNameInput,
+          position: teamPositionInput,
+          city: teamCityInput,
+          isCurrent: isCurrentPlayingInput,
+          startMonth: startMonthInput,
+          startYear: startYearInput,
+          endMonth: endMonthInput,
+          endYear: endYearInput,
+          description: teamDescInput,
+          subtitle: subtitleText,
+          logo: '/kcBlue.png',
+        };
+        setCareerTeamsList((prev) => [newTeam, ...prev]);
+      }
+
+      setToast({ message: 'Career team saved successfully!', type: 'success' });
+      resetTeamForm();
+    } catch (err: any) {
+      console.error('❌ Save Career Team Error:', err);
+      setToast({ message: err.message || 'Failed to save career team.', type: 'error' });
+    } finally {
+      setIsSavingTeam(false);
+    }
   };
 
   const handleEditClick = (team: any) => {
@@ -655,7 +749,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
                 <div className="mhn-profile-action-buttons">
                   <Button
-                    onClick={() => alert('Share profile link copied!')}
+                    onClick={() => setToast({ message: 'Profile link copied to clipboard!', type: 'success' })}
                     className="mhn-btn-share-profile"
                   >
                     <div className="share-profile-text">Share Profile</div>
@@ -700,6 +794,15 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 <span>About</span>
                 {activeProfileTab === 'about' && <div className="mhn-profile-tab-indicator" />}
               </Button>
+              {(liveRole.toUpperCase() === 'PARENT' || (user as any)?.roles?.includes('PARENT') || user?.primaryRole === 'PARENT') && (
+                <Button
+                  onClick={() => setActiveProfileTab('guardian-requests')}
+                  className={`mhn-profile-tab-btn ${activeProfileTab === 'guardian-requests' ? 'mhn-profile-tab-active' : ''}`}
+                >
+                  <span>Guardian Requests</span>
+                  {activeProfileTab === 'guardian-requests' && <div className="mhn-profile-tab-indicator" />}
+                </Button>
+              )}
             </div>
           </div>
 
@@ -710,67 +813,57 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               <div className="mhn-posts-container-card">
                 <div className="mhn-posts-header-bar">
                   <h3 className="mhn-posts-title">Posts</h3>
-                  <Button className="mhn-btn-create-post" onClick={() => setIsCreatePostOpen(true)}>Create Post</Button>
+                  <Button className="mhn-btn-create-post" onClick={handleOpenCreatePost}>Create Post</Button>
                 </div>
 
-                {/* Dynamic Live Posts Grid from API if available */}
-                <div className="mhn-posts-grid-wrapper">
-                  {(liveUserPosts.length > 0 ? liveUserPosts : [
-                    {
-                      id: 'post-1',
-                      body: "First tournament of the season! Let's go!",
-                      likeCount: 13,
-                      commentCount: 2,
-                      repostCount: 0,
-                      createdAt: "2026-08-17T11:39:39.830Z",
-                      media: [{ url: "/playHockey.png" }],
-                      authorProfile: { displayName: liveName, avatarUrl: liveAvatar, position: "C", jerseyNumber: 97 }
-                    },
-                    {
-                      id: 'post-2',
-                      body: "🏒 FINAL MATCH DAY! 🏆 Everything we've trained for comes down to this. The ice is ready, and we're ready. #IceHockey #FinalMatch #GameDay",
-                      likeCount: 24,
-                      commentCount: 5,
-                      repostCount: 1,
-                      createdAt: "2026-08-17T11:43:09.856Z",
-                      media: [{ url: "/mhnStars.png" }],
-                      authorProfile: { displayName: liveName, avatarUrl: liveAvatar, position: "C", jerseyNumber: 97 }
-                    }
-                  ]).map((post: any) => {
-                    const author = post.authorProfile || post.author || {};
-                    const postName = author.displayName || liveName;
-                    const postAvatar = author.avatarUrl || liveAvatar;
-                    const postRole = author.position && author.jerseyNumber ? `${author.position} • #${author.jerseyNumber}` : `${liveRole} • #${jerseyText}`;
-                    const mediaUrl = post.media && post.media.length > 0 ? post.media[0].url : null;
-                    const formattedDate = post.createdAt ? new Date(post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '1 Aug';
+                {liveUserPosts.length === 0 ? (
+                  <NoDataFound
+                    title="No Posts Found"
+                    description="There are no posts in your feed right now. Be the first to share an update with your network!"
+                    actionLabel="Create Post"
+                    onAction={handleOpenCreatePost}
+                  />
+                ) : (
+                  <>
+                    <div className="mhn-posts-grid-wrapper">
+                      {liveUserPosts.map((post: any) => {
+                        const author = post.authorProfile || post.author || {};
+                        const postName = author.displayName || liveName;
+                        const postAvatar = author.avatarUrl || liveAvatar;
+                        const postRole = author.position && author.jerseyNumber ? `${author.position} • #${author.jerseyNumber}` : `${liveRole} • #${jerseyText}`;
+                        const mediaUrl = post.media && post.media.length > 0 ? post.media[0].url : null;
+                        const formattedDate = post.createdAt ? new Date(post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Recently';
 
-                    return (
-                      <FeedPostCard
-                        key={post.id}
-                        id={post.id}
-                        authorName={postName}
-                        authorRole={postRole}
-                        authorTime={formattedDate}
-                        authorAvatar={postAvatar}
-                        content={post.body || ''}
-                        postImage={mediaUrl || undefined}
-                        likesCount={post.likeCount ?? post.reactionsCount ?? 0}
-                        commentsCount={post.commentCount ?? post.commentsCount ?? 0}
-                        repostCount={post.repostCount ?? post.repostsCount ?? 0}
-                        userReaction={post.userReaction}
-                        isSelf={true}
-                        onDeleteSuccess={(deletedId, msg) => {
-                          setToast({ message: msg || 'Post deleted successfully!', type: 'success' });
-                        }}
-                      />
-                    );
-                  })}
-                </div>
+                        return (
+                          <FeedPostCard
+                            key={post.id}
+                            id={post.id}
+                            authorName={postName}
+                            authorRole={postRole}
+                            authorTime={formattedDate}
+                            authorAvatar={postAvatar}
+                            content={post.body || ''}
+                            postImage={mediaUrl || undefined}
+                            likesCount={post.likeCount ?? post.reactionsCount ?? 0}
+                            commentsCount={post.commentCount ?? post.commentsCount ?? 0}
+                            repostCount={post.repostCount ?? post.repostsCount ?? 0}
+                            userReaction={post.userReaction}
+                            isSelf={true}
+                            onNavigate={onNavigate}
+                            onDeleteSuccess={(deletedId, msg) => {
+                              setToast({ message: msg || 'Post deleted successfully!', type: 'success' });
+                              setLiveUserPosts((prev) => prev.filter((p) => p.id !== deletedId));
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
 
-                {/* Bottom Show All Button */}
-                <div className="mhn-posts-show-all-divider">
-                  <Button className="mhn-btn-show-all">Show All</Button>
-                </div>
+                    <div className="mhn-posts-show-all-divider">
+                      <Button className="mhn-btn-show-all">Show All</Button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -1127,12 +1220,14 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       >
                         Intro
                       </Button>
-                      <Button
-                        onClick={() => setActiveAboutSection('career')}
-                        className={`mhn-about-menu-btn ${activeAboutSection === 'career' ? 'mhn-about-btn-active' : ''}`}
-                      >
-                        Career
-                      </Button>
+                      {isPlayer && (
+                        <Button
+                          onClick={() => setActiveAboutSection('career')}
+                          className={`mhn-about-menu-btn ${activeAboutSection === 'career' ? 'mhn-about-btn-active' : ''}`}
+                        >
+                          Career
+                        </Button>
+                      )}
                       <Button
                         onClick={() => setActiveAboutSection('details')}
                         className={`mhn-about-menu-btn ${activeAboutSection === 'details' ? 'mhn-about-btn-active' : ''}`}
@@ -1176,33 +1271,41 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                           </div>
                         </div>
 
-                        {/* Position */}
-                        <div className="mhn-about-field-group">
-                          <label className="mhn-about-field-label">Position</label>
-                          <div style={{ position: 'relative' }}>
-                            <Input
-                              type="text"
-                              value={positionText}
-                              onChange={(e) => setPositionText(e.target.value)}
-                              className="mhn-about-input-box"
-                              placeholder="e.g. Center, Winger, Goalie"
-                            />
+                        {/* Position (Only for Players) */}
+                        {isPlayer && (
+                          <div className="mhn-about-field-group">
+                            <label className="mhn-about-field-label">Position</label>
+                            <div style={{ position: 'relative' }}>
+                              <Select
+                                value={positionText && ['Center', 'Left Wing', 'Right Wing', 'Defense', 'Goaltender'].includes(positionText) ? positionText : 'Center'}
+                                onChange={(e) => setPositionText(e.target.value)}
+                                className="mhn-about-input-box"
+                              >
+                                <option value="Center">Center</option>
+                                <option value="Left Wing">Left Wing</option>
+                                <option value="Right Wing">Right Wing</option>
+                                <option value="Defense">Defense</option>
+                                <option value="Goaltender">Goaltender</option>
+                              </Select>
+                            </div>
                           </div>
-                        </div>
+                        )}
 
-                        {/* Jersey Number */}
-                        <div className="mhn-about-field-group">
-                          <label className="mhn-about-field-label">Jersey Number</label>
-                          <div style={{ position: 'relative' }}>
-                            <Input
-                              type="number"
-                              value={jerseyText}
-                              onChange={(e) => setJerseyText(e.target.value)}
-                              className="mhn-about-input-box"
-                              placeholder="e.g. 97"
-                            />
+                        {/* Jersey Number (Only for Players) */}
+                        {isPlayer && (
+                          <div className="mhn-about-field-group">
+                            <label className="mhn-about-field-label">Jersey Number</label>
+                            <div style={{ position: 'relative' }}>
+                              <Input
+                                type="number"
+                                value={jerseyText}
+                                onChange={(e) => setJerseyText(e.target.value)}
+                                className="mhn-about-input-box"
+                                placeholder="e.g. 97"
+                              />
+                            </div>
                           </div>
-                        </div>
+                        )}
 
                         {/* Save & Feedback Row */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
@@ -1557,19 +1660,23 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                               <Button
                                 type="button"
                                 onClick={handleSaveTeam}
-                                disabled={!teamNameInput.trim()}
+                                disabled={!teamNameInput.trim() || isSavingTeam}
                                 style={{
-                                  backgroundColor: teamNameInput.trim() ? '#1860C3' : '#CBD5E1',
+                                  backgroundColor: teamNameInput.trim() && !isSavingTeam ? '#1860C3' : '#CBD5E1',
                                   border: 'none',
                                   borderRadius: '8px',
                                   padding: '8px 24px',
                                   fontSize: '14px',
                                   fontWeight: 600,
                                   color: '#FFFFFF',
-                                  cursor: teamNameInput.trim() ? 'pointer' : 'not-allowed',
+                                  cursor: teamNameInput.trim() && !isSavingTeam ? 'pointer' : 'not-allowed',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
                                 }}
                               >
-                                Save
+                                {isSavingTeam && <Spinner size="sm" color="#FFFFFF" />}
+                                <span>Save</span>
                               </Button>
                             </div>
                           </div>
@@ -1667,47 +1774,31 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                           </div>
                         </div>
 
-                        {/* Gender Category */}
+                        {/* Gender Category Select */}
                         <div className="mhn-about-field-group">
                           <label className="mhn-about-field-label">Gender</label>
-                          <div style={{ position: 'relative' }}>
-                            <Input
-                              type="text"
-                              value={genderText}
+                          <div className="mhn-about-select-wrapper">
+                            <Select
+                              value={genderText || 'Male'}
                               onChange={(e) => setGenderText(e.target.value)}
-                              className="mhn-about-input-box"
-                              placeholder="e.g. Male, Female, Other"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Public Reference ID (Read-Only) */}
-                        <div className="mhn-about-field-group">
-                          <label className="mhn-about-field-label">
-                            Public Reference ID <span style={{ fontSize: '12px', fontWeight: 400, color: '#64748B' }}>(Read-Only)</span>
-                          </label>
-                          <div style={{ position: 'relative' }}>
-                            <Input
-                              type="text"
-                              value={(user?.profile as any)?.publicRef || 'HKY-B5E3EMET'}
-                              disabled
-                              className="mhn-about-input-box mhn-about-input-disabled"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Account Status (Read-Only) */}
-                        <div className="mhn-about-field-group">
-                          <label className="mhn-about-field-label">
-                            Account Status <span style={{ fontSize: '12px', fontWeight: 400, color: '#64748B' }}>(Read-Only)</span>
-                          </label>
-                          <div style={{ position: 'relative' }}>
-                            <Input
-                              type="text"
-                              value={user?.status || 'ACTIVE'}
-                              disabled
-                              className="mhn-about-input-box mhn-about-input-disabled"
-                            />
+                              className="mhn-about-select-box"
+                            >
+                              <option value="Male">Male</option>
+                              <option value="Female">Female</option>
+                            </Select>
+                            <svg
+                              className="mhn-about-select-arrow"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="#64748B"
+                              strokeWidth="2.2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <polyline points="6 9 12 15 18 9" />
+                            </svg>
                           </div>
                         </div>
 
@@ -1770,9 +1861,103 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 </div>
               </div>
             )}
+
+            {/* 5. GUARDIAN REQUESTS TAB (PARENT Role Only) */}
+            {activeProfileTab === 'guardian-requests' && (
+              <div className="mhn-posts-container-card" style={{ padding: '24px' }}>
+                <div className="mhn-posts-header-bar" style={{ marginBottom: '20px' }}>
+                  <h3 className="mhn-posts-title">Pending Guardian Requests</h3>
+                </div>
+
+                {isGuardianReqsLoading ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '24px 0' }}>
+                    <Spinner size="md" color="#0B66C2" />
+                    <span style={{ fontSize: '14px', color: '#64748B' }}>Loading pending guardian requests...</span>
+                  </div>
+                ) : pendingGuardianReqs.length === 0 ? (
+                  <NoDataFound
+                    title="No Pending Guardian Requests"
+                    description="There are currently no pending guardian requests."
+                  />
+                ) : (
+                  <div className="mhn-supervision-requests-grid">
+                    {pendingGuardianReqs.map((req: any, idx: number) => {
+                      const reqId = req.id || `greq_${idx}`;
+                      const child = req.child || req.minor || {};
+                      const displayName = child.displayName || req.displayName || req.name || 'Minor Athlete';
+                      const rawAvatar = child.avatarUrl || req.avatarUrl;
+                      const avatarUrl = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
+                      const roleTag = child.roleTag || child.primaryRole || req.roleTag || 'PLAYER';
+                      const code = req.code || req.devCode || req.inviteCode || '';
+
+                      return (
+                        <div key={reqId} className="mhn-supervision-req-card">
+                          <div className="mhn-supervision-req-avatar-wrapper">
+                            <img
+                              src={avatarUrl}
+                              alt={displayName}
+                              className="mhn-supervision-req-avatar"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = '/userPlaceholder.png';
+                              }}
+                            />
+                          </div>
+                          <h4 className="mhn-supervision-req-name">{displayName}</h4>
+                          <p className="mhn-supervision-req-role">{roleTag}</p>
+
+                          {code && (
+                            <div style={{ margin: '8px 0', fontSize: '13px', color: '#0B66C2', fontWeight: 600 }}>
+                              Code: {code}
+                            </div>
+                          )}
+
+                          <div className="mhn-supervision-req-actions" style={{ marginTop: '12px' }}>
+                            <Button
+                              type="button"
+                              className="mhn-supervision-btn-ignore"
+                              disabled={guardianReqActionLoading}
+                              onClick={() => handleDeclineGuardianReq(code || reqId)}
+                            >
+                              Decline
+                            </Button>
+                            <Button
+                              type="button"
+                              className="mhn-supervision-btn-accept"
+                              disabled={guardianReqActionLoading}
+                              onClick={() => {
+                                setGuardianApprovalModalConfig({
+                                  isOpen: true,
+                                  targetName: displayName,
+                                  code: code || '',
+                                });
+                              }}
+                            >
+                              Approve
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </main>
       )}
+
+      {/* Approval Code Modal for Guardian Requests */}
+      <ApprovalCodeModal
+        isOpen={guardianApprovalModalConfig.isOpen}
+        targetName={guardianApprovalModalConfig.targetName}
+        initialCode={guardianApprovalModalConfig.code}
+        loading={guardianReqActionLoading}
+        onClose={() => setGuardianApprovalModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        onSubmit={async (enteredCode) => {
+          await handleAcceptGuardianReq(enteredCode);
+          setGuardianApprovalModalConfig((prev) => ({ ...prev, isOpen: false }));
+        }}
+      />
 
       {/* Create Post Modal */}
       {isCreatePostOpen && (

@@ -23,9 +23,10 @@ import { useAuth } from '../hooks/use-auth';
 function RouteTree() {
   const navigate = useNavigate();
   const { handleLogout } = useAuth();
-  const navigateTo = (route: AppRoute | string) => {
+  const navigateTo = (route: AppRoute | string, extraData?: any) => {
     const definition = ROUTE_MAP[route as AppRoute];
-    navigate(definition?.path ?? `/${String(route).replace(/^\//, '')}`);
+    const targetPath = definition?.path ?? `/${String(route).replace(/^\//, '')}`;
+    navigate(targetPath, { state: extraData });
   };
   const logout = async () => {
     await handleLogout();

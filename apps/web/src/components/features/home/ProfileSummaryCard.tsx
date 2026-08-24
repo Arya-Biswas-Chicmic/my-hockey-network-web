@@ -47,6 +47,9 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
 
   const resolvedLocation = user?.profile?.city || (location !== 'Austria, Europe' ? location : undefined) || '-';
 
+  const { checkSupervisionPermission, assertSupervisionPermission } = useAuth();
+  const canCreatePost = checkSupervisionPermission('create_posts');
+
   return (
     <div className="mhn-profile-summary-stack">
       {/* Profile Card */}
@@ -111,7 +114,17 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
       </div>
 
       {/* Post Action Button */}
-      <Button onClick={onPostClick} className="mhn-btn-post">
+      <Button
+        onClick={() => assertSupervisionPermission('create_posts', onPostClick || (() => {}))}
+        className="mhn-btn-post"
+        title={!canCreatePost ? 'Parent did not give permission' : undefined}
+      >
+        {!canCreatePost && (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginRight: '6px' }}>
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+        )}
         Post
       </Button>
     </div>

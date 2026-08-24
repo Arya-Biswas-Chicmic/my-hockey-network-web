@@ -299,7 +299,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             followers="-"
             following="-"
             onPostClick={() => {
-              if (requirePermission()) {
+              if (requirePermission('CREATE_POST')) {
                 setIsCreatePostOpen(true);
               }
             }}
@@ -307,36 +307,38 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         </aside>
 
         <section className="mhn-layout-col-center">
-          <div className="mhn-feed-header-bar">
-            <div className="mhn-feed-search-wrapper">
-              <svg className="mhn-feed-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <Input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search"
-                className="mhn-feed-search-input"
-              />
-            </div>
+          {(filteredPosts.length > 0 || searchQuery.trim().length > 0) && (
+            <div className="mhn-feed-header-bar">
+              <div className="mhn-feed-search-wrapper">
+                <svg className="mhn-feed-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <Input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search"
+                  className="mhn-feed-search-input"
+                />
+              </div>
 
-            <div className="mhn-feed-filter-wrapper">
-              <Select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="mhn-feed-filter-select"
-              >
-                <option value="RECENT">Newest First</option>
-                <option value="POPULAR">Most Popular</option>
-                <option value="TRENDING">Trending (48h)</option>
-              </Select>
-              <svg className="mhn-feed-filter-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
+              <div className="mhn-feed-filter-wrapper">
+                <Select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="mhn-feed-filter-select"
+                >
+                  <option value="RECENT">Newest First</option>
+                  <option value="POPULAR">Most Popular</option>
+                  <option value="TRENDING">Trending (48h)</option>
+                </Select>
+                <svg className="mhn-feed-filter-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
             </div>
-          </div>
+          )}
 
           {isFeedRefreshing ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

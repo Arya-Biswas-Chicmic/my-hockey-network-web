@@ -83,7 +83,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
 
   const handleSendComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!requirePermission()) return;
+    if (!requirePermission('COMMENT_ON_POSTS')) return;
     const text = newCommentText.trim();
     if (!text || isSubmitting) return;
 

@@ -41,6 +41,20 @@ export interface ApiClient {
   request<T>(path: string, options?: RequestInit): Promise<T>;
 }
 
+export function formatCurlCommand(url: string, method: string, headers: Headers, body?: BodyInit | null): string {
+  const lines: string[] = [`curl -X ${method} "${url}"`];
+  headers.forEach((value, key) => {
+    lines.push(`  -H "${key}: ${value}"`);
+  });
+  if (body != null) {
+    const bodyStr = typeof body === 'string' ? body : String(body);
+    if (bodyStr && bodyStr !== '{}') {
+      lines.push(`  -d '${bodyStr}'`);
+    }
+  }
+  return lines.join(' \\\n');
+}
+
 export function createApiClient(options: ApiClientOptions): ApiClient {
   const fetchImpl = options.fetchImpl ?? fetch;
   const storage = options.sessionAdapter ?? options.authStorage;
@@ -49,23 +63,28 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
   }
   let refreshPromise: Promise<boolean> | null = null;
 
-  const buildHeaders = async (input?: HeadersInit): Promise<Headers> => {
+    const buildHeaders = async (input?: HeadersInit): Promise<Headers> => {
     const headers = new Headers(input);
     headers.set('Accept', 'application/json');
     headers.set('Accept-Language', 'en');
     headers.set('X-Client-Type', options.clientType);
+    headers.set('ngrok-skip-browser-warning', 'true');
+    headers.set('Bypass-Tunnel-Reminder', 'true');
+    headers.set('localtunnel-skip-warning', 'true');
 
     const [accessToken, csrfToken] = await Promise.all([
       storage.getAccessToken(),
       storage.getCsrfToken(),
     ]);
-    if (accessToken && !headers.has('Authorization')) {
-      headers.set('Authorization', `Bearer ${accessToken}`);
+    if (accessToken) {
+      if (!headers.has('Authorization')) headers.set('Authorization', `Bearer ${accessToken}`);
+      if (!headers.has('mhn_at')) headers.set('mhn_at', accessToken);
     }
     if (csrfToken) {
       if (!headers.has('X-CSRF-Token')) headers.set('X-CSRF-Token', csrfToken);
       if (!headers.has('X-XSRF-Token')) headers.set('X-XSRF-Token', csrfToken);
       if (!headers.has('csrf-token')) headers.set('csrf-token', csrfToken);
+      if (!headers.has('mhn_csrf')) headers.set('mhn_csrf', csrfToken);
     }
     return headers;
   };
@@ -112,6 +131,10 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
 
     const url = buildUrl(path);
 
+    if (typeof console !== 'undefined' && typeof console.info === 'function') {
+      console.info(`📡 [API Call] ${method} ${url}\n${formatCurlCommand(url, method, headers, body)}`);
+    }
+
     let response: Response;
     try {
       response = await fetchImpl(url, {
@@ -134,11 +157,27 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
       void storage.saveSession({ csrfToken: decodeURIComponent(serverCsrf) });
     }
 
+    const serverAccessToken =
+      response.headers.get('mhn_at') ||
+      response.headers.get('x-access-token') ||
+      response.headers.get('authorization');
+    if (serverAccessToken) {
+      const cleanToken = serverAccessToken.replace(/^Bearer\s+/i, '');
+      void storage.saveSession({ accessToken: cleanToken });
+    }
+
     let envelope: ApiEnvelope<T>;
     try {
       envelope = (await response.json()) as ApiEnvelope<T>;
-      if (envelope?.data && typeof envelope.data === 'object' && 'csrfToken' in envelope.data && (envelope.data as any).csrfToken) {
-        void storage.saveSession({ csrfToken: String((envelope.data as any).csrfToken) });
+      if (envelope?.data && typeof envelope.data === 'object') {
+        const dataObj = envelope.data as any;
+        if ('csrfToken' in dataObj && dataObj.csrfToken) {
+          void storage.saveSession({ csrfToken: String(dataObj.csrfToken) });
+        }
+        const bodyToken = dataObj.accessToken || dataObj.token || dataObj.mhn_at || dataObj.jwt || dataObj.access_token;
+        if (bodyToken) {
+          void storage.saveSession({ accessToken: String(bodyToken) });
+        }
       }
     } catch {
       throw new ApiError(response.status, `Failed to parse response: ${response.statusText}`);

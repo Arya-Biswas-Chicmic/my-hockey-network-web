@@ -7,7 +7,7 @@ import { getSupervisionData } from '@my-hockey-network/core';
 
 interface HeaderProps {
   activeTab?: string;
-  onTabChange?: (tab: string) => void;
+  onTabChange?: (tab: string, extraData?: any) => void;
   onLogout?: () => void;
   userName?: string;
   userAvatar?: string;
@@ -31,10 +31,8 @@ export const Header: React.FC<HeaderProps> = ({
   const rawAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl;
   const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
   const [activeUser, setActiveUser] = useState({ name: resolvedName, avatar: resolvedAvatar });
-  const [familyMembers, setFamilyMembers] = useState<Array<{ id: string; name: string; avatar: string }>>([
-    { id: 'w1', name: 'Steve', avatar: '/jack.png' },
-    { id: 'w2', name: 'David', avatar: '/lucas.png' },
-  ]);
+  const [isFamilyLoading, setIsFamilyLoading] = useState(false);
+  const [familyMembers, setFamilyMembers] = useState<Array<{ id: string; name: string; avatar: string }>>([]);
 
   React.useEffect(() => {
     setCurrentTab(activeTab);
@@ -50,6 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
   React.useEffect(() => {
     const isParent = user?.primaryRole === 'PARENT' || user?.roleAssignments?.some((r: any) => r.role === 'PARENT');
     if (isParent) {
+      setIsFamilyLoading(true);
       getSupervisionData()
         .then((data: any) => {
           const children = data?.children || data?.data?.children || [];
@@ -60,11 +59,19 @@ export const Header: React.FC<HeaderProps> = ({
               avatar: resolveMediaUrl(c.avatarUrl, c.avatar || '/userPlaceholder.png'),
             }));
             setFamilyMembers(mapped);
+          } else {
+            setFamilyMembers([]);
           }
         })
         .catch(() => {
-          // Retain default fallback
+          setFamilyMembers([]);
+        })
+        .finally(() => {
+          setIsFamilyLoading(false);
         });
+    } else {
+      setIsFamilyLoading(false);
+      setFamilyMembers([]);
     }
   }, [user]);
 
@@ -256,7 +263,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </Button>
 
                 {/* Dynamic Family Members Box */}
-                {familyMembers.length > 0 && (
+                {(isFamilyLoading || familyMembers.length > 0) && (
                   <div className="mhn-dropdown-family-box">
                     <div
                       className="mhn-family-header"
@@ -271,7 +278,9 @@ export const Header: React.FC<HeaderProps> = ({
                             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                           </svg>
                         </div>
-                        <span className="mhn-dropdown-item-text">Family ({familyMembers.length})</span>
+                        <span className="mhn-dropdown-item-text">
+                          Family {isFamilyLoading ? '...' : `(${familyMembers.length})`}
+                        </span>
                       </div>
                       <svg className={`mhn-family-chevron ${isFamilyExpanded ? 'mhn-chevron-rotated' : ''}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="6 9 12 15 18 9" />
@@ -280,23 +289,70 @@ export const Header: React.FC<HeaderProps> = ({
 
                     {isFamilyExpanded && (
                       <div className="mhn-family-list">
-                        {familyMembers.map((member) => (
-                          <div
-                            key={member.id}
-                            className="mhn-family-member-item"
-                            onClick={() => handleSwitchUser(member.name, member.avatar)}
-                          >
-                            <div className="mhn-dropdown-item-left">
-                              <img src={member.avatar} alt={member.name} className="mhn-family-member-img" />
-                              <span className="mhn-family-member-name">{member.name}</span>
-                            </div>
-                            <div className="mhn-family-switch-btn" title={`Switch to ${member.name}`}>
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-                              </svg>
-                            </div>
+                        {isFamilyLoading ? (
+                          <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div style={{ height: '28px', borderRadius: '6px', backgroundColor: '#e2e8f0', animation: 'mhn-spin 1.5s infinite opacity' }} />
+                            <div style={{ height: '28px', borderRadius: '6px', backgroundColor: '#e2e8f0', animation: 'mhn-spin 1.5s infinite opacity' }} />
                           </div>
-                        ))}
+                        ) : (
+                          <>
+                            {familyMembers.slice(0, 3).map((member) => (
+                              <div
+                                key={member.id}
+                                className="mhn-family-member-item"
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => {
+                                  setIsProfileOpen(false);
+                                  if (onTabChange) {
+                                    onTabChange('supervision', { selectedWardId: member.id });
+                                  }
+                                }}
+                              >
+                                <div className="mhn-dropdown-item-left">
+                                  <img src={member.avatar} alt={member.name} className="mhn-family-member-img" />
+                                  <span className="mhn-family-member-name">{member.name}</span>
+                                </div>
+                                <div className="mhn-family-switch-btn" title={`View ${member.name} in Supervision`}>
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="9 18 15 12 9 6" />
+                                  </svg>
+                                </div>
+                              </div>
+                            ))}
+                            {familyMembers.length > 3 && (
+                              <div
+                                className="mhn-family-show-more-item"
+                                style={{
+                                  padding: '10px 12px',
+                                  fontSize: '13px',
+                                  fontWeight: 600,
+                                  color: '#0B66C2',
+                                  cursor: 'pointer',
+                                  textAlign: 'center',
+                                  borderTop: '1px solid #E2E8F0',
+                                  backgroundColor: '#F8FAFC',
+                                  borderBottomLeftRadius: '8px',
+                                  borderBottomRightRadius: '8px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '6px',
+                                }}
+                                onClick={() => {
+                                  setIsProfileOpen(false);
+                                  if (onTabChange) {
+                                    onTabChange('supervision');
+                                  }
+                                }}
+                              >
+                                <span>Show More ({familyMembers.length - 3})</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0B66C2" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="9 18 15 12 9 6" />
+                                </svg>
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
                     )}
                   </div>

@@ -4,6 +4,7 @@ export type FeedPermissionReason =
   | 'UNAUTHENTICATED'
   | 'PROFILE_INCOMPLETE'
   | 'GUARDIAN_APPROVAL_REQUIRED'
+  | 'SUPERVISION_CONTROL_RESTRICTED'
   | 'ALLOWED';
 
 export type FeedCtaAction =
@@ -69,9 +70,13 @@ export function isGuardianApproved(user: AuthMeResponse | null): boolean {
  * 1. Authentication
  * 2. Profile completion
  * 3. Guardian approval (when required)
- * 4. Feed interaction allowed
+ * 4. Supervision control restrictions (when specified)
+ * 5. Feed interaction allowed
  */
-export function evaluateFeedPermissions(user: AuthMeResponse | null): FeedPermissionResult {
+export function evaluateFeedPermissions(
+  user: AuthMeResponse | null,
+  controls?: Record<string, boolean | string> | null
+): FeedPermissionResult {
   if (!user) {
     return {
       allowed: false,
@@ -102,6 +107,16 @@ export function evaluateFeedPermissions(user: AuthMeResponse | null): FeedPermis
     };
   }
 
+  if (controls && controls.VIEW_FEED === false) {
+    return {
+      allowed: false,
+      reason: 'SUPERVISION_CONTROL_RESTRICTED',
+      message: 'Your parent/guardian has disabled viewing feed posts.',
+      ctaText: null,
+      ctaAction: null,
+    };
+  }
+
   return {
     allowed: true,
     reason: 'ALLOWED',
@@ -111,22 +126,74 @@ export function evaluateFeedPermissions(user: AuthMeResponse | null): FeedPermis
   };
 }
 
-export function canCreatePost(user: AuthMeResponse | null): boolean {
-  return evaluateFeedPermissions(user).allowed;
+export function canCreatePost(
+  user: AuthMeResponse | null,
+  controls?: Record<string, boolean | string> | null
+): boolean {
+  if (!evaluateFeedPermissions(user, controls).allowed) return false;
+  if (controls && controls.CREATE_POST === false) return false;
+  return true;
 }
 
-export function canLikePost(user: AuthMeResponse | null): boolean {
-  return evaluateFeedPermissions(user).allowed;
+export function canLikePost(
+  user: AuthMeResponse | null,
+  controls?: Record<string, boolean | string> | null
+): boolean {
+  if (!evaluateFeedPermissions(user, controls).allowed) return false;
+  if (controls && controls.REACT_TO_POSTS === false) return false;
+  return true;
 }
 
-export function canComment(user: AuthMeResponse | null): boolean {
-  return evaluateFeedPermissions(user).allowed;
+export function canComment(
+  user: AuthMeResponse | null,
+  controls?: Record<string, boolean | string> | null
+): boolean {
+  if (!evaluateFeedPermissions(user, controls).allowed) return false;
+  if (controls && controls.COMMENT_ON_POSTS === false) return false;
+  return true;
 }
 
-export function canSharePost(user: AuthMeResponse | null): boolean {
-  return evaluateFeedPermissions(user).allowed;
+export function canSharePost(
+  user: AuthMeResponse | null,
+  controls?: Record<string, boolean | string> | null
+): boolean {
+  if (!evaluateFeedPermissions(user, controls).allowed) return false;
+  if (controls && controls.SHARE_POSTS === false) return false;
+  return true;
 }
 
-export function canRepost(user: AuthMeResponse | null): boolean {
-  return evaluateFeedPermissions(user).allowed;
+export function canRepost(
+  user: AuthMeResponse | null,
+  controls?: Record<string, boolean | string> | null
+): boolean {
+  if (!evaluateFeedPermissions(user, controls).allowed) return false;
+  if (controls && controls.SHARE_POSTS === false) return false;
+  return true;
+}
+
+export function canFollowOthers(
+  user: AuthMeResponse | null,
+  controls?: Record<string, boolean | string> | null
+): boolean {
+  if (!evaluateFeedPermissions(user, controls).allowed) return false;
+  if (controls && controls.FOLLOW_OTHERS === false) return false;
+  return true;
+}
+
+export function canSendMessages(
+  user: AuthMeResponse | null,
+  controls?: Record<string, boolean | string> | null
+): boolean {
+  if (!evaluateFeedPermissions(user, controls).allowed) return false;
+  if (controls && controls.SEND_MESSAGES === false) return false;
+  return true;
+}
+
+export function canCreateGroupChats(
+  user: AuthMeResponse | null,
+  controls?: Record<string, boolean | string> | null
+): boolean {
+  if (!evaluateFeedPermissions(user, controls).allowed) return false;
+  if (controls && controls.CREATE_GROUP_CHATS === false) return false;
+  return true;
 }

@@ -14,5 +14,5 @@ export const webApiClient = createApiClient({
 });
 
 export function configureWebPlatform(): void {
-  configureApiClient(webApiClient);
+  configureApiClient(webApiClient, webAuthStorage);
 }

@@ -1,6 +1,6 @@
 import { createAuthService } from '@my-hockey-network/auth';
 import type { AuthStorageAdapter } from '@my-hockey-network/api-client';
-import { apiFetch, getConfiguredApiClient } from './client';
+import { apiFetch, getConfiguredApiClient, getConfiguredAuthStorage } from './client';
 import { API_ENDPOINTS } from './urls';
 export * from './signUpRules';
 import type {
@@ -14,16 +14,8 @@ import type {
   GuardianRequestResponse
 } from './types';
 
-const noopStorage: AuthStorageAdapter = {
-  getAccessToken: () => null,
-  getRefreshToken: () => null,
-  getCsrfToken: () => null,
-  saveSession: () => {},
-  clearSession: () => {},
-};
-
 function getSharedAuthService() {
-  return createAuthService(getConfiguredApiClient(), noopStorage);
+  return createAuthService(getConfiguredApiClient(), getConfiguredAuthStorage());
 }
 
 /**

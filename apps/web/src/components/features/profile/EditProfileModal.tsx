@@ -125,6 +125,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
   const userEmail = user?.email || 'saksham.garg@chicmicstudios.in';
   const userPrimaryRole = user?.primaryRole || user?.profile?.type || 'PLAYER';
+  const isPlayer = userPrimaryRole.toUpperCase() === 'PLAYER';
 
   // Compute dirty state
   const isFormDirty = JSON.stringify(initialForm) !== JSON.stringify(formData) || !!selectedAvatarFile;
@@ -643,118 +644,198 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                   Gender Category
                 </label>
-                <Select
-                  value={formData.genderCategory}
-                  onChange={(e) => handleChange('genderCategory', e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '44px',
-                    borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
-                    padding: '0 12px',
-                    fontSize: '14px',
-                    outline: 'none',
-                    backgroundColor: '#FFFFFF',
-                  }}
-                >
-                  {GENDER_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Select>
+                <div style={{ position: 'relative' }}>
+                  <Select
+                    value={formData.genderCategory}
+                    onChange={(e) => handleChange('genderCategory', e.target.value)}
+                    style={{
+                      width: '100%',
+                      height: '44px',
+                      borderRadius: '8px',
+                      border: '1px solid #CBD5E1',
+                      padding: '0 36px 0 12px',
+                      fontSize: '14px',
+                      outline: 'none',
+                      backgroundColor: '#FFFFFF',
+                      appearance: 'none',
+                      WebkitAppearance: 'none',
+                      MozAppearance: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {GENDER_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </Select>
+                  <svg
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      pointerEvents: 'none',
+                    }}
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#64748B"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Section 3: Player Athletic & Hockey Details */}
-          <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', marginBottom: '16px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-              Player & Athletic Information
-            </h3>
+          {/* Section 3: Player Athletic & Hockey Details (Only for Players) */}
+          {isPlayer && (
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', marginBottom: '16px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
+                Player & Athletic Information
+              </h3>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Position
-                </label>
-                <Select
-                  value={formData.position}
-                  onChange={(e) => handleChange('position', e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '44px',
-                    borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
-                    padding: '0 12px',
-                    fontSize: '14px',
-                    outline: 'none',
-                    backgroundColor: '#FFFFFF',
-                  }}
-                >
-                  {POSITION_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                    Position
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <Select
+                      value={formData.position}
+                      onChange={(e) => handleChange('position', e.target.value)}
+                      style={{
+                        width: '100%',
+                        height: '44px',
+                        borderRadius: '8px',
+                        border: '1px solid #CBD5E1',
+                        padding: '0 36px 0 12px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        backgroundColor: '#FFFFFF',
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {POSITION_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </Select>
+                    <svg
+                      style={{
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        pointerEvents: 'none',
+                      }}
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#64748B"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Shoots / Catches
-                </label>
-                <Select
-                  value={formData.shootsCatches}
-                  onChange={(e) => handleChange('shootsCatches', e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '44px',
-                    borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
-                    padding: '0 12px',
-                    fontSize: '14px',
-                    outline: 'none',
-                    backgroundColor: '#FFFFFF',
-                  }}
-                >
-                  {SHOOTS_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                    Shoots / Catches
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <Select
+                      value={formData.shootsCatches}
+                      onChange={(e) => handleChange('shootsCatches', e.target.value)}
+                      style={{
+                        width: '100%',
+                        height: '44px',
+                        borderRadius: '8px',
+                        border: '1px solid #CBD5E1',
+                        padding: '0 36px 0 12px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        backgroundColor: '#FFFFFF',
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {SHOOTS_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </Select>
+                    <svg
+                      style={{
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        pointerEvents: 'none',
+                      }}
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#64748B"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Jersey Number (#)
-                </label>
-                <Input
-                  type="number"
-                  min="0"
-                  max="99"
-                  value={formData.jerseyNumber}
-                  onChange={(e) => handleChange('jerseyNumber', e.target.value)}
-                  placeholder="e.g. 97"
-                  style={{
-                    width: '100%',
-                    height: '44px',
-                    borderRadius: '8px',
-                    border: errors.jerseyNumber ? '1px solid #DC2626' : '1px solid #CBD5E1',
-                    padding: '0 12px',
-                    fontSize: '14px',
-                    outline: 'none',
-                  }}
-                />
-                {errors.jerseyNumber && (
-                  <span style={{ fontSize: '12px', color: '#DC2626', marginTop: '4px', display: 'block' }}>
-                    {errors.jerseyNumber}
-                  </span>
-                )}
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                    Jersey Number (#)
+                  </label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="99"
+                    value={formData.jerseyNumber}
+                    onChange={(e) => handleChange('jerseyNumber', e.target.value)}
+                    placeholder="e.g. 97"
+                    style={{
+                      width: '100%',
+                      height: '44px',
+                      borderRadius: '8px',
+                      border: errors.jerseyNumber ? '1px solid #DC2626' : '1px solid #CBD5E1',
+                      padding: '0 12px',
+                      fontSize: '14px',
+                      outline: 'none',
+                    }}
+                  />
+                  {errors.jerseyNumber && (
+                    <span style={{ fontSize: '12px', color: '#DC2626', marginTop: '4px', display: 'block' }}>
+                      {errors.jerseyNumber}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
+          )}
 
+          {/* Location & Bio Section */}
+          <div style={{ marginBottom: '24px' }}>
             <div style={{ marginTop: '16px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                 City / Location

@@ -21,7 +21,7 @@ export interface ApprovalItem {
 }
 
 export interface ApproveRequestDTO {
-  mode?: 'SINGLE_USE' | 'DURATION' | 'UNBOUNDED';
+  mode?: 'SINGLE_USE' | 'DURATION' | 'UNBOUNDED' | 'INDEFINITE';
   expiresAt?: string; // Required when mode === 'DURATION'
   note?: string;
 }

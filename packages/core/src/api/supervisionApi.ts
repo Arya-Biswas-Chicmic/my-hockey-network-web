@@ -4,7 +4,7 @@ import { API_ENDPOINTS } from './urls';
 export interface CreateManagedChildDTO {
   displayName: string;
   firstName: string;
-  lastName: string;
+  lastName?: string;
   dateOfBirth: string; // YYYY-MM-DD
   guardianRelation: 'MOTHER' | 'FATHER' | 'LEGAL_GUARDIAN' | 'GRANDPARENT' | 'OTHER';
   email?: string;
@@ -43,6 +43,44 @@ export interface SupervisionLogItem {
 }
 
 /**
+ * Strips empty strings (""), null, or undefined fields from an object before sending payload
+ */
+export function cleanEmptyFields<T extends Record<string, any>>(obj: T): Partial<T> {
+  const result: Partial<T> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined && value !== null && value !== '') {
+      result[key as keyof T] = value;
+    }
+  }
+  return result;
+}
+
+/**
+ * Format any date string (DD/MM/YYYY, DD-MM-YYYY, or YYYY-MM-DD) into ISO format YYYY-MM-DD
+ */
+export function formatDobToIso(dob: string): string {
+  if (!dob) return '';
+  const trimmed = dob.trim();
+  // Already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return trimmed;
+  }
+  // DD/MM/YYYY or DD-MM-YYYY
+  if (/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/.test(trimmed)) {
+    const parts = trimmed.split(/[\/\-]/);
+    const [dd, mm, yyyy] = parts;
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  // YYYY/MM/DD
+  if (/^\d{4}[\/\-]\d{2}[\/\-]\d{2}$/.test(trimmed)) {
+    const parts = trimmed.split(/[\/\-]/);
+    const [yyyy, mm, dd] = parts;
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  return trimmed;
+}
+
+/**
  * Fetch Supervision Data (Parent-only list of managed children)
  */
 export async function getSupervisionData(clientType: 'web' | 'mobile' = 'web'): Promise<{ children: SupervisionChildItem[] }> {
@@ -60,11 +98,18 @@ export async function createManagedChild(
   dto: CreateManagedChildDTO,
   clientType: 'web' | 'mobile' = 'web'
 ): Promise<{ child: SupervisionChildItem }> {
+  const formattedDto: CreateManagedChildDTO = {
+    ...dto,
+    dateOfBirth: formatDobToIso(dto.dateOfBirth),
+  };
+
+  const cleanedPayload = cleanEmptyFields(formattedDto);
+
   return apiFetch<{ child: SupervisionChildItem }>(
     API_ENDPOINTS.SUPERVISION.CHILDREN,
     {
       method: 'POST',
-      body: JSON.stringify(dto),
+      body: JSON.stringify(cleanedPayload),
     },
     clientType
   );
@@ -120,4 +165,40 @@ export async function getSupervisionLogs(
     { method: 'GET' },
     clientType
   );
+}
+
+export interface SupervisionPermissionsResponse {
+  controlsMap: Record<string, boolean | string>;
+  raw: any;
+}
+
+/**
+ * Fetch Supervision Permissions for the logged-in minor player (GET /v1/supervision/me/permissions)
+ * Note: Only called for minor players / wards, NOT for parent or coach roles.
+ */
+export async function getMySupervisionPermissions(
+  clientType: 'web' | 'mobile' = 'web'
+): Promise<SupervisionPermissionsResponse> {
+  const res = await apiFetch<any>(
+    API_ENDPOINTS.SUPERVISION.MY_PERMISSIONS,
+    { method: 'GET' },
+    clientType
+  );
+
+  const controlsList = res?.controls || (res as any)?.data?.controls || [];
+  const controlsMap: Record<string, boolean | string> = {};
+
+  if (Array.isArray(controlsList)) {
+    controlsList.forEach((item: any) => {
+      const key = item.control || item.name;
+      if (key) {
+        controlsMap[key] = item.value;
+      }
+    });
+  }
+
+  return {
+    controlsMap,
+    raw: res,
+  };
 }
