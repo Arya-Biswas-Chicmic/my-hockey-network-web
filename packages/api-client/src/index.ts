@@ -6,7 +6,7 @@ export interface AuthStorageAdapter {
   getAccessToken(): Promise<string | null> | string | null;
   getRefreshToken(): Promise<string | null> | string | null;
   getCsrfToken(): Promise<string | null> | string | null;
-  saveSession(session: OtpVerifyResponse): Promise<void> | void;
+  saveSession(session: Partial<OtpVerifyResponse>): Promise<void> | void;
   clearSession(): Promise<void> | void;
 }
 
@@ -51,9 +51,9 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
 
   const buildHeaders = async (input?: HeadersInit): Promise<Headers> => {
     const headers = new Headers(input);
+    headers.set('Accept', 'application/json');
     headers.set('Accept-Language', 'en');
     headers.set('X-Client-Type', options.clientType);
-    headers.set('ngrok-skip-browser-warning', 'true');
 
     const [accessToken, csrfToken] = await Promise.all([
       storage.getAccessToken(),
@@ -62,10 +62,21 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     if (accessToken && !headers.has('Authorization')) {
       headers.set('Authorization', `Bearer ${accessToken}`);
     }
-    if (csrfToken && !headers.has('X-CSRF-Token')) {
-      headers.set('X-CSRF-Token', csrfToken);
+    if (csrfToken) {
+      if (!headers.has('X-CSRF-Token')) headers.set('X-CSRF-Token', csrfToken);
+      if (!headers.has('X-XSRF-Token')) headers.set('X-XSRF-Token', csrfToken);
+      if (!headers.has('csrf-token')) headers.set('csrf-token', csrfToken);
     }
     return headers;
+  };
+
+  const buildUrl = (targetPath: string): string => {
+    if (targetPath.startsWith('http://') || targetPath.startsWith('https://')) {
+      return targetPath;
+    }
+    const cleanBase = options.baseUrl.replace(/\/+$/, '');
+    const cleanPath = targetPath.startsWith('/') ? targetPath : `/${targetPath}`;
+    return `${cleanBase}${cleanPath}`;
   };
 
   const refresh = async (): Promise<boolean> => {
@@ -74,7 +85,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     if (refreshToken) headers.set('X-Refresh-Token', refreshToken);
 
     try {
-      const response = await fetchImpl(`${options.baseUrl}${API_ENDPOINTS.AUTH.REFRESH}`, {
+      const response = await fetchImpl(buildUrl(API_ENDPOINTS.AUTH.REFRESH), {
         method: 'POST',
         headers,
         body: '{}',
@@ -99,9 +110,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
       if (body == null) body = '{}';
     }
 
-    const url = path.startsWith('http')
-      ? path
-      : `${options.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+    const url = buildUrl(path);
 
     let response: Response;
     try {
@@ -117,15 +126,27 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
       throw new ApiError(500, message);
     }
 
+    const serverCsrf =
+      response.headers.get('x-csrf-token') ||
+      response.headers.get('csrf-token') ||
+      response.headers.get('x-xsrf-token');
+    if (serverCsrf) {
+      void storage.saveSession({ csrfToken: decodeURIComponent(serverCsrf) });
+    }
+
     let envelope: ApiEnvelope<T>;
     try {
       envelope = (await response.json()) as ApiEnvelope<T>;
+      if (envelope?.data && typeof envelope.data === 'object' && 'csrfToken' in envelope.data && (envelope.data as any).csrfToken) {
+        void storage.saveSession({ csrfToken: String((envelope.data as any).csrfToken) });
+      }
     } catch {
       throw new ApiError(response.status, `Failed to parse response: ${response.statusText}`);
     }
 
+    const isCsrfError = response.status === 403 && envelope?.message?.toLowerCase().includes('csrf');
     const canRefresh =
-      response.status === 401 &&
+      (response.status === 401 || isCsrfError) &&
       !isRetry &&
       !path.includes(API_ENDPOINTS.AUTH.REFRESH) &&
       !path.includes(API_ENDPOINTS.AUTH.LOGOUT);
@@ -135,8 +156,10 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
         refreshPromise = null;
       });
       if (await refreshPromise) return request<T>(path, requestOptions, true);
-      await storage.clearSession();
-      if (!path.includes(API_ENDPOINTS.AUTH.ME)) await options.onUnauthorized?.();
+      if (!isCsrfError) {
+        await storage.clearSession();
+        if (!path.includes(API_ENDPOINTS.AUTH.ME)) await options.onUnauthorized?.();
+      }
     }
 
     if (!response.ok || !envelope.success) {

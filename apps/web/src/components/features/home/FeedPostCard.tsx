@@ -6,6 +6,7 @@ import { Toast } from '../../common/Toast';
 import { Spinner } from '../../common/Spinner';
 
 import { PostCommentSection } from './PostCommentSection';
+import { useFeedPermissions } from '../../../hooks/use-feed-permissions';
 
 export interface FeedPostProps {
   id: string;
@@ -44,6 +45,7 @@ export interface FeedPostProps {
   onRepostComplete?: () => void;
   onDeleteSuccess?: (id: string, message?: string) => void;
   onUpdateSuccess?: (id: string, newContent: string) => void;
+  onNavigate?: (screen: string) => void;
 }
 
 export const FeedPostCard: React.FC<FeedPostProps> = ({
@@ -67,7 +69,9 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   onRepostComplete,
   onDeleteSuccess,
   onUpdateSuccess,
+  onNavigate,
 }) => {
+  const { requirePermission } = useFeedPermissions(onNavigate);
   const [postContent, setPostContent] = useState(initialContent);
   const [likes, setLikes] = useState(initialLikes);
   const [reposts, setReposts] = useState(initialReposts);
@@ -155,6 +159,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   };
 
   const handleLike = async () => {
+    if (!requirePermission()) return;
     if (isLiking) return;
     setIsLiking(true);
 
@@ -186,6 +191,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   };
 
   const handleShare = async () => {
+    if (!requirePermission()) return;
     if (isSharing) return;
     setIsSharing(true);
 
@@ -464,7 +470,11 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
           </Button>
 
           <Button
-            onClick={() => setShowComments((prev) => !prev)}
+            onClick={() => {
+              if (requirePermission()) {
+                setShowComments((prev) => !prev);
+              }
+            }}
             className={`mhn-action-item ${showComments ? 'mhn-action-active' : ''}`}
             aria-label="Toggle comments"
           >

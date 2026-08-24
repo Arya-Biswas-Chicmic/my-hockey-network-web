@@ -10,6 +10,7 @@ interface VerifyEmailFormProps {
   onResendCode?: () => void;
   loading?: boolean;
   errorMessage?: string | null;
+  resendNotice?: string | null;
 }
 
 export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
@@ -19,11 +20,11 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
   onResendCode,
   loading = false,
   errorMessage = null,
+  resendNotice = null,
 }) => {
   const [code, setCode] = useState<string[]>(['', '', '', '', '', '']);
   const [otpError, setOtpError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState<number>(0);
-  const [resendNotice, setResendNotice] = useState<string | null>(null);
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -90,15 +91,11 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
   };
 
   const handleResendClick = () => {
-    if (resendCooldown > 0) return;
+    if (resendCooldown > 0 || loading) return;
     if (onResendCode) {
       onResendCode();
     }
     setResendCooldown(30);
-    setResendNotice(`A new 6-digit code has been sent to ${email}`);
-    setTimeout(() => {
-      setResendNotice(null);
-    }, 4000);
   };
 
   const activeError = otpError || errorMessage;

@@ -203,11 +203,15 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
             <label className="auth-label" htmlFor="dob">
               {CREATE_ACCOUNT_STRINGS.dobLabel}
             </label>
-            {currentAge !== null && (
+            {currentAge !== null && currentAge >= 0 && currentAge <= 110 ? (
               <span style={{ fontSize: '12px', fontWeight: 600, color: currentAge < 18 ? '#D97706' : '#4B5563' }}>
                 Age: {currentAge} yrs {currentAge < 18 ? '(Under 18)' : ''}
               </span>
-            )}
+            ) : dob.length === 10 ? (
+              <span style={{ fontSize: '12px', fontWeight: 600, color: '#EF4444' }}>
+                Invalid Date
+              </span>
+            ) : null}
           </div>
           <div className="auth-input-wrapper" style={{ position: 'relative' }}>
             <Input

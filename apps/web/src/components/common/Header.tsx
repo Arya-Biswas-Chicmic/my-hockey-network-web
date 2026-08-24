@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../hooks/use-auth';
 import { LogoutModal } from './LogoutModal';
 import { resolveMediaUrl } from '../../utils/mediaUtils';
+import { getSupervisionData } from '@my-hockey-network/core';
 
 interface HeaderProps {
   activeTab?: string;
@@ -19,7 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
   userName,
   userAvatar,
 }) => {
-  const { user, handleLogout: contextLogout } = useAuth();
+  const { user, showToast, handleLogout: contextLogout } = useAuth();
   const [currentTab, setCurrentTab] = useState(activeTab);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isFamilyExpanded, setIsFamilyExpanded] = useState(true);
@@ -30,6 +31,10 @@ export const Header: React.FC<HeaderProps> = ({
   const rawAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl;
   const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
   const [activeUser, setActiveUser] = useState({ name: resolvedName, avatar: resolvedAvatar });
+  const [familyMembers, setFamilyMembers] = useState<Array<{ id: string; name: string; avatar: string }>>([
+    { id: 'w1', name: 'Steve', avatar: '/jack.png' },
+    { id: 'w2', name: 'David', avatar: '/lucas.png' },
+  ]);
 
   React.useEffect(() => {
     setCurrentTab(activeTab);
@@ -41,6 +46,27 @@ export const Header: React.FC<HeaderProps> = ({
     const avatar = resolveMediaUrl(av, '/userPlaceholder.png');
     setActiveUser({ name, avatar });
   }, [user, userName]);
+
+  React.useEffect(() => {
+    const isParent = user?.primaryRole === 'PARENT' || user?.roleAssignments?.some((r: any) => r.role === 'PARENT');
+    if (isParent) {
+      getSupervisionData()
+        .then((data: any) => {
+          const children = data?.children || data?.data?.children || [];
+          if (Array.isArray(children) && children.length > 0) {
+            const mapped = children.map((c: any) => ({
+              id: c.userId || c.profileId || c.id || c.displayName,
+              name: c.displayName || c.firstName || c.name || 'Child',
+              avatar: resolveMediaUrl(c.avatarUrl, c.avatar || '/userPlaceholder.png'),
+            }));
+            setFamilyMembers(mapped);
+          }
+        })
+        .catch(() => {
+          // Retain default fallback
+        });
+    }
+  }, [user]);
 
   const handleTabClick = (tabId: string) => {
     setCurrentTab(tabId);
@@ -229,58 +255,52 @@ export const Header: React.FC<HeaderProps> = ({
                   </svg>
                 </Button>
 
-                {/* Family (2) Box */}
-                <div className="mhn-dropdown-family-box">
-                  <div
-                    className="mhn-family-header"
-                    onClick={() => setIsFamilyExpanded(!isFamilyExpanded)}
-                  >
-                    <div className="mhn-dropdown-item-left">
-                      <div className="mhn-family-icon-box">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1860C3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                          <circle cx="9" cy="7" r="4" />
-                          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                        </svg>
+                {/* Dynamic Family Members Box */}
+                {familyMembers.length > 0 && (
+                  <div className="mhn-dropdown-family-box">
+                    <div
+                      className="mhn-family-header"
+                      onClick={() => setIsFamilyExpanded(!isFamilyExpanded)}
+                    >
+                      <div className="mhn-dropdown-item-left">
+                        <div className="mhn-family-icon-box">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1860C3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                          </svg>
+                        </div>
+                        <span className="mhn-dropdown-item-text">Family ({familyMembers.length})</span>
                       </div>
-                      <span className="mhn-dropdown-item-text">Family  (2)</span>
+                      <svg className={`mhn-family-chevron ${isFamilyExpanded ? 'mhn-chevron-rotated' : ''}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
                     </div>
-                    <svg className={`mhn-family-chevron ${isFamilyExpanded ? 'mhn-chevron-rotated' : ''}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
+
+                    {isFamilyExpanded && (
+                      <div className="mhn-family-list">
+                        {familyMembers.map((member) => (
+                          <div
+                            key={member.id}
+                            className="mhn-family-member-item"
+                            onClick={() => handleSwitchUser(member.name, member.avatar)}
+                          >
+                            <div className="mhn-dropdown-item-left">
+                              <img src={member.avatar} alt={member.name} className="mhn-family-member-img" />
+                              <span className="mhn-family-member-name">{member.name}</span>
+                            </div>
+                            <div className="mhn-family-switch-btn" title={`Switch to ${member.name}`}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                              </svg>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-
-                  {isFamilyExpanded && (
-                    <div className="mhn-family-list">
-                      {/* Member 1: Steve */}
-                      <div className="mhn-family-member-item" onClick={() => handleSwitchUser('Steve', '/steve.png')}>
-                        <div className="mhn-dropdown-item-left">
-                          <img src="/steve.png" alt="Steve" className="mhn-family-member-img" />
-                          <span className="mhn-family-member-name">Steve</span>
-                        </div>
-                        <div className="mhn-family-switch-btn" title="Switch to Steve">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-                          </svg>
-                        </div>
-                      </div>
-
-                      {/* Member 2: David */}
-                      <div className="mhn-family-member-item" onClick={() => handleSwitchUser('David', '/david.png')}>
-                        <div className="mhn-dropdown-item-left">
-                          <img src="/david.png" alt="David" className="mhn-family-member-img" />
-                          <span className="mhn-family-member-name">David</span>
-                        </div>
-                        <div className="mhn-family-switch-btn" title="Switch to David">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                )}
 
                 {/* Settings & Privacy */}
                 <Button className="mhn-dropdown-item" onClick={() => { setIsProfileOpen(false); handleTabClick('settings'); }}>
@@ -299,7 +319,18 @@ export const Header: React.FC<HeaderProps> = ({
                 </Button>
 
                 {/* Supervision */}
-                <Button className="mhn-dropdown-item" onClick={() => { setIsProfileOpen(false); handleTabClick('supervision'); }}>
+                <Button
+                  className="mhn-dropdown-item"
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    const isParent = user?.primaryRole === 'PARENT' || user?.roleAssignments?.some((r: any) => r.role === 'PARENT');
+                    if (!isParent) {
+                      showToast('Supervision is only available for Parent / Guardian accounts.', 'info');
+                      return;
+                    }
+                    handleTabClick('supervision');
+                  }}
+                >
                   <div className="mhn-dropdown-item-left">
                     <div className="mhn-dropdown-icon-box">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1860C3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

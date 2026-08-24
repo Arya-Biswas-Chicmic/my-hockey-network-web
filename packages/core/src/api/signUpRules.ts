@@ -8,6 +8,7 @@ export function calculateAge(dobInput: string | Date | null | undefined): number
   if (!dobInput) return null;
 
   let birthDate: Date;
+  const currentYear = new Date().getFullYear();
 
   if (dobInput instanceof Date) {
     birthDate = dobInput;
@@ -18,14 +19,20 @@ export function calculateAge(dobInput: string | Date | null | undefined): number
     // Handle DD/MM/YYYY format
     if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
       const [dd, mm, yyyy] = trimmed.split('/').map(Number);
+      if (mm < 1 || mm > 12 || dd < 1 || dd > 31 || yyyy < 1900 || yyyy > currentYear) {
+        return null;
+      }
       birthDate = new Date(yyyy, mm - 1, dd);
     } 
     // Handle YYYY-MM-DD format
     else if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(trimmed)) {
       const [yyyy, mm, dd] = trimmed.split('-').map(Number);
+      if (mm < 1 || mm > 12 || dd < 1 || dd > 31 || yyyy < 1900 || yyyy > currentYear) {
+        return null;
+      }
       birthDate = new Date(yyyy, mm - 1, dd);
     } else {
-      birthDate = new Date(trimmed);
+      return null;
     }
   } else {
     return null;
@@ -41,6 +48,10 @@ export function calculateAge(dobInput: string | Date | null | undefined): number
 
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
     age--;
+  }
+
+  if (age < 0 || age > 120) {
+    return null;
   }
 
   return age;

@@ -15,7 +15,7 @@ export const mobileAuthStorage: AuthStorageAdapter = {
   getAccessToken: () => SecureStore.getItemAsync(ACCESS_TOKEN_KEY),
   getRefreshToken: () => SecureStore.getItemAsync(REFRESH_TOKEN_KEY),
   getCsrfToken: () => SecureStore.getItemAsync(CSRF_TOKEN_KEY),
-  saveSession: async (session: OtpVerifyResponse) => {
+  saveSession: async (session: Partial<OtpVerifyResponse>) => {
     await Promise.all([
       saveOrDelete(ACCESS_TOKEN_KEY, session.accessToken),
       saveOrDelete(REFRESH_TOKEN_KEY, session.refreshToken),

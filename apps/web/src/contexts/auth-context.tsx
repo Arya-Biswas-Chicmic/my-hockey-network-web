@@ -13,10 +13,15 @@ export interface AuthContextType {
   hasBootstrapped: boolean;
   setUserProfile: (profile: AuthMeResponse) => void;
   setAuthSession: (session: OtpVerifyResponse) => void;
-  loadAuthMe: (silent?: boolean) => Promise<AuthMeResponse | null>;
+  loadAuthMe: (silent?: boolean, force?: boolean) => Promise<AuthMeResponse | null>;
   handleLogout: () => Promise<void>;
   hideToast: () => void;
-  showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
+  showToast: (
+    message: string,
+    type?: 'success' | 'error' | 'info',
+    actionText?: string,
+    onActionClick?: () => void
+  ) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,12 +31,18 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [session, setSession] = useState<OtpVerifyResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasBootstrapped, setHasBootstrapped] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'info';
+    actionText?: string;
+    onActionClick?: () => void;
+  } | null>(null);
   const authMePromise = useRef<Promise<AuthMeResponse | null> | null>(null);
   const isLoggingOut = useRef(false);
 
-  const loadAuthMe = useCallback(async (silent = false): Promise<AuthMeResponse | null> => {
+  const loadAuthMe = useCallback(async (silent = false, force = false): Promise<AuthMeResponse | null> => {
     if (isLoggingOut.current) return null;
+    if (force) authMePromise.current = null;
     if (authMePromise.current) return authMePromise.current;
     if (!silent) setIsLoading(true);
 
@@ -100,11 +111,20 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         loadAuthMe,
         handleLogout,
         hideToast: () => setToast(null),
-        showToast: (message, type = 'error') => setToast({ message, type }),
+        showToast: (message, type = 'error', actionText, onActionClick) =>
+          setToast({ message, type, actionText, onActionClick }),
       }}
     >
       {children}
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          actionText={toast.actionText}
+          onActionClick={toast.onActionClick}
+          onClose={() => setToast(null)}
+        />
+      )}
     </AuthContext.Provider>
   );
 }

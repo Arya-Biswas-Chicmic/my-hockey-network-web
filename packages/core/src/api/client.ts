@@ -9,13 +9,17 @@ export function configureApiClient(client: ApiClient): void {
   configuredClient = client;
 }
 
+export function getConfiguredApiClient(): ApiClient {
+  if (!configuredClient) {
+    throw new Error('API client is not configured. Configure the web or mobile platform adapter first.');
+  }
+  return configuredClient;
+}
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
   _clientType: ClientType = 'web',
 ): Promise<T> {
-  if (!configuredClient) {
-    throw new Error('API client is not configured. Configure the web or mobile platform adapter first.');
-  }
-  return configuredClient.request<T>(path, options);
+  return getConfiguredApiClient().request<T>(path, options);
 }

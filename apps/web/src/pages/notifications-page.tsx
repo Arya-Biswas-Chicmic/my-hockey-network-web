@@ -2,6 +2,7 @@ import { Button } from '../components/common/Button';
 import React, { useState } from 'react';
 import { Header } from '../components/common/Header';
 import { PendingBanner } from '../components/common/PendingBanner';
+import { useFeedPermissions } from '../hooks/use-feed-permissions';
 import { NoDataFound } from '../components/common/no-data-found';
 import { NotificationCard, NotificationItemProps } from '../components/features/notifications/NotificationCard';
 
@@ -11,6 +12,7 @@ interface PageProps {
 }
 
 export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
+  const { permissions } = useFeedPermissions(onNavigate);
   const [activeNavTab, setActiveNavTab] = useState('notifications');
   const [activeFilterTab, setActiveFilterTab] = useState('all');
 
@@ -54,11 +56,21 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
       />
 
       {/* Pending Guardian Notice Banner */}
-      <PendingBanner
-        message="Guardian invitation pending. Your guardian has not yet accepted your request to connect."
-        actionText="Manage Invitations"
-        onActionClick={() => alert('Manage invitations clicked')}
-      />
+      {!permissions.allowed && permissions.message && (
+        <PendingBanner
+          message={permissions.message}
+          actionText={permissions.ctaText || 'Complete Profile'}
+          onActionClick={() => {
+            if (permissions.ctaAction === 'COMPLETE_PROFILE') {
+              if (onNavigate) onNavigate('profile');
+            } else if (permissions.ctaAction === 'GUARDIAN_APPROVAL') {
+              if (onNavigate) onNavigate('supervision');
+            } else if (permissions.ctaAction === 'LOGIN') {
+              if (onNavigate) onNavigate('login');
+            }
+          }}
+        />
+      )}
 
       {/* Main Centered Content Container */}
       <main className="mhn-notifications-main-container">

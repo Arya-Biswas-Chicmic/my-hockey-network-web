@@ -13,6 +13,7 @@ import { AuthMeResponse, createPost, getFeed, uploadMediaFile, completeMediaUplo
 import { useAuth } from '../hooks/use-auth';
 
 import { resolveCoverUrl } from '../utils/mediaUtils';
+import { useFeedPermissions } from '../hooks/use-feed-permissions';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -21,6 +22,7 @@ interface PageProps {
 
 export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { user, loadAuthMe } = useAuth();
+  const { permissions, requirePermission } = useFeedPermissions(onNavigate);
   const [activeNavTab, setActiveNavTab] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
@@ -179,6 +181,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   };
 
   const handleCreatePost = async (content: string, postImage?: string, privacySettings?: any, imageFile?: File) => {
+    if (!requirePermission()) return;
     let audienceEnum: 'PUBLIC' | 'CONNECTIONS' | 'GROUP' | 'CUSTOM' = 'PUBLIC';
     if (privacySettings?.audience === 'Groups') {
       audienceEnum = 'GROUP';
@@ -270,11 +273,21 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         onLogout={onLogout}
       />
 
-      <PendingBanner
-        message="Guardian invitation pending. Your guardian has not yet accepted your request to connect."
-        actionText="Manage Invitations"
-        onActionClick={() => alert('Manage invitations clicked')}
-      />
+      {!permissions.allowed && permissions.message && (
+        <PendingBanner
+          message={permissions.message}
+          actionText={permissions.ctaText || 'Complete Profile'}
+          onActionClick={() => {
+            if (permissions.ctaAction === 'COMPLETE_PROFILE') {
+              if (onNavigate) onNavigate('profile');
+            } else if (permissions.ctaAction === 'GUARDIAN_APPROVAL') {
+              if (onNavigate) onNavigate('supervision');
+            } else if (permissions.ctaAction === 'LOGIN') {
+              if (onNavigate) onNavigate('login');
+            }
+          }}
+        />
+      )}
 
       <main className="mhn-home-main-layout">
         <aside className="mhn-layout-col-left">
@@ -285,7 +298,11 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             teamLogo="/HC.png"
             followers="-"
             following="-"
-            onPostClick={() => setIsCreatePostOpen(true)}
+            onPostClick={() => {
+              if (requirePermission()) {
+                setIsCreatePostOpen(true);
+              }
+            }}
           />
         </aside>
 
@@ -345,6 +362,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 <FeedPostCard
                   key={post.id}
                   {...post}
+                  onNavigate={onNavigate}
                   onFollowChange={handleFollowChange}
                   onDeleteSuccess={(deletedId, msg) => {
                     setToast({ message: msg || 'Post deleted successfully!', type: 'success' });

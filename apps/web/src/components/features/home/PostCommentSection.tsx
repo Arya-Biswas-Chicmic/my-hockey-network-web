@@ -5,6 +5,7 @@ import { getComments, addComment } from '@my-hockey-network/core';
 import { useAuth } from '../../../hooks/use-auth';
 import { Spinner } from '../../common/Spinner';
 import { resolveMediaUrl } from '../../../utils/mediaUtils';
+import { useFeedPermissions } from '../../../hooks/use-feed-permissions';
 
 export interface CommentItem {
   id: string;
@@ -40,6 +41,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
   initialCommentsCount = 0,
 }) => {
   const { user } = useAuth();
+  const { requirePermission } = useFeedPermissions();
   const rawUserAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl;
   const currentUserAvatar = resolveMediaUrl(rawUserAvatar, '/userPlaceholder.png');
   const currentUserName = user?.profile?.displayName || (user as any)?.displayName || 'You';
@@ -81,6 +83,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
 
   const handleSendComment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!requirePermission()) return;
     const text = newCommentText.trim();
     if (!text || isSubmitting) return;
 

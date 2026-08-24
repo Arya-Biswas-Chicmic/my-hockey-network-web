@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Header } from '../components/common/Header';
 import { PendingBanner } from '../components/common/PendingBanner';
+import { useFeedPermissions } from '../hooks/use-feed-permissions';
 import { ChatSidebar } from '../components/features/messaging/ChatSidebar';
 import { ChatConversation } from '../components/features/messaging/ChatConversation';
 
@@ -10,6 +11,7 @@ interface PageProps {
 }
 
 export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
+  const { permissions } = useFeedPermissions(onNavigate);
   const [activeNavTab, setActiveNavTab] = useState('messaging');
   const [selectedChatId, setSelectedChatId] = useState('c1');
 
@@ -30,11 +32,21 @@ export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
       />
 
       {/* Pending Guardian Notice Banner */}
-      <PendingBanner
-        message="Guardian invitation pending. Your guardian has not yet accepted your request to connect."
-        actionText="Manage Invitations"
-        onActionClick={() => alert('Manage invitations clicked')}
-      />
+      {!permissions.allowed && permissions.message && (
+        <PendingBanner
+          message={permissions.message}
+          actionText={permissions.ctaText || 'Complete Profile'}
+          onActionClick={() => {
+            if (permissions.ctaAction === 'COMPLETE_PROFILE') {
+              if (onNavigate) onNavigate('profile');
+            } else if (permissions.ctaAction === 'GUARDIAN_APPROVAL') {
+              if (onNavigate) onNavigate('supervision');
+            } else if (permissions.ctaAction === 'LOGIN') {
+              if (onNavigate) onNavigate('login');
+            }
+          }}
+        />
+      )}
 
       {/* Main 2-Column Content Layout */}
       <main className="mhn-messaging-main-container">

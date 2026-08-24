@@ -26,6 +26,8 @@ Last reviewed: 2026-08-24
 - Extended automated boundary checks to reject React Navigation in web and browser routing in mobile.
 - Updated shared API client options to support sessionStorage adapter alias and added unit test coverage.
 - Centralized API endpoint URLs into @my-hockey-network/contracts/urls.ts and updated auth/api-client services to reference API_ENDPOINTS catalog.
+- Updated Vite development server HMR configuration and local runtime environment configuration for seamless local dev startup.
+- Implemented production-ready Centralized Feed-Access Permission System in @my-hockey-network/domain based on /v1/auth/me response (evaluating profile completion and guardian approval across Web & Mobile).
 
 ## Current quality gates
 
@@ -35,8 +37,8 @@ Last reviewed: 2026-08-24
 - Production web build must pass.
 - Web/native UI ownership and npm-only dependency management checks must pass.
 
-Latest measured shared-code coverage: 94.73% statements, 88.99% branches, 100% functions, and
-95.9% lines. The suite currently contains 37 tests across six test files. The latest web, Android,
+Latest measured shared-code coverage: 92.54% statements, 86.45% branches, 100% functions, and
+93.19% lines. The suite currently contains 48 tests across 8 test files. The latest web, Android,
 and iOS production bundle commands pass.
 
 ## Maintainability backlog

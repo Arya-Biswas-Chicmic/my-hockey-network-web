@@ -12,6 +12,7 @@ import { Toast } from '../components/common/Toast';
 import { useAuth } from '../hooks/use-auth';
 import { resolveMediaUrl, resolveCoverUrl } from '../utils/mediaUtils';
 import { createPost, getUserPosts, updateAuthProfile, uploadMediaFile } from '@my-hockey-network/core';
+import { useFeedPermissions } from '../hooks/use-feed-permissions';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -20,6 +21,7 @@ interface PageProps {
 
 export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { user, setUserProfile, loadAuthMe } = useAuth();
+  const { permissions } = useFeedPermissions(onNavigate);
   const coverFileInputRef = React.useRef<HTMLInputElement>(null);
   const [isUploadingCover, setIsUploadingCover] = useState<boolean>(false);
   const [coverUploadMsg, setCoverUploadMsg] = useState<string | null>(null);
@@ -485,11 +487,21 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       />
 
       {/* Pending Guardian Notice Banner */}
-      <PendingBanner
-        message="Guardian invitation pending. Your guardian has not yet accepted your request to connect."
-        actionText="Manage Invitations"
-        onActionClick={() => alert('Manage invitations clicked')}
-      />
+      {!permissions.allowed && permissions.message && (
+        <PendingBanner
+          message={permissions.message}
+          actionText={permissions.ctaText || 'Complete Profile'}
+          onActionClick={() => {
+            if (permissions.ctaAction === 'COMPLETE_PROFILE') {
+              setIsEditProfileOpen(true);
+            } else if (permissions.ctaAction === 'GUARDIAN_APPROVAL') {
+              if (onNavigate) onNavigate('supervision');
+            } else if (permissions.ctaAction === 'LOGIN') {
+              if (onNavigate) onNavigate('login');
+            }
+          }}
+        />
+      )}
 
       {/* Main Centered Content Container */}
       {!user || isPostsLoading ? (

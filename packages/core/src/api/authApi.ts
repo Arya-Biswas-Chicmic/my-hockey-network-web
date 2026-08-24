@@ -1,4 +1,6 @@
-import { apiFetch } from './client';
+import { createAuthService } from '@my-hockey-network/auth';
+import type { AuthStorageAdapter } from '@my-hockey-network/api-client';
+import { apiFetch, getConfiguredApiClient } from './client';
 import { API_ENDPOINTS } from './urls';
 export * from './signUpRules';
 import type {
@@ -12,43 +14,44 @@ import type {
   GuardianRequestResponse
 } from './types';
 
-/**
- * Request OTP via EMAIL or SMS (Shared for Web & Mobile)
- */
-export async function requestOtp(dto: OtpRequestDTO, clientType: 'web' | 'mobile' = 'web'): Promise<OtpRequestResponse> {
-  return apiFetch<OtpRequestResponse>(API_ENDPOINTS.AUTH.OTP_REQUEST, {
-    method: 'POST',
-    body: JSON.stringify(dto),
-  }, clientType);
+const noopStorage: AuthStorageAdapter = {
+  getAccessToken: () => null,
+  getRefreshToken: () => null,
+  getCsrfToken: () => null,
+  saveSession: () => {},
+  clearSession: () => {},
+};
+
+function getSharedAuthService() {
+  return createAuthService(getConfiguredApiClient(), noopStorage);
 }
 
 /**
- * Verify OTP code (Shared for Web & Mobile)
+ * Request OTP via EMAIL or SMS (Shared for Web & Mobile - delegates to @my-hockey-network/auth)
  */
-export async function verifyOtp(dto: OtpVerifyDTO, clientType: 'web' | 'mobile' = 'web'): Promise<OtpVerifyResponse> {
-  return apiFetch<OtpVerifyResponse>(API_ENDPOINTS.AUTH.OTP_VERIFY, {
-    method: 'POST',
-    body: JSON.stringify(dto),
-  }, clientType);
+export async function requestOtp(dto: OtpRequestDTO, _clientType: 'web' | 'mobile' = 'web'): Promise<OtpRequestResponse> {
+  return getSharedAuthService().requestOtp(dto);
 }
 
 /**
- * Submit onboarding profile data (Shared for Web & Mobile)
+ * Verify OTP code (Shared for Web & Mobile - delegates to @my-hockey-network/auth)
  */
-export async function submitOnboarding(dto: OnboardingDTO, clientType: 'web' | 'mobile' = 'web'): Promise<OnboardingResponse> {
-  return apiFetch<OnboardingResponse>(API_ENDPOINTS.AUTH.ONBOARDING, {
-    method: 'POST',
-    body: JSON.stringify(dto),
-  }, clientType);
+export async function verifyOtp(dto: OtpVerifyDTO, _clientType: 'web' | 'mobile' = 'web'): Promise<OtpVerifyResponse> {
+  return getSharedAuthService().verifyOtp(dto);
 }
 
 /**
- * Fetch current user session details & profile (Shared for Web & Mobile)
+ * Submit onboarding profile data (Shared for Web & Mobile - delegates to @my-hockey-network/auth)
  */
-export async function getAuthMe(clientType: 'web' | 'mobile' = 'web'): Promise<AuthMeResponse> {
-  return apiFetch<AuthMeResponse>(API_ENDPOINTS.AUTH.ME, {
-    method: 'GET',
-  }, clientType);
+export async function submitOnboarding(dto: OnboardingDTO, _clientType: 'web' | 'mobile' = 'web'): Promise<OnboardingResponse> {
+  return getSharedAuthService().submitOnboarding(dto);
+}
+
+/**
+ * Fetch current user session details & profile (Shared for Web & Mobile - delegates to @my-hockey-network/auth)
+ */
+export async function getAuthMe(_clientType: 'web' | 'mobile' = 'web'): Promise<AuthMeResponse> {
+  return getSharedAuthService().getMe();
 }
 
 export interface UpdateProfileDTO {
@@ -78,22 +81,18 @@ export async function updateAuthProfile(dto: UpdateProfileDTO, clientType: 'web'
 }
 
 /**
- * Logout current device session (Shared for Web & Mobile)
+ * Logout current device session (Shared for Web & Mobile - delegates to @my-hockey-network/auth)
  */
-export async function logout(clientType: 'web' | 'mobile' = 'web'): Promise<{ message: string }> {
-  return apiFetch<{ message: string }>(API_ENDPOINTS.AUTH.LOGOUT, {
-    method: 'POST',
-  }, clientType);
+export async function logout(_clientType: 'web' | 'mobile' = 'web'): Promise<{ message: string }> {
+  await getSharedAuthService().logout();
+  return { message: 'Logged out successfully' };
 }
 
 /**
- * Send minor guardian connection request (Shared for Web & Mobile)
+ * Send minor guardian connection request (Shared for Web & Mobile - delegates to @my-hockey-network/auth)
  */
-export async function sendGuardianRequest(parentEmail: string, clientType: 'web' | 'mobile' = 'web'): Promise<GuardianRequestResponse> {
-  return apiFetch<GuardianRequestResponse>(API_ENDPOINTS.RELATIONSHIPS.GUARDIAN_REQUESTS, {
-    method: 'POST',
-    body: JSON.stringify({ parentEmail }),
-  }, clientType);
+export async function sendGuardianRequest(parentEmail: string, _clientType: 'web' | 'mobile' = 'web'): Promise<GuardianRequestResponse> {
+  return getSharedAuthService().sendGuardianRequest(parentEmail);
 }
 
 /**

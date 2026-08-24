@@ -6,6 +6,7 @@
   "private": true,
   "dependencies": {
     "@my-hockey-network/api-client": "*",
+    "@my-hockey-network/auth": "*",
     "@my-hockey-network/contracts": "*",
     "@my-hockey-network/types": "*"
   }

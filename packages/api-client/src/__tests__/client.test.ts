@@ -220,4 +220,19 @@ describe('platform-neutral API client', () => {
     expect(new ApiError(400, 'Bad', { key: 123 }).key).toBe('123');
     expect(new ApiError(400, 'Bad').key).toBe('Bad');
   });
+
+  it('normalizes base URLs with trailing slashes during requests and token refresh', async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(JSON.stringify({ success: true, statusCode: 200, message: 'ok', data: { ok: true } }), { status: 200 }),
+    );
+    const client = createApiClient({
+      baseUrl: 'https://api.example.test/v1/',
+      clientType: 'web',
+      authStorage: storage(),
+      fetchImpl,
+    });
+
+    await client.request('/feed');
+    expect(fetchImpl.mock.calls[0][0]).toBe('https://api.example.test/v1/feed');
+  });
 });

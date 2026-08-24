@@ -26,10 +26,13 @@ describe('Sign Up Rules & Age Validation', () => {
       expect(calculateAge(dobIso)).toBe(16);
     });
 
-    it('returns null for invalid date strings', () => {
+    it('returns null for invalid date strings or out-of-bound years', () => {
       expect(calculateAge('invalid-date')).toBeNull();
       expect(calculateAge('')).toBeNull();
       expect(calculateAge(null)).toBeNull();
+      expect(calculateAge('11/12/0244')).toBeNull();
+      expect(calculateAge('01/01/1899')).toBeNull();
+      expect(calculateAge('15/13/2010')).toBeNull();
     });
   });
 

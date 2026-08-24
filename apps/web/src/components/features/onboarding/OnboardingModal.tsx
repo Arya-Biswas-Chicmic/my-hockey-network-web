@@ -4,6 +4,8 @@ import { RoleSelectionForm } from './RoleSelectionForm';
 import { CreateAccountForm, VerifyEmailForm, LoginForm, GuardianApprovalModal, RequestSentCard } from '../auth';
 import { DEFAULT_ROLE_OPTIONS, DEFAULT_SELECTED_ROLE_IDS } from '../../../constants/onboarding';
 import { requestOtp, verifyOtp, submitOnboarding, sendGuardianRequest, calculateAge, UserRole } from '@my-hockey-network/core';
+import type { OtpVerifyResponse } from '@my-hockey-network/contracts';
+import { webAuthStorage } from '../../../platform/auth-storage';
 import { useAuth } from '../../../hooks/use-auth';
 
 interface OnboardingModalProps {
@@ -11,11 +13,12 @@ interface OnboardingModalProps {
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) => {
-  const { setAuthSession, loadAuthMe } = useAuth();
-  const [authMode, setAuthMode] = useState<'signup' | 'login'>('login');
+  const { setAuthSession, loadAuthMe, showToast } = useAuth();
+  const [authMode, setAuthMode] = useState<'signup' | 'login'>('signup');
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1); // 1: Role, 2: CreateAccount, 3: VerifyOTP, 4: GuardianApproval, 5: RequestSent
   const [loginStep, setLoginStep] = useState<1 | 2>(1);
   const [loginEmail, setLoginEmail] = useState<string>('');
+  const [resendNotice, setResendNotice] = useState<string | null>(null);
 
   const [selectedRoles, setSelectedRoles] = useState<string[]>(DEFAULT_SELECTED_ROLE_IDS);
   const [accountData, setAccountData] = useState<{
@@ -91,6 +94,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
     return dobStr;
   };
 
+  const [verifiedSession, setVerifiedSession] = useState<OtpVerifyResponse | null>(null);
+
   // Step 3: Verify OTP
   const handleVerifyConfirm = async (code: string) => {
     setLoading(true);
@@ -106,7 +111,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
       });
 
       if (verifyRes) {
-        setAuthSession(verifyRes);
+        setVerifiedSession(verifyRes);
+        webAuthStorage.saveSession(verifyRes);
       }
 
       // Check if user is minor (< 18)
@@ -115,11 +121,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
       const isMinorUser = (roleUpper === 'PLAYER' || roleUpper === 'COACH' || roleUpper === 'STAFF') && age !== null && age >= 5 && age < 18;
 
       if (isMinorUser) {
-        // Post-OTP: Move to Guardian Approval Request Screen (Image 2 left screen)
+        // Post-OTP: Move to Guardian Approval Request Screen
         setStep(4);
       } else {
         // Adult: Complete Onboarding immediately
-        await finalizeOnboarding();
+        await finalizeOnboarding(undefined, verifyRes);
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Verification failed. Please check your code and try again.');
@@ -128,9 +134,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
     }
   };
 
-  const finalizeOnboarding = async (parentEmail?: string) => {
+  const finalizeOnboarding = async (parentEmail?: string, sessionToSave?: OtpVerifyResponse) => {
     setLoading(true);
     try {
+      const activeSession = sessionToSave || verifiedSession;
+      if (activeSession) {
+        webAuthStorage.saveSession(activeSession);
+      }
+
       const apiRoles: UserRole[] = selectedRoles.map((r) => {
         const upper = r.toUpperCase();
         if (['PLAYER', 'PARENT', 'COACH', 'STAFF'].includes(upper)) {
@@ -149,7 +160,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
         preferredLanguage: 'en',
       });
 
-      await loadAuthMe(true);
+      if (activeSession) {
+        setAuthSession(activeSession);
+      }
+
+      await loadAuthMe(true, true);
 
       if (onComplete) {
         onComplete({ selectedRoles, accountData: { ...accountData, parentEmail }, onboardingResult });
@@ -240,15 +255,26 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
   const handleResendCode = async () => {
     const targetEmail = authMode === 'login' ? loginEmail : accountData.email;
     if (!targetEmail) return;
+
+    setLoading(true);
+    setErrorMessage(null);
+    setResendNotice(null);
+
     try {
       await requestOtp({
         channel: 'EMAIL',
         destination: targetEmail,
         intent: authMode === 'login' ? 'SIGNIN' : 'SIGNUP',
       });
-      alert(`A new verification code was sent to ${targetEmail}`);
+      const msg = `A new verification code was sent to ${targetEmail}`;
+      setResendNotice(msg);
+      showToast(msg, 'success');
     } catch (err: any) {
-      alert(`Resent verification code to ${targetEmail}`);
+      const msg = err.message || `Failed to send verification code to ${targetEmail}. Please try again.`;
+      setErrorMessage(msg);
+      showToast(msg, 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -317,6 +343,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
               onResendCode={handleResendCode}
               loading={loading}
               errorMessage={errorMessage}
+              resendNotice={resendNotice}
             />
           )}
           {step === 4 && (
@@ -356,6 +383,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
               onResendCode={handleResendCode}
               loading={loading}
               errorMessage={errorMessage}
+              resendNotice={resendNotice}
             />
           )}
         </>

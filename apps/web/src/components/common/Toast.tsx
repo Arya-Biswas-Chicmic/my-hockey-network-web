@@ -6,13 +6,17 @@ interface ToastProps {
   type?: 'success' | 'info' | 'error';
   onClose: () => void;
   duration?: number;
+  actionText?: string;
+  onActionClick?: () => void;
 }
 
 export const Toast: React.FC<ToastProps> = ({
   message,
   type = 'success',
   onClose,
-  duration = 4000,
+  duration = 5000,
+  actionText,
+  onActionClick,
 }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -52,6 +56,18 @@ export const Toast: React.FC<ToastProps> = ({
     <div className={`mhn-toast-container mhn-toast-${type}`}>
       <div className="mhn-toast-icon">{getIcon()}</div>
       <span className="mhn-toast-message">{message}</span>
+      {actionText && onActionClick && (
+        <Button
+          type="button"
+          className="mhn-toast-action-btn"
+          onClick={() => {
+            onActionClick();
+            onClose();
+          }}
+        >
+          {actionText}
+        </Button>
+      )}
       <Button className="mhn-toast-close-btn" onClick={onClose} aria-label="Close notification">
         &times;
       </Button>

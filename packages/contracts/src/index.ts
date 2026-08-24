@@ -76,6 +76,11 @@ export interface AuthMeResponse {
   email: string;
   status: 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED';
   primaryRole: string;
+  guardianship?: {
+    required: boolean;
+    approved: boolean;
+  };
+  isProfileComplete?: boolean;
   roleAssignments: Array<{
     role: string;
     scopeType: string | null;

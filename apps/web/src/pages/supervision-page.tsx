@@ -6,6 +6,9 @@ import { NoDataFound } from '../components/common/no-data-found';
 import { withRoleGuard } from '../hocs/with-role-guard';
 import { UserRole } from '../enums/role';
 import { GuardianRequestSkeleton } from '../components/supervision/guardian-request-skeleton';
+import { ApprovalCodeModal } from '../components/supervision/ApprovalCodeModal';
+import { useAuth } from '../hooks/use-auth';
+import { resolveMediaUrl } from '../utils/mediaUtils';
 import {
   getSupervisionData,
   createManagedChild,
@@ -27,6 +30,7 @@ interface SupervisionPageProps {
 }
 
 const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLogout }) => {
+  const { showToast } = useAuth();
   const [activeNavTab, setActiveNavTab] = useState('supervision');
   const [selectedWardId, setSelectedWardId] = useState('w1'); // 'w1' = Steve (14), 'w2' = David (10)
   const [activeMainTab, setActiveMainTab] = useState<'permissions' | 'requests' | 'logs'>('permissions');
@@ -45,6 +49,17 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
   const [apiLoading, setApiLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+
+  // Approval Code Modal State
+  const [approvalModalConfig, setApprovalModalConfig] = useState<{
+    isOpen: boolean;
+    targetName: string;
+    code?: string;
+  }>({
+    isOpen: false,
+    targetName: '',
+    code: '',
+  });
 
   // Live Pending Guardian Requests & Approval Code State
   const [livePendingRequests, setLivePendingRequests] = useState<any[]>([]);
@@ -77,8 +92,10 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
   const handleApproveCodeSubmit = async (codeToSubmit?: string) => {
     const code = (codeToSubmit || approvalCodeInput).trim();
     if (!code || code.length !== 6) {
-      setRequestNotice({ type: 'error', message: 'Please enter a valid 6-digit approval code.' });
-      return;
+      const msg = 'Please enter a valid 6-digit approval code.';
+      setRequestNotice({ type: 'error', message: msg });
+      showToast(msg, 'error');
+      throw new Error(msg);
     }
 
     setRequestActionLoading(true);
@@ -86,10 +103,9 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
     try {
       const res = await acceptGuardianRequest(code);
-      setRequestNotice({
-        type: 'success',
-        message: res.message || 'Player approval accepted! You are now supervising this player.',
-      });
+      const successMsg = res.message || 'Player approval accepted! You are now supervising this player.';
+      setRequestNotice({ type: 'success', message: successMsg });
+      showToast(successMsg, 'success');
       setApprovalCodeInput('');
 
       // Refresh supervision list & pending requests
@@ -99,7 +115,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
           id: c.id,
           name: c.displayName || c.firstName || 'Minor Player',
           age: c.age || 12,
-          avatar: c.avatarUrl || '/connor.png',
+          avatar: resolveMediaUrl(c.avatarUrl, '/userPlaceholder.png'),
         }));
         setWards(mapped);
       }
@@ -108,17 +124,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
       setLivePendingRequests(reqRes?.items || (reqRes as any)?.data?.items || []);
     } catch (err: any) {
       console.error('Accept Request Error:', err);
-      if (err.key === 'GUARDIAN_REQUEST_CHILD_SETUP_INCOMPLETE' || err.message?.includes('setup')) {
-        setRequestNotice({
-          type: 'error',
-          message: "This player hasn't finished setting up their profile yet — try again shortly.",
-        });
-      } else {
-        setRequestNotice({
-          type: 'error',
-          message: err.message || 'Failed to approve request. Please verify the code and try again.',
-        });
-      }
+      const errMsg = err.key === 'GUARDIAN_REQUEST_CHILD_SETUP_INCOMPLETE' || err.message?.includes('setup')
+        ? "This player hasn't finished setting up their profile yet — try again shortly."
+        : err.message || 'Failed to approve request. Please verify the code and try again.';
+
+      setRequestNotice({ type: 'error', message: errMsg });
+      showToast(errMsg, 'error');
+      throw err;
     } finally {
       setRequestActionLoading(false);
     }
@@ -153,7 +165,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
             id: c.userId || c.profileId || c.id,
             name: c.displayName || c.firstName || 'Minor Player',
             age: c.age || 12,
-            avatar: c.avatarUrl || '/connor.png',
+            avatar: resolveMediaUrl(c.avatarUrl, '/userPlaceholder.png'),
           }));
           setWards(mapped);
           setSelectedWardId(mapped[0].id);
@@ -1251,40 +1263,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                   {/* Content for Requests Tab */}
                   {activeMainTab === 'requests' && (
                     <div className="mhn-supervision-requests-stack">
-                      {/* 1. Enter 6-digit Approval Code Card */}
-                      <div className="mhn-supervision-code-card">
-                        <h3 className="mhn-supervision-section-subtitle">Enter Guardian Approval Code</h3>
-                        <p style={{ fontSize: '13px', color: '#64748B', margin: '4px 0 12px 0' }}>
-                          Enter the 6-digit approval code sent via email or provided by the minor player to approve supervision.
-                        </p>
-
-                        {requestNotice && (
-                          <div className={`mhn-notice-banner ${requestNotice.type === 'success' ? 'mhn-notice-success' : 'mhn-notice-error'}`}>
-                            {requestNotice.message}
-                          </div>
-                        )}
-
-                        <div className="mhn-supervision-code-input-group">
-                          <Input
-                            type="text"
-                            className="mhn-supervision-code-input"
-                            placeholder="e.g. 123456"
-                            maxLength={6}
-                            value={approvalCodeInput}
-                            onChange={(e) => setApprovalCodeInput(e.target.value.replace(/\D/g, ''))}
-                          />
-                          <Button
-                            type="button"
-                            className="mhn-supervision-code-btn"
-                            disabled={requestActionLoading || approvalCodeInput.length !== 6}
-                            onClick={() => handleApproveCodeSubmit()}
-                          >
-                            {requestActionLoading ? 'Submitting...' : 'Approve Player'}
-                          </Button>
+                      {requestNotice && (
+                        <div className={`mhn-notice-banner ${requestNotice.type === 'success' ? 'mhn-notice-success' : 'mhn-notice-error'}`}>
+                          {requestNotice.message}
                         </div>
-                      </div>
+                      )}
 
-                      {/* 2. Pending Requests List */}
+                      {/* Pending Requests List */}
                       <div>
                         <h3 className="mhn-supervision-section-subtitle">
                           Pending Minor Approval Requests ({livePendingRequests.length})
@@ -1303,12 +1288,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                               const reqId = req.id || `req_${idx}`;
                               const child = req.child || {};
                               const displayName = child.displayName || req.displayName || req.name || 'Minor Athlete';
-                              const avatarUrl = child.avatarUrl || req.avatarUrl || '/connor.png';
+                              const rawAvatar = child.avatarUrl || req.avatarUrl;
+                              const avatarUrl = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
                               const roleTag = child.roleTag || child.primaryRole || child.profileType || req.roleTag || 'PLAYER';
-                              const teamName = child.teamName || req.teamName || 'Youth Hockey Team';
-                              const teamLogo = child.teamLogo || req.teamLogo || '/kcBlue.png';
-                              const location = child.location || req.location || 'Parent Supervision Approval';
-                              const code = req.code || req.inviteCode;
+                              const teamName = child.teamName || req.teamName || null;
+                              const teamLogo = child.teamLogo || req.teamLogo ? resolveMediaUrl(child.teamLogo || req.teamLogo, '/HC.png') : null;
+                              const location = child.location || req.location || null;
+                              const code = req.code || req.devCode || req.inviteCode;
 
                               return (
                                 <div key={reqId} className="mhn-supervision-req-card">
@@ -1325,25 +1311,31 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                   <h4 className="mhn-supervision-req-name">{displayName}</h4>
                                   <p className="mhn-supervision-req-role">{roleTag}</p>
 
-                                  <div className="mhn-supervision-req-team-pill">
-                                    <img
-                                      src={teamLogo}
-                                      alt="Team"
-                                      className="mhn-supervision-req-team-logo"
-                                      onError={(e) => {
-                                        (e.target as HTMLImageElement).src = '/HC.png';
-                                      }}
-                                    />
-                                    <span>{teamName}</span>
-                                  </div>
+                                  {teamName && (
+                                    <div className="mhn-supervision-req-team-pill">
+                                      {teamLogo && (
+                                        <img
+                                          src={teamLogo}
+                                          alt="Team"
+                                          className="mhn-supervision-req-team-logo"
+                                          onError={(e) => {
+                                            (e.target as HTMLImageElement).style.display = 'none';
+                                          }}
+                                        />
+                                      )}
+                                      <span>{teamName}</span>
+                                    </div>
+                                  )}
 
-                                  <div className="mhn-supervision-req-location">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2">
-                                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                                      <circle cx="12" cy="10" r="3" />
-                                    </svg>
-                                    <span>{location}</span>
-                                  </div>
+                                  {location && (
+                                    <div className="mhn-supervision-req-location">
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                        <circle cx="12" cy="10" r="3" />
+                                      </svg>
+                                      <span>{location}</span>
+                                    </div>
+                                  )}
 
                                   <div className="mhn-supervision-req-actions">
                                     <Button
@@ -1359,14 +1351,11 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                       className="mhn-supervision-btn-accept"
                                       disabled={requestActionLoading}
                                       onClick={() => {
-                                        if (code) {
-                                          handleApproveCodeSubmit(code);
-                                        } else {
-                                          const userInputCode = prompt(`Enter 6-digit approval code for ${displayName}:`);
-                                          if (userInputCode) {
-                                            handleApproveCodeSubmit(userInputCode);
-                                          }
-                                        }
+                                        setApprovalModalConfig({
+                                          isOpen: true,
+                                          targetName: displayName,
+                                          code: code || '',
+                                        });
                                       }}
                                     >
                                       Approve
@@ -1479,6 +1468,17 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
           </section>
         </div>
       </main>
+      <ApprovalCodeModal
+        isOpen={approvalModalConfig.isOpen}
+        targetName={approvalModalConfig.targetName}
+        initialCode={approvalModalConfig.code}
+        loading={requestActionLoading}
+        onClose={() => setApprovalModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        onSubmit={async (enteredCode) => {
+          await handleApproveCodeSubmit(enteredCode);
+          setApprovalModalConfig((prev) => ({ ...prev, isOpen: false }));
+        }}
+      />
     </div>
   );
 };
