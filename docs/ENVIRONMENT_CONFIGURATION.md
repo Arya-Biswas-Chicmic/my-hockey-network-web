@@ -6,8 +6,7 @@ Last reviewed: 2026-08-21
 
 Local runtime files exist for developer convenience and are ignored by Git. Only `.env.example`
 files are versioned. Obtain the official development/staging/production API origins from backend or
-DevOps and replace the current local development URL. There is no hard-coded URL fallback: a missing
-variable stops the app with a clear configuration error.
+DevOps and replace the current local development URL. If omitted in web build, `VITE_API_BASE_URL` safely defaults to `/v1` to support relative proxy deployment.
 
 ## Required variables
 
