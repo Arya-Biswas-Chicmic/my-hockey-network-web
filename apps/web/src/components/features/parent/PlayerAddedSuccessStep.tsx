@@ -41,7 +41,7 @@ export const PlayerAddedSuccessStep: React.FC<PlayerAddedSuccessStepProps> = ({
   const displayNameShort = formatShortPlayerName(playerName, 14);
 
   return (
-    <div className="mhn-parent-step-container" style={{ textAlign: 'center', maxWidth: '380px' }}>
+    <div className="mhn-parent-step-container mhn-text-center mhn-parent-step-container-max380">
       <div className="mhn-parent-icon-circle mhn-green">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
           <polyline points="20 6 9 17 4 12" />
@@ -51,19 +51,18 @@ export const PlayerAddedSuccessStep: React.FC<PlayerAddedSuccessStepProps> = ({
       <h2 className="mhn-parent-step-title">
         {displayNameShort} has been {type === 'link' ? 'invited' : 'added'}
       </h2>
-      <p className="mhn-parent-step-desc" style={{ marginBottom: '32px' }}>
+      <p className="mhn-parent-step-desc mhn-mb-32">
         {type === 'link'
           ? `Invitation sent to ${childEmail}. Waiting for player to accept code.`
           : `You're now managing ${displayNameShort}'s hockey profile.`}
       </p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div className="mhn-col-flex-gap-12">
         <Button
           type="button"
-          className="mhn-parent-btn-primary"
+          className="mhn-parent-btn-primary mhn-btn-loading-flex"
           onClick={handleGoHomeClick}
           disabled={isFinishing}
-          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
         >
           {isFinishing ? (
             <>
@@ -74,7 +73,7 @@ export const PlayerAddedSuccessStep: React.FC<PlayerAddedSuccessStepProps> = ({
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2.5"
-                style={{ animation: 'mhn-spin 0.8s linear infinite' }}
+                className="mhn-spin"
               >
                 <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4" strokeDashoffset="10" fill="none" />
               </svg>

@@ -3,6 +3,8 @@ import { StyleSheet } from 'react-native';
 import { ThemeColors } from '@theme/constants';
 import { _scaleText } from '@utils/utility';
 
+import { FONT } from '@utils/constants';
+
 const styles = (Colors: ThemeColors) =>
   StyleSheet.create({
     screen: {
@@ -16,11 +18,13 @@ const styles = (Colors: ThemeColors) =>
     title: {
       color: Colors.text,
       fontSize: _scaleText(26),
+      fontFamily: FONT.BOLD,
     },
     subtitle: {
       color: Colors.mutedText,
       marginTop: 6,
       fontSize: _scaleText(14),
+      fontFamily: FONT.REGULAR,
     },
     form: {
       marginTop: 18,
@@ -28,6 +32,17 @@ const styles = (Colors: ThemeColors) =>
     },
     message: {
       fontSize: _scaleText(13),
+      fontFamily: FONT.REGULAR,
+    },
+    errorMessage: {
+      color: Colors.error,
+      fontSize: _scaleText(13),
+      fontFamily: FONT.REGULAR,
+    },
+    successMessage: {
+      color: Colors.text,
+      fontSize: _scaleText(13),
+      fontFamily: FONT.REGULAR,
     },
     bottomLink: {
       marginTop: 4,
@@ -36,6 +51,7 @@ const styles = (Colors: ThemeColors) =>
     link: {
       color: Colors.primary,
       fontSize: _scaleText(13),
+      fontFamily: FONT.MEDIUM,
     },
   });
 

@@ -173,19 +173,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
         <Button
           type="button"
           onClick={onBack}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: 'none',
-            border: 'none',
-            color: '#0B66C2',
-            fontSize: '14px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            marginBottom: '12px',
-            padding: 0,
-          }}
+          className="mhn-btn-back-link"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -199,18 +187,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
       </div>
 
       {localError && (
-        <div
-          style={{
-            backgroundColor: '#FEF2F2',
-            color: '#DC2626',
-            padding: '10px 14px',
-            borderRadius: '8px',
-            fontSize: '13px',
-            fontWeight: 600,
-            marginBottom: '16px',
-            border: '1px solid #FCA5A5',
-          }}
-        >
+        <div className="mhn-local-error-card">
           {localError}
         </div>
       )}
@@ -268,21 +245,21 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
 
         {/* Date of Birth Field */}
         <div className="auth-form-group">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="mhn-dob-header-row">
             <label className="auth-label" htmlFor="dob">
               {CREATE_ACCOUNT_STRINGS.dobLabel}
             </label>
             {currentAge !== null && currentAge >= 0 && currentAge <= 110 ? (
-              <span style={{ fontSize: '12px', fontWeight: 600, color: currentAge < 18 ? '#D97706' : '#4B5563' }}>
+              <span className={currentAge < 18 ? 'mhn-age-badge-under18' : 'mhn-age-badge-adult'}>
                 Age: {currentAge} yrs {currentAge < 18 ? '(Under 18)' : ''}
               </span>
             ) : dob.length === 10 ? (
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#EF4444' }}>
+              <span className="mhn-age-badge-invalid">
                 Invalid Date
               </span>
             ) : null}
           </div>
-          <div className="auth-input-wrapper" style={{ position: 'relative' }}>
+          <div className="auth-input-wrapper mhn-relative-container">
             <Input
               id="dob"
               type="text"
@@ -295,32 +272,22 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
             <img
               src="/calendar.png"
               alt="Calendar"
-              className="auth-input-icon auth-input-icon-clickable"
+              className="auth-input-icon auth-input-icon-clickable mhn-cursor-pointer"
               onClick={handleCalendarClick}
-              style={{ cursor: 'pointer' }}
             />
             <Input
               type="date"
               ref={dateInputRef}
               onChange={handleDatePickerChange}
-              style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                width: '32px',
-                height: '100%',
-                opacity: 0,
-                cursor: 'pointer',
-                zIndex: 2,
-              }}
+              className="mhn-date-picker-overlay"
             />
           </div>
           {hasAttemptedSubmit && renderFieldError(fieldErrors.dob)}
         </div>
 
-        <Button type="submit" className="btn-submit" disabled={loading} style={{ opacity: loading ? 0.75 : 1 }}>
+        <Button type="submit" className={`btn-submit ${loading ? 'mhn-loading' : ''}`} disabled={loading}>
           {loading ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <span className="mhn-btn-loading-flex">
               <Spinner size="sm" color="#FFFFFF" />
               <span>Sending Code...</span>
             </span>

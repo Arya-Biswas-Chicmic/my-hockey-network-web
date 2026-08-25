@@ -46,7 +46,7 @@ export const CareerFormFields: React.FC<CareerFormFieldsProps> = ({
   const positionOptions = refPositions.length ? refPositions : POSITION_OPTIONS;
 
   return (
-    <div className="mhn-career-form-fields" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div className="mhn-career-form-fields mhn-col-flex-gap-16">
       {/* Team Input */}
       <FormField label="Team" required error={errors.teamName} maxLength={50} valueLength={values.teamName?.length}>
         <Input
@@ -56,15 +56,7 @@ export const CareerFormFields: React.FC<CareerFormFieldsProps> = ({
           disabled={disabled}
           maxLength={50}
           placeholder="Team name"
-          style={{
-            width: '100%',
-            height: '42px',
-            borderRadius: '8px',
-            border: (errors.teamName || (values.teamName && values.teamName.length >= 50)) ? '1px solid #DC2626' : '1px solid #CBD5E1',
-            padding: '0 12px',
-            fontSize: '14px',
-            outline: 'none',
-          }}
+          className={`mhn-about-input-box ${errors.teamName || (values.teamName && values.teamName.length >= 50) ? 'mhn-edit-profile-input-error' : ''}`}
         />
       </FormField>
 
@@ -89,33 +81,25 @@ export const CareerFormFields: React.FC<CareerFormFieldsProps> = ({
           disabled={disabled}
           maxLength={50}
           placeholder="e.g. Toronto, Canada"
-          style={{
-            width: '100%',
-            height: '42px',
-            borderRadius: '8px',
-            border: (errors.location || (values.location && values.location.length >= 50)) ? '1px solid #DC2626' : '1px solid #CBD5E1',
-            padding: '0 12px',
-            fontSize: '14px',
-            outline: 'none',
-          }}
+          className={`mhn-about-input-box ${errors.location || (values.location && values.location.length >= 50) ? 'mhn-edit-profile-input-error' : ''}`}
         />
       </FormField>
 
       {/* Checkbox: Currently playing here */}
-      <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>
+      <label className="mhn-checkbox-label-row">
         <Input
           type="checkbox"
           checked={values.isCurrentPlaying}
           onChange={(e) => onChange('isCurrentPlaying', e.target.checked)}
           disabled={disabled}
-          style={{ width: '16px', height: '16px', accentColor: '#1860C3', cursor: 'pointer' }}
+          className="mhn-checkbox-accent"
         />
         <span>I currently playing here</span>
       </label>
 
       {/* Start Date: Month + Year side-by-side */}
       <FormField label="Start date" required>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <div className="mhn-grid-2col-gap-12">
           <Dropdown
             value={values.startMonth}
             options={MONTH_OPTIONS}
@@ -138,7 +122,7 @@ export const CareerFormFields: React.FC<CareerFormFieldsProps> = ({
       {/* End Date (if !isCurrentPlaying) */}
       {!values.isCurrentPlaying && (
         <FormField label="End date" required>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="mhn-grid-2col-gap-12">
             <Dropdown
               value={values.endMonth}
               options={MONTH_OPTIONS}
@@ -167,16 +151,7 @@ export const CareerFormFields: React.FC<CareerFormFieldsProps> = ({
           onChange={(e) => onChange('note', e.target.value)}
           disabled={disabled}
           placeholder="Tell us about it"
-          style={{
-            width: '100%',
-            borderRadius: '8px',
-            border: errors.note ? '1px solid #DC2626' : '1px solid #CBD5E1',
-            padding: '10px 12px',
-            fontSize: '14px',
-            outline: 'none',
-            fontFamily: 'inherit',
-            resize: 'vertical',
-          }}
+          className={`mhn-about-input-box ${errors.note ? 'mhn-edit-profile-input-error' : ''}`}
         />
       </FormField>
     </div>

@@ -18,35 +18,16 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({
 
   return (
     <div className="mhn-modal-overlay">
-      <div
-        className="mhn-modal-card"
-        style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '16px',
-          width: '100%',
-          maxWidth: '420px',
-          padding: '24px',
-          boxShadow: '0 20px 45px rgba(0, 0, 0, 0.25)',
-          border: '1px solid #E2E8F0',
-          animation: 'mhnPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-        }}
-      >
+      <div className="mhn-modal-card mhn-delete-modal-card">
         {/* Modal Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#0F172A' }}>
+        <div className="mhn-delete-modal-header">
+          <h3 className="mhn-delete-modal-title">
             Log Out
           </h3>
           {!isLoading && (
             <Button
               onClick={onClose}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                fontSize: '22px',
-                color: '#64748B',
-                cursor: 'pointer',
-                lineHeight: 1,
-              }}
+              className="mhn-delete-modal-close"
               aria-label="Close modal"
             >
               &times;
@@ -55,27 +36,17 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.5, margin: '0 0 24px 0' }}>
+        <p className="mhn-delete-modal-body">
           Are you sure you want to log out? You will need to sign in again to access your account.
         </p>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px' }}>
+        <div className="mhn-delete-modal-actions">
           <Button
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            style={{
-              padding: '10px 18px',
-              borderRadius: '8px',
-              border: '1px solid #CBD5E1',
-              backgroundColor: '#FFFFFF',
-              color: '#475569',
-              fontWeight: 600,
-              fontSize: '14px',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              opacity: isLoading ? 0.6 : 1,
-            }}
+            className="mhn-btn-modal-cancel"
           >
             Cancel
           </Button>
@@ -83,20 +54,7 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
-            style={{
-              padding: '10px 20px',
-              borderRadius: '8px',
-              border: 'none',
-              backgroundColor: '#DC2626',
-              color: '#FFFFFF',
-              fontWeight: 600,
-              fontSize: '14px',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              opacity: isLoading ? 0.8 : 1,
-            }}
+            className="mhn-btn-modal-danger"
           >
             {isLoading ? (
               <>

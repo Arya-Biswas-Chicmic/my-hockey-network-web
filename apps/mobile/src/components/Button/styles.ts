@@ -3,6 +3,8 @@ import { StyleSheet } from 'react-native';
 import { ThemeColors } from '@theme/constants';
 import { _scaleText } from '@utils/utility';
 
+import { FONT } from '@utils/constants';
+
 const styles = (Colors: ThemeColors) =>
   StyleSheet.create({
     button: {
@@ -28,6 +30,7 @@ const styles = (Colors: ThemeColors) =>
     text: {
       color: Colors.onPrimary,
       fontSize: _scaleText(15),
+      fontFamily: FONT.SEMI_BOLD,
     },
   });
 

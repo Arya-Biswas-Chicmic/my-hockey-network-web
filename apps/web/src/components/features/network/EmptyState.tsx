@@ -91,49 +91,21 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
   return (
     <div
-      className="mhn-empty-state-card"
-      style={{
-        backgroundColor: '#FFFFFF',
-        border: isServerError ? '1px solid #FECACA' : '1px dashed #CBD5E1',
-        borderRadius: '16px',
-        padding: '32px 24px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textAlign: 'center',
-        gap: '12px',
-        width: '100%',
-        boxSizing: 'border-box',
-        margin: '12px 0',
-      }}
+      className={`mhn-empty-state-card ${isServerError ? 'mhn-server-error-border' : ''}`}
     >
       <div
-        className="mhn-empty-state-icon-wrapper"
-        style={{
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          backgroundColor: isServerError ? '#FEF2F2' : isNoData ? '#F1F5F9' : '#EFF6FF',
-          border: isServerError ? '1px solid #FECACA' : isNoData ? '1px solid #E2E8F0' : '1px solid #DBEAFE',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}
+        className={`mhn-empty-state-icon-wrapper ${isServerError ? 'mhn-icon-server-error' : isNoData ? 'mhn-icon-nodata' : ''}`}
       >
         {renderIcon()}
       </div>
       <div>
         <h4
           className="mhn-empty-state-title"
-          style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: 700, color: '#0F172A' }}
         >
           {title}
         </h4>
         <p
           className="mhn-empty-state-message"
-          style={{ margin: 0, fontSize: '13px', color: '#64748B', lineHeight: 1.5, maxWidth: '400px' }}
         >
           {message}
         </p>
@@ -142,17 +114,6 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         <Button
           onClick={onAction}
           className="mhn-empty-state-btn"
-          style={{
-            marginTop: '8px',
-            padding: '9px 18px',
-            borderRadius: '8px',
-            border: 'none',
-            backgroundColor: '#1860C3',
-            color: '#FFFFFF',
-            fontSize: '13px',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
         >
           {actionLabel}
         </Button>

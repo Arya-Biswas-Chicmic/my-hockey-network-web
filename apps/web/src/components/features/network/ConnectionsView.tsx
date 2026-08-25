@@ -159,29 +159,18 @@ export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick
   );
 
   return (
-    <div className="mhn-connections-view-container" style={{ width: '100%' }}>
+    <div className="mhn-connections-view-container mhn-w-full">
       {/* 1. Page Header Title matching Figma */}
-      <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0F172A', marginBottom: '16px', marginTop: 0 }}>
+      <h2 className="mhn-connections-title">
         Connections
       </h2>
 
       {/* 2. Full Width Search Input Bar */}
       <div
         className="mhn-connections-search-wrapper"
-        style={{
-          position: 'relative',
-          width: '100%',
-          marginBottom: '20px',
-        }}
       >
         <svg
-          style={{
-            position: 'absolute',
-            left: '14px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            pointerEvents: 'none',
-          }}
+          className="mhn-connections-search-icon"
           width="18"
           height="18"
           viewBox="0 0 24 24"
@@ -199,67 +188,24 @@ export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search"
-          style={{
-            width: '100%',
-            height: '44px',
-            borderRadius: '8px',
-            border: '1px solid #CBD5E1',
-            paddingLeft: '42px',
-            paddingRight: '16px',
-            fontSize: '14px',
-            outline: 'none',
-            backgroundColor: '#FFFFFF',
-          }}
+          className="mhn-connections-search-input"
         />
       </div>
 
       {/* 3. Followers / Following Sub-Tabs matching Figma Screenshot */}
       <div
         className="mhn-connections-tabs-row"
-        style={{
-          display: 'flex',
-          width: '100%',
-          borderBottom: '1px solid #E2E8F0',
-          marginBottom: '24px',
-          gap: '0',
-        }}
       >
         <Button
           onClick={() => setActiveTab('followers')}
-          style={{
-            flex: 1,
-            padding: '14px 16px',
-            backgroundColor: 'transparent',
-            border: 'none',
-            borderBottom: activeTab === 'followers' ? '3px solid #18181B' : '3px solid transparent',
-            marginBottom: '-1px',
-            color: activeTab === 'followers' ? '#18181B' : '#71717A',
-            fontSize: '15px',
-            fontWeight: activeTab === 'followers' ? 700 : 500,
-            cursor: 'pointer',
-            transition: 'all 0.15s ease-in-out',
-            textAlign: 'center',
-          }}
+          className={`mhn-connections-tab-btn ${activeTab === 'followers' ? 'active' : ''}`}
         >
           Followers
         </Button>
 
         <Button
           onClick={() => setActiveTab('following')}
-          style={{
-            flex: 1,
-            padding: '14px 16px',
-            backgroundColor: 'transparent',
-            border: 'none',
-            borderBottom: activeTab === 'following' ? '3px solid #18181B' : '3px solid transparent',
-            marginBottom: '-1px',
-            color: activeTab === 'following' ? '#18181B' : '#71717A',
-            fontSize: '15px',
-            fontWeight: activeTab === 'following' ? 700 : 500,
-            cursor: 'pointer',
-            transition: 'all 0.15s ease-in-out',
-            textAlign: 'center',
-          }}
+          className={`mhn-connections-tab-btn ${activeTab === 'following' ? 'active' : ''}`}
         >
           Following
         </Button>
@@ -276,52 +222,21 @@ export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick
         />
       ) : (
         <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-            gap: '16px',
-            width: '100%',
-          }}
+          className="mhn-network-skeleton-grid"
         >
           {filteredMembers.map((member) => (
             <div
               key={member.id}
-              style={{
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #E2E8F0',
-                borderRadius: '12px',
-                padding: '20px 16px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                textAlign: 'center',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-              }}
+              className="mhn-connection-member-card"
             >
               {/* Avatar Circle with blue ring */}
               <div
-                style={{
-                  width: '80px',
-                  height: '80px',
-                  borderRadius: '50%',
-                  padding: '3px',
-                  border: '2px solid #1860C3',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '12px',
-                }}
+                className="mhn-connection-avatar-ring"
               >
                 <img
                   src={member.avatarUrl}
                   alt={member.name}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                  }}
+                  className="mhn-connection-avatar-img"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/userPlaceholder.png';
                   }}
@@ -329,52 +244,35 @@ export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick
               </div>
 
               {/* User Name */}
-              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: '0 0 2px 0', wordBreak: 'break-word', overflowWrap: 'anywhere', maxWidth: '100%' }}>
+              <h4 className="mhn-connection-member-name">
                 {member.name}
               </h4>
 
               {/* Role Tag */}
-              <p style={{ fontSize: '12px', color: '#64748B', margin: '0 0 8px 0', fontWeight: 500, wordBreak: 'break-word', overflowWrap: 'anywhere', maxWidth: '100%' }}>
+              <p className="mhn-connection-member-role">
                 {member.roleTag}
               </p>
 
               {/* Team Pill Badge */}
               <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: '#1860C3',
-                  marginBottom: '6px',
-                  maxWidth: '100%',
-                  boxSizing: 'border-box',
-                }}
+                className="mhn-connection-team-pill"
               >
                 {member.teamLogo && (
                   <img
                     src={member.teamLogo}
                     alt={member.teamName}
-                    style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }}
+                    className="mhn-connection-team-logo"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/HC.png';
                     }}
                   />
                 )}
-                <span style={{ wordBreak: 'break-word', overflowWrap: 'anywhere', maxWidth: '100%' }}>{member.teamName}</span>
+                <span>{member.teamName}</span>
               </div>
 
               {/* Location Line */}
               <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  fontSize: '12px',
-                  color: '#64748B',
-                  marginBottom: '16px',
-                }}
+                className="mhn-connection-location-line"
               >
                 <svg
                   width="12"
@@ -396,25 +294,7 @@ export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick
               <Button
                 type="button"
                 onClick={() => onMessageClick && onMessageClick(member)}
-                style={{
-                  width: '100%',
-                  height: '38px',
-                  backgroundColor: '#FFFFFF',
-                  border: '1px solid #1860C3',
-                  borderRadius: '8px',
-                  color: '#1860C3',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  marginTop: 'auto',
-                  transition: 'background-color 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#EFF6FF';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#FFFFFF';
-                }}
+                className="mhn-btn-connection-message"
               >
                 Message
               </Button>

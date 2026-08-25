@@ -45,7 +45,7 @@ export const PersonalDetailsFields: React.FC<PersonalDetailsFieldsProps> = ({
   disabled = false,
 }) => {
   return (
-    <div className="mhn-personal-details-fields" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="mhn-personal-details-fields mhn-col-flex-gap-20">
       {/* Location / City */}
       <FormField label="Location (City)" error={errors.city} maxLength={50} valueLength={values.city?.length}>
         <Input

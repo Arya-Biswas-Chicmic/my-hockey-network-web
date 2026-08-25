@@ -110,7 +110,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="mhn-header-container">
         {/* Left: Brand Logo */}
         <div className="mhn-header-logo-area">
-          <div className="mhn-logo-badge" onClick={() => handleTabClick('home')} style={{ cursor: 'pointer' }}>
+          <div className="mhn-logo-badge mhn-header-logo-badge" onClick={() => handleTabClick('home')}>
             <div className="mhn-logo-stick-icon">
               <img src="/logo.png" className='logo' />
             </div>
@@ -284,17 +284,16 @@ export const Header: React.FC<HeaderProps> = ({
                     {isFamilyExpanded && (
                       <div className="mhn-family-list">
                         {isFamilyLoading ? (
-                          <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <div style={{ height: '28px', borderRadius: '6px', backgroundColor: '#e2e8f0', animation: 'mhn-spin 1.5s infinite opacity' }} />
-                            <div style={{ height: '28px', borderRadius: '6px', backgroundColor: '#e2e8f0', animation: 'mhn-spin 1.5s infinite opacity' }} />
+                          <div className="mhn-family-skeleton-container">
+                            <div className="mhn-family-skeleton-item" />
+                            <div className="mhn-family-skeleton-item" />
                           </div>
                         ) : (
                           <>
                             {familyMembers.slice(0, 3).map((member) => (
                               <div
                                 key={member.id}
-                                className="mhn-family-member-item"
-                                style={{ cursor: 'pointer' }}
+                                className="mhn-family-member-item mhn-family-member-item-clickable"
                                 onClick={() => {
                                   setIsProfileOpen(false);
                                   if (onTabChange) {
@@ -302,7 +301,7 @@ export const Header: React.FC<HeaderProps> = ({
                                   }
                                 }}
                               >
-                                <div className="mhn-dropdown-item-left" style={{ minWidth: 0, flex: 1 }}>
+                                <div className="mhn-dropdown-item-left mhn-family-member-left">
                                   <img src={member.avatar} alt={member.name} className="mhn-family-member-img" />
                                   <span className="mhn-family-member-name" title={member.name}>
                                     {member.name.length > 18 ? `${member.name.trim().split(/\s+/).slice(0, 2).join(' ')}...` : member.name}
@@ -317,23 +316,7 @@ export const Header: React.FC<HeaderProps> = ({
                             ))}
                             {familyMembers.length > 3 && (
                               <div
-                                className="mhn-family-show-more-item"
-                                style={{
-                                  padding: '10px 12px',
-                                  fontSize: '13px',
-                                  fontWeight: 600,
-                                  color: '#0B66C2',
-                                  cursor: 'pointer',
-                                  textAlign: 'center',
-                                  borderTop: '1px solid #E2E8F0',
-                                  backgroundColor: '#F8FAFC',
-                                  borderBottomLeftRadius: '8px',
-                                  borderBottomRightRadius: '8px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '6px',
-                                }}
+                                className="mhn-family-show-more-item mhn-family-show-more-btn"
                                 onClick={() => {
                                   setIsProfileOpen(false);
                                   if (onTabChange) {

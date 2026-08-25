@@ -3,6 +3,8 @@ import { StyleSheet } from 'react-native';
 import { ThemeColors } from '@theme/constants';
 import { _scaleText } from '@utils/utility';
 
+import { FONT } from '@utils/constants';
+
 const styles = (Colors: ThemeColors) =>
   StyleSheet.create({
     container: {
@@ -12,6 +14,7 @@ const styles = (Colors: ThemeColors) =>
       color: Colors.text,
       marginBottom: 6,
       fontSize: _scaleText(13),
+      fontFamily: FONT.MEDIUM,
     },
     inputContainer: {
       flexDirection: 'row',
@@ -37,11 +40,13 @@ const styles = (Colors: ThemeColors) =>
       color: Colors.text,
       fontSize: _scaleText(15),
       padding: 0,
+      fontFamily: FONT.REGULAR,
     },
     errorText: {
       marginTop: 6,
       color: Colors.error,
       fontSize: _scaleText(12),
+      fontFamily: FONT.REGULAR,
     },
   });
 

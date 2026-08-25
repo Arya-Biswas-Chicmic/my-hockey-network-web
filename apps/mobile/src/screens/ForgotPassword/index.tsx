@@ -16,7 +16,6 @@ import useStyles from '@hooks/useStyles';
 import { ROUTES } from '../../navigation/constants';
 import { RootStackParamList } from '../../navigation/types';
 import { useForgotPasswordMutation } from '@redux/ApiReducer';
-import { FONT } from '@utils/constants';
 import { isValidEmail, sanitizeEmail } from '@utils/validation';
 
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -26,7 +25,7 @@ import styles from './styles';
 type Props = NativeStackScreenProps<RootStackParamList, ROUTES.FORGOT_PASSWORD>;
 
 const ForgotPasswordScreen = ({ navigation }: Props) => {
-  const { dynamicStyles, Layout, Colors } = useStyles(styles);
+  const { dynamicStyles, Layout } = useStyles(styles);
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
 
   const [email, setEmail] = useState('');
@@ -83,12 +82,8 @@ const ForgotPasswordScreen = ({ navigation }: Props) => {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <View style={dynamicStyles.card}>
-            <Text style={[dynamicStyles.title, { fontFamily: FONT.BOLD }]}>
-              Forgot password
-            </Text>
-            <Text
-              style={[dynamicStyles.subtitle, { fontFamily: FONT.REGULAR }]}
-            >
+            <Text style={dynamicStyles.title}>Forgot password</Text>
+            <Text style={dynamicStyles.subtitle}>
               We’ll email you a reset link.
             </Text>
 
@@ -115,15 +110,13 @@ const ForgotPasswordScreen = ({ navigation }: Props) => {
               {!!submitError && (
                 <Text
                   accessibilityRole="alert"
-                  style={[dynamicStyles.message, { color: Colors.error }]}
+                  style={dynamicStyles.errorMessage}
                 >
                   {submitError}
                 </Text>
               )}
               {!!success && (
-                <Text style={[dynamicStyles.message, { color: Colors.text }]}>
-                  {success}
-                </Text>
+                <Text style={dynamicStyles.successMessage}>{success}</Text>
               )}
 
               <Button
@@ -141,9 +134,7 @@ const ForgotPasswordScreen = ({ navigation }: Props) => {
                 disabled={isLoading}
                 style={dynamicStyles.bottomLink}
               >
-                <Text style={[dynamicStyles.link, { fontFamily: FONT.MEDIUM }]}>
-                  Back to login
-                </Text>
+                <Text style={dynamicStyles.link}>Back to login</Text>
               </Pressable>
             </View>
           </View>

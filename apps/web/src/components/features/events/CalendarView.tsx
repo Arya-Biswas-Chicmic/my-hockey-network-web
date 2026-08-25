@@ -217,15 +217,23 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onEventClick }) => {
                   {/* Event Dots Row */}
                   {cell.dots && cell.dots.length > 0 && (
                     <div className="mhn-day-dots">
-                      {cell.dots.map((dotColor, dotIdx) => (
-                        <span
-                          key={dotIdx}
-                          className="mhn-dot"
-                          style={{
-                            backgroundColor: isSelected ? '#FFFFFF' : dotColor
-                          }}
-                        />
-                      ))}
+                      {cell.dots.map((dotColor, dotIdx) => {
+                        const dotClass = isSelected
+                          ? 'mhn-dot-white'
+                          : dotColor === '#3B82F6'
+                          ? 'mhn-dot-blue'
+                          : dotColor === '#F59E0B'
+                          ? 'mhn-dot-yellow'
+                          : dotColor === '#EF4444'
+                          ? 'mhn-dot-red'
+                          : 'mhn-dot-gray';
+                        return (
+                          <span
+                            key={dotIdx}
+                            className={`mhn-dot ${dotClass}`}
+                          />
+                        );
+                      })}
                     </div>
                   )}
                 </div>

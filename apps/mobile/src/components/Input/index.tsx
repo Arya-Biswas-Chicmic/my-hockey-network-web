@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 
 import useStyles from '@hooks/useStyles';
-import { FONT } from '@utils/constants';
 
 import styles from './styles';
 
@@ -69,12 +68,14 @@ const Input = forwardRef<TextInput, InputProps>(
     ]);
 
     return (
-      <View style={[dynamicStyles.container, containerStyle]}>
-        {!!label && (
-          <Text style={[dynamicStyles.label, { fontFamily: FONT.MEDIUM }]}>
-            {label}
-          </Text>
-        )}
+      <View
+        style={
+          containerStyle
+            ? [dynamicStyles.container, containerStyle]
+            : dynamicStyles.container
+        }
+      >
+        {!!label && <Text style={dynamicStyles.label}>{label}</Text>}
         <View style={inputContainerStyle}>
           <TextInput
             ref={ref}
@@ -89,19 +90,16 @@ const Input = forwardRef<TextInput, InputProps>(
               props.onBlur?.(e);
             }}
             placeholderTextColor={placeholderTextColor}
-            style={[
-              dynamicStyles.input,
-              { fontFamily: FONT.REGULAR },
-              inputStyle,
-            ]}
+            style={
+              inputStyle
+                ? [dynamicStyles.input, inputStyle]
+                : dynamicStyles.input
+            }
           />
           {rightAccessory}
         </View>
         {!!error && (
-          <Text
-            accessibilityRole="alert"
-            style={[dynamicStyles.errorText, { fontFamily: FONT.REGULAR }]}
-          >
+          <Text accessibilityRole="alert" style={dynamicStyles.errorText}>
             {error}
           </Text>
         )}

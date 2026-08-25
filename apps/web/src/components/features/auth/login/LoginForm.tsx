@@ -97,12 +97,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
         <Button
           type="submit"
-          className="btn-submit"
+          className={`btn-submit mhn-btn-submit-margin ${loading ? 'mhn-loading' : ''}`}
           disabled={loading}
-          style={{ opacity: loading ? 0.75 : 1, marginTop: '28px' }}
         >
           {loading ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <span className="mhn-btn-loading-flex">
               <Spinner size="sm" color="#FFFFFF" />
               <span>Sending Code...</span>
             </span>
@@ -114,9 +113,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
       <Button
         type="button"
-        className="btn-google"
+        className="btn-google mhn-btn-google-margin"
         onClick={onGoogleSignIn}
-        style={{ marginTop: '16px' }}
       >
         <svg className="google-icon-svg" width="20" height="20" viewBox="0 0 24 24">
           <path
@@ -139,7 +137,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <span>Continue with Google</span>
       </Button>
 
-      <div className="auth-footer-text" style={{ marginTop: '24px' }}>
+      <div className="auth-footer-text mhn-auth-footer-margin">
         <span>Don't have an account? </span>
         <Button
           type="button"

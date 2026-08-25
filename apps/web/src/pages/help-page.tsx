@@ -200,33 +200,15 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
   });
 
   return (
-    <div className="mhn-help-page-root" style={{ width: '100%', minHeight: '100vh', backgroundColor: '#F8FAFC' }}>
+    <div className="mhn-help-page-container">
       {/* Top Header Navbar */}
       <Header activeTab={activeTab} onTabChange={handleTabChange} onLogout={onLogout} />
 
-      <main className="mhn-help-main-container" style={{ maxWidth: '1080px', margin: '0 auto', padding: '32px 16px 64px' }}>
+      <main className="mhn-help-main-layout">
         
         {/* ==================== HERO SEARCH SECTION ==================== */}
-        <section className="mhn-help-hero-card" style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '16px',
-          border: '1px solid #E2E8F0',
-          padding: '40px 32px',
-          textAlign: 'center',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
-          marginBottom: '32px',
-        }}>
-          <div style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '14px',
-            backgroundColor: '#EFF6FF',
-            color: '#0B66C2',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: '16px',
-          }}>
+        <section className="mhn-help-hero-banner">
+          <div className="mhn-help-hero-icon">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
               <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
@@ -234,15 +216,15 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
             </svg>
           </div>
 
-          <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.02em' }}>
+          <h1 className="mhn-help-hero-title">
             Help & Support Center
           </h1>
-          <p style={{ fontSize: '15px', color: '#64748B', maxWidth: '560px', margin: '0 auto 28px', lineHeight: 1.6 }}>
+          <p className="mhn-help-hero-sub">
             How can we help you today? Search our knowledge base or browse help categories below.
           </p>
 
           {/* Search Box */}
-          <div style={{ maxWidth: '600px', margin: '0 auto', position: 'relative' }}>
+          <div className="mhn-help-search-wrapper">
             <svg
               width="20"
               height="20"
@@ -252,7 +234,7 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
               strokeWidth="2.2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', zIndex: 2 }}
+              className="mhn-help-search-icon"
             >
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -262,25 +244,14 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
               placeholder="Search help topics, FAQs, technical issues..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                height: '52px',
-                borderRadius: '12px',
-                border: '1.5px solid #CBD5E1',
-                paddingLeft: '50px',
-                paddingRight: '20px',
-                fontSize: '15px',
-                backgroundColor: '#F8FAFC',
-                outline: 'none',
-                boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.02)',
-              }}
+              className="mhn-help-search-input"
             />
           </div>
         </section>
 
         {/* ==================== CATEGORY NAVIGATION PILLS ==================== */}
-        <section style={{ marginBottom: '32px' }}>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <section className="mhn-mb-32">
+          <div className="mhn-help-pills-row">
             {[
               { id: 'all', label: '🔍 All Topics' },
               { id: 'account', label: '👤 Account & Profile' },
@@ -293,18 +264,7 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
               <Button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                style={{
-                  padding: '10px 18px',
-                  borderRadius: '24px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  border: activeCategory === cat.id ? '1.5px solid #0B66C2' : '1px solid #CBD5E1',
-                  backgroundColor: activeCategory === cat.id ? '#0B66C2' : '#FFFFFF',
-                  color: activeCategory === cat.id ? '#FFFFFF' : '#475569',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: activeCategory === cat.id ? '0 4px 12px rgba(11, 102, 194, 0.25)' : 'none',
-                }}
+                className={`mhn-help-cat-pill ${activeCategory === cat.id ? 'active' : 'inactive'}`}
               >
                 {cat.label}
               </Button>
@@ -313,74 +273,41 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
         </section>
 
         {/* ==================== FREQUENTLY ASKED QUESTIONS ==================== */}
-        <section style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '16px',
-          border: '1px solid #E2E8F0',
-          padding: '32px',
-          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.03)',
-          marginBottom: '32px',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A' }}>
+        <section className="mhn-help-section-card">
+          <div className="mhn-toggle-row-between mhn-mb-24">
+            <h2 className="mhn-parent-card-title-lg">
               ❓ Frequently Asked Questions
             </h2>
-            <span style={{ fontSize: '13px', color: '#64748B', fontWeight: 500 }}>
+            <span className="mhn-comment-time">
               Showing {filteredFaqs.length} help articles
             </span>
           </div>
 
           {filteredFaqs.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748B' }}>
-              <div style={{ fontSize: '36px', marginBottom: '12px' }}>🔍</div>
-              <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1E293B', marginBottom: '4px' }}>No matching help topics found</h3>
-              <p style={{ fontSize: '14px' }}>Try searching with different keywords or submit a problem report below.</p>
+            <div className="mhn-text-center mhn-empty-state-card">
+              <div className="mhn-support-card-icon">🔍</div>
+              <h3 className="mhn-parent-card-title mhn-mb-4">No matching help topics found</h3>
+              <p className="mhn-parent-card-sub">Try searching with different keywords or submit a problem report below.</p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="mhn-col-flex-gap-12">
               {filteredFaqs.map((faq) => {
                 const isExpanded = expandedFaqId === faq.id;
                 return (
                   <div
                     key={faq.id}
-                    style={{
-                      borderRadius: '12px',
-                      border: isExpanded ? '1.5px solid #93C5FD' : '1px solid #E2E8F0',
-                      backgroundColor: isExpanded ? '#F0F9FF' : '#FFFFFF',
-                      overflow: 'hidden',
-                      transition: 'all 0.2s ease',
-                    }}
+                    className={`mhn-faq-card-item ${isExpanded ? 'expanded' : 'collapsed'}`}
                   >
                     <Button
                       type="button"
                       onClick={() => handleToggleFaq(faq.id)}
-                      style={{
-                        width: '100%',
-                        padding: '18px 20px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        background: 'none',
-                        border: 'none',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        gap: '16px',
-                      }}
+                      className="mhn-faq-trigger-btn"
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          padding: '4px 8px',
-                          borderRadius: '6px',
-                          backgroundColor: '#E0F2FE',
-                          color: '#0369A1',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
-                        }}>
+                      <div className="mhn-btn-loading-flex">
+                        <span className="mhn-faq-cat-badge">
                           {faq.categoryLabel}
                         </span>
-                        <span style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>
+                        <span className="mhn-faq-question-text">
                           {faq.question}
                         </span>
                       </div>
@@ -393,24 +320,14 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
                         strokeWidth="2.5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        style={{
-                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                          transition: 'transform 0.25s ease',
-                        }}
+                        className={`mhn-arrow-rotate ${isExpanded ? 'rotated' : ''}`}
                       >
                         <polyline points="6 9 12 15 18 9" />
                       </svg>
                     </Button>
 
                     {isExpanded && (
-                      <div style={{
-                        padding: '0 20px 18px 20px',
-                        fontSize: '14px',
-                        color: '#334155',
-                        lineHeight: 1.65,
-                        borderTop: '1px solid #E0F2FE',
-                        paddingTop: '14px',
-                      }}>
+                      <div className="mhn-faq-answer-body">
                         {faq.answer}
                       </div>
                     )}
@@ -422,33 +339,26 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
         </section>
 
         {/* ==================== REPORT A PROBLEM FORM ==================== */}
-        <section style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '16px',
-          border: '1px solid #E2E8F0',
-          padding: '32px',
-          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.03)',
-          marginBottom: '32px',
-        }}>
-          <div style={{ marginBottom: '24px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A', marginBottom: '6px' }}>
+        <section className="mhn-help-section-card">
+          <div className="mhn-mb-24">
+            <h2 className="mhn-parent-card-title-lg mhn-mb-6">
               📝 Report a Problem / Submit Ticket
             </h2>
-            <p style={{ fontSize: '14px', color: '#64748B' }}>
+            <p className="mhn-parent-card-sub">
               Encountered a bug, technical glitch, or login issue? Describe it below and our support team will investigate.
             </p>
           </div>
 
-          <form onSubmit={handleSubmitTicket} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <form onSubmit={handleSubmitTicket} className="mhn-col-flex-gap-20">
             {/* Category Selection */}
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+              <label className="mhn-form-label-block">
                 Issue Category
               </label>
               <Select
                 value={ticketCategory}
                 onChange={(e) => setTicketCategory(e.target.value)}
-                style={{ width: '100%', height: '44px', borderRadius: '8px' }}
+                className="mhn-ticket-select-input"
               >
                 <option value="technical">🛠️ Technical / App Loading Issue</option>
                 <option value="login">🔑 Login / OTP Verification Issue</option>
@@ -460,7 +370,7 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
 
             {/* Subject Line */}
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+              <label className="mhn-form-label-block">
                 Subject
               </label>
               <Input
@@ -468,13 +378,13 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
                 placeholder="Brief summary of the issue (e.g. OTP code not arriving)"
                 value={ticketSubject}
                 onChange={(e) => setTicketSubject(e.target.value)}
-                style={{ width: '100%', height: '44px', borderRadius: '8px' }}
+                className="mhn-ticket-select-input"
               />
             </div>
 
             {/* Description */}
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+              <label className="mhn-form-label-block">
                 Detailed Description
               </label>
               <Textarea
@@ -482,13 +392,13 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
                 value={ticketDescription}
                 onChange={(e) => setTicketDescription(e.target.value)}
                 rows={4}
-                style={{ width: '100%', borderRadius: '8px' }}
+                className="mhn-about-input-box"
               />
             </div>
 
             {/* File Upload Mockup */}
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+              <label className="mhn-form-label-block">
                 Attach Screenshot / Log (Optional)
               </label>
               <Input
@@ -496,27 +406,19 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
                 type="file"
                 accept="image/*,.log,.pdf"
                 onChange={handleFileSelect}
-                style={{ display: 'none' }}
+                className="mhn-display-none"
               />
               <div
                 onClick={() => fileInputRef.current?.click()}
-                style={{
-                  border: '1.5px dashed #CBD5E1',
-                  borderRadius: '10px',
-                  padding: '20px',
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  backgroundColor: '#F8FAFC',
-                  transition: 'background-color 0.2s ease',
-                }}
+                className="mhn-ticket-file-dropzone"
               >
                 {attachedFile ? (
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#166534', fontWeight: 600, fontSize: '14px' }}>
+                  <div className="mhn-btn-loading-flex mhn-text-center">
                     <span>📄 {attachedFile.name}</span>
-                    <span style={{ fontSize: '12px', color: '#64748B' }}>({(attachedFile.size / 1024).toFixed(1)} KB)</span>
+                    <span className="mhn-comment-time">({(attachedFile.size / 1024).toFixed(1)} KB)</span>
                   </div>
                 ) : (
-                  <div style={{ color: '#64748B', fontSize: '14px' }}>
+                  <div className="mhn-parent-card-sub">
                     <span>📎 Click to upload a screenshot or error log</span>
                   </div>
                 )}
@@ -528,16 +430,7 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
               <Button
                 type="submit"
                 disabled={isSubmittingTicket}
-                style={{
-                  backgroundColor: '#0B66C2',
-                  color: '#FFFFFF',
-                  padding: '12px 28px',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  cursor: isSubmittingTicket ? 'not-allowed' : 'pointer',
-                  opacity: isSubmittingTicket ? 0.7 : 1,
-                }}
+                className="mhn-btn-ticket-submit"
               >
                 {isSubmittingTicket ? 'Submitting Ticket...' : 'Submit Support Ticket'}
               </Button>
@@ -546,59 +439,36 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
         </section>
 
         {/* ==================== CONTACT SUPPORT CARDS ==================== */}
-        <section style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '20px',
-          marginBottom: '32px',
-        }}>
+        <section className="mhn-support-cards-grid">
           {/* Email Support Card */}
-          <div style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: '14px',
-            border: '1px solid #E2E8F0',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
-          }}>
-            <div style={{ fontSize: '24px', marginBottom: '10px' }}>📩</div>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', marginBottom: '4px' }}>Direct Email Support</h3>
-            <p style={{ fontSize: '13px', color: '#64748B', marginBottom: '12px' }}>Email our dedicated support specialists for complex account inquiries.</p>
-            <a href="mailto:support@myhockeynetwork.com" style={{ fontSize: '14px', fontWeight: 600, color: '#0B66C2', textDecoration: 'none' }}>
+          <div className="mhn-support-contact-card">
+            <div className="mhn-support-card-icon">📩</div>
+            <h3 className="mhn-support-card-title">Direct Email Support</h3>
+            <p className="mhn-support-card-desc">Email our dedicated support specialists for complex account inquiries.</p>
+            <a href="mailto:support@myhockeynetwork.com" className="mhn-support-card-link">
               support@myhockeynetwork.com
             </a>
           </div>
 
           {/* Live Hours Card */}
-          <div style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: '14px',
-            border: '1px solid #E2E8F0',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
-          }}>
-            <div style={{ fontSize: '24px', marginBottom: '10px' }}>⚡</div>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', marginBottom: '4px' }}>Support Operating Hours</h3>
-            <p style={{ fontSize: '13px', color: '#64748B', marginBottom: '12px' }}>Our technical support team actively responds during official hours.</p>
-            <span style={{ fontSize: '14px', fontWeight: 600, color: '#166534' }}>
+          <div className="mhn-support-contact-card">
+            <div className="mhn-support-card-icon">⚡</div>
+            <h3 className="mhn-support-card-title">Support Operating Hours</h3>
+            <p className="mhn-support-card-desc">Our technical support team actively responds during official hours.</p>
+            <span className="mhn-support-card-green-text">
               Mon - Fri: 9:00 AM - 6:00 PM EST
             </span>
           </div>
 
           {/* Legal Links Card */}
-          <div style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: '14px',
-            border: '1px solid #E2E8F0',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
-          }}>
-            <div style={{ fontSize: '24px', marginBottom: '10px' }}>📄</div>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', marginBottom: '4px' }}>Legal & Guidelines</h3>
-            <p style={{ fontSize: '13px', color: '#64748B', marginBottom: '12px' }}>Review terms of service, safety policies, and community guidelines.</p>
-            <div style={{ display: 'flex', gap: '12px', fontSize: '13px', fontWeight: 600 }}>
-              <a href="#" style={{ color: '#0B66C2', textDecoration: 'none' }}>Terms & Conditions</a>
-              <span style={{ color: '#CBD5E1' }}>•</span>
-              <a href="#" style={{ color: '#0B66C2', textDecoration: 'none' }}>Privacy Policy</a>
+          <div className="mhn-support-contact-card">
+            <div className="mhn-support-card-icon">📄</div>
+            <h3 className="mhn-support-card-title">Legal & Guidelines</h3>
+            <p className="mhn-support-card-desc">Review terms of service, safety policies, and community guidelines.</p>
+            <div className="mhn-legal-links-flex">
+              <a href="#" className="mhn-support-card-link">Terms & Conditions</a>
+              <span className="mhn-parent-card-sub">•</span>
+              <a href="#" className="mhn-support-card-link">Privacy Policy</a>
             </div>
           </div>
         </section>

@@ -1,6 +1,6 @@
-import { PropsWithChildren } from 'react';
+import { PropsWithChildren, useMemo } from 'react';
 
-import { StyleProp, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 
 import Header, { HeaderProps } from '@components/Header';
 import { HEADER_HEIGHT } from '@components/Header/constants';
@@ -14,6 +14,12 @@ export type ScreenWrapperProps = PropsWithChildren<{
   showHeader?: boolean;
 }>;
 
+const styles = StyleSheet.create({
+  flexContainer: {
+    flex: 1,
+  },
+});
+
 const ScreenWrapper = ({
   style,
   contentStyle,
@@ -24,12 +30,20 @@ const ScreenWrapper = ({
   const insets = useSafeAreaInsets();
   const topPadding = (showHeader ? HEADER_HEIGHT : 0) + insets.top;
 
+  const wrapperStyle = useMemo(
+    () => (style ? [styles.flexContainer, style] : styles.flexContainer),
+    [style],
+  );
+
+  const innerContentStyle = useMemo(
+    () => [styles.flexContainer, { paddingTop: topPadding }, contentStyle],
+    [topPadding, contentStyle],
+  );
+
   return (
-    <View style={[{ flex: 1 }, style]}>
+    <View style={wrapperStyle}>
       {showHeader ? <Header {...headerProps} /> : null}
-      <View style={[{ flex: 1, paddingTop: topPadding }, contentStyle]}>
-        {children}
-      </View>
+      <View style={innerContentStyle}>{children}</View>
     </View>
   );
 };

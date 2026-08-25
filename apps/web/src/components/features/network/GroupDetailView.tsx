@@ -70,7 +70,6 @@ export const GroupDetailView: React.FC<GroupDetailViewProps> = ({
             {/* Cover Banner */}
             <div 
               className="mhn-group-member-banner"
-              style={{ backgroundImage: 'url(/cover.png)' }}
             />
             {/* Avatar Circle */}
             <div className="mhn-group-member-avatar-wrapper">
@@ -107,7 +106,6 @@ export const GroupDetailView: React.FC<GroupDetailViewProps> = ({
           <div className="mhn-group-hero-card">
             <div 
               className="mhn-group-cover-banner"
-              style={{ backgroundImage: 'url(/event1.png)' }}
             />
 
             {/* Header Title & Actions Bar */}

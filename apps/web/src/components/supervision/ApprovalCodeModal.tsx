@@ -139,7 +139,7 @@ export const ApprovalCodeModal: React.FC<ApprovalCodeModalProps> = ({
 
   return (
     <div className="mhn-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="mhn-modal-card" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
+      <div className="mhn-modal-card mhn-parent-step-container-max440" onClick={(e) => e.stopPropagation()}>
         <div className="mhn-modal-header">
           <div className="mhn-modal-badge-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0B66C2" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -162,7 +162,7 @@ export const ApprovalCodeModal: React.FC<ApprovalCodeModalProps> = ({
           </p>
 
           <form onSubmit={handleSubmit} className="mhn-modal-form">
-            <div className="otp-inputs-row" style={{ justifyContent: 'center', margin: '16px 0 12px' }}>
+            <div className="otp-inputs-row mhn-otp-inputs-center">
               {digits.map((digit, index) => (
                 <Input
                   key={index}
@@ -185,19 +185,19 @@ export const ApprovalCodeModal: React.FC<ApprovalCodeModalProps> = ({
 
             {/* Standardized Edit Profile Reference Error UI */}
             {activeError && (
-              <span className="mhn-edit-profile-field-error" style={{ justifyContent: 'center', marginBottom: '12px' }}>
+              <span className="mhn-edit-profile-field-error mhn-mb-12 mhn-flex-justify-center">
                 <span>⚠️</span>
                 <span>{activeError}</span>
               </span>
             )}
 
-            <div className="mhn-modal-actions" style={{ marginTop: '20px', justifyContent: 'center' }}>
+            <div className="mhn-modal-actions mhn-mt-20 mhn-flex-justify-center">
               <Button type="button" className="mhn-modal-btn-cancel" onClick={onClose} disabled={loading}>
                 Cancel
               </Button>
               <Button type="submit" className="mhn-modal-btn-submit" disabled={loading}>
                 {loading ? (
-                  <span className="mhn-modal-spinner-wrapper" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="mhn-modal-spinner-wrapper mhn-btn-loading-flex">
                     <Spinner size="sm" color="#FFFFFF" />
                     <span>Confirming...</span>
                   </span>

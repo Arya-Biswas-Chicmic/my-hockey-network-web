@@ -567,8 +567,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
         type="button"
         onClick={() => handleToggleControl(controlKey, label, isOn, setter)}
         disabled={isUpdating}
-        className={`mhn-toggle-switch ${isOn ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
-        style={isUpdating ? { opacity: 0.8, cursor: 'wait', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' } : undefined}
+        className={`mhn-toggle-switch ${isOn ? 'mhn-toggle-on' : 'mhn-toggle-off'} ${isUpdating ? 'mhn-updating-state' : ''}`}
       >
         {isUpdating ? (
           <svg
@@ -578,7 +577,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
             fill="none"
             stroke="currentColor"
             strokeWidth="3"
-            style={{ animation: 'mhn-spin 0.8s linear infinite', margin: 'auto' }}
+            className="mhn-spin-auto"
           >
             <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4" strokeDashoffset="10" fill="none" />
           </svg>
@@ -836,7 +835,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
               {apiLoading ? (
                 <SidebarWardSkeleton count={2} />
               ) : wards.length === 0 ? (
-                <div style={{ padding: '16px 12px', fontSize: '13px', color: '#64748b', textAlign: 'center' }}>
+                <div className="mhn-ward-empty-msg">
                   No managed players found.
                 </div>
               ) : (
@@ -949,7 +948,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                     </FormField>
 
                     <FormField label="DOB" required error={dobErr}>
-                      <div className="mhn-form-date-input-wrapper" style={{ position: 'relative' }}>
+                      <div className="mhn-form-date-input-wrapper mhn-relative-container">
                         <Input
                           type="text"
                           value={newPlayer.dob}
@@ -963,7 +962,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                           className={`mhn-form-input ${dobErr ? 'mhn-input-error' : ''}`}
                         />
                         <svg
-                          className="mhn-calendar-icon"
+                          className="mhn-calendar-icon mhn-calendar-icon-pos"
                           width="18"
                           height="18"
                           viewBox="0 0 24 24"
@@ -971,7 +970,6 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                           stroke="#94A3B8"
                           strokeWidth="2"
                           onClick={handleSupervisionCalendarClick}
-                          style={{ cursor: 'pointer', position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}
                         >
                           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                           <line x1="16" y1="2" x2="16" y2="6" />
@@ -992,16 +990,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                               }
                             }
                           }}
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            right: '12px',
-                            width: '32px',
-                            height: '100%',
-                            opacity: 0,
-                            cursor: 'pointer',
-                            zIndex: 2,
-                          }}
+                          className="mhn-date-picker-hidden"
                         />
                       </div>
                     </FormField>
@@ -1192,7 +1181,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
                 <div className="mhn-form-actions-stack mhn-form-actions-narrow">
                   <Button
-                    className="mhn-btn-modal-submit"
+                    className="mhn-btn-modal-submit mhn-btn-ellipsis-block"
                     onClick={() => {
                       setViewMode(SupervisionViewModeEnum.MAIN);
                       const targetId = createdWardId || selectedWardId;
@@ -1201,14 +1190,6 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                       }
                     }}
                     title={`Go to ${addedPlayerName}'s Profile`}
-                    style={{
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      maxWidth: '100%',
-                      display: 'block',
-                      textAlign: 'center',
-                    }}
                   >
                     Go to Supervision Hub
                   </Button>
@@ -1245,10 +1226,9 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
                 <div className="mhn-form-actions-stack">
                   <Button
-                    className="mhn-btn-solid-blue"
+                    className="mhn-btn-solid-blue mhn-btn-loading-flex"
                     onClick={handleSendLinkInvitation}
                     disabled={isSendingLinkInvite}
-                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   >
                     {isSendingLinkInvite && <Spinner size="sm" color="#FFFFFF" />}
                     <span>{isSendingLinkInvite ? 'Sending Invitation...' : 'Send Invitation'}</span>
@@ -1447,7 +1427,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                   onChange={(val) => handleToggleControl('who_can_follow_them', 'Who can follow them', val, setNetworkPermissions)}
                                   disabled={updatingControlKey === 'who_can_follow_them'}
                                   placeholder=""
-                                  style={{ width: '180px' }}
+                                  className="mhn-w-180"
                                 />
                               </div>
 
@@ -1463,7 +1443,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                   onChange={(val) => handleToggleControl('who_can_send_requests', 'Who can send requests', val, setNetworkPermissions)}
                                   disabled={updatingControlKey === 'who_can_send_requests'}
                                   placeholder=""
-                                  style={{ width: '180px' }}
+                                  className="mhn-w-180"
                                 />
                               </div>
 
@@ -1543,7 +1523,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                   onChange={(val) => handleToggleControl('who_can_message_them', 'Who can message them', val, setMessagingPermissions)}
                                   disabled={updatingControlKey === 'who_can_message_them'}
                                   placeholder=""
-                                  style={{ width: '180px' }}
+                                  className="mhn-w-180"
                                 />
                               </div>
                             </div>
@@ -1677,34 +1657,14 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                               return (
                                 <div
                                   key={reqId}
-                                  className="mhn-supervision-req-card"
-                                  style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    textAlign: 'center',
-                                    padding: '24px 20px 20px',
-                                    borderRadius: '16px',
-                                    background: '#FFFFFF',
-                                    border: '1px solid #E2E8F0',
-                                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-                                    width: '100%',
-                                    minWidth: 0,
-                                    boxSizing: 'border-box',
-                                  }}
+                                  className="mhn-supervision-req-card mhn-req-card-centered"
                                 >
                                   {/* Centered Large Circular Avatar */}
-                                  <div style={{ position: 'relative', marginBottom: '12px' }}>
+                                  <div className="mhn-req-avatar-container">
                                     <img
                                       src={avatarUrl}
                                       alt={displayName}
-                                      style={{
-                                        width: '72px',
-                                        height: '72px',
-                                        borderRadius: '50%',
-                                        objectFit: 'cover',
-                                        border: '2px solid #F1F5F9',
-                                      }}
+                                      className="mhn-req-avatar-lg"
                                       onError={(e) => {
                                         (e.target as HTMLImageElement).src = '/userPlaceholder.png';
                                       }}
@@ -1714,36 +1674,14 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                   {/* Centered Name */}
                                   <h4
                                     title={displayName}
-                                    style={{
-                                      fontSize: '16px',
-                                      fontWeight: 700,
-                                      color: '#0F172A',
-                                      margin: '0 0 4px 0',
-                                      lineHeight: '1.3',
-                                      width: '100%',
-                                      maxWidth: '100%',
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis',
-                                      whiteSpace: 'nowrap',
-                                      wordBreak: 'break-all',
-                                    }}
+                                    className="mhn-req-name-lg"
                                   >
                                     {displayName}
                                   </h4>
 
                                   {/* Centered Role Tag */}
                                   <p
-                                    style={{
-                                      fontSize: '13px',
-                                      color: '#64748B',
-                                      margin: '0 0 10px 0',
-                                      fontWeight: 500,
-                                      width: '100%',
-                                      maxWidth: '100%',
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis',
-                                      whiteSpace: 'nowrap',
-                                    }}
+                                    className="mhn-req-role-lg"
                                   >
                                     {roleTag}
                                   </p>
@@ -1751,66 +1689,37 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                   {/* Centered Team Pill */}
                                   {teamName && (
                                     <div
-                                      style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '6px',
-                                        fontSize: '12px',
-                                        fontWeight: 600,
-                                        color: '#0B66C2',
-                                        marginBottom: '6px',
-                                        maxWidth: '100%',
-                                      }}
+                                      className="mhn-req-team-pill"
                                     >
                                       <img
                                         src={teamLogo}
                                         alt="Team"
-                                        style={{ width: '16px', height: '16px', borderRadius: '4px', objectFit: 'cover', flexShrink: 0 }}
+                                        className="mhn-req-team-logo-mini"
                                         onError={(e) => {
                                           (e.target as HTMLImageElement).style.display = 'none';
                                         }}
                                       />
-                                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{teamName}</span>
+                                      <span className="mhn-ellipsis-text">{teamName}</span>
                                     </div>
                                   )}
 
                                   {/* Centered Location */}
                                   {location && (
                                     <div
-                                      style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '4px',
-                                        fontSize: '12px',
-                                        color: '#64748B',
-                                        marginBottom: '16px',
-                                        maxWidth: '100%',
-                                      }}
+                                      className="mhn-req-loc-row"
                                     >
-                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" style={{ flexShrink: 0 }}>
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" className="mhn-flex-shrink-0">
                                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                                         <circle cx="12" cy="10" r="3" />
                                       </svg>
-                                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{location}</span>
+                                      <span className="mhn-ellipsis-text">{location}</span>
                                     </div>
                                   )}
 
                                   {/* Action Type Badge for Approval Requests */}
                                   {isApprovalItem && req.action && (
                                     <div
-                                      style={{
-                                        marginBottom: '10px',
-                                        padding: '4px 10px',
-                                        borderRadius: '12px',
-                                        backgroundColor: '#EFF6FF',
-                                        color: '#0B66C2',
-                                        fontSize: '11px',
-                                        fontWeight: 700,
-                                        letterSpacing: '0.04em',
-                                        textTransform: 'uppercase',
-                                      }}
+                                      className="mhn-req-action-badge"
                                     >
                                       {req.action === 'POST_MEDIA' || req.action === 'CREATE_POST' ? '🏒 Post Approval' :
                                        req.action === 'COMMENT_ON_POSTS' ? '💬 Comment Approval' :
@@ -1822,23 +1731,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                   {/* Post Subject Content Preview Box */}
                                   {isApprovalItem && req.subject && (
                                     <div
-                                      style={{
-                                        width: '100%',
-                                        padding: '10px 12px',
-                                        borderRadius: '10px',
-                                        backgroundColor: '#F8FAFC',
-                                        border: '1px solid #E2E8F0',
-                                        marginBottom: '14px',
-                                        textAlign: 'left',
-                                        fontSize: '12px',
-                                        boxSizing: 'border-box',
-                                      }}
+                                      className="mhn-req-subject-preview-box"
                                     >
-                                      <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: '4px' }}>
+                                      <div className="mhn-req-subject-title">
                                         {req.subject.kind || 'Post'} {req.subject.audience ? `(${req.subject.audience})` : ''}
                                       </div>
                                       {req.subject.body && (
-                                        <p style={{ margin: 0, color: '#1E293B', fontWeight: 500, lineHeight: '1.4', fontStyle: 'italic' }}>
+                                        <p className="mhn-req-subject-body">
                                           "{req.subject.body}"
                                         </p>
                                       )}
@@ -1847,30 +1746,11 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
                                   {/* Action Buttons Row */}
                                   <div
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '10px',
-                                      width: '100%',
-                                      marginTop: 'auto',
-                                    }}
+                                    className="mhn-req-btn-row"
                                   >
                                     <Button
                                       type="button"
-                                      style={{
-                                        flex: 1,
-                                        height: '36px',
-                                        borderRadius: '8px',
-                                        border: '1px solid #CBD5E1',
-                                        background: '#FFFFFF',
-                                        color: '#334155',
-                                        fontSize: '13px',
-                                        fontWeight: 600,
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
-                                      }}
+                                      className="mhn-req-btn-outline"
                                       disabled={requestActionLoading}
                                       onClick={() => {
                                         if (isApprovalItem) {
@@ -1884,20 +1764,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                     </Button>
                                     <Button
                                       type="button"
-                                      style={{
-                                        flex: 1,
-                                        height: '36px',
-                                        borderRadius: '8px',
-                                        border: 'none',
-                                        background: '#0B66C2',
-                                        color: '#FFFFFF',
-                                        fontSize: '13px',
-                                        fontWeight: 600,
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
-                                      }}
+                                      className="mhn-req-btn-solid"
                                       disabled={requestActionLoading}
                                       onClick={() => {
                                         if (isApprovalItem) {

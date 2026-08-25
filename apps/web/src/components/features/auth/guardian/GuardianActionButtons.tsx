@@ -11,26 +11,15 @@ interface GuardianActionButtonsProps {
 export const GuardianActionButtons: React.FC<GuardianActionButtonsProps> = ({ onSignOut, onSkip, loading }) => {
   return (
     <div className="guardian-button-stack">
-      <Button type="submit" className="btn-guardian-primary" disabled={loading} style={{ opacity: loading ? 0.75 : 1 }}>
+      <Button type="submit" className={`btn-guardian-primary ${loading ? 'mhn-loading' : ''}`} disabled={loading}>
         {loading ? 'Sending Invitation...' : GUARDIAN_APPROVAL_STRINGS.sendRequestButton}
       </Button>
 
       {onSkip ? (
         <Button
           type="button"
-          className="btn-guardian-secondary"
+          className="btn-guardian-secondary btn-guardian-skip"
           onClick={onSkip}
-          style={{
-            width: '100%',
-            padding: '12px',
-            backgroundColor: '#F3F4F6',
-            color: '#374151',
-            borderRadius: '8px',
-            fontWeight: 600,
-            border: '1px solid #D1D5DB',
-            cursor: 'pointer',
-            marginTop: '8px',
-          }}
         >
           Skip
         </Button>

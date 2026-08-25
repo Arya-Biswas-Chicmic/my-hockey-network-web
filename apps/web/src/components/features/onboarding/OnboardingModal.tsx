@@ -333,22 +333,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
       )}
 
       {errorMessage && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '12px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: '#FEF2F2',
-            color: '#DC2626',
-            padding: '8px 16px',
-            borderRadius: '8px',
-            fontSize: '13px',
-            fontWeight: 600,
-            zIndex: 10,
-            border: '1px solid #FCA5A5',
-          }}
-        >
+        <div className="mhn-error-banner-top">
           {errorMessage}
         </div>
       )}

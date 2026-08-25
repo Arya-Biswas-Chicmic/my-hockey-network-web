@@ -3,7 +3,6 @@ import { ReactNode, useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import useStyles from '@hooks/useStyles';
-import { FONT } from '@utils/constants';
 
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -48,8 +47,13 @@ const Header = ({
     if (canGoBack) navigation.goBack();
   };
 
+  const containerStyle = useMemo(
+    () => [dynamicStyles.container, { paddingTop: insets.top }],
+    [dynamicStyles.container, insets.top],
+  );
+
   return (
-    <View style={[dynamicStyles.container, { paddingTop: insets.top }]}>
+    <View style={containerStyle}>
       <View style={dynamicStyles.content}>
         <View style={dynamicStyles.side}>
           {leftComponent ? (
@@ -62,16 +66,8 @@ const Header = ({
               hitSlop={10}
               style={dynamicStyles.backButton}
             >
-              <Text
-                style={[dynamicStyles.backText, { fontFamily: FONT.MEDIUM }]}
-              >
-                {'‹'}
-              </Text>
-              <Text
-                style={[dynamicStyles.backLabel, { fontFamily: FONT.MEDIUM }]}
-              >
-                Back
-              </Text>
+              <Text style={dynamicStyles.backText}>{'‹'}</Text>
+              <Text style={dynamicStyles.backLabel}>Back</Text>
             </Pressable>
           ) : null}
         </View>
@@ -80,10 +76,7 @@ const Header = ({
           {centerComponent ? (
             centerComponent
           ) : (
-            <Text
-              numberOfLines={1}
-              style={[dynamicStyles.title, { fontFamily: FONT.SEMI_BOLD }]}
-            >
+            <Text numberOfLines={1} style={dynamicStyles.title}>
               {title || ''}
             </Text>
           )}

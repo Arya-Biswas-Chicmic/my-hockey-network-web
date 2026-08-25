@@ -11,17 +11,7 @@ export const Spinner: React.FC<SpinnerProps> = ({ size = 'sm', color = 'currentC
 
   return (
     <span
-      className="mhn-spinner-ring"
-      style={{
-        display: 'inline-block',
-        width: dimensions,
-        height: dimensions,
-        border: `${borderWidth} solid rgba(255, 255, 255, 0.35)`,
-        borderTopColor: color,
-        borderRadius: '50%',
-        animation: 'mhn-spin 0.6s linear infinite',
-        verticalAlign: 'middle',
-      }}
+      className={`mhn-spinner-ring mhn-spinner-${size}`}
     />
   );
 };

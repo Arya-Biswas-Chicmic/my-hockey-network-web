@@ -17,7 +17,6 @@ import { ROUTES } from '../../navigation/constants';
 import { RootStackParamList } from '../../navigation/types';
 import { loginUser } from '@redux/CommonReducer';
 import { useAppDispatch } from '@redux/store';
-import { FONT } from '@utils/constants';
 import { isValidEmail, sanitizeEmail } from '@utils/validation';
 import { mobileAuth } from '../../platform/auth-service';
 
@@ -28,7 +27,7 @@ import styles from './styles';
 type Props = NativeStackScreenProps<RootStackParamList, ROUTES.LOGIN>;
 
 const LoginScreen = ({ navigation }: Props) => {
-  const { dynamicStyles, Layout, Colors } = useStyles(styles);
+  const { dynamicStyles, Layout } = useStyles(styles);
   const dispatch = useAppDispatch();
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -106,14 +105,8 @@ const LoginScreen = ({ navigation }: Props) => {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <View style={dynamicStyles.card}>
-            <Text style={[dynamicStyles.title, { fontFamily: FONT.BOLD }]}>
-              Welcome back
-            </Text>
-            <Text
-              style={[dynamicStyles.subtitle, { fontFamily: FONT.REGULAR }]}
-            >
-              Sign in to continue
-            </Text>
+            <Text style={dynamicStyles.title}>Welcome back</Text>
+            <Text style={dynamicStyles.subtitle}>Sign in to continue</Text>
 
             <View style={dynamicStyles.form}>
               <Input
@@ -160,7 +153,7 @@ const LoginScreen = ({ navigation }: Props) => {
               {!!submitError && (
                 <Text
                   accessibilityRole="alert"
-                  style={[dynamicStyles.submitError, { color: Colors.error }]}
+                  style={dynamicStyles.submitError}
                 >
                   {submitError}
                 </Text>
@@ -183,11 +176,7 @@ const LoginScreen = ({ navigation }: Props) => {
                   onPress={() => navigation.navigate(ROUTES.FORGOT_PASSWORD)}
                   disabled={isLoading}
                 >
-                  <Text
-                    style={[dynamicStyles.link, { fontFamily: FONT.MEDIUM }]}
-                  >
-                    Forgot password?
-                  </Text>
+                  <Text style={dynamicStyles.link}>Forgot password?</Text>
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
@@ -195,11 +184,7 @@ const LoginScreen = ({ navigation }: Props) => {
                   onPress={() => navigation.navigate(ROUTES.SIGNUP)}
                   disabled={isLoading}
                 >
-                  <Text
-                    style={[dynamicStyles.link, { fontFamily: FONT.MEDIUM }]}
-                  >
-                    Create account
-                  </Text>
+                  <Text style={dynamicStyles.link}>Create account</Text>
                 </Pressable>
               </View>
             </View>

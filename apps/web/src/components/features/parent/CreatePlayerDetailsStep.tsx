@@ -127,7 +127,7 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
       <h2 className="mhn-parent-step-title">Player Details</h2>
       <p className="mhn-parent-step-desc">Tell us a little about your player.</p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      <div className="mhn-col-flex-gap-18">
         {/* Full Name */}
         <FormField label="Full Name" required error={fullNameError} maxLength={50} valueLength={formData.fullName?.length}>
           <Input
@@ -146,7 +146,7 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
 
         {/* DOB */}
         <FormField label="DOB" required error={dobError}>
-          <div style={{ position: 'relative' }}>
+          <div className="mhn-relative-container">
             <Input
               type="text"
               className={`auth-input ${dobError ? 'mhn-input-invalid' : ''}`}
@@ -159,23 +159,14 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
             <img
               src="/calendar.png"
               alt="Calendar"
-              className="auth-input-icon auth-input-icon-clickable"
+              className="auth-input-icon auth-input-icon-clickable mhn-cursor-pointer"
               onClick={handleCalendarClick}
-              style={{ cursor: 'pointer' }}
             />
             <Input
               type="date"
               ref={dateInputRef}
               onChange={handleDatePickerChange}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                opacity: 0,
-                pointerEvents: 'none',
-              }}
+              className="mhn-hidden-date-picker"
             />
           </div>
         </FormField>
@@ -210,7 +201,7 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
         </FormField>
       </div>
 
-      <div style={{ marginTop: '28px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div className="mhn-parent-actions-stack">
         <Button
           type="button"
           className="mhn-parent-btn-primary"

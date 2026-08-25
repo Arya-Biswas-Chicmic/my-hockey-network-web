@@ -362,7 +362,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           )}
 
           {isFeedRefreshing ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="mhn-col-flex-gap-16">
               <FeedPostSkeleton />
             </div>
           ) : feedError?.isServerError ? (

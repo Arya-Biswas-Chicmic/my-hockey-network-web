@@ -135,20 +135,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
           type="button"
           onClick={onChangeEmail}
           disabled={loading}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: 'none',
-            border: 'none',
-            color: '#0B66C2',
-            fontSize: '14px',
-            fontWeight: 600,
-            cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: loading ? 0.6 : 1,
-            marginBottom: '12px',
-            padding: 0,
-          }}
+          className="mhn-btn-back-link"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -168,24 +155,13 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
       </div>
 
       {resendNotice && (
-        <div
-          style={{
-            backgroundColor: '#F0FDF4',
-            border: '1px solid #86EFAC',
-            borderRadius: '8px',
-            padding: '10px 14px',
-            marginBottom: '16px',
-            color: '#166534',
-            fontSize: '13px',
-            fontWeight: 500,
-          }}
-        >
+        <div className="mhn-resend-notice-card">
           ✓ {resendNotice}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="verify-email-form">
-        <div className="otp-inputs-row" style={{ position: 'relative' }}>
+        <div className="otp-inputs-row mhn-relative-container">
           {code.map((digit, index) => (
             <Input
               key={index}
@@ -208,7 +184,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
 
         {/* Standardized Edit Profile Reference Validation Error Format */}
         {activeError && (
-          <div className="mhn-edit-profile-field-error" style={{ marginTop: '12px', justifyContent: 'center' }}>
+          <div className="mhn-edit-profile-field-error mhn-error-center-margin">
             <span>⚠️</span>
             <span>{activeError}</span>
           </div>
@@ -216,12 +192,11 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
 
         <Button
           type="submit"
-          className="btn-submit btn-confirm-otp"
+          className={`btn-submit btn-confirm-otp mhn-btn-confirm-margin ${loading ? 'mhn-loading' : ''}`}
           disabled={loading}
-          style={{ opacity: loading ? 0.75 : 1, marginTop: '24px' }}
         >
           {loading ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <span className="mhn-btn-loading-flex">
               <Spinner size="sm" color="#FFFFFF" />
               <span>Verifying...</span>
             </span>
@@ -236,30 +211,16 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
         type="button"
         onClick={onChangeEmail}
         disabled={loading}
-        className="auth-back-link btn-change-email"
-        style={{
-          marginTop: '16px',
-          opacity: loading ? 0.6 : 1,
-          cursor: loading ? 'not-allowed' : 'pointer',
-        }}
+        className="auth-back-link btn-change-email mhn-mt-16"
       >
         Change Email
       </Button>
 
       {/* Resend Code Footer */}
-      <div className="auth-footer-text verify-email-footer" style={{ marginTop: '16px' }}>
+      <div className="auth-footer-text verify-email-footer mhn-mt-16">
         <span>Don’t Receive the code? </span>
         {resendCooldown > 0 ? (
-          <span
-            style={{
-              color: isLastTenSeconds ? '#EF4444' : '#64748B',
-              fontWeight: 600,
-              fontSize: '14px',
-              transition: 'color 0.3s ease',
-              display: 'inline-block',
-              marginLeft: '4px',
-            }}
-          >
+          <span className={isLastTenSeconds ? 'mhn-timer-text-urgent' : 'mhn-timer-text'}>
             Resend OTP in {formattedTimer}
           </span>
         ) : (
@@ -267,13 +228,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
             type="button"
             onClick={handleResendClick}
             disabled={loading}
-            className="auth-primary-link btn-resend-code"
-            style={{
-              color: '#0B66C2',
-              fontWeight: 600,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.6 : 1,
-            }}
+            className="auth-primary-link btn-resend-code mhn-btn-resend-link"
           >
             Resend OTP
           </Button>

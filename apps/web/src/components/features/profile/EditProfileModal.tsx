@@ -270,69 +270,29 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   return (
     <div
       className="mhn-modal-overlay"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(15, 23, 42, 0.65)',
-        backdropFilter: 'blur(4px)',
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px',
-      }}
       onClick={(e) => {
         if (e.target === e.currentTarget) handleAttemptClose();
       }}
     >
       <div
-        className="mhn-edit-profile-modal-card"
-        style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '16px',
-          width: '100%',
-          maxWidth: '740px',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
-          overflow: 'hidden',
-          animation: 'modalSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-        }}
+        className="mhn-edit-profile-dialog-card"
       >
         {/* Modal Header */}
         <div
-          style={{
-            padding: '20px 24px',
-            borderBottom: '1px solid #E2E8F0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            backgroundColor: '#F8FAFC',
-          }}
+          className="mhn-edit-profile-header"
         >
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+            <h2 className="mhn-edit-profile-title">
               Edit Profile
             </h2>
-            <p style={{ fontSize: '13px', color: '#64748B', margin: '4px 0 0 0' }}>
+            <p className="mhn-edit-profile-sub">
               Update your personal details, player stats, and account preferences.
             </p>
           </div>
 
           <Button
             onClick={handleAttemptClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#64748B',
-              cursor: 'pointer',
-              padding: '6px',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            className="mhn-edit-profile-close-btn"
             aria-label="Close modal"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -343,22 +303,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         </div>
 
         {/* Modal Scrollable Form Body */}
-        <form onSubmit={handleSubmit} style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+        <form onSubmit={handleSubmit} className="mhn-edit-profile-form-body">
           {saveSuccessMsg && (
             <div
-              style={{
-                backgroundColor: '#F0FDF4',
-                border: '1px solid #86EFAC',
-                color: '#166534',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 600,
-                marginBottom: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
+              className="mhn-resend-notice-card mhn-mb-20"
             >
               <span>✓</span>
               <span>{saveSuccessMsg}</span>
@@ -367,16 +315,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
           {errors.form && (
             <div
-              style={{
-                backgroundColor: '#FEF2F2',
-                border: '1px solid #FCA5A5',
-                color: '#DC2626',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 600,
-                marginBottom: '20px',
-              }}
+              className="mhn-edit-profile-field-error mhn-mb-20"
             >
               {errors.form}
             </div>
@@ -384,34 +323,16 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
           {/* Section 1: Read-Only System Account Badges */}
           <div
-            style={{
-              backgroundColor: '#F1F5F9',
-              borderRadius: '12px',
-              padding: '16px',
-              marginBottom: '24px',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-              gap: '16px',
-            }}
+            className="mhn-edit-profile-system-banner"
           >
             {/* Email (Read-only + Verified Badge) */}
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div className="mhn-toggle-row-between mhn-mb-6">
+                <label className="mhn-system-field-label">
                   Email Address
                 </label>
                 <span
-                  style={{
-                    backgroundColor: '#DCFCE7',
-                    color: '#15803D',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: '12px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}
+                  className="mhn-verified-badge-pill"
                 >
                   ✓ Verified
                 </span>
@@ -421,70 +342,38 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 value={userEmail}
                 disabled
                 readOnly
-                style={{
-                  width: '100%',
-                  height: '42px',
-                  backgroundColor: '#E2E8F0',
-                  border: '1px solid #CBD5E1',
-                  borderRadius: '8px',
-                  padding: '0 12px',
-                  fontSize: '14px',
-                  color: '#64748B',
-                  cursor: 'not-allowed',
-                  fontWeight: 500,
-                }}
+                className="mhn-readonly-input-box"
               />
             </div>
 
             {/* Primary Role (Read-only PLAYER Badge) */}
             <div>
-              <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>
+              <label className="mhn-system-field-label mhn-display-block">
                 Primary Account Role
               </label>
               <div
-                style={{
-                  width: '100%',
-                  height: '42px',
-                  backgroundColor: '#E2E8F0',
-                  border: '1px solid #CBD5E1',
-                  borderRadius: '8px',
-                  padding: '0 12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  color: '#475569',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  cursor: 'not-allowed',
-                }}
+                className="mhn-readonly-role-box"
               >
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#1860C3' }} />
+                <span className="mhn-blue-role-dot" />
                 <span>{userPrimaryRole}</span>
-                <span style={{ fontSize: '11px', color: '#94A3B8', marginLeft: 'auto' }}>(Primary Role Locked)</span>
+                <span className="mhn-comment-time mhn-ml-auto">(Primary Role Locked)</span>
               </div>
             </div>
           </div>
 
           {/* Section 2: Avatar Upload & Identity */}
-          <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', marginBottom: '16px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
+          <div className="mhn-mb-24">
+            <h3 className="mhn-section-heading">
               Personal Identity
             </h3>
 
             {/* Avatar Row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px' }}>
-              <div style={{ position: 'relative' }}>
+            <div className="mhn-avatar-edit-row">
+              <div className="mhn-relative-container">
                 <img
                   src={formData.avatarUrl}
                   alt="Profile Avatar"
-                  style={{
-                    width: '84px',
-                    height: '84px',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    border: '3px solid #1860C3',
-                    backgroundColor: '#F1F5F9',
-                  }}
+                  className="mhn-avatar-preview-img"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/userPlaceholder.png';
                   }}
@@ -492,21 +381,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 <Button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  style={{
-                    position: 'absolute',
-                    bottom: '0',
-                    right: '0',
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '50%',
-                    backgroundColor: '#1860C3',
-                    color: '#FFFFFF',
-                    border: '2px solid #FFFFFF',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
+                  className="mhn-avatar-pencil-badge"
                   title="Upload profile photo"
                 >
                   ✎
@@ -516,7 +391,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   ref={fileInputRef}
                   onChange={handleAvatarFileChange}
                   accept="image/*"
-                  style={{ display: 'none' }}
+                  className="mhn-display-none"
                 />
               </div>
 
@@ -524,17 +399,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 <Button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  style={{
-                    backgroundColor: '#F1F5F9',
-                    border: '1px solid #CBD5E1',
-                    borderRadius: '8px',
-                    padding: '8px 16px',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    color: '#1E293B',
-                    cursor: 'pointer',
-                    marginRight: '8px',
-                  }}
+                  className="mhn-btn-upload-photo"
                 >
                   Upload Photo
                 </Button>
@@ -542,29 +407,22 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   <Button
                     type="button"
                     onClick={() => handleChange('avatarUrl', '/userPlaceholder.png')}
-                    style={{
-                      backgroundColor: 'transparent',
-                      border: 'none',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      color: '#DC2626',
-                      cursor: 'pointer',
-                    }}
+                    className="mhn-btn-remove-photo"
                   >
                     Remove
                   </Button>
                 )}
-                <p style={{ fontSize: '12px', color: '#64748B', margin: '6px 0 0 0' }}>
+                <p className="mhn-parent-card-sub-sm mhn-mt-6">
                   Allowed JPG, PNG or WebP. Max 5MB.
                 </p>
               </div>
             </div>
 
             {/* Display Name, First Name, Last Name Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
+            <div className="mhn-edit-profile-system-banner">
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Display Name <span style={{ color: '#DC2626' }}>*</span>
+                <label className="mhn-form-label-block">
+                  Display Name <span className="mhn-red-star">*</span>
                 </label>
                 <Input
                   type="text"
@@ -583,7 +441,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                <label className="mhn-form-label-block">
                   First Name
                 </label>
                 <Input
@@ -603,7 +461,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                <label className="mhn-form-label-block">
                   Last Name
                 </label>
                 <Input
@@ -624,9 +482,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             </div>
 
             {/* Date of Birth & Gender Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginTop: '16px' }}>
+            <div className="mhn-edit-profile-system-banner mhn-mt-16">
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                <label className="mhn-form-label-block">
                   Date of Birth
                 </label>
                 <Input
@@ -655,12 +513,12 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
           {/* Section 3: Player Athletic & Hockey Details (Only for Players) */}
           {isPlayer && (
-            <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', marginBottom: '16px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
+            <div className="mhn-mb-24">
+              <h3 className="mhn-section-heading">
                 Player & Athletic Information
               </h3>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
+              <div className="mhn-edit-profile-system-banner">
                 <Dropdown
                   label="Position"
                   value={formData.position}
@@ -678,7 +536,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 />
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  <label className="mhn-form-label-block">
                     Jersey Number (#)
                   </label>
                   <Input
@@ -702,9 +560,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
           )}
 
           {/* Location & Bio Section */}
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ marginTop: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+          <div className="mhn-mb-24">
+            <div className="mhn-mt-16">
+              <label className="mhn-form-label-block">
                 City / Location
               </label>
               <Input
@@ -723,8 +581,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               )}
             </div>
 
-            <div style={{ marginTop: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+            <div className="mhn-mt-16">
+              <label className="mhn-form-label-block">
                 Player Bio
               </label>
               <Textarea
@@ -732,10 +590,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 onChange={(e) => handleChange('bio', e.target.value)}
                 placeholder="Write a brief intro about your hockey background and goals..."
                 rows={3}
-                className={`mhn-edit-profile-input ${errors.bio ? 'mhn-input-invalid' : ''}`}
-                style={{ height: 'auto', minHeight: '80px', paddingTop: '10px' }}
+                className={`mhn-edit-profile-input mhn-bio-textarea ${errors.bio ? 'mhn-input-invalid' : ''}`}
               />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="mhn-toggle-row-between">
                 <div>
                   {errors.bio && (
                     <span className="mhn-edit-profile-field-error">
@@ -754,33 +611,17 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
         {/* Modal Footer Actions */}
         <div
-          style={{
-            padding: '16px 24px',
-            borderTop: '1px solid #E2E8F0',
-            backgroundColor: '#F8FAFC',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
+          className="mhn-edit-profile-footer"
         >
-          <span style={{ fontSize: '13px', color: isFormDirty ? '#1E293B' : '#94A3B8', fontWeight: 500 }}>
+          <span className={`mhn-unsaved-text ${isFormDirty ? 'dirty' : 'clean'}`}>
             {isFormDirty ? '● Unsaved changes' : 'No changes made'}
           </span>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="mhn-btn-loading-flex">
             <Button
               type="button"
               onClick={handleAttemptClose}
-              style={{
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #CBD5E1',
-                borderRadius: '8px',
-                padding: '10px 20px',
-                fontSize: '14px',
-                fontWeight: 600,
-                color: '#475569',
-                cursor: 'pointer',
-              }}
+              className="mhn-btn-profile-cancel"
             >
               Cancel
             </Button>
@@ -789,20 +630,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               type="button"
               onClick={handleSubmit}
               disabled={isSaveDisabled}
-              style={{
-                backgroundColor: isSaveDisabled ? '#94A3B8' : '#1860C3',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '10px 24px',
-                fontSize: '14px',
-                fontWeight: 600,
-                color: '#FFFFFF',
-                cursor: isSaveDisabled ? 'not-allowed' : 'pointer',
-                transition: 'all 0.15s ease-in-out',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
+              className={`mhn-btn-profile-save ${isSaveDisabled ? 'disabled' : 'active'}`}
             >
               {isSubmitting ? (
                 <>
@@ -820,46 +648,21 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       {/* Discard Unsaved Changes Dialog */}
       {showDiscardConfirm && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 10000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px',
-          }}
+          className="mhn-discard-modal-overlay"
         >
           <div
-            style={{
-              backgroundColor: '#FFFFFF',
-              borderRadius: '12px',
-              padding: '24px',
-              maxWidth: '400px',
-              width: '100%',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
-            }}
+            className="mhn-discard-modal-card"
           >
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 8px 0' }}>
+            <h3 className="mhn-discard-title">
               Discard Unsaved Changes?
             </h3>
-            <p style={{ fontSize: '14px', color: '#64748B', margin: '0 0 20px 0', lineHeight: 1.4 }}>
+            <p className="mhn-discard-sub">
               You have unsaved edits in your profile. Are you sure you want to discard them?
             </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+            <div className="mhn-delete-modal-actions">
               <Button
                 onClick={() => setShowDiscardConfirm(false)}
-                style={{
-                  backgroundColor: '#F1F5F9',
-                  border: '1px solid #CBD5E1',
-                  borderRadius: '6px',
-                  padding: '8px 16px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#334155',
-                  cursor: 'pointer',
-                }}
+                className="mhn-btn-keep-editing"
               >
                 Keep Editing
               </Button>
@@ -868,16 +671,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   setShowDiscardConfirm(false);
                   onClose();
                 }}
-                style={{
-                  backgroundColor: '#DC2626',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '8px 16px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#FFFFFF',
-                  cursor: 'pointer',
-                }}
+                className="mhn-btn-discard-confirm"
               >
                 Discard
               </Button>

@@ -116,12 +116,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
                 alt="arrow"
                 width="9"
                 height="4.5"
-                style={{
-                  width: '9px',
-                  height: '4.5px',
-                  transform: isReadMore ? 'rotate(180deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.2s ease',
-                }}
+                className={`mhn-arrow-rotate ${isReadMore ? 'rotated' : ''}`}
               />
             </Button>
 

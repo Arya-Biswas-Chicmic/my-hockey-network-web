@@ -320,22 +320,13 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
           </div>
         </div>
 
-        <div className="mhn-post-header-actions" style={{ position: 'relative' }}>
+        <div className="mhn-post-header-actions mhn-relative-container">
           {!isSelf && (
             <Button
               onClick={() => assertSupervisionPermission('follow_others', toggleFollow)}
               disabled={isFollowingLoading}
-              className={`mhn-btn-follow ${isFollowing ? 'mhn-btn-following' : ''}`}
+              className={`mhn-btn-follow ${isFollowing ? 'mhn-btn-following' : ''} ${isFollowingLoading ? 'mhn-loading' : ''}`}
               title={!canFollow ? 'Parent did not give permission' : undefined}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                minWidth: '82px',
-                opacity: isFollowingLoading ? 0.75 : 1,
-                cursor: isFollowingLoading ? 'not-allowed' : 'pointer',
-              }}
             >
               {!canFollow ? (
                 <>
@@ -370,42 +361,14 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
               </Button>
 
               {isMenuOpen && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    right: 0,
-                    top: '36px',
-                    backgroundColor: '#FFFFFF',
-                    borderRadius: '8px',
-                    boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-                    border: '1px solid #E2E8F0',
-                    zIndex: 50,
-                    minWidth: '130px',
-                    overflow: 'hidden',
-                  }}
-                >
+                <div className="mhn-post-menu-popover">
                   <Button
                     onClick={() => {
                       setIsMenuOpen(false);
                       setEditContentInput(postContent);
                       setIsEditModalOpen(true);
                     }}
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      textAlign: 'left',
-                      background: 'none',
-                      border: 'none',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      color: '#0F172A',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    className="mhn-post-menu-item"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
                     <span>Edit Post</span>
@@ -415,23 +378,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                       setIsMenuOpen(false);
                       setIsDeleteModalOpen(true);
                     }}
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      textAlign: 'left',
-                      background: 'none',
-                      border: 'none',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      color: '#EF4444',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      borderTop: '1px solid #F1F5F9',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#FEF2F2')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    className="mhn-post-menu-item-danger"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                     <span>Delete Post</span>
@@ -462,7 +409,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
               alt="Post attachment"
               className="mhn-post-media-img"
               onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
+                (e.target as HTMLImageElement).classList.add('mhn-display-none');
               }}
             />
           </div>
@@ -490,7 +437,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
             ) : (
               <img src="/like.png" alt="" className="like-count-icon" />
             )}
-            <span className="mhn-action-count" style={{ color: isLiked ? '#1860C3' : undefined, fontWeight: isLiked ? 700 : undefined }}>{likes}</span>
+            <span className={`mhn-action-count ${isLiked ? 'mhn-action-count-liked' : ''}`}>{likes}</span>
           </Button>
 
           <Button
@@ -511,7 +458,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
             ) : (
               <img src="/comment.png" alt="" className="comment-count-icon" />
             )}
-            <span className="mhn-action-count" style={{ color: showComments ? '#0091FF' : undefined, fontWeight: showComments ? 700 : undefined }}>
+            <span className={`mhn-action-count ${showComments ? 'mhn-action-count-commented' : ''}`}>
               {currentCommentsCount}
             </span>
           </Button>
@@ -520,10 +467,9 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
             <Button
               onClick={() => assertSupervisionPermission('share_posts', handleShare)}
               disabled={isSharing}
-              className={`mhn-action-item ${hasReposted ? 'mhn-action-active' : ''}`}
+              className={`mhn-action-item ${hasReposted ? 'mhn-action-active' : ''} ${isSharing ? 'mhn-loading' : ''}`}
               aria-label="Share post"
               title={!canShare ? 'Parent did not give permission' : hasReposted ? 'Undo Repost' : 'Repost update'}
-              style={{ opacity: isSharing ? 0.7 : 1, cursor: isSharing ? 'not-allowed' : 'pointer' }}
             >
               {!canShare ? (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" className="share-count-icon">
@@ -536,13 +482,11 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                 <img
                   src="/share.png"
                   alt=""
-                  className="share-count-icon"
-                  style={hasReposted ? { filter: 'hue-rotate(200deg)' } : undefined}
+                  className={`share-count-icon ${hasReposted ? 'mhn-repost-icon-filter' : ''}`}
                 />
               )}
               <span
-                className="mhn-action-count"
-                style={{ color: hasReposted ? '#1860C3' : undefined, fontWeight: hasReposted ? 700 : undefined }}
+                className={`mhn-action-count ${hasReposted ? 'mhn-action-count-reposted' : ''}`}
               >
                 {reposts}
               </span>
@@ -561,35 +505,18 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
 
       {isEditModalOpen && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.65)',
-            backdropFilter: 'blur(4px)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-          }}
+          className="mhn-modal-overlay"
           onClick={() => setIsEditModalOpen(false)}
         >
           <div
-            style={{
-              width: '100%',
-              maxWidth: '520px',
-              backgroundColor: '#FFFFFF',
-              borderRadius: '16px',
-              padding: '24px',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-            }}
+            className="mhn-modal-card mhn-edit-post-modal-card"
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#0F172A' }}>Edit Post</h3>
+            <div className="mhn-edit-post-header">
+              <h3 className="mhn-edit-post-title">Edit Post</h3>
               <Button
                 onClick={() => setIsEditModalOpen(false)}
-                style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#64748B' }}
+                className="mhn-edit-post-close-btn"
               >
                 ✕
               </Button>
@@ -599,48 +526,20 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
               value={editContentInput}
               onChange={(e) => setEditContentInput(e.target.value)}
               rows={4}
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '10px',
-                border: '1px solid #CBD5E1',
-                fontSize: '14px',
-                resize: 'vertical',
-                outline: 'none',
-                boxSizing: 'border-box',
-              }}
+              className="mhn-edit-post-textarea"
             />
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+            <div className="mhn-edit-post-actions">
               <Button
                 onClick={() => setIsEditModalOpen(false)}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  backgroundColor: '#F1F5F9',
-                  color: '#475569',
-                  border: '1px solid #CBD5E1',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
+                className="mhn-btn-edit-cancel"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSaveEdit}
                 disabled={isUpdating}
-                style={{
-                  padding: '8px 20px',
-                  borderRadius: '8px',
-                  backgroundColor: '#1860C3',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
+                className="mhn-btn-edit-save"
               >
                 {isUpdating && <Spinner size="sm" color="#FFFFFF" />}
                 <span>Save Changes</span>
@@ -654,57 +553,26 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
       {isDeleteModalOpen && (
         <div
           className="mhn-modal-overlay"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.65)',
-            backdropFilter: 'blur(4px)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-          }}
           onClick={() => !isDeleting && setIsDeleteModalOpen(false)}
         >
           <div
-            className="mhn-modal-card"
-            style={{
-              width: '100%',
-              maxWidth: '420px',
-              backgroundColor: '#FFFFFF',
-              borderRadius: '16px',
-              padding: '24px',
-              boxShadow: '0 20px 45px rgba(0, 0, 0, 0.25)',
-              border: '1px solid #E2E8F0',
-              animation: 'mhnPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-            }}
+            className="mhn-modal-card mhn-delete-modal-card"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#FEF2F2',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#DC2626'
-                }}>
+            <div className="mhn-delete-modal-header">
+              <div className="mhn-dropdown-item-left">
+                <div className="mhn-delete-icon-circle">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                 </div>
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#0F172A' }}>
+                <h3 className="mhn-delete-modal-title">
                   Delete Post
                 </h3>
               </div>
               {!isDeleting && (
                 <Button
                   onClick={() => setIsDeleteModalOpen(false)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    fontSize: '22px',
-                    color: '#64748B',
-                    cursor: 'pointer',
-                    lineHeight: 1,
-                  }}
+                  className="mhn-delete-modal-close"
                   aria-label="Close modal"
                 >
                   &times;
@@ -713,27 +581,17 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
             </div>
 
             {/* Modal Body */}
-            <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.5, margin: '0 0 24px 0' }}>
+            <p className="mhn-delete-modal-body">
               Are you sure you want to delete this post? This action is permanent and cannot be undone.
             </p>
 
             {/* Action Buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px' }}>
+            <div className="mhn-delete-modal-actions">
               <Button
                 type="button"
                 onClick={() => setIsDeleteModalOpen(false)}
                 disabled={isDeleting}
-                style={{
-                  padding: '10px 18px',
-                  borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
-                  backgroundColor: '#FFFFFF',
-                  color: '#475569',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  cursor: isDeleting ? 'not-allowed' : 'pointer',
-                  opacity: isDeleting ? 0.6 : 1,
-                }}
+                className="mhn-btn-modal-cancel"
               >
                 Cancel
               </Button>
@@ -741,20 +599,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={isDeleting}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: '#DC2626',
-                  color: '#FFFFFF',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  cursor: isDeleting ? 'not-allowed' : 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  opacity: isDeleting ? 0.8 : 1,
-                }}
+                className="mhn-btn-modal-danger"
               >
                 {isDeleting ? (
                   <>

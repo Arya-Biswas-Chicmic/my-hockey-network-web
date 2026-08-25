@@ -175,7 +175,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 ref={fileInputRef}
                 onChange={handleImageSelect}
                 accept="image/*"
-                style={{ display: 'none' }}
+                className="mhn-display-none"
               />
 
               {/* Action Toolbar */}
@@ -215,7 +215,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   className={`mhn-modal-submit-btn ${(content.trim() || postImage) && !isLoading ? 'active' : 'disabled'}`}
                 >
                   {isLoading ? (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="mhn-btn-loading-flex">
                       <svg className="mhn-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
                         <path d="M12 2a10 10 0 0 1 10 10" fill="currentColor" />
@@ -376,7 +376,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               </div>
 
               {customError && (
-                <div className="mhn-edit-profile-field-error" style={{ marginBottom: '12px' }}>
+                <div className="mhn-edit-profile-field-error mhn-mb-12">
                   <span>⚠️</span>
                   <span>{customError}</span>
                 </div>

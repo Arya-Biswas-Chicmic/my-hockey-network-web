@@ -2,73 +2,46 @@ import React from 'react';
 
 export const FeedPostSkeleton: React.FC = () => {
   return (
-    <div
-      className="mhn-post-figma-card"
-      style={{
-        padding: '20px',
-        backgroundColor: '#FFFFFF',
-        borderRadius: '16px',
-        border: '1px solid #E2E8F0',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '14px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-      }}
-    >
+    <div className="mhn-post-figma-card mhn-feed-skeleton-card">
       {/* Header Row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+      <div className="mhn-skeleton-row-between">
+        <div className="mhn-skeleton-author-group">
           {/* Avatar Skeleton */}
-          <div
-            className="mhn-skeleton-avatar"
-            style={{ width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0 }}
-          />
+          <div className="mhn-skeleton-avatar mhn-skeleton-avatar-lg" />
           {/* Name & Subtitle Skeleton */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-            <div
-              className="mhn-skeleton-line"
-              style={{ width: '38%', height: '14px', borderRadius: '4px' }}
-            />
-            <div
-              className="mhn-skeleton-line"
-              style={{ width: '22%', height: '11px', borderRadius: '4px' }}
-            />
+          <div className="mhn-skeleton-text-stack">
+            <div className="mhn-skeleton-line mhn-skeleton-name-line" />
+            <div className="mhn-skeleton-line mhn-skeleton-sub-line" />
           </div>
         </div>
 
         {/* 3 Dots Icon Placeholder */}
-        <div
-          className="mhn-skeleton-line"
-          style={{ width: '20px', height: '14px', borderRadius: '4px' }}
-        />
+        <div className="mhn-skeleton-line mhn-skeleton-dots-icon" />
       </div>
 
       {/* Text Lines */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <div className="mhn-skeleton-line" style={{ width: '94%', height: '13px', borderRadius: '4px' }} />
-        <div className="mhn-skeleton-line" style={{ width: '70%', height: '13px', borderRadius: '4px' }} />
+      <div className="mhn-skeleton-body-lines">
+        <div className="mhn-skeleton-line mhn-skeleton-body-l1" />
+        <div className="mhn-skeleton-line mhn-skeleton-body-l2" />
       </div>
 
       {/* Media Box Skeleton */}
-      <div
-        className="mhn-skeleton-line"
-        style={{ width: '100%', height: '220px', borderRadius: '12px' }}
-      />
+      <div className="mhn-skeleton-line mhn-skeleton-media-box" />
 
       {/* Footer Action Icons */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '28px', paddingTop: '4px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div className="mhn-skeleton-line" style={{ width: '18px', height: '18px', borderRadius: '50%' }} />
-          <div className="mhn-skeleton-line" style={{ width: '24px', height: '12px', borderRadius: '4px' }} />
+      <div className="mhn-skeleton-actions-row">
+        <div className="mhn-skeleton-action-item">
+          <div className="mhn-skeleton-line mhn-skeleton-icon-circle" />
+          <div className="mhn-skeleton-line mhn-skeleton-stat-text" />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div className="mhn-skeleton-line" style={{ width: '18px', height: '18px', borderRadius: '50%' }} />
-          <div className="mhn-skeleton-line" style={{ width: '24px', height: '12px', borderRadius: '4px' }} />
+        <div className="mhn-skeleton-action-item">
+          <div className="mhn-skeleton-line mhn-skeleton-icon-circle" />
+          <div className="mhn-skeleton-line mhn-skeleton-stat-text" />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div className="mhn-skeleton-line" style={{ width: '18px', height: '18px', borderRadius: '50%' }} />
+        <div className="mhn-skeleton-action-item">
+          <div className="mhn-skeleton-line mhn-skeleton-icon-circle" />
         </div>
       </div>
     </div>
@@ -77,26 +50,26 @@ export const FeedPostSkeleton: React.FC = () => {
 
 export const ProfileSummarySkeleton: React.FC = () => {
   return (
-    <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-      <div className="mhn-skeleton-line animate-pulse" style={{ width: '100%', height: '80px', borderRadius: '12px' }} />
-      <div className="mhn-skeleton-avatar animate-pulse" style={{ width: '68px', height: '68px', borderRadius: '50%', marginTop: '-40px', border: '3px solid #FFF' }} />
-      <div className="mhn-skeleton-line animate-pulse" style={{ width: '60%', height: '18px', borderRadius: '4px' }} />
-      <div className="mhn-skeleton-line animate-pulse" style={{ width: '40%', height: '12px', borderRadius: '4px' }} />
-      <div className="mhn-skeleton-line animate-pulse" style={{ width: '50%', height: '12px', borderRadius: '4px' }} />
-      <div style={{ display: 'flex', width: '100%', gap: '16px', marginTop: '8px' }}>
-        <div className="mhn-skeleton-line animate-pulse" style={{ flex: 1, height: '36px', borderRadius: '8px' }} />
-        <div className="mhn-skeleton-line animate-pulse" style={{ flex: 1, height: '36px', borderRadius: '8px' }} />
+    <div className="mhn-profile-skeleton-card">
+      <div className="mhn-skeleton-line animate-pulse mhn-profile-skeleton-cover" />
+      <div className="mhn-skeleton-avatar animate-pulse mhn-profile-skeleton-avatar" />
+      <div className="mhn-skeleton-line animate-pulse mhn-profile-skeleton-name" />
+      <div className="mhn-skeleton-line animate-pulse mhn-profile-skeleton-role" />
+      <div className="mhn-skeleton-line animate-pulse mhn-profile-skeleton-loc" />
+      <div className="mhn-profile-skeleton-stats-row">
+        <div className="mhn-skeleton-line animate-pulse mhn-profile-skeleton-stat-btn" />
+        <div className="mhn-skeleton-line animate-pulse mhn-profile-skeleton-stat-btn" />
       </div>
-      <div className="mhn-skeleton-line animate-pulse" style={{ width: '100%', height: '40px', borderRadius: '8px', marginTop: '4px' }} />
+      <div className="mhn-skeleton-line animate-pulse mhn-profile-skeleton-post-btn" />
     </div>
   );
 };
 
 export const WidgetSkeleton: React.FC = () => {
   return (
-    <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div className="mhn-skeleton-line animate-pulse" style={{ width: '50%', height: '16px', borderRadius: '4px' }} />
-      <div className="mhn-skeleton-line animate-pulse" style={{ width: '100%', height: '70px', borderRadius: '10px' }} />
+    <div className="mhn-widget-skeleton-card">
+      <div className="mhn-skeleton-line animate-pulse mhn-widget-skeleton-title" />
+      <div className="mhn-skeleton-line animate-pulse mhn-widget-skeleton-body" />
     </div>
   );
 };
@@ -110,13 +83,13 @@ export const HomeSkeletonLoader: React.FC = () => {
       </aside>
 
       {/* Center Column */}
-      <section className="mhn-layout-col-center" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <section className="mhn-layout-col-center mhn-col-flex-gap-16">
         <FeedPostSkeleton />
         <FeedPostSkeleton />
       </section>
 
       {/* Right Column */}
-      <aside className="mhn-layout-col-right" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <aside className="mhn-layout-col-right mhn-col-flex-gap-16">
         <WidgetSkeleton />
         <WidgetSkeleton />
       </aside>

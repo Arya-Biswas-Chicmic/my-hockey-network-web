@@ -6,7 +6,7 @@ export const HeaderSkeleton: React.FC = () => {
       <div className="mhn-header-container">
         {/* Left: Brand Logo Shimmer */}
         <div className="mhn-header-logo-area">
-          <div className="mhn-header-shimmer-box" style={{ width: '140px', height: '36px', borderRadius: '8px' }} />
+          <div className="mhn-header-shimmer-box mhn-header-shimmer-logo" />
         </div>
 
         {/* Center: Navigation Bar Shimmer */}
@@ -20,39 +20,20 @@ export const HeaderSkeleton: React.FC = () => {
           ].map((item, index) => (
             <div
               key={index}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                height: '68px',
-                padding: '0 20px',
-              }}
+              className="mhn-header-shimmer-nav-item"
             >
-              <div className="mhn-header-shimmer-box" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />
-              <div className="mhn-header-shimmer-box" style={{ width: item.width, height: '10px', borderRadius: '3px' }} />
+              <div className="mhn-header-shimmer-box mhn-header-shimmer-icon" />
+              <div className="mhn-header-shimmer-box mhn-header-shimmer-label" />
             </div>
           ))}
         </nav>
 
         {/* Right: User Profile Pill Shimmer */}
         <div className="mhn-header-user">
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '4px 12px 4px 4px',
-              height: '40px',
-              borderRadius: '24px',
-              backgroundColor: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-            }}
-          >
-            <div className="mhn-header-shimmer-box" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
-            <div className="mhn-header-shimmer-box" style={{ width: '60px', height: '12px', borderRadius: '4px' }} />
-            <div className="mhn-header-shimmer-box" style={{ width: '12px', height: '12px', borderRadius: '3px' }} />
+          <div className="mhn-header-shimmer-user-pill">
+            <div className="mhn-header-shimmer-box mhn-header-shimmer-avatar" />
+            <div className="mhn-header-shimmer-box mhn-header-shimmer-name" />
+            <div className="mhn-header-shimmer-box mhn-header-shimmer-chevron" />
           </div>
         </div>
       </div>

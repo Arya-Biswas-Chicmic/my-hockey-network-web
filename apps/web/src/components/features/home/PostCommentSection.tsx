@@ -196,12 +196,8 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
           <Button
             type="submit"
             disabled={!newCommentText.trim() || isSubmitting}
-            className="mhn-comment-send-btn"
+            className={`mhn-comment-send-btn ${isSubmitting ? 'mhn-submitting' : ''}`}
             aria-label="Send comment"
-            style={{
-              backgroundColor: isSubmitting ? '#E0F2FE' : undefined,
-              cursor: isSubmitting ? 'not-allowed' : undefined,
-            }}
           >
             {isSubmitting ? (
               <Spinner size="sm" color="#0091FF" />
@@ -226,17 +222,17 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
       {isLoading ? (
         <div className="mhn-comment-skeleton-list">
           <div className="mhn-comment-skeleton-item">
-            <div className="mhn-skeleton-avatar mhn-shimmer-box" style={{ width: 36, height: 36, borderRadius: '50%' }} />
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div className="mhn-skeleton-line mhn-shimmer-box" style={{ width: '40%', height: 14 }} />
-              <div className="mhn-skeleton-line mhn-shimmer-box" style={{ width: '85%', height: 12 }} />
+            <div className="mhn-skeleton-avatar mhn-shimmer-box mhn-comment-skeleton-avatar" />
+            <div className="mhn-comment-skeleton-meta">
+              <div className="mhn-skeleton-line mhn-shimmer-box mhn-comment-skeleton-name" />
+              <div className="mhn-skeleton-line mhn-shimmer-box mhn-comment-skeleton-body" />
             </div>
           </div>
           <div className="mhn-comment-skeleton-item">
-            <div className="mhn-skeleton-avatar mhn-shimmer-box" style={{ width: 36, height: 36, borderRadius: '50%' }} />
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div className="mhn-skeleton-line mhn-shimmer-box" style={{ width: '30%', height: 14 }} />
-              <div className="mhn-skeleton-line mhn-shimmer-box" style={{ width: '70%', height: 12 }} />
+            <div className="mhn-skeleton-avatar mhn-shimmer-box mhn-comment-skeleton-avatar" />
+            <div className="mhn-comment-skeleton-meta">
+              <div className="mhn-skeleton-line mhn-shimmer-box mhn-comment-skeleton-name-short" />
+              <div className="mhn-skeleton-line mhn-shimmer-box mhn-comment-skeleton-body-short" />
             </div>
           </div>
         </div>

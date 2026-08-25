@@ -291,12 +291,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
               <div className="mhn-notification-settings-list">
                 {isLoadingNotifications ? (
                   [1, 2, 3, 4, 5].map((n) => (
-                    <div key={n} className="mhn-notification-setting-row" style={{ opacity: 0.75, alignItems: 'center' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-                        <div style={{ width: '180px', height: '16px', borderRadius: '4px', background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%)', backgroundSize: '200% 100%', animation: 'mhnShimmer 1.5s infinite linear' }} />
-                        <div style={{ width: '260px', height: '12px', borderRadius: '4px', background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%)', backgroundSize: '200% 100%', animation: 'mhnShimmer 1.5s infinite linear' }} />
+                    <div key={n} className="mhn-notification-setting-row mhn-notif-skeleton-row">
+                      <div className="mhn-comment-skeleton-meta">
+                        <div className="mhn-shimmer-box mhn-notif-skeleton-title-line" />
+                        <div className="mhn-shimmer-box mhn-notif-skeleton-sub-line" />
                       </div>
-                      <div style={{ width: '48px', height: '26px', borderRadius: '13px', background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%)', backgroundSize: '200% 100%', animation: 'mhnShimmer 1.5s infinite linear' }} />
+                      <div className="mhn-shimmer-box mhn-notif-skeleton-toggle-pill" />
                     </div>
                   ))
                 ) : filteredNotificationItems.length === 0 ? (
@@ -311,26 +311,18 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                         <h4 className="mhn-notification-item-title">{item.title}</h4>
                         <p className="mhn-notification-item-subtitle">{item.subtitle}</p>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div className="mhn-btn-loading-flex">
                         {updatingNotifKey === item.id && (
                           <div
-                            style={{
-                              width: '16px',
-                              height: '16px',
-                              border: '2px solid rgba(15, 23, 42, 0.2)',
-                              borderTopColor: '#0F172A',
-                              borderRadius: '50%',
-                              animation: 'mhnSpin 0.8s linear infinite',
-                            }}
+                            className="mhn-spinner-mini"
                           />
                         )}
                         <Button
                           type="button"
                           onClick={() => toggleNotification(item.id)}
                           disabled={updatingNotifKey === item.id}
-                          className={`mhn-toggle-switch ${item.enabled ? 'mhn-toggle-on' : 'mhn-toggle-off'}`}
+                          className={`mhn-toggle-switch ${item.enabled ? 'mhn-toggle-on' : 'mhn-toggle-off'} ${updatingNotifKey === item.id ? 'mhn-updating-opacity' : ''}`}
                           aria-label={item.title}
-                          style={{ opacity: updatingNotifKey === item.id ? 0.6 : 1 }}
                         >
                           <div className="mhn-toggle-handle" />
                         </Button>
@@ -430,26 +422,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                           type="button"
                           onClick={() => handleUnblock(user.id)}
                           disabled={unblockingIds.includes(user.id)}
-                          className="mhn-btn-unblock"
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px',
-                            opacity: unblockingIds.includes(user.id) ? 0.75 : 1,
-                          }}
+                          className="mhn-btn-unblock mhn-btn-loading-flex"
                         >
                           {unblockingIds.includes(user.id) ? (
                             <>
                               <div
-                                style={{
-                                  width: '14px',
-                                  height: '14px',
-                                  border: '2px solid rgba(255,255,255,0.3)',
-                                  borderTopColor: '#FFFFFF',
-                                  borderRadius: '50%',
-                                  animation: 'mhnSpin 0.8s linear infinite',
-                                }}
+                                className="mhn-spinner-white-mini"
                               />
                               <span>Unblocking...</span>
                             </>

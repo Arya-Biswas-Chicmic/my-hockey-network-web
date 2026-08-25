@@ -3,6 +3,7 @@ import { StyleSheet } from 'react-native';
 import { ThemeColors } from '@theme/constants';
 import { _scaleText } from '@utils/utility';
 
+import { FONT } from '@utils/constants';
 import { HEADER_HEIGHT } from './constants';
 
 const styles = (Colors: ThemeColors) =>
@@ -39,6 +40,7 @@ const styles = (Colors: ThemeColors) =>
     title: {
       color: Colors.text,
       fontSize: _scaleText(16),
+      fontFamily: FONT.SEMI_BOLD,
     },
     backButton: {
       flexDirection: 'row',
@@ -51,10 +53,12 @@ const styles = (Colors: ThemeColors) =>
       fontSize: _scaleText(22),
       marginRight: 6,
       marginTop: -1,
+      fontFamily: FONT.MEDIUM,
     },
     backLabel: {
       color: Colors.primary,
       fontSize: _scaleText(14),
+      fontFamily: FONT.MEDIUM,
     },
   });
 

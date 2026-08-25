@@ -55,7 +55,7 @@ export const GuardianApprovalForm: React.FC<GuardianApprovalFormProps> = ({
       <GuardianFormHeader />
 
       <form onSubmit={handleSubmit} className="guardian-form-stack" noValidate>
-        <div className="auth-form-group" style={{ position: 'relative' }}>
+        <div className="auth-form-group mhn-relative-container">
           <label className="guardian-input-label" htmlFor="guardianEmail">
             {GUARDIAN_APPROVAL_STRINGS.emailLabel}
           </label>
@@ -64,7 +64,7 @@ export const GuardianApprovalForm: React.FC<GuardianApprovalFormProps> = ({
               id="guardianEmail"
               type="email"
               maxLength={100}
-              className={`guardian-input ${hasAttemptedSubmit && emailError ? 'mhn-edit-profile-input-error' : ''}`}
+              className={`guardian-input ${hasAttemptedSubmit && emailError ? 'mhn-edit-profile-input-error mhn-input-error-orange' : ''}`}
               placeholder={GUARDIAN_APPROVAL_STRINGS.emailPlaceholder}
               value={email}
               onChange={(e) => {
@@ -74,61 +74,12 @@ export const GuardianApprovalForm: React.FC<GuardianApprovalFormProps> = ({
                   setEmailError(validateEmail(val));
                 }
               }}
-              style={hasAttemptedSubmit && emailError ? { borderColor: '#EA580C', backgroundColor: '#FFF7ED' } : {}}
             />
           </div>
           {hasAttemptedSubmit && emailError && (
-            <div
-              className="mhn-validation-tooltip-bubble"
-              style={{
-                position: 'absolute',
-                top: 'calc(100% + 6px)',
-                left: '0',
-                zIndex: 100,
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #71717A',
-                borderRadius: '6px',
-                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.16)',
-                padding: '8px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                maxWidth: '100%',
-                fontSize: '13px',
-                color: '#18181B',
-                fontWeight: 500,
-                lineHeight: '1.35',
-              }}
-            >
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '-6px',
-                  left: '18px',
-                  width: '10px',
-                  height: '10px',
-                  backgroundColor: '#FFFFFF',
-                  borderLeft: '1px solid #71717A',
-                  borderTop: '1px solid #71717A',
-                  transform: 'rotate(45deg)',
-                }}
-              />
-              <div
-                style={{
-                  width: '20px',
-                  height: '20px',
-                  backgroundColor: '#EA580C',
-                  borderRadius: '3px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#FFFFFF',
-                  fontSize: '13px',
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  lineHeight: 1,
-                }}
-              >
+            <div className="mhn-validation-tooltip-bubble">
+              <div className="mhn-validation-tooltip-arrow" />
+              <div className="mhn-validation-tooltip-badge">
                 !
               </div>
               <span>{emailError}</span>

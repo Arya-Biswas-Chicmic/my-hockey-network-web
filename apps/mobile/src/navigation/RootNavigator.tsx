@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useAppDispatch, useAppSelector } from '@redux/store';
 import {
   completeAuthBootstrap,
@@ -61,7 +61,7 @@ const RootNavigator = () => {
 
   if (!hasBootstrapped) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator />
       </View>
     );
@@ -93,4 +93,12 @@ const RootNavigator = () => {
     </SafeAreaProvider>
   );
 };
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
+
 export default RootNavigator;

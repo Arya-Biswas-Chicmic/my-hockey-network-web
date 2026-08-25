@@ -762,42 +762,28 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           <div className="mhn-profile-hero-card">
             {/* Cover Banner Area */}
             <div
-              className="mhn-profile-cover-banner"
+              className="mhn-profile-cover-banner mhn-relative-container"
               style={{
                 backgroundImage: `url(${liveCoverImage})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                position: 'relative',
-                overflow: 'hidden',
               }}
             >
               <Input
                 type="file"
                 ref={coverFileInputRef}
                 accept="image/*"
-                style={{ display: 'none' }}
+                className="mhn-display-none"
                 onChange={handleCoverFileChange}
               />
 
               {/* Full Cover Banner Uploading Overlay */}
               {isUploadingCover && (
                 <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    backgroundColor: 'rgba(15, 23, 42, 0.65)',
-                    backdropFilter: 'blur(4px)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '10px',
-                    color: '#FFFFFF',
-                    zIndex: 5,
-                  }}
+                  className="mhn-cover-uploading-overlay"
                 >
                   <Spinner size="lg" color="#38BDF8" />
-                  <span style={{ fontSize: '14px', fontWeight: 600, letterSpacing: '0.3px' }}>
+                  <span className="mhn-cover-uploading-text">
                     Uploading cover image...
                   </span>
                 </div>
@@ -806,12 +792,11 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               {/* Edit Cover Pencil Button */}
               {isOwnProfile && (
                 <Button
-                  className="mhn-btn-edit-cover"
+                  className="mhn-btn-edit-cover mhn-z-6"
                   aria-label="Edit cover photo"
                   onClick={handleEditCoverClick}
                   disabled={isUploadingCover}
                   title="Upload new cover image"
-                  style={{ zIndex: 6 }}
                 >
                   {isUploadingCover ? (
                     <Spinner size="sm" color="#1860C3" />
@@ -823,18 +808,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
               {coverUploadMsg && (
                 <div
-                  style={{
-                    position: 'absolute',
-                    bottom: '12px',
-                    left: '16px',
-                    backgroundColor: 'rgba(15, 23, 42, 0.85)',
-                    color: '#FFFFFF',
-                    padding: '6px 12px',
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    zIndex: 10,
-                  }}
+                  className="mhn-cover-success-badge"
                 >
                   ✅ {coverUploadMsg}
                 </div>
@@ -848,7 +822,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 type="file"
                 ref={avatarFileInputRef}
                 accept="image/*"
-                style={{ display: 'none' }}
+                className="mhn-display-none"
                 onChange={handleAvatarFileChange}
               />
 
@@ -1072,7 +1046,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       options={['2025-26', '2024-25']}
                       onChange={(val) => setSelectedSeason(val)}
                       placeholder=""
-                      style={{ width: '160px' }}
+                      className="mhn-w-160"
                     />
 
                     <Dropdown
@@ -1080,7 +1054,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       options={['Regular Season', 'Playoffs']}
                       onChange={(val) => setSelectedSeasonType(val)}
                       placeholder=""
-                      style={{ width: '200px' }}
+                      className="mhn-w-200"
                     />
 
                     <Dropdown
@@ -1088,7 +1062,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       options={['Miles • MI', 'KM • KPH']}
                       onChange={(val) => setSelectedUnit(val)}
                       placeholder=""
-                      style={{ width: '160px' }}
+                      className="mhn-w-160"
                     />
                   </div>
 
@@ -1155,7 +1129,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   <div className="mhn-stats-section-card">
                     <h3 className="mhn-stats-section-title">
                       <span>Shots On Goal Zone Map</span>
-                      <span className="mhn-percentile-info-icon" style={{ width: '18px', height: '18px', fontSize: '11px' }}>i</span>
+                      <span className="mhn-percentile-info-icon mhn-info-icon-sm">i</span>
                     </h3>
 
                     <div className="mhn-zone-map-content-row">
@@ -1187,11 +1161,11 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
                         {/* Percentile Gradient Bar Legend */}
                         <div className="mhn-percentile-legend-bar">
-                          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '10px', color: '#64748B', fontWeight: 600 }}>
+                          <div className="mhn-toggle-row-between mhn-text-xs-sub">
                             <span>Percentile</span>
                           </div>
                           <div className="mhn-legend-bar-img" />
-                          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '10px', color: '#64748B', fontWeight: 700 }}>
+                          <div className="mhn-toggle-row-between mhn-text-xs-bold">
                             <span>1-50</span>
                             <span>51-80</span>
                             <span>81-99</span>
@@ -1210,7 +1184,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         <div className="mhn-zone-table-row">
                           <div className="mhn-zone-table-left">
                             <span className="mhn-badge-pill-outline">&lt;50th</span>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <div className="mhn-comment-skeleton-meta">
                               <div className="mhn-zone-stats-nums">
                                 <span className="mhn-num-main">72</span>
                                 <span className="mhn-num-avg">86</span>
@@ -1224,7 +1198,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         <div className="mhn-zone-table-row">
                           <div className="mhn-zone-table-left">
                             <span className="mhn-badge-pill-cyan">52nd</span>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <div className="mhn-comment-skeleton-meta">
                               <div className="mhn-zone-stats-nums">
                                 <span className="mhn-num-main">30</span>
                                 <span className="mhn-num-avg">32</span>
@@ -1238,7 +1212,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         <div className="mhn-zone-table-row">
                           <div className="mhn-zone-table-left">
                             <span className="mhn-badge-pill-outline">&lt;50th</span>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <div className="mhn-comment-skeleton-meta">
                               <div className="mhn-zone-stats-nums">
                                 <span className="mhn-num-main">14</span>
                                 <span className="mhn-num-avg">27</span>
@@ -1252,7 +1226,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         <div className="mhn-zone-table-row">
                           <div className="mhn-zone-table-left">
                             <span className="mhn-badge-pill-cyan">79th</span>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <div className="mhn-comment-skeleton-meta">
                               <div className="mhn-zone-stats-nums">
                                 <span className="mhn-num-main">13</span>
                                 <span className="mhn-num-avg">8</span>
@@ -1269,12 +1243,12 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   <div className="mhn-stats-section-card">
                     <h3 className="mhn-stats-section-title">
                       <span>Zone Time</span>
-                      <span className="mhn-percentile-info-icon" style={{ width: '18px', height: '18px', fontSize: '11px' }}>i</span>
+                      <span className="mhn-percentile-info-icon mhn-info-icon-sm">i</span>
                     </h3>
 
                     <div className="mhn-zone-time-visual-wrapper">
                       {/* SVG Rink Overlay Lines */}
-                      <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0.4 }} viewBox="0 0 600 200" fill="none">
+                      <svg className="mhn-rink-svg-overlay" viewBox="0 0 600 200" fill="none">
                         <rect x="10" y="10" width="580" height="180" rx="30" stroke="#FCA5A5" strokeWidth="1.5" />
                         <line x1="200" y1="10" x2="200" y2="190" stroke="#0091FF" strokeWidth="2" />
                         <line x1="400" y1="10" x2="400" y2="190" stroke="#0091FF" strokeWidth="2" />
@@ -1313,11 +1287,11 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
                     {/* Percentile Gradient Bar Legend */}
                     <div className="mhn-percentile-legend-bar">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '10px', color: '#64748B', fontWeight: 600 }}>
+                      <div className="mhn-toggle-row-between mhn-text-xs-sub">
                         <span>Percentile</span>
                       </div>
                       <div className="mhn-legend-bar-img" />
-                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '10px', color: '#64748B', fontWeight: 700 }}>
+                      <div className="mhn-toggle-row-between mhn-text-xs-bold">
                         <span>1-50</span>
                         <span>51-80</span>
                         <span>81-99</span>
@@ -1368,7 +1342,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         {/* Bio */}
                         <div className="mhn-about-field-group">
                           <label className="mhn-about-field-label">Bio</label>
-                          <div style={{ position: 'relative' }}>
+                          <div className="mhn-relative-container">
                             <Textarea
                               value={bioText}
                               onChange={(e) => {
@@ -1391,9 +1365,9 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         {/* Primary Role (Read-Only / System Managed) */}
                         <div className="mhn-about-field-group">
                           <label className="mhn-about-field-label">
-                            Role <span style={{ fontSize: '12px', fontWeight: 400, color: '#64748B' }}>(Managed by system)</span>
+                            Role <span className="mhn-sub-label-light">(Managed by system)</span>
                           </label>
-                          <div style={{ position: 'relative' }}>
+                          <div className="mhn-relative-container">
                             <Input
                               type="text"
                               value={liveRole}
@@ -1419,7 +1393,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         {isPlayer && (
                           <div className="mhn-about-field-group">
                             <label className="mhn-about-field-label">Jersey Number</label>
-                            <div style={{ position: 'relative' }}>
+                            <div className="mhn-relative-container">
                               <Input
                                 type="number"
                                 value={jerseyText}
@@ -1441,23 +1415,10 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         )}
 
                         {/* Save & Feedback Row */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
+                        <div className="mhn-btn-loading-flex mhn-mt-12">
                           <Button
                             type="button"
-                            className="mhn-about-btn-save"
-                            style={{
-                              height: '38px',
-                              padding: '0 24px',
-                              backgroundColor: '#1860C3',
-                              color: '#FFFFFF',
-                              borderRadius: '8px',
-                              fontWeight: 600,
-                              border: 'none',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                            }}
+                            className="mhn-about-btn-save mhn-btn-primary-compact"
                             onClick={handleSaveIntro}
                             disabled={isSavingIntro}
                           >
@@ -1466,17 +1427,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                           </Button>
                           <Button
                             type="button"
-                            className="mhn-about-btn-cancel"
-                            style={{
-                              height: '38px',
-                              padding: '0 16px',
-                              backgroundColor: '#F1F5F9',
-                              color: '#475569',
-                              borderRadius: '8px',
-                              fontWeight: 600,
-                              border: '1px solid #CBD5E1',
-                              cursor: 'pointer',
-                            }}
+                            className="mhn-about-btn-cancel mhn-btn-cancel-compact"
                             onClick={() => {
                               if (user?.profile) {
                                 setBioText(user.profile.bio || '');
@@ -1488,7 +1439,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                             Cancel
                           </Button>
                           {introSaveMsg && (
-                            <span style={{ fontSize: '13px', color: '#16A34A', fontWeight: 600 }}>
+                            <span className="mhn-success-text-sm">
                               ✅ {introSaveMsg}
                             </span>
                           )}
@@ -1497,10 +1448,10 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                     )}
 
                     {activeAboutSection === ProfileAboutSectionEnum.CAREER && canHaveCareer && (
-                      <div className="mhn-about-section-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      <div className="mhn-about-section-content mhn-col-flex-gap-20">
                         {/* Teams Header */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                          <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Teams</h4>
+                        <div className="mhn-toggle-row-between mhn-mb-4">
+                          <h4 className="mhn-about-section-heading">Teams</h4>
                           <Button
                             type="button"
                             onClick={() => {
@@ -1511,15 +1462,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                                 setIsAddTeamFormOpen(true);
                               }
                             }}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              cursor: 'pointer',
-                              padding: '4px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
+                            className="mhn-btn-icon-clear"
                             title="Add Team"
                           >
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1532,16 +1475,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         {/* Add / Edit Team Form Card matching User Screenshot */}
                         {isAddTeamFormOpen && (
                           <div
-                            style={{
-                              backgroundColor: '#FFFFFF',
-                              border: '1px solid #E2E8F0',
-                              borderRadius: '12px',
-                              padding: '20px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '16px',
-                              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                            }}
+                            className="mhn-add-team-card-form"
                           >
                             <CareerFormFields
                               values={{
@@ -1571,20 +1505,11 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                             />
 
                             {/* Buttons Row: Cancel and Save */}
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '4px' }}>
+                            <div className="mhn-team-actions-row">
                               <Button
                                 type="button"
                                 onClick={resetTeamForm}
-                                style={{
-                                  backgroundColor: '#E2E8F0',
-                                  border: 'none',
-                                  borderRadius: '8px',
-                                  padding: '8px 20px',
-                                  fontSize: '14px',
-                                  fontWeight: 600,
-                                  color: '#334155',
-                                  cursor: 'pointer',
-                                }}
+                                className="mhn-btn-team-cancel"
                               >
                                 Cancel
                               </Button>
@@ -1592,19 +1517,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                                 type="button"
                                 onClick={handleSaveTeam}
                                 disabled={isSavingTeam}
-                                style={{
-                                  backgroundColor: !isSavingTeam ? '#1860C3' : '#CBD5E1',
-                                  border: 'none',
-                                  borderRadius: '8px',
-                                  padding: '8px 24px',
-                                  fontSize: '14px',
-                                  fontWeight: 600,
-                                  color: '#FFFFFF',
-                                  cursor: !isSavingTeam ? 'pointer' : 'not-allowed',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                }}
+                                className={`mhn-btn-team-save ${isSavingTeam ? 'disabled' : 'active'}`}
                               >
                                 {isSavingTeam && <Spinner size="sm" color="#FFFFFF" />}
                                 <span>Save</span>
@@ -1614,30 +1527,21 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         )}
 
                         {/* Saved Career Teams List matching API spec */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div className="mhn-col-flex-gap-12">
                           {careerEntries === null ? (
-                            <div style={{ padding: '24px', textAlign: 'center', backgroundColor: '#F8FAFC', borderRadius: '10px', color: '#64748B', fontSize: '14px' }}>
+                            <div className="mhn-career-privacy-hidden-box">
                               Career history is hidden based on user privacy settings.
                             </div>
                           ) : careerEntries.length === 0 && !isAddTeamFormOpen ? (
-                            <div style={{ padding: '32px 16px', textAlign: 'center', backgroundColor: '#F8FAFC', borderRadius: '10px', border: '1px dashed #CBD5E1' }}>
-                              <p style={{ fontSize: '14px', color: '#64748B', margin: '0 0 12px 0' }}>No career teams added yet.</p>
+                            <div className="mhn-career-empty-dashed-box">
+                              <p className="mhn-parent-card-sub mhn-mb-12">No career teams added yet.</p>
                               <Button
                                 type="button"
                                 onClick={() => {
                                   resetTeamForm();
                                   setIsAddTeamFormOpen(true);
                                 }}
-                                style={{
-                                  backgroundColor: '#1860C3',
-                                  color: '#FFFFFF',
-                                  border: 'none',
-                                  borderRadius: '8px',
-                                  padding: '8px 16px',
-                                  fontSize: '13px',
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                }}
+                                className="mhn-btn-add-team-blue"
                               >
                                 + Add a Team
                               </Button>
@@ -1665,33 +1569,24 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                               return (
                                 <div
                                   key={team.id}
-                                  style={{
-                                    backgroundColor: '#FFFFFF',
-                                    border: '1px solid #F1F5F9',
-                                    borderRadius: '10px',
-                                    padding: '16px',
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    justifyContent: 'space-between',
-                                    gap: '12px',
-                                  }}
+                                  className="mhn-career-item-card"
                                 >
-                                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+                                  <div className="mhn-career-item-left">
                                     <img
                                       src={team.teamLogoUrl || '/kcBlue.png'}
                                       alt={team.teamName || 'Team Logo'}
-                                      style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'contain' }}
+                                      className="mhn-career-team-logo-img"
                                       onError={(e) => {
                                         (e.target as HTMLImageElement).src = '/kcBlue.png';
                                       }}
                                     />
                                     <div>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <h5 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                                      <div className="mhn-btn-loading-flex">
+                                        <h5 className="mhn-career-team-title">
                                           {team.teamName || 'Team Name'}
                                         </h5>
                                         {team.verified && (
-                                          <span title="Verified Team on Platform" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                                          <span title="Verified Team on Platform" className="mhn-btn-loading-flex">
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="#0B66C2" stroke="#FFFFFF" strokeWidth="2">
                                               <circle cx="12" cy="12" r="10" />
                                               <path d="m9 12 2 2 4-4" />
@@ -1699,48 +1594,30 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                                           </span>
                                         )}
                                       </div>
-                                      <p style={{ fontSize: '13px', color: '#64748B', margin: '2px 0 4px 0', fontWeight: 500 }}>
+                                      <p className="mhn-career-team-sub">
                                         {subtitleStr}
                                       </p>
                                       {team.note && (
-                                        <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0, fontStyle: 'italic' }}>
+                                        <p className="mhn-career-team-note">
                                           {team.note}
                                         </p>
                                       )}
                                     </div>
                                   </div>
 
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <div className="mhn-btn-loading-flex">
                                     <Button
                                       type="button"
                                       onClick={() => handleEditClick(team)}
-                                      style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        padding: '6px',
-                                        borderRadius: '6px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                      }}
+                                      className="mhn-btn-icon-clear"
                                       title="Edit team details"
                                     >
-                                      <img src="/edit3.png" alt="Edit" style={{ width: '16px', height: '16px' }} />
+                                      <img src="/edit3.png" alt="Edit" className="mhn-edit-icon-img" />
                                     </Button>
                                     <Button
                                       type="button"
                                       onClick={() => setDeletingEntryTarget(team)}
-                                      style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        padding: '6px',
-                                        borderRadius: '6px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                      }}
+                                      className="mhn-btn-icon-clear"
                                       title="Delete career entry"
                                     >
                                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1758,7 +1635,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                     )}
 
                     {activeAboutSection === ProfileAboutSectionEnum.DETAILS && (
-                      <div className="mhn-about-section-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      <div className="mhn-about-section-content mhn-col-flex-gap-20">
                         <PersonalDetailsFields
                           values={{
                             city: locationText,
@@ -1775,23 +1652,10 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         />
 
                         {/* Save & Feedback Row */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
+                        <div className="mhn-btn-loading-flex mhn-mt-4">
                           <Button
                             type="button"
-                            className="mhn-about-btn-save"
-                            style={{
-                              height: '38px',
-                              padding: '0 24px',
-                              backgroundColor: '#1860C3',
-                              color: '#FFFFFF',
-                              borderRadius: '8px',
-                              fontWeight: 600,
-                              border: 'none',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                            }}
+                            className="mhn-about-btn-save mhn-btn-primary-compact"
                             onClick={handleSaveDetails}
                             disabled={isSavingDetails}
                           >
@@ -1800,17 +1664,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                           </Button>
                           <Button
                             type="button"
-                            className="mhn-about-btn-cancel"
-                            style={{
-                              height: '38px',
-                              padding: '0 16px',
-                              backgroundColor: '#F1F5F9',
-                              color: '#475569',
-                              borderRadius: '8px',
-                              fontWeight: 600,
-                              border: '1px solid #CBD5E1',
-                              cursor: 'pointer',
-                            }}
+                            className="mhn-about-btn-cancel mhn-btn-cancel-compact"
                             onClick={() => {
                               if (user?.profile) {
                                 setLocationText(user.profile.city || '');
@@ -1822,7 +1676,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                             Cancel
                           </Button>
                           {detailsSaveMsg && (
-                            <span style={{ fontSize: '13px', color: '#16A34A', fontWeight: 600 }}>
+                            <span className="mhn-success-text-sm">
                               ✅ {detailsSaveMsg}
                             </span>
                           )}
@@ -1836,15 +1690,15 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
             {/* 5. GUARDIAN REQUESTS TAB (PARENT Role Only) */}
             {activeProfileTab === ProfileTabEnum.GUARDIAN_REQUESTS && (
-              <div className="mhn-posts-container-card" style={{ padding: '24px' }}>
-                <div className="mhn-posts-header-bar" style={{ marginBottom: '20px' }}>
+              <div className="mhn-posts-container-card mhn-p-24">
+                <div className="mhn-posts-header-bar mhn-mb-20">
                   <h3 className="mhn-posts-title">Pending Guardian Requests</h3>
                 </div>
 
                 {isGuardianReqsLoading ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '24px 0' }}>
+                  <div className="mhn-btn-loading-flex mhn-py-24">
                     <Spinner size="md" color="#0B66C2" />
-                    <span style={{ fontSize: '14px', color: '#64748B' }}>Loading pending guardian requests...</span>
+                    <span className="mhn-parent-card-sub">Loading pending guardian requests...</span>
                   </div>
                 ) : pendingGuardianReqs.length === 0 ? (
                   <NoDataFound
@@ -1877,9 +1731,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                           <h4 className="mhn-supervision-req-name">{displayName}</h4>
                           <p className="mhn-supervision-req-role">{roleTag}</p>
 
-
-
-                          <div className="mhn-supervision-req-actions" style={{ marginTop: '12px' }}>
+                          <div className="mhn-supervision-req-actions mhn-mt-12">
                             <Button
                               type="button"
                               className="mhn-supervision-btn-ignore"

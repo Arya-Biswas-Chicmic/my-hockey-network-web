@@ -2,7 +2,6 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 
 import useStyles from '@hooks/useStyles';
-import { FONT } from '@utils/constants';
 
 import styles from './styles';
 
@@ -44,9 +43,7 @@ const Button = ({
         {loading ? (
           <ActivityIndicator color={Colors.onPrimary as string} />
         ) : (
-          <Text style={[dynamicStyles.text, { fontFamily: FONT.SEMI_BOLD }]}>
-            {title}
-          </Text>
+          <Text style={dynamicStyles.text}>{title}</Text>
         )}
       </View>
     </Pressable>

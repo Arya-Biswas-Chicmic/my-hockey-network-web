@@ -14,14 +14,14 @@ export const WhoDoYouManageStep: React.FC<WhoDoYouManageStepProps> = ({ onAddPla
         Add the players you're responsible for. You can add more later.
       </p>
 
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+      <div className="mhn-flex-justify-center mhn-mb-16">
         <img src="./manage.png" alt="Manage" className="manage" />
       </div>
 
-      <div style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', marginBottom: '4px', textAlign: 'center' }}>
+      <div className="mhn-parent-card-title mhn-text-center">
         No players added yet
       </div>
-      <div style={{ fontSize: '13px', color: '#64748B', marginBottom: '24px', textAlign: 'center' }}>
+      <div className="mhn-parent-card-sub mhn-text-center mhn-mb-24">
         Add the players you're responsible for managing.
       </div>
 
@@ -35,7 +35,7 @@ export const WhoDoYouManageStep: React.FC<WhoDoYouManageStepProps> = ({ onAddPla
       <Button type="button" className="mhn-parent-btn-primary" onClick={onAddPlayer}>
         Add a Player
       </Button>
-      <div style={{ height: '12px' }} />
+      <div className="mhn-h-12" />
       <Button type="button" className="mhn-parent-btn-secondary" onClick={onSkip}>
         Skip for now
       </Button>

@@ -63,16 +63,9 @@ export const RequestSentCard: React.FC<RequestSentCardProps> = ({
         <div className="request-sent-action-wrapper">
           <Button
             type="button"
-            className="btn-request-sent-continue"
+            className={`btn-request-sent-continue mhn-btn-loading-flex ${isLoading ? 'mhn-loading' : ''}`}
             onClick={handleContinueClick}
             disabled={isLoading}
-            style={{
-              opacity: isLoading ? 0.75 : 1,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-            }}
           >
             {isLoading ? (
               <>

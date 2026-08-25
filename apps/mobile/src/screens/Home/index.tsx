@@ -7,7 +7,6 @@ import useStyles from '@hooks/useStyles';
 import ScreenWrapper from '@components/ScreenWrapper';
 import { logoutUser } from '@redux/CommonReducer';
 import { useAppDispatch } from '@redux/store';
-import { FONT } from '@utils/constants';
 import { ICONS } from '@utils/icons';
 import { STRINGS } from '@utils/strings';
 
@@ -19,17 +18,13 @@ const Home = () => {
   const logout = () => {
     dispatch(logoutUser());
   };
-  const { dynamicStyles, Layout, toggleTheme } = useStyles(styles);
+  const { dynamicStyles, toggleTheme } = useStyles(styles);
   const IMAGES = useImages();
   return (
     <ScreenWrapper headerProps={{ title: 'Home', showBack: false }}>
-      <View
-        style={[Layout.flex, Layout.center, { borderWidth: 1, height: '100%' }]}
-      >
-        <Text style={[dynamicStyles.button, { fontFamily: FONT.BOLD }]}>
-          {STRINGS.HI}
-        </Text>
-        <Image source={IMAGES.MONEY} style={{ height: 100, width: 100 }} />
+      <View style={dynamicStyles.centerContainer}>
+        <Text style={dynamicStyles.button}>{STRINGS.HI}</Text>
+        <Image source={IMAGES.MONEY} style={dynamicStyles.image} />
         <ICONS.User width={500} height={50} color="red" />
         <Pressable
           onPress={() => {

@@ -45,9 +45,8 @@ export const UpcomingEventsWidget: React.FC<UpcomingEventsWidgetProps> = ({
         {events.map((event) => (
           <div 
             key={event.id} 
-            className="mhn-event-card-item"
+            className="mhn-event-card-item mhn-cursor-pointer"
             onClick={() => onEventClick && onEventClick(event.id)}
-            style={{ cursor: 'pointer' }}
           >
             {/* Left Date Badge Box */}
             <div className="mhn-event-date-box">
