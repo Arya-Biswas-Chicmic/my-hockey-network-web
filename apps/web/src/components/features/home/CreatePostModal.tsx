@@ -3,6 +3,7 @@ import { Input, Textarea } from '../../common/FormControls';
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../../../hooks/use-auth';
 import { resolveMediaUrl } from '../../../utils/mediaUtils';
+import { isEmailValid } from '@my-hockey-network/validation';
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [tempAudience, setTempAudience] = useState<'Everyone' | 'Groups' | 'Custom'>('Everyone');
   const [shareWithEmails, setShareWithEmails] = useState('');
   const [dontShareWithEmails, setDontShareWithEmails] = useState('');
+  const [customError, setCustomError] = useState<string | null>(null);
 
   const [postImage, setPostImage] = useState<string | null>(null);
   const [postImageFile, setPostImageFile] = useState<File | null>(null);
@@ -348,9 +350,12 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 <h3 className="mhn-custom-field-label">Share with</h3>
                 <Textarea
                   className="mhn-custom-textarea"
-                  placeholder="Type mail of the users"
+                  placeholder="Type mail of the users (e.g. user@example.com)"
                   value={shareWithEmails}
-                  onChange={(e) => setShareWithEmails(e.target.value)}
+                  onChange={(e) => {
+                    setShareWithEmails(e.target.value);
+                    if (customError) setCustomError(null);
+                  }}
                   rows={3}
                 />
               </div>
@@ -360,12 +365,22 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 <h3 className="mhn-custom-field-label">Don't share with</h3>
                 <Textarea
                   className="mhn-custom-textarea"
-                  placeholder="Type mail of the users"
+                  placeholder="Type mail of the users (e.g. user@example.com)"
                   value={dontShareWithEmails}
-                  onChange={(e) => setDontShareWithEmails(e.target.value)}
+                  onChange={(e) => {
+                    setDontShareWithEmails(e.target.value);
+                    if (customError) setCustomError(null);
+                  }}
                   rows={3}
                 />
               </div>
+
+              {customError && (
+                <div className="mhn-edit-profile-field-error" style={{ marginBottom: '12px' }}>
+                  <span>⚠️</span>
+                  <span>{customError}</span>
+                </div>
+              )}
 
               {/* Footnote note */}
               <p className="mhn-custom-footnote">
@@ -377,7 +392,10 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 <Button
                   type="button"
                   className="mhn-btn-custom-cancel"
-                  onClick={() => setScreen('audience')}
+                  onClick={() => {
+                    setCustomError(null);
+                    setScreen('audience');
+                  }}
                 >
                   Cancel
                 </Button>
@@ -385,6 +403,23 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   type="button"
                   className="mhn-btn-custom-done"
                   onClick={() => {
+                    const parseResult = (input: string) => {
+                      if (!input.trim()) return [];
+                      return input.split(/[, \n;]+/).map((e) => e.trim()).filter(Boolean);
+                    };
+
+                    const shareTokens = parseResult(shareWithEmails);
+                    const dontShareTokens = parseResult(dontShareWithEmails);
+                    const invalidShare = shareTokens.filter((t) => !isEmailValid(t));
+                    const invalidDontShare = dontShareTokens.filter((t) => !isEmailValid(t));
+                    const allInvalid = [...invalidShare, ...invalidDontShare];
+
+                    if (allInvalid.length > 0) {
+                      setCustomError(`Invalid email address: "${allInvalid.join(', ')}". Please enter valid email addresses.`);
+                      return;
+                    }
+
+                    setCustomError(null);
                     setAudience('Custom');
                     setScreen('create');
                   }}

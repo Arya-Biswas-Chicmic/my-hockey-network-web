@@ -99,7 +99,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
         (res?.comment as any)?.status === 'PENDING';
 
       if (isPendingApproval) {
-        setStatusNotice('Comment submitted for guardian approval.');
+        setStatusNotice('Your comment has been submitted and is waiting for parent/guardian approval.');
         setNewCommentText('');
       } else {
         const commentObj = res?.comment || {};
@@ -129,7 +129,11 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
       }
     } catch (err: any) {
       console.error(`❌ [PostCommentSection] Add comment error:`, err);
-      setStatusNotice(err.message || 'Failed to post comment. Please try again.');
+      if (err?.statusCode === 403 && (err?.message?.includes('GUARDIAN_DISABLED') || err?.message?.includes('guardian'))) {
+        setStatusNotice('A guardian has turned this action off for this account.');
+      } else {
+        setStatusNotice(err.message || 'Failed to post comment. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }

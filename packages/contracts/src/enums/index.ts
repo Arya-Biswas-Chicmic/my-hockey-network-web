@@ -7,4 +7,7 @@ export * from './approvals.enum';
 export * from './relationships.enum';
 export * from './queryKeys.enum';
 export * from './validationMessages.enum';
+export * from './ui.enum';
+export * from './posts.enum';
+
 

@@ -2,6 +2,7 @@ import { Button } from '../../common/Button';
 import React, { useState } from 'react';
 import { Spinner } from '../../common/Spinner';
 import { useAuth } from '../../../hooks/use-auth';
+import { ERROR_MESSAGES } from '@my-hockey-network/constants';
 
 export interface PendingRequestProps {
   id: string;
@@ -17,12 +18,12 @@ export interface PendingRequestProps {
 
 export const PendingRequestCard: React.FC<PendingRequestProps> = ({
   id,
-  name = '-',
+  name = 'Athlete',
   avatarUrl = '/userPlaceholder.png',
-  roleTag = '-',
-  teamName = '-',
+  roleTag = 'PLAYER',
+  teamName,
   teamLogo = '/kcBlue.png',
-  location = '-',
+  location,
   onAccept,
   onIgnore
 }) => {
@@ -30,6 +31,9 @@ export const PendingRequestCard: React.FC<PendingRequestProps> = ({
   const [status, setStatus] = useState<'pending' | 'accepted' | 'ignored'>('pending');
   const [isAcceptLoading, setIsAcceptLoading] = useState(false);
   const [isIgnoreLoading, setIsIgnoreLoading] = useState(false);
+
+  const hasValidTeam = Boolean(teamName && teamName.trim() !== '' && teamName.trim() !== '-');
+  const hasValidLocation = Boolean(location && location.trim() !== '' && location.trim() !== '-');
 
   const handleAccept = async () => {
     if (isAcceptLoading || isIgnoreLoading) return;
@@ -40,7 +44,7 @@ export const PendingRequestCard: React.FC<PendingRequestProps> = ({
       await loadAuthMe(true);
     } catch (err: any) {
       console.error('Accept error:', err);
-      showToast(err?.message || 'Failed to accept request.', 'error');
+      showToast(err?.message || ERROR_MESSAGES.FAILED_ACCEPT_REQUEST, 'error');
     } finally {
       setIsAcceptLoading(false);
     }
@@ -55,11 +59,12 @@ export const PendingRequestCard: React.FC<PendingRequestProps> = ({
       await loadAuthMe(true);
     } catch (err: any) {
       console.error('Ignore error:', err);
-      showToast(err?.message || 'Failed to decline request.', 'error');
+      showToast(err?.message || ERROR_MESSAGES.FAILED_DECLINE_REQUEST, 'error');
     } finally {
       setIsIgnoreLoading(false);
     }
   };
+
 
   if (status === 'accepted') {
     return (
@@ -93,11 +98,11 @@ export const PendingRequestCard: React.FC<PendingRequestProps> = ({
 
       {/* User Info */}
       <div className="mhn-request-info">
-        <h4 className="mhn-request-name">{name}</h4>
+        <h4 className="mhn-request-name" title={name}>{name}</h4>
         <span className="mhn-request-role">{roleTag}</span>
 
         {/* Team Badge Pill */}
-        {teamName && (
+        {hasValidTeam && (
           <div className="mhn-request-team-line">
             <img 
               src={teamLogo} 
@@ -112,9 +117,9 @@ export const PendingRequestCard: React.FC<PendingRequestProps> = ({
         )}
 
         {/* Location Line */}
-        {location && (
+        {hasValidLocation && (
           <div className="mhn-request-location-line">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
               <circle cx="12" cy="10" r="3"/>
             </svg>

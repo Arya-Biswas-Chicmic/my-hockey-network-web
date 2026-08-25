@@ -59,11 +59,13 @@ export const ApprovalCodeModal: React.FC<ApprovalCodeModalProps> = ({
   const handleChange = (index: number, value: string) => {
     if (otpError) setOtpError(null);
 
+    const cleanVal = value.replace(/\D/g, '');
     const newDigits = [...digits];
 
     if (value.length > 1) {
-      // Handle paste of 6 digits
-      const pastedDigits = value.slice(0, 6).replace(/\D/g, '').split('');
+      // Handle paste of 6 numeric digits
+      const pastedDigits = cleanVal.slice(0, 6).split('');
+      if (pastedDigits.length === 0) return;
       pastedDigits.forEach((d, i) => {
         newDigits[i] = d;
       });
@@ -74,11 +76,11 @@ export const ApprovalCodeModal: React.FC<ApprovalCodeModalProps> = ({
       return;
     }
 
-    const cleanVal = value.replace(/\D/g, '');
-    newDigits[index] = cleanVal;
+    const singleDigit = cleanVal.slice(0, 1);
+    newDigits[index] = singleDigit;
     setDigits(newDigits);
 
-    if (cleanVal && index < 5) {
+    if (singleDigit && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
 
@@ -86,8 +88,28 @@ export const ApprovalCodeModal: React.FC<ApprovalCodeModalProps> = ({
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !digits[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+    if (e.key === 'Backspace') {
+      if (!digits[index] && index > 0) {
+        inputRefs.current[index - 1]?.focus();
+      }
+      return;
+    }
+
+    if (
+      e.key === 'Tab' ||
+      e.key === 'ArrowLeft' ||
+      e.key === 'ArrowRight' ||
+      e.key === 'Delete' ||
+      e.key === 'Enter' ||
+      e.ctrlKey ||
+      e.metaKey
+    ) {
+      return;
+    }
+
+    // Reject non-digit keystrokes
+    if (!/^\d$/.test(e.key)) {
+      e.preventDefault();
     }
   };
 
@@ -149,6 +171,7 @@ export const ApprovalCodeModal: React.FC<ApprovalCodeModalProps> = ({
                   }}
                   type="text"
                   inputMode="numeric"
+                  pattern="[0-9]*"
                   maxLength={1}
                   value={digit}
                   onChange={(e) => handleChange(index, e.target.value)}

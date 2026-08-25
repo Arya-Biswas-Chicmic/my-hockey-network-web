@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   dateOfBirthSchema,
   emailSchema,
+  isEmailValid,
   otpRequestSchema,
   otpSchema,
   sanitizeEmailInput,
@@ -14,6 +15,10 @@ describe('shared validation schemas', () => {
   it('normalizes valid emails and rejects invalid emails', () => {
     expect(emailSchema.parse('  player@example.com ')).toBe('player@example.com');
     expect(emailSchema.safeParse('not-an-email').success).toBe(false);
+    expect(isEmailValid('player@example.com')).toBe(true);
+    expect(isEmailValid('not-an-email')).toBe(false);
+    expect(isEmailValid('jtyjtyjt')).toBe(false);
+    expect(isEmailValid('')).toBe(false);
   });
 
   it('sanitizes email inputs in real-time by stripping all whitespace', () => {

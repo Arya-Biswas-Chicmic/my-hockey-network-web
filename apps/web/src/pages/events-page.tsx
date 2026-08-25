@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Header } from '../components/common/Header';
 import { PendingBanner } from '../components/common/PendingBanner';
 import { useFeedPermissions } from '../hooks/use-feed-permissions';
+import { useDebounce } from '../hooks/use-debounce';
 import { EventCard, EventCardProps } from '../components/features/events/EventCard';
 import { CalendarView } from '../components/features/events/CalendarView';
 
@@ -16,6 +17,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { permissions } = useFeedPermissions(onNavigate);
   const [activeNavTab, setActiveNavTab] = useState('events');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 800);
   const [activeFilterPill, setActiveFilterPill] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
@@ -200,13 +202,19 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         {/* Dynamic View: List vs Calendar */}
         {viewMode === 'list' ? (
           <div className="mhn-events-cards-grid">
-            {eventsList.map((event) => (
-              <EventCard 
-                key={event.id} 
-                {...event} 
-                onCardClick={() => onNavigate && onNavigate('event-detail')}
-              />
-            ))}
+            {eventsList
+              .filter((event) =>
+                !debouncedSearchQuery.trim() ||
+                event.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+                event.location.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+              )
+              .map((event) => (
+                <EventCard 
+                  key={event.id} 
+                  {...event} 
+                  onCardClick={() => onNavigate && onNavigate('event-detail')}
+                />
+              ))}
           </div>
         ) : (
           <CalendarView

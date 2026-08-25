@@ -8,6 +8,7 @@ export enum AppRoute {
   SETTINGS = 'settings',
   SUPERVISION = 'supervision',
   EVENT_DETAIL = 'event-detail',
+  HELP = 'help',
   ONBOARDING = 'onboarding',
   GUARDIAN = 'guardian',
   SENT = 'sent',

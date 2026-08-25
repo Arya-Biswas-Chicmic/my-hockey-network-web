@@ -13,10 +13,14 @@ import { ApprovalCodeModal } from '../components/supervision/ApprovalCodeModal';
 import { ParentOnboardingModal } from '../components/features/parent';
 import { Spinner } from '../components/common/Spinner';
 import { useAuth } from '../hooks/use-auth';
+import { useDebounce } from '../hooks/use-debounce';
 import { resolveMediaUrl } from '../utils/mediaUtils';
 import { GUARDIAN_RELATION_OPTIONS, formatDobToIso, formatDobInput } from '../utils/guardianUtils';
-import { QueryKeys } from '@my-hockey-network/contracts';
+import { QueryKeys, ToastTypeEnum, NavTabEnum, SupervisionMainTabEnum, SupervisionViewModeEnum, SupervisionControlKeyEnum } from '@my-hockey-network/contracts';
+import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
 import { useQuery, useQueryClient, globalQueryClient } from '../query';
+
+
 import {
   getSupervisionData,
   createManagedChild,
@@ -43,16 +47,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
   const navState = location.state as { selectedWardId?: string; childId?: string } | null;
   const initialWardIdFromNav = navState?.selectedWardId || navState?.childId || new URLSearchParams(location.search).get('childId');
 
-  const [activeNavTab, setActiveNavTab] = useState('supervision');
+  const [activeNavTab, setActiveNavTab] = useState<NavTabEnum | string>(NavTabEnum.SUPERVISION);
   const [selectedWardId, setSelectedWardId] = useState(initialWardIdFromNav || '');
-  const [activeMainTab, setActiveMainTab] = useState<'permissions' | 'requests' | 'logs'>('permissions');
+  const [activeMainTab, setActiveMainTab] = useState<SupervisionMainTabEnum>(SupervisionMainTabEnum.PERMISSIONS);
   const [isAddPlayerModalOpen, setIsAddPlayerModalOpen] = useState(false);
 
   // Interactive Flow View Mode for Add Button (+):
-  // 'main' | 'choice' | 'create-details' | 'create-protect' | 'create-success' | 'link-existing' | 'link-sent'
-  const [viewMode, setViewMode] = useState<
-    'main' | 'choice' | 'create-details' | 'create-protect' | 'create-success' | 'link-existing' | 'link-sent'
-  >('main');
+  const [viewMode, setViewMode] = useState<SupervisionViewModeEnum>(SupervisionViewModeEnum.MAIN);
 
   // Supervised Wards list (Dynamic)
   const [wards, setWards] = useState<Array<{ id: string; name: string; age: number; avatar: string }>>([]);
@@ -107,7 +108,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
   };
 
   useEffect(() => {
-    if (activeMainTab === 'requests') {
+    if (activeMainTab === SupervisionMainTabEnum.REQUESTS) {
       loadPendingRequests();
     }
   }, [activeMainTab, selectedWardId]);
@@ -116,8 +117,11 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     setRequestActionLoading(true);
     setRequestNotice(null);
     try {
-      await approveRequest(approvalId, { mode: 'INDEFINITE' });
-      const successMsg = 'Request approved successfully!';
+      const res = await approveRequest(approvalId, { mode: 'SINGLE_USE' });
+      const isPublished = res?.advanced === 'POST_PUBLISHED';
+      const successMsg = isPublished
+        ? 'Request approved! The post has been published to the feed.'
+        : 'Request approved successfully!';
       setRequestNotice({ type: 'success', message: successMsg });
       showToast(successMsg, 'success');
       loadPendingRequests();
@@ -135,9 +139,9 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     setRequestNotice(null);
     try {
       await declineRequest(approvalId, 'Declined by parent');
-      const successMsg = 'Request declined.';
+      const successMsg = 'Request declined. The item will remain unpublished.';
       setRequestNotice({ type: 'success', message: successMsg });
-      showToast(successMsg, 'success');
+      showToast(successMsg, 'info');
       loadPendingRequests();
     } catch (err: any) {
       const errMsg = err.message || 'Failed to decline request.';
@@ -376,28 +380,67 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
       const controls = res?.controls || (res as any)?.data?.controls || [];
       if (Array.isArray(controls) && controls.length > 0) {
         controls.forEach((c: any) => {
-          const key = c.control || c.name;
+          const rawKey = String(c.control || c.name || '').toUpperCase();
           const val = c.value;
-          if (key === 'VIEW_FEED' || key === 'view_feed' || key === 'viewFeed') setHomePermissions((p) => ({ ...p, viewFeed: Boolean(val) }));
-          if (key === 'CREATE_POST' || key === 'create_posts' || key === 'createPosts') setHomePermissions((p) => ({ ...p, createPosts: Boolean(val) }));
-          if (key === 'COMMENT_ON_POSTS' || key === 'comment_on_posts' || key === 'commentOnPosts') setHomePermissions((p) => ({ ...p, commentOnPosts: Boolean(val) }));
-          if (key === 'REACT_TO_POSTS' || key === 'react_to_posts' || key === 'reactToPosts') setHomePermissions((p) => ({ ...p, reactToPosts: Boolean(val) }));
-          if (key === 'SHARE_POSTS' || key === 'share_posts' || key === 'sharePosts') setHomePermissions((p) => ({ ...p, sharePosts: Boolean(val) }));
 
-          if (key === 'FOLLOW_OTHERS' || key === 'follow_others' || key === 'followOthers') setNetworkPermissions((p) => ({ ...p, followOthers: Boolean(val) }));
-          if (key === 'WHO_CAN_FOLLOW' || key === 'who_can_follow_them' || key === 'whoCanFollowThem') setNetworkPermissions((p) => ({ ...p, whoCanFollowThem: String(val) }));
-          if (key === 'WHO_CAN_SEND_CONNECTION_REQUESTS' || key === 'who_can_send_requests' || key === 'whoCanSendRequests') setNetworkPermissions((p) => ({ ...p, whoCanSendRequests: String(val) }));
-          if (key === 'ACCEPT_CONNECTIONS' || key === 'accept_requests' || key === 'acceptRequests') setNetworkPermissions((p) => ({ ...p, acceptRequests: Boolean(val) }));
+          // Feed Controls
+          if (rawKey === SupervisionControlKeyEnum.VIEW_FEED || rawKey === 'VIEWFEED') {
+            setHomePermissions((p) => ({ ...p, viewFeed: Boolean(val) }));
+          }
+          if (rawKey === SupervisionControlKeyEnum.CREATE_POST || rawKey === 'CREATEPOSTS') {
+            setHomePermissions((p) => ({ ...p, createPosts: Boolean(val) }));
+          }
+          if (rawKey === SupervisionControlKeyEnum.COMMENT_ON_POSTS || rawKey === 'COMMENTONPOSTS') {
+            setHomePermissions((p) => ({ ...p, commentOnPosts: Boolean(val) }));
+          }
+          if (rawKey === SupervisionControlKeyEnum.REACT_TO_POSTS || rawKey === 'REACTTOPOSTS') {
+            setHomePermissions((p) => ({ ...p, reactToPosts: Boolean(val) }));
+          }
+          if (rawKey === SupervisionControlKeyEnum.SHARE_POSTS || rawKey === 'SHAREPOSTS') {
+            setHomePermissions((p) => ({ ...p, sharePosts: Boolean(val) }));
+          }
 
-          if (key === 'SEND_MESSAGES' || key === 'send_messages' || key === 'sendMessages') setMessagingPermissions((p) => ({ ...p, sendMessages: Boolean(val) }));
-          if (key === 'RECEIVE_MESSAGES' || key === 'receive_messages' || key === 'receiveMessages') setMessagingPermissions((p) => ({ ...p, receiveMessages: Boolean(val) }));
-          if (key === 'CREATE_GROUP_CHATS' || key === 'create_group_chats' || key === 'createGroupChats') setMessagingPermissions((p) => ({ ...p, createGroupChats: Boolean(val) }));
-          if (key === 'WHO_CAN_MESSAGE_THEM' || key === 'who_can_message_them' || key === 'whoCanMessageThem') setMessagingPermissions((p) => ({ ...p, whoCanMessageThem: String(val) }));
+          // Network Controls
+          if (rawKey === SupervisionControlKeyEnum.FOLLOW_OTHERS || rawKey === 'FOLLOWOTHERS') {
+            setNetworkPermissions((p) => ({ ...p, followOthers: Boolean(val) }));
+          }
+          if (rawKey === SupervisionControlKeyEnum.WHO_CAN_FOLLOW || rawKey === 'WHOCANFOLLOWTHEM') {
+            setNetworkPermissions((p) => ({ ...p, whoCanFollowThem: String(val) }));
+          }
+          if (rawKey === SupervisionControlKeyEnum.WHO_CAN_SEND_CONNECTION_REQUESTS || rawKey === 'WHOCANSENDREQUESTS') {
+            setNetworkPermissions((p) => ({ ...p, whoCanSendRequests: String(val) }));
+          }
+          if (rawKey === SupervisionControlKeyEnum.ACCEPT_CONNECTIONS || rawKey === 'ACCEPTREQUESTS') {
+            setNetworkPermissions((p) => ({ ...p, acceptRequests: Boolean(val) }));
+          }
 
-          if (key === 'REQUIRE_APPROVAL_ADULT_CONTACT' || key === 'message_notifications' || key === 'messageNotifications') setNotificationPermissions((p) => ({ ...p, messageNotifications: Boolean(val) }));
-          if (key === 'REQUIRE_APPROVAL_CONNECTIONS' || key === 'connection_notifications' || key === 'connectionNotifications') setNotificationPermissions((p) => ({ ...p, connectionNotifications: Boolean(val) }));
-          if (key === 'REQUIRE_APPROVAL_TEAM_INVITES' || key === 'activity_notifications' || key === 'activityNotifications') setNotificationPermissions((p) => ({ ...p, activityNotifications: Boolean(val) }));
-          if (key === 'REQUIRE_APPROVAL_MEDIA' || key === 'mention_notifications' || key === 'mentionNotifications') setNotificationPermissions((p) => ({ ...p, mentionNotifications: Boolean(val) }));
+          // Messaging Controls
+          if (rawKey === SupervisionControlKeyEnum.SEND_MESSAGES || rawKey === 'SENDMESSAGES') {
+            setMessagingPermissions((p) => ({ ...p, sendMessages: Boolean(val) }));
+          }
+          if (rawKey === SupervisionControlKeyEnum.RECEIVE_MESSAGES || rawKey === 'RECEIVEMESSAGES') {
+            setMessagingPermissions((p) => ({ ...p, receiveMessages: Boolean(val) }));
+          }
+          if (rawKey === SupervisionControlKeyEnum.CREATE_GROUP_CHATS || rawKey === 'CREATEGROUPCHATS') {
+            setMessagingPermissions((p) => ({ ...p, createGroupChats: Boolean(val) }));
+          }
+          if (rawKey === SupervisionControlKeyEnum.WHO_CAN_MESSAGE_THEM || rawKey === 'WHOCANMESSAGETHEM') {
+            setMessagingPermissions((p) => ({ ...p, whoCanMessageThem: String(val) }));
+          }
+
+          // Approval / Notification Controls
+          if (rawKey === SupervisionControlKeyEnum.REQUIRE_APPROVAL_ADULT_CONTACT || rawKey === 'MESSAGENOTIFICATIONS') {
+            setNotificationPermissions((p) => ({ ...p, messageNotifications: Boolean(val) }));
+          }
+          if (rawKey === SupervisionControlKeyEnum.REQUIRE_APPROVAL_CONNECTIONS || rawKey === 'CONNECTIONNOTIFICATIONS') {
+            setNotificationPermissions((p) => ({ ...p, connectionNotifications: Boolean(val) }));
+          }
+          if (rawKey === SupervisionControlKeyEnum.REQUIRE_APPROVAL_TEAM_INVITES || rawKey === 'ACTIVITYNOTIFICATIONS') {
+            setNotificationPermissions((p) => ({ ...p, activityNotifications: Boolean(val) }));
+          }
+          if (rawKey === SupervisionControlKeyEnum.REQUIRE_APPROVAL_MEDIA || rawKey === 'MENTIONNOTIFICATIONS') {
+            setNotificationPermissions((p) => ({ ...p, mentionNotifications: Boolean(val) }));
+          }
         });
       }
     } catch (err: any) {
@@ -498,7 +541,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
     try {
       await updateSupervisionControls(selectedWardId, [{ control: backendControl, value: newVal }]);
-      showToast(`${label} permission updated successfully!`, 'success');
+      showToast(SUCCESS_MESSAGES.PERMISSION_UPDATED, ToastTypeEnum.SUCCESS);
       await fetchControlsForWard(selectedWardId);
     } catch (err: any) {
       setter((prev: any) => ({
@@ -506,7 +549,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
         [controlKey]: currentVal,
         [targetPropKey]: currentVal,
       }));
-      showToast(err.message || `Failed to update ${label} permission.`, 'error');
+      showToast(err.message || ERROR_MESSAGES.FAILED_UPDATE_PERMISSION, ToastTypeEnum.ERROR);
     } finally {
       setUpdatingControlKey(null);
     }
@@ -546,62 +589,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     );
   };
 
-  const sampleSupervisionRequests = [
-    {
-      id: 'req1',
-      name: 'Connor McDavid',
-      roleTag: 'C • #97',
-      avatarUrl: '/connor.png',
-      teamName: 'HC Bloemendaal',
-      teamLogo: '/kcBlue.png',
-      location: 'Austria, Europe',
-    },
-    {
-      id: 'req2',
-      name: 'Lucas Bennett',
-      roleTag: 'Head Coach • U18 AAA',
-      avatarUrl: '/lucas.png',
-      teamName: 'HC Bloemendaal',
-      teamLogo: '/kcBlue.png',
-      location: 'Austria, Europe',
-    },
-    {
-      id: 'req3',
-      name: 'Columbus Blue Jackets',
-      roleTag: 'Team',
-      avatarUrl: '/columbus.png',
-      teamName: 'HC Bloemendaal',
-      teamLogo: '/kcBlue.png',
-      location: 'Austria, Europe',
-    },
-    {
-      id: 'req4',
-      name: 'Connor McDavid',
-      roleTag: 'C • #97',
-      avatarUrl: '/connor.png',
-      teamName: 'HC Bloemendaal',
-      teamLogo: '/kcBlue.png',
-      location: 'Austria, Europe',
-    },
-    {
-      id: 'req5',
-      name: 'Lucas Bennett',
-      roleTag: 'Head Coach • U18 AAA',
-      avatarUrl: '/lucas.png',
-      teamName: 'HC Bloemendaal',
-      teamLogo: '/kcBlue.png',
-      location: 'Austria, Europe',
-    },
-    {
-      id: 'req6',
-      name: 'Columbus Blue Jackets',
-      roleTag: 'Team',
-      avatarUrl: '/columbus.png',
-      teamName: 'HC Bloemendaal',
-      teamLogo: '/kcBlue.png',
-      location: 'Austria, Europe',
-    },
-  ];
+ 
 
   const sampleLogs = [
     {
@@ -657,6 +645,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
   const [liveLogs, setLiveLogs] = useState<any[]>([]);
   const [logsSearchQuery, setLogsSearchQuery] = useState('');
+  const debouncedLogsSearchQuery = useDebounce(logsSearchQuery, 800);
 
   // Load live controls and logs for selected minor child
   useEffect(() => {
@@ -767,10 +756,10 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
         console.warn('Supervision API refetch after creation notice:', refetchErr);
       }
 
-      showToast(`${nameToUse} has been added successfully!`, 'success');
-      setViewMode('create-success');
+      showToast(SUCCESS_MESSAGES.PLAYER_ADDED, ToastTypeEnum.SUCCESS);
+      setViewMode(SupervisionViewModeEnum.CREATE_SUCCESS);
     } catch (err: any) {
-      showToast(err?.message || 'Failed to create player.', 'error');
+      showToast(err?.message || ERROR_MESSAGES.FAILED_CREATE_PLAYER, ToastTypeEnum.ERROR);
     } finally {
       setApiLoading(false);
       setIsControlsLoading(false);
@@ -787,10 +776,10 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     setIsSendingLinkInvite(true);
     try {
       await sendGuardianInvite(linkChildEmail.trim());
-      showToast('Guardian invitation sent successfully!', 'success');
-      setViewMode('link-sent');
+      showToast(SUCCESS_MESSAGES.INVITATION_SENT, ToastTypeEnum.SUCCESS);
+      setViewMode(SupervisionViewModeEnum.LINK_SENT);
     } catch (err: any) {
-      showToast(err?.message || 'Failed to send invitation.', 'error');
+      showToast(err?.message || ERROR_MESSAGES.FAILED_SEND_INVITATION, ToastTypeEnum.ERROR);
     } finally {
       setIsSendingLinkInvite(false);
     }
@@ -798,7 +787,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
   const handlePlayerAddComplete = async () => {
     setIsAddPlayerModalOpen(false);
-    showToast('Player updated successfully!', 'success');
+    showToast(SUCCESS_MESSAGES.PLAYER_UPDATED, ToastTypeEnum.SUCCESS);
     try {
       const supData = await getSupervisionData();
       if (supData?.children && supData.children.length > 0) {
@@ -836,7 +825,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
               <h2 className="mhn-supervision-sidebar-title">Supervision</h2>
               <Button
                 className="mhn-supervision-add-btn"
-                onClick={() => setViewMode('choice')}
+                onClick={() => setViewMode(SupervisionViewModeEnum.CHOICE)}
                 title="Add Minor Account"
               >
                 <img src='/add4.png' className='add4' />
@@ -852,13 +841,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                 </div>
               ) : (
                 wards.map((ward) => (
-                  <Button
+                  <div
                     key={ward.id}
                     onClick={() => {
                       setSelectedWardId(ward.id);
-                      setViewMode('main');
+                      setViewMode(SupervisionViewModeEnum.MAIN);
                     }}
-                    className={`mhn-supervision-ward-item ${selectedWardId === ward.id && viewMode === 'main' ? 'mhn-ward-active' : ''}`}
+                    className={`mhn-supervision-ward-item ${selectedWardId === ward.id && viewMode === SupervisionViewModeEnum.MAIN ? 'mhn-ward-active' : ''}`}
                   >
                     <img
                       src={ward.avatar}
@@ -871,7 +860,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                     <span className="mhn-ward-name-label">
                       {ward.name} <span className="mhn-ward-age">({ward.age})</span>
                     </span>
-                  </Button>
+                  </div>
                 ))
               )}
             </div>
@@ -880,51 +869,49 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
           {/* Right Main Content Area */}
           <section className="mhn-supervision-content-area">
             {/* STEP 1: Choice View ("How would you like to add them?") - Image 35 */}
-            {viewMode === 'choice' && (
-              <div className="mhn-flow-container">
-                <h2 className="mhn-flow-title">
-                  How would you like<br />to add them?
-                </h2>
-                <div className="mhn-flow-options-stack">
-                  {/* Option 1: Create a new player profile */}
-                  <Button
-                    className="mhn-flow-card-option mhn-flow-option-active"
-                    onClick={() => setViewMode('create-details')}
-                  >
-                    <div className="mhn-flow-option-icon-box mhn-icon-box-blue">
-                      <img src='/add5.png' className='add5' />
-                    </div>
-                    <div className="mhn-flow-option-text">
-                      <h4 className="mhn-flow-option-heading mhn-heading-blue">Create a new player profile</h4>
-                      <p className="mhn-flow-option-sub">Set up a player profile for your child.</p>
-                    </div>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B66C2" strokeWidth="2" strokeLinecap="round">
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                  </Button>
+            {viewMode === SupervisionViewModeEnum.CHOICE && (
+              <div className="mhn-supervision-choice-view">
+                <h3 className="mhn-choice-title">Add Player Account</h3>
+                <p className="mhn-choice-desc">Choose how you would like to connect your athlete to your supervision hub.</p>
 
-                  {/* Option 2: Link an existing player */}
-                  <Button
-                    className="mhn-flow-card-option"
-                    onClick={() => setViewMode('link-existing')}
+                <div className="mhn-choice-options-grid">
+                  {/* Option 1: Create New Player Account */}
+                  <div
+                    onClick={() => setViewMode(SupervisionViewModeEnum.CREATE_DETAILS)}
+                    className="mhn-choice-card"
                   >
-                    <div className="mhn-flow-option-icon-box">
-                      <img src='/link.png' className='add5' />
+                    <div className="mhn-choice-icon-badge mhn-icon-create">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0B66C2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="8.5" cy="7" r="4" />
+                        <line x1="20" y1="8" x2="20" y2="14" />
+                        <line x1="17" y1="11" x2="23" y2="11" />
+                      </svg>
                     </div>
-                    <div className="mhn-flow-option-text">
-                      <h4 className="mhn-flow-option-heading">Link an existing player</h4>
-                      <p className="mhn-flow-option-sub">Connect with a player who already has a My Hockey account.</p>
+                    <h4 className="mhn-choice-card-title">Create Player Account</h4>
+                    <p className="mhn-choice-card-desc">Create a new account for a child under 13 or an athlete without an account.</p>
+                  </div>
+
+                  {/* Option 2: Link Existing Account */}
+                  <div
+                    onClick={() => setViewMode(SupervisionViewModeEnum.LINK_EXISTING)}
+                    className="mhn-choice-card"
+                  >
+                    <div className="mhn-choice-icon-badge mhn-icon-link">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0B66C2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                      </svg>
                     </div>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round">
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                  </Button>
+                    <h4 className="mhn-choice-card-title">Link Existing Account</h4>
+                    <p className="mhn-choice-card-desc">Send a supervision request to an athlete who already has an email account.</p>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* STEP 2A: Form 1 - Player Details (Image 36) */}
-            {viewMode === 'create-details' && (() => {
+            {/* B. STEP 1: CREATE PLAYER ACCOUNT DETAILS */}
+            {viewMode === SupervisionViewModeEnum.CREATE_DETAILS && (() => {
               const fullNameErr = (supervisionPlayerTouched.fullName || hasAttemptedSupervisionCreate) ? getSupervisionFullNameError() : null;
               const dobErr = (supervisionPlayerTouched.dob || hasAttemptedSupervisionCreate) ? getSupervisionDobError() : null;
               const relationErr = (supervisionPlayerTouched.relationship || hasAttemptedSupervisionCreate) ? getSupervisionRelationError() : null;
@@ -936,7 +923,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                 setHasAttemptedSupervisionCreate(true);
                 setSupervisionPlayerTouched({ fullName: true, dob: true, relationship: true, email: true });
                 if (isStep1Valid) {
-                  setViewMode('create-protect');
+                  setViewMode(SupervisionViewModeEnum.CREATE_PROTECT);
                 }
               };
 
@@ -1049,24 +1036,26 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
                   <div className="mhn-form-actions-stack">
                     <Button
-                      className="mhn-btn-solid-blue"
+                      className="mhn-btn-modal-cancel"
+                      onClick={() => setViewMode(SupervisionViewModeEnum.CHOICE)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={isCreatingPlayer}
+                      className="mhn-btn-modal-submit"
                       onClick={handleStep1Continue}
                     >
                       Continue
-                    </Button>
-                    <Button
-                      className="mhn-btn-outline"
-                      onClick={() => setViewMode('choice')}
-                    >
-                      Back
                     </Button>
                   </div>
                 </div>
               );
             })()}
 
-            {/* STEP 2A: Form 2 - Protect Profile (Image 37) */}
-            {viewMode === 'create-protect' && (
+            {/* C. STEP 2: CREATE PLAYER ACCOUNT PROTECTION */}
+            {viewMode === SupervisionViewModeEnum.CREATE_PROTECT && (
               <div className="mhn-flow-container mhn-flow-form-wrapper">
                 <h2 className="mhn-flow-title">Protect {newPlayer.fullName.trim() || 'Noah'}'s profile</h2>
                 <p className="mhn-flow-subtitle">You can change these settings anytime.</p>
@@ -1173,26 +1162,26 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
                 <div className="mhn-form-actions-stack">
                   <Button
-                    className="mhn-btn-solid-blue"
-                    onClick={handleCreatePlayerSubmit}
+                    className="mhn-btn-modal-cancel"
+                    onClick={() => setViewMode(SupervisionViewModeEnum.CREATE_DETAILS)}
                     disabled={isCreatingPlayer}
-                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                  >
-                    {isCreatingPlayer && <Spinner size="sm" color="#FFFFFF" />}
-                    <span>{isCreatingPlayer ? 'Creating Profile...' : 'Create Player Profile'}</span>
-                  </Button>
-                  <Button
-                    className="mhn-btn-outline"
-                    onClick={() => setViewMode('create-details')}
                   >
                     Back
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleCreatePlayerSubmit}
+                    disabled={isCreatingPlayer}
+                    className="mhn-btn-modal-submit"
+                  >
+                    {isCreatingPlayer ? <Spinner size="sm" color="#FFFFFF" /> : 'Create Account'}
                   </Button>
                 </div>
               </div>
             )}
 
-            {/* STEP 2A: Form 3 - Success Screen (Image 38) */}
-            {viewMode === 'create-success' && (
+            {/* D. STEP 3: CREATE PLAYER ACCOUNT SUCCESS */}
+            {viewMode === SupervisionViewModeEnum.CREATE_SUCCESS && (
               <div className="mhn-flow-container mhn-flow-success-box">
                 <div className="mhn-success-circle-icon">
                   <img src='/CheckCircle.png' alt='check-circle' className='checkCircle' />
@@ -1203,9 +1192,9 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
                 <div className="mhn-form-actions-stack mhn-form-actions-narrow">
                   <Button
-                    className="mhn-btn-solid-blue"
+                    className="mhn-btn-modal-submit"
                     onClick={() => {
-                      setViewMode('main');
+                      setViewMode(SupervisionViewModeEnum.MAIN);
                       const targetId = createdWardId || selectedWardId;
                       if (onNavigate) {
                         onNavigate('profile', { selectedWardId: targetId, userId: targetId, childId: targetId, childName: addedPlayerName });
@@ -1221,20 +1210,14 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                       textAlign: 'center',
                     }}
                   >
-                    Go to {formatShortPlayerName(addedPlayerName, 14)}'s Profile
-                  </Button>
-                  <Button
-                    className="mhn-btn-outline"
-                    onClick={() => setViewMode('choice')}
-                  >
-                    Add Another Player
+                    Go to Supervision Hub
                   </Button>
                 </div>
               </div>
             )}
 
-            {/* STEP 2B: Link An Existing Player Form (Image 39) */}
-            {viewMode === 'link-existing' && (
+            {/* E. LINK EXISTING ACCOUNT FORM */}
+            {viewMode === SupervisionViewModeEnum.LINK_EXISTING && (
               <div className="mhn-flow-container mhn-flow-form-wrapper">
                 <h2 className="mhn-flow-title">Supervise your child</h2>
                 <p className="mhn-flow-subtitle">Invite your teen to partner with you on supervising their Teen Account.</p>
@@ -1272,7 +1255,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                   </Button>
                   <Button
                     className="mhn-btn-outline"
-                    onClick={() => setViewMode('choice')}
+                    onClick={() => setViewMode(SupervisionViewModeEnum.CHOICE)}
                   >
                     Back
                   </Button>
@@ -1288,7 +1271,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
             )}
 
             {/* STEP 2B: Request Sent Screen (Image 40) */}
-            {viewMode === 'link-sent' && (
+            {viewMode === SupervisionViewModeEnum.LINK_SENT && (
               <div className="mhn-flow-container mhn-flow-success-box">
                 <div className="mhn-request-sent-icon-wrapper">
                   <img alt='request-sent' src='/emailSent.png' />
@@ -1304,7 +1287,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                     className="mhn-btn-solid-blue"
                     onClick={() => {
                       setLinkChildEmail('');
-                      setViewMode('main');
+                      setViewMode(SupervisionViewModeEnum.MAIN);
                     }}
                   >
                     Continue
@@ -1314,25 +1297,25 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
             )}
 
             {/* DEFAULT VIEW: Main Tabbed View (Permissions / Requests / Logs) */}
-            {viewMode === 'main' && (
+            {viewMode === SupervisionViewModeEnum.MAIN && (
               <>
                 {/* Top Sub-Tabs Navigation */}
                 <div className="mhn-supervision-tabs-row">
                   <Button
-                    onClick={() => setActiveMainTab('permissions')}
-                    className={`mhn-supervision-tab-btn ${activeMainTab === 'permissions' ? 'mhn-tab-active' : ''}`}
+                    onClick={() => setActiveMainTab(SupervisionMainTabEnum.PERMISSIONS)}
+                    className={`mhn-supervision-tab-btn ${activeMainTab === SupervisionMainTabEnum.PERMISSIONS ? 'mhn-tab-active' : ''}`}
                   >
                     Permissions
                   </Button>
                   <Button
-                    onClick={() => setActiveMainTab('requests')}
-                    className={`mhn-supervision-tab-btn ${activeMainTab === 'requests' ? 'mhn-tab-active' : ''}`}
+                    onClick={() => setActiveMainTab(SupervisionMainTabEnum.REQUESTS)}
+                    className={`mhn-supervision-tab-btn ${activeMainTab === SupervisionMainTabEnum.REQUESTS ? 'mhn-tab-active' : ''}`}
                   >
                     Requests
                   </Button>
                   <Button
-                    onClick={() => setActiveMainTab('logs')}
-                    className={`mhn-supervision-tab-btn ${activeMainTab === 'logs' ? 'mhn-tab-active' : ''}`}
+                    onClick={() => setActiveMainTab(SupervisionMainTabEnum.LOGS)}
+                    className={`mhn-supervision-tab-btn ${activeMainTab === SupervisionMainTabEnum.LOGS ? 'mhn-tab-active' : ''}`}
                   >
                     Logs
                   </Button>
@@ -1340,7 +1323,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
                 <div className="mhn-supervision-tab-body">
                   {/* Content for Permissions Tab */}
-                  {activeMainTab === 'permissions' && (
+                  {activeMainTab === SupervisionMainTabEnum.PERMISSIONS && (
                     isControlsLoading ? (
                       <PermissionSkeletonLoader />
                     ) : (
@@ -1635,7 +1618,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                   )}
 
                   {/* Content for Requests Tab */}
-                  {activeMainTab === 'requests' && (
+                  {activeMainTab === SupervisionMainTabEnum.REQUESTS && (
                     <div className="mhn-supervision-requests-stack">
                       {requestNotice && (
                         <div className={`mhn-notice-banner ${requestNotice.type === 'success' ? 'mhn-notice-success' : 'mhn-notice-error'}`}>
@@ -1814,6 +1797,54 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                     </div>
                                   )}
 
+                                  {/* Action Type Badge for Approval Requests */}
+                                  {isApprovalItem && req.action && (
+                                    <div
+                                      style={{
+                                        marginBottom: '10px',
+                                        padding: '4px 10px',
+                                        borderRadius: '12px',
+                                        backgroundColor: '#EFF6FF',
+                                        color: '#0B66C2',
+                                        fontSize: '11px',
+                                        fontWeight: 700,
+                                        letterSpacing: '0.04em',
+                                        textTransform: 'uppercase',
+                                      }}
+                                    >
+                                      {req.action === 'POST_MEDIA' || req.action === 'CREATE_POST' ? '🏒 Post Approval' :
+                                       req.action === 'COMMENT_ON_POSTS' ? '💬 Comment Approval' :
+                                       req.action === 'REACT_TO_POSTS' ? '❤️ Reaction Approval' :
+                                       `🛡️ ${String(req.action).replace(/_/g, ' ')}`}
+                                    </div>
+                                  )}
+
+                                  {/* Post Subject Content Preview Box */}
+                                  {isApprovalItem && req.subject && (
+                                    <div
+                                      style={{
+                                        width: '100%',
+                                        padding: '10px 12px',
+                                        borderRadius: '10px',
+                                        backgroundColor: '#F8FAFC',
+                                        border: '1px solid #E2E8F0',
+                                        marginBottom: '14px',
+                                        textAlign: 'left',
+                                        fontSize: '12px',
+                                        boxSizing: 'border-box',
+                                      }}
+                                    >
+                                      <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: '4px' }}>
+                                        {req.subject.kind || 'Post'} {req.subject.audience ? `(${req.subject.audience})` : ''}
+                                      </div>
+                                      {req.subject.body && (
+                                        <p style={{ margin: 0, color: '#1E293B', fontWeight: 500, lineHeight: '1.4', fontStyle: 'italic' }}>
+                                          "{req.subject.body}"
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+
                                   {/* Action Buttons Row */}
                                   <div
                                     style={{
@@ -1893,7 +1924,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                   )}
 
                   {/* Content for Logs Tab matching Figma Image 34 */}
-                  {activeMainTab === 'logs' && (
+                  {activeMainTab === SupervisionMainTabEnum.LOGS && (
                     <div className="mhn-supervision-logs-wrapper">
                       {/* Search Bar & Filter Header */}
                       <div className="mhn-logs-top-controls">
@@ -1962,10 +1993,10 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                             </tr>
                           </thead>
                           <tbody>
-                            {(liveLogs.length > 0 ? liveLogs : sampleLogs)
+                            {(liveLogs.length > 0 ? liveLogs : [])
                               .filter((log) => {
-                                if (!logsSearchQuery.trim()) return true;
-                                const q = logsSearchQuery.toLowerCase();
+                                if (!debouncedLogsSearchQuery.trim()) return true;
+                                const q = debouncedLogsSearchQuery.toLowerCase();
                                 return (
                                   (log.activity && log.activity.toLowerCase().includes(q)) ||
                                   (log.initiatedBy && log.initiatedBy.toLowerCase().includes(q)) ||

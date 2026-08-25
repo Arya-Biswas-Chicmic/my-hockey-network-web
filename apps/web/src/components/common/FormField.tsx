@@ -6,6 +6,7 @@ export interface FormFieldProps {
   error?: string | null;
   helperText?: string;
   className?: string;
+  style?: React.CSSProperties;
   maxLength?: number;
   valueLength?: number;
   children: React.ReactNode;
@@ -17,6 +18,7 @@ export const FormField: React.FC<FormFieldProps> = ({
   error,
   helperText,
   className = '',
+  style,
   maxLength,
   valueLength,
   children,
@@ -28,7 +30,7 @@ export const FormField: React.FC<FormFieldProps> = ({
   const activeError = error || maxLengthError;
 
   return (
-    <div className={`mhn-form-field-group ${className}`}>
+    <div className={`mhn-form-field-group ${className}`} style={style}>
       {label && (
         <label className="mhn-form-field-label">
           {label}

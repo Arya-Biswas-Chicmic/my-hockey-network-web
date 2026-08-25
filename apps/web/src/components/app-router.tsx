@@ -8,6 +8,7 @@ import {
   EventDetailPage,
   EventsPage,
   GuardianApprovalPage,
+  HelpPage,
   HomePage,
   MessagingPage,
   MyNetworkPage,
@@ -56,6 +57,7 @@ function RouteTree() {
           <Route path={ROUTE_MAP[AppRoute.NOTIFICATIONS].path} element={<NotificationsPage {...pageProps} />} />
           <Route path={ROUTE_MAP[AppRoute.PROFILE].path} element={<ProfilePage {...pageProps} />} />
           <Route path={ROUTE_MAP[AppRoute.SETTINGS].path} element={<SettingsPage {...pageProps} />} />
+          <Route path={ROUTE_MAP[AppRoute.HELP].path} element={<HelpPage {...pageProps} />} />
           <Route
             path={ROUTE_MAP[AppRoute.EVENT_DETAIL].path}
             element={<EventDetailPage {...pageProps} onBack={() => navigateTo(AppRoute.EVENTS)} />}

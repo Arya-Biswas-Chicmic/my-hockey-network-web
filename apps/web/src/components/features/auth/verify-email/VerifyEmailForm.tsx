@@ -25,7 +25,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
 }) => {
   const [code, setCode] = useState<string[]>(['', '', '', '', '', '']);
   const [otpError, setOtpError] = useState<string | null>(null);
-  const [resendCooldown, setResendCooldown] = useState<number>(0);
+  const [resendCooldown, setResendCooldown] = useState<number>(59);
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -42,9 +42,12 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
   const handleChange = (index: number, value: string) => {
     if (otpError) setOtpError(null);
 
+    const cleanVal = value.replace(/\D/g, '');
+
     if (value.length > 1) {
-      // Handle paste of 6 digits
-      const digits = value.slice(0, 6).replace(/\D/g, '').split('');
+      // Handle paste of 6 numeric digits
+      const digits = cleanVal.slice(0, 6).split('');
+      if (digits.length === 0) return;
       const newCode = [...code];
       digits.forEach((d, i) => {
         newCode[i] = d;
@@ -55,18 +58,39 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
       return;
     }
 
+    const singleDigit = cleanVal.slice(0, 1);
     const newCode = [...code];
-    newCode[index] = value;
+    newCode[index] = singleDigit;
     setCode(newCode);
 
-    if (value && index < 5) {
+    if (singleDigit && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !code[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+    if (e.key === 'Backspace') {
+      if (!code[index] && index > 0) {
+        inputRefs.current[index - 1]?.focus();
+      }
+      return;
+    }
+
+    if (
+      e.key === 'Tab' ||
+      e.key === 'ArrowLeft' ||
+      e.key === 'ArrowRight' ||
+      e.key === 'Delete' ||
+      e.key === 'Enter' ||
+      e.ctrlKey ||
+      e.metaKey
+    ) {
+      return;
+    }
+
+    // Reject non-digit keystrokes
+    if (!/^\d$/.test(e.key)) {
+      e.preventDefault();
     }
   };
 
@@ -96,10 +120,13 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
     if (onResendCode) {
       onResendCode();
     }
-    setResendCooldown(30);
+    setResendCooldown(59);
   };
 
   const activeError = otpError || errorMessage;
+
+  const formattedTimer = `00:${resendCooldown.toString().padStart(2, '0')}`;
+  const isLastTenSeconds = resendCooldown <= 10 && resendCooldown > 0;
 
   return (
     <div className="onboarding-form verify-email-form-container">
@@ -167,6 +194,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
               }}
               type="text"
               inputMode="numeric"
+              pattern="[0-9]*"
               maxLength={1}
               value={digit}
               onChange={(e) => handleChange(index, e.target.value)}
@@ -221,18 +249,35 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
       {/* Resend Code Footer */}
       <div className="auth-footer-text verify-email-footer" style={{ marginTop: '16px' }}>
         <span>Don’t Receive the code? </span>
-        <Button
-          type="button"
-          onClick={handleResendClick}
-          disabled={resendCooldown > 0 || loading}
-          className="auth-primary-link btn-resend-code"
-          style={{
-            opacity: resendCooldown > 0 || loading ? 0.6 : 1,
-            cursor: resendCooldown > 0 || loading ? 'not-allowed' : 'pointer',
-          }}
-        >
-          {resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : 'Resend Code'}
-        </Button>
+        {resendCooldown > 0 ? (
+          <span
+            style={{
+              color: isLastTenSeconds ? '#EF4444' : '#64748B',
+              fontWeight: 600,
+              fontSize: '14px',
+              transition: 'color 0.3s ease',
+              display: 'inline-block',
+              marginLeft: '4px',
+            }}
+          >
+            Resend OTP in {formattedTimer}
+          </span>
+        ) : (
+          <Button
+            type="button"
+            onClick={handleResendClick}
+            disabled={loading}
+            className="auth-primary-link btn-resend-code"
+            style={{
+              color: '#0B66C2',
+              fontWeight: 600,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.6 : 1,
+            }}
+          >
+            Resend OTP
+          </Button>
+        )}
       </div>
     </div>
   );

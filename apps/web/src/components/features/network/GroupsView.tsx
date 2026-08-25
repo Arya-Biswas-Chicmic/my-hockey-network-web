@@ -1,6 +1,7 @@
 import { Button } from '../../common/Button';
 import { Input } from '../../common/FormControls';
 import React, { useState } from 'react';
+import { useDebounce } from '../../../hooks/use-debounce';
 
 export interface GroupItem {
   id: string;
@@ -17,6 +18,7 @@ interface GroupsViewProps {
 export const GroupsView: React.FC<GroupsViewProps> = ({ onViewGroup }) => {
   const [activeTab, setActiveTab] = useState<'your-groups' | 'discover'>('your-groups');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 800);
 
   const yourGroups: GroupItem[] = [
     {
@@ -54,7 +56,7 @@ export const GroupsView: React.FC<GroupsViewProps> = ({ onViewGroup }) => {
 
   const currentList = activeTab === 'your-groups' ? yourGroups : discoverGroups;
   const filteredGroups = currentList.filter((g) =>
-    g.name.toLowerCase().includes(searchQuery.toLowerCase())
+    !debouncedSearchQuery.trim() || g.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
   );
 
   return (

@@ -12,6 +12,7 @@ import {
   SettingsPage, 
   SupervisionPage, 
   EventDetailPage, 
+  HelpPage,
   OnboardingPage, 
   GuardianApprovalPage, 
   RequestSentPage 
@@ -82,6 +83,12 @@ export const ROUTE_MAP: Record<AppRoute, RouteDefinition> = {
     path: paths.eventDetail,
     isProtected: true,
     component: EventDetailPage,
+  },
+  [AppRoute.HELP]: {
+    key: AppRoute.HELP,
+    path: paths.help,
+    isProtected: true,
+    component: HelpPage,
   },
   [AppRoute.ONBOARDING]: {
     key: AppRoute.ONBOARDING,

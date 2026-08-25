@@ -1,5 +1,6 @@
 import { Input, Select, Dropdown } from '../components/common/FormControls';
 import React, { useState, useEffect, useRef } from 'react';
+import { maskEmail, isEmailValid } from '@my-hockey-network/validation';
 import { Header, PendingBanner, NoDataFound, ServerDown } from '../components/common';
 import { ProfileSummaryCard } from '../components/features/home/ProfileSummaryCard';
 import { FeedPostCard, FeedPostProps } from '../components/features/home/FeedPostCard';
@@ -10,13 +11,16 @@ import { CreatePostModal } from '../components/features/home/CreatePostModal';
 import { EmptyState } from '../components/features/network/EmptyState';
 import { HomeSkeletonLoader, FeedPostSkeleton } from '../components/features/home/HomeSkeletonLoader';
 import { AuthMeResponse, createPost, getFeed, uploadMediaFile, completeMediaUpload } from '@my-hockey-network/core';
-import { QueryKeys } from '@my-hockey-network/contracts';
+import { QueryKeys, NavTabEnum, PostAudienceEnum } from '@my-hockey-network/contracts';
 import { useAuth } from '../hooks/use-auth';
 import { globalQueryClient } from '../query';
 
 import { resolveCoverUrl } from '../utils/mediaUtils';
 import { useFeedPermissions } from '../hooks/use-feed-permissions';
+import { useDebounce } from '../hooks/use-debounce';
 import { showSuccessToast, showErrorToast, showInfoToast } from '../utils/toast';
+import { ERROR_MESSAGES, SUCCESS_MESSAGES, HELPER_MESSAGES } from '@my-hockey-network/constants';
+
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -26,8 +30,9 @@ interface PageProps {
 export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { user, loadAuthMe } = useAuth();
   const { permissions, requirePermission } = useFeedPermissions(onNavigate);
-  const [activeNavTab, setActiveNavTab] = useState('home');
+  const [activeNavTab, setActiveNavTab] = useState<NavTabEnum | string>(NavTabEnum.HOME);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 800);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [isCreatingPost, setIsCreatingPost] = useState<boolean>(false);
   const [userSession] = useState<AuthMeResponse | null>(null);
@@ -169,15 +174,9 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
   useEffect(() => {
     if (!hasLoadedFeedRef.current) return;
-    if (searchQuery.trim().length === 1) return;
-
-    const timer = setTimeout(() => {
-      const profileId = user?.profile?.id || user?.id;
-      fetchFeedPosts(profileId, searchQuery, sortBy);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery, sortBy]);
+    const profileId = user?.profile?.id || user?.id;
+    fetchFeedPosts(profileId, debouncedSearchQuery, sortBy);
+  }, [debouncedSearchQuery, sortBy]);
 
   const filteredPosts = feedPosts;
 
@@ -190,16 +189,22 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
   const handleCreatePost = async (content: string, postImage?: string, privacySettings?: any, imageFile?: File) => {
     if (!requirePermission()) return;
-    let audienceEnum: 'PUBLIC' | 'CONNECTIONS' | 'GROUP' | 'CUSTOM' = 'PUBLIC';
-    if (privacySettings?.audience === 'Groups') {
-      audienceEnum = 'GROUP';
+    let audienceEnum: PostAudienceEnum = PostAudienceEnum.PUBLIC;
+    if (privacySettings?.audience === 'Connections') {
+      audienceEnum = PostAudienceEnum.CONNECTIONS;
+    } else if (privacySettings?.audience === 'Groups') {
+      audienceEnum = PostAudienceEnum.GROUP;
     } else if (privacySettings?.audience === 'Custom') {
-      audienceEnum = 'CUSTOM';
+      audienceEnum = PostAudienceEnum.PRIVATE;
     }
 
     const parseEmails = (input?: string): string[] | undefined => {
       if (!input || !input.trim()) return undefined;
-      return input.split(/[, \n]+/).map(e => e.trim()).filter(e => e.length > 0 && e.includes('@'));
+      const emails = input
+        .split(/[, \n;]+/)
+        .map((e) => e.trim())
+        .filter((e) => isEmailValid(e));
+      return emails.length > 0 ? emails : undefined;
     };
 
     setIsCreatingPost(true);
@@ -230,13 +235,18 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       };
 
       const res = await createPost(dto);
-      const isPendingApproval = res?.message === 'POST_PENDING_APPROVAL' || res?.data?.pendingGuardianApproval || res?.pendingGuardianApproval;
+      const isPendingApproval = Boolean(
+        res?.message === 'POST_PENDING_APPROVAL' ||
+        res?.pendingGuardianApproval ||
+        res?.data?.pendingGuardianApproval ||
+        res?.data?.post?.isDraft
+      );
 
       if (isPendingApproval) {
-        showInfoToast('Post submitted for guardian approval');
+        showInfoToast(HELPER_MESSAGES.GUARDIAN_APPROVAL_SUBMITTED);
       } else {
         const newPost: FeedPostProps = {
-          id: res?.data?.post?.id || res?.id || `pending-post-${feedPosts.length + 1}`,
+          id: res?.data?.post?.id || res?.id || `post-${feedPosts.length + 1}`,
           authorName: userSession?.profile?.displayName || currentUserName,
           authorRole: userSession?.primaryRole || currentUserRole,
           authorTime: 'Just now',
@@ -249,11 +259,15 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         };
         setFeedPosts([newPost, ...feedPosts]);
         globalQueryClient.invalidateQueries(QueryKeys.FEED_POSTS);
-        showSuccessToast('Post added successfully');
+        showSuccessToast(SUCCESS_MESSAGES.POST_CREATED);
       }
       setIsCreatePostOpen(false);
     } catch (err: any) {
-      showErrorToast(err, 'Failed to create post. Please try again.');
+      if (err?.statusCode === 403 && (err?.message?.includes('GUARDIAN_DISABLED') || err?.message?.includes('guardian'))) {
+        showErrorToast(err, ERROR_MESSAGES.GUARDIAN_DISABLED_THIS_ACTION);
+      } else {
+        showErrorToast(err, ERROR_MESSAGES.FAILED_CREATE_POST);
+      }
     } finally {
       setIsCreatingPost(false);
     }
@@ -374,11 +388,12 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   onNavigate={onNavigate}
                   onFollowChange={handleFollowChange}
                   onDeleteSuccess={(deletedId, msg) => {
-                    showSuccessToast(msg || 'Post deleted successfully!');
+                    showSuccessToast(msg || SUCCESS_MESSAGES.POST_DELETED);
                     setFeedPosts((prev) => prev.filter((p) => p.id !== deletedId));
                     const profileId = userSession?.profile?.id || userSession?.id;
                     fetchFeedPosts(profileId, searchQuery, sortBy, true);
                   }}
+
                   onRepostComplete={() => {
                     const profileId = userSession?.profile?.id || userSession?.id;
                     fetchFeedPosts(profileId, searchQuery, sortBy, true);

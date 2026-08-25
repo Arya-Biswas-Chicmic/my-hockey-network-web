@@ -1,6 +1,7 @@
 import { Button } from '../../common/Button';
 import { Input } from '../../common/FormControls';
 import React, { useState } from 'react';
+import { useDebounce } from '../../../hooks/use-debounce';
 
 export interface ChatItem {
   id: string;
@@ -47,12 +48,23 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
 }) => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 800);
 
   const categories = [
     { id: 'all', label: 'All' },
     { id: 'unread', label: 'Unread' },
     { id: 'groups', label: 'Groups' },
   ];
+
+  const filteredChats = chats.filter((c) => {
+    const matchesSearch =
+      !debouncedSearchQuery.trim() ||
+      c.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      (c.lastMessage && c.lastMessage.toLowerCase().includes(debouncedSearchQuery.toLowerCase()));
+    if (activeCategory === 'unread') return matchesSearch && Boolean(c.unreadCount);
+    if (activeCategory === 'groups') return matchesSearch && Boolean(c.isGroup);
+    return matchesSearch;
+  });
 
   return (
     <div className="mhn-chat-sidebar-card">
@@ -108,7 +120,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
       {/* Chat List Items */}
       <div className="mhn-chat-list">
-        {chats.map((chat) => (
+        {filteredChats.map((chat) => (
           <div
             key={chat.id}
             onClick={() => onSelectChat && onSelectChat(chat.id)}

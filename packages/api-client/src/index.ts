@@ -18,6 +18,7 @@ export interface ApiClientOptions {
   credentials?: RequestCredentials;
   fetchImpl?: typeof fetch;
   onUnauthorized?: () => Promise<void> | void;
+  onServerDown?: (statusCode: number, message: string) => Promise<void> | void;
 }
 
 export class ApiError extends Error {
@@ -166,6 +167,10 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
       console.info(`📡 [API Call] ${method} ${url}\n${formatCurlCommand(url, method, headers, body)}`);
     }
 
+    const notifyServerDown = (statusCode: number, message: string) => {
+      void options.onServerDown?.(statusCode, message);
+    };
+
     let response: Response;
     try {
       response = await fetchImpl(url, {
@@ -180,6 +185,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
       if (message.toLowerCase().includes('failed to fetch') || message.toLowerCase().includes('networkerror')) {
         message = 'Unable to connect to backend server. Please check your network or server URL.';
       }
+      notifyServerDown(500, message);
       throw new ApiError(500, message);
     }
 
@@ -242,6 +248,9 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
         extractedMessage = response.statusText
           ? `API request failed with status ${response.status}: ${response.statusText}`
           : `API request failed with status code ${response.status}`;
+      }
+      if (response.status >= 500) {
+        notifyServerDown(response.status, extractedMessage);
       }
       throw new ApiError(response.status, extractedMessage);
     }

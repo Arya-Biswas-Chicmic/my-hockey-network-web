@@ -1,9 +1,10 @@
 import { apiFetch } from './client';
 import { API_ENDPOINTS } from './urls';
+import { PostAudienceEnum, type PostAudience } from '@my-hockey-network/contracts';
 
 export interface CreatePostDTO {
   body?: string;
-  audience?: 'PUBLIC' | 'CONNECTIONS' | 'GROUP' | 'CUSTOM';
+  audience?: PostAudienceEnum | PostAudience;
   groupId?: string | null;
   mediaIds?: string[];
   placeName?: string | null;

@@ -95,20 +95,26 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
   return (
     <div className="mhn-profile-summary-stack">
       {/* Profile Card */}
-      <div className="mhn-profile-summary-card">
-        {/* Card Header Banner Background */}
-        <div 
-          className="mhn-profile-card-banner"
-          style={{ backgroundImage: `url(${resolvedCover})` }}
-        />
+      <div className="mhn-network-profile-card">
+        {/* Cover Banner */}
+        <div className="mhn-network-card-banner">
+          <img 
+            src={resolvedCover} 
+            alt="Cover" 
+            className="mhn-network-banner-img"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/cover.png';
+            }} 
+          />
+        </div>
 
-        {/* Profile Avatar Outer Circle */}
-        <div className="mhn-profile-avatar-wrapper">
-          <div className="mhn-profile-avatar-circle">
+        {/* Avatar Circle */}
+        <div className="mhn-network-avatar-wrapper">
+          <div className="mhn-network-avatar-circle">
             <img 
               src={resolvedAvatar} 
               alt={resolvedName} 
-              className="mhn-profile-avatar-img"
+              className="mhn-network-avatar-img"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/userPlaceholder.png';
               }} 
@@ -117,13 +123,13 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
         </div>
 
         {/* User Identity Details */}
-        <div className="mhn-profile-info">
-          <h3 className="mhn-profile-name" title={resolvedName}>{resolvedName}</h3>
-          <p className="mhn-profile-role">{resolvedRole}</p>
+        <div className="mhn-network-user-info">
+          <h3 className="mhn-network-user-name" title={resolvedName}>{resolvedName}</h3>
+          <p className="mhn-network-user-role">{resolvedRole}</p>
 
           {/* Location Line */}
           {resolvedLocation && (
-            <div className="mhn-profile-location-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+            <div className="mhn-profile-location-line" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                 <circle cx="12" cy="10" r="3"/>
@@ -132,25 +138,32 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
             </div>
           )}
 
-          {/* Team Pill Badge (Only shown for Player or Coach if a team was added, never for Parent) */}
+          {/* Team Badge Pill (Only shown for Player or Coach if a team was added, never for Parent) */}
           {effectiveTeamName && (
-            <div className="mhn-profile-team-pill">
-              {teamLogo && <img src={teamLogo} alt={effectiveTeamName} className="mhn-team-pill-logo" />}
-              <span className="mhn-team-pill-name">{effectiveTeamName}</span>
+            <div className="mhn-profile-team-badge">
+              <img 
+                src={teamLogo} 
+                alt={effectiveTeamName} 
+                className="mhn-profile-team-logo"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/HC.png';
+                }}
+              />
+              <span className="mhn-profile-team-name">{effectiveTeamName}</span>
             </div>
           )}
+        </div>
 
-          {/* Followers & Following Stats Row */}
-          <div className="mhn-profile-stats-divider-row">
-            <div className="mhn-profile-stat-col">
-              <span className="mhn-stat-num">{resolvedFollowers}</span>
-              <span className="mhn-stat-label">Followers</span>
-            </div>
-            <div className="mhn-profile-stat-divider" />
-            <div className="mhn-profile-stat-col">
-              <span className="mhn-stat-num">{resolvedFollowing}</span>
-              <span className="mhn-stat-label">Following</span>
-            </div>
+        {/* Followers & Following Stats Row */}
+        <div className="mhn-network-stats-row">
+          <div className="mhn-network-stat-col">
+            <span className="mhn-network-stat-number">{resolvedFollowers}</span>
+            <span className="mhn-network-stat-label">Followers</span>
+          </div>
+          <div className="mhn-network-stat-divider" />
+          <div className="mhn-network-stat-col">
+            <span className="mhn-network-stat-number">{resolvedFollowing}</span>
+            <span className="mhn-network-stat-label">Following</span>
           </div>
         </div>
       </div>

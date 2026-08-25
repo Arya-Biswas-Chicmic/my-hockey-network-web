@@ -5,7 +5,9 @@ import { LogoutModal } from './LogoutModal';
 import { resolveMediaUrl } from '../../utils/mediaUtils';
 import { getSupervisionData } from '@my-hockey-network/core';
 import { QueryKeys } from '@my-hockey-network/contracts';
+import { ERROR_MESSAGES } from '@my-hockey-network/constants';
 import { useQuery } from '../../query';
+
 
 interface HeaderProps {
   activeTab?: string;
@@ -375,7 +377,7 @@ export const Header: React.FC<HeaderProps> = ({
                     setIsProfileOpen(false);
                     const isParent = user?.primaryRole === 'PARENT' || user?.roleAssignments?.some((r: any) => r.role === 'PARENT');
                     if (!isParent) {
-                      showToast('Supervision is only available for Parent / Guardian accounts.', 'info');
+                      showToast(ERROR_MESSAGES.PARENT_ONLY_SUPERVISION, 'info');
                       return;
                     }
                     handleTabClick('supervision');
@@ -396,7 +398,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </Button>
 
                 {/* Help & Support */}
-                <Button className="mhn-dropdown-item" onClick={() => setIsProfileOpen(false)}>
+                <Button className="mhn-dropdown-item" onClick={() => { setIsProfileOpen(false); handleTabClick('help'); }}>
                   <div className="mhn-dropdown-item-left">
                     <div className="mhn-dropdown-icon-box">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1860C3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

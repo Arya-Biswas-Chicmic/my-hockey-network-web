@@ -11,6 +11,9 @@ export const webApiClient = createApiClient({
   onUnauthorized: () => {
     window.dispatchEvent(new CustomEvent('mhn:unauthorized'));
   },
+  onServerDown: (statusCode, message) => {
+    window.dispatchEvent(new CustomEvent('mhn:server-down', { detail: { statusCode, message } }));
+  },
 });
 
 export function configureWebPlatform(): void {

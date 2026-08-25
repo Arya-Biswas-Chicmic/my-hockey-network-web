@@ -1,6 +1,7 @@
 import { Button } from '../../common/Button';
 import { Input } from '../../common/FormControls';
 import React, { useState } from 'react';
+import { useDebounce } from '../../../hooks/use-debounce';
 import { useAuth } from '../../../hooks/use-auth';
 import { FeedPostCard, FeedPostProps } from '../home/FeedPostCard';
 import { CreatePostModal } from '../home/CreatePostModal';
@@ -25,6 +26,7 @@ export const GroupDetailView: React.FC<GroupDetailViewProps> = ({
   const [isJoined, setIsJoined] = useState(true);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 800);
 
   // Sample group posts matching Figma screenshot
   const [posts, setPosts] = useState<FeedPostProps[]>([
@@ -169,9 +171,15 @@ export const GroupDetailView: React.FC<GroupDetailViewProps> = ({
             {/* Left Sub-column: Posts Feed */}
             <div className="mhn-group-feed-column">
               <div className="mhn-feed-posts-stack">
-                {posts.map((post) => (
-                  <FeedPostCard key={post.id} {...post} />
-                ))}
+                {posts
+                  .filter((post) =>
+                    !debouncedSearchQuery.trim() ||
+                    post.content.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+                    post.authorName.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+                  )
+                  .map((post) => (
+                    <FeedPostCard key={post.id} {...post} />
+                  ))}
               </div>
             </div>
 

@@ -40,7 +40,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
   );
 
   return (
-    <FormField label={label} required={required} error={error} className={className}>
+    <FormField label={label} required={required} error={error} className={className} style={style}>
       <div className="mhn-dropdown-wrapper" style={style}>
         <select
           id={id}

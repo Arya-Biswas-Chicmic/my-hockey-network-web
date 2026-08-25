@@ -24,8 +24,9 @@ import {
   RelationshipItem,
 } from '@my-hockey-network/core';
 
-import { QueryKeys } from '@my-hockey-network/contracts';
+import { QueryKeys, NavTabEnum, NetworkViewModeEnum } from '@my-hockey-network/contracts';
 import { useQuery } from '../query';
+
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -34,12 +35,12 @@ interface PageProps {
 
 export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { user, loadAuthMe } = useAuth();
-  const [activeNavTab, setActiveNavTab] = useState('network');
-  const [currentView, setCurrentView] = useState<'network' | 'connections' | 'groups' | 'group-detail'>('network');
+  const [activeNavTab, setActiveNavTab] = useState<NavTabEnum>(NavTabEnum.MY_NETWORK);
+  const [currentView, setCurrentView] = useState<NetworkViewModeEnum>(NetworkViewModeEnum.NETWORK);
   const [selectedGroupId, setSelectedGroupId] = useState('g1');
   const [activeFilterTab, setActiveFilterTab] = useState('Invitations');
   const [searchQuery, setSearchQuery] = useState('');
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const debouncedSearchQuery = useDebounce(searchQuery, 800);
 
   const [livePendingRequests, setLivePendingRequests] = useState<PendingRequestProps[]>([]);
   const [liveSuggestedUsers, setLiveSuggestedUsers] = useState<SuggestedUserProps[]>([]);
@@ -140,9 +141,9 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
   }, [peopleData]);
 
   const handleTabChange = (tab: string) => {
-    setActiveNavTab(tab);
-    if (tab === 'network') {
-      setCurrentView('network');
+    setActiveNavTab(tab as any);
+    if (tab === NavTabEnum.MY_NETWORK || tab === 'network') {
+      setCurrentView(NetworkViewModeEnum.NETWORK);
     }
     if (onNavigate) {
       onNavigate(tab);
@@ -152,32 +153,33 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
   const handleAcceptRequest = async (id: string) => {
     try {
       await acceptRelationship(id);
-      setLivePendingRequests((prev) => prev.filter((r) => r.id !== id));
-      await loadAuthMe(true);
-    } catch (err: any) {
-      console.error('❌ [MyNetworkPage] Accept request error:', err);
+      setLivePendingRequests((prev) => prev.filter((req) => req.id !== id));
+    } catch (err) {
+      console.error('Accept request error:', err);
     }
   };
 
   const handleIgnoreRequest = async (id: string) => {
     try {
       await declineRelationship(id);
-      setLivePendingRequests((prev) => prev.filter((r) => r.id !== id));
-      await loadAuthMe(true);
-    } catch (err: any) {
-      console.error('❌ [MyNetworkPage] Ignore request error:', err);
+      setLivePendingRequests((prev) => prev.filter((req) => req.id !== id));
+    } catch (err) {
+      console.error('Decline request error:', err);
     }
   };
 
   const handleFollowUser = async (id: string) => {
     try {
       await followUser({ type: 'PROFILE', id });
-      await loadAuthMe(true);
-    } catch (err: any) {
-      console.error('❌ [MyNetworkPage] Follow user error:', err);
-      throw err;
+      setLiveSuggestedUsers((prev) => prev.map((u) => (u.id === id ? { ...u, isFollowing: true } : u)));
+    } catch (err) {
+      console.error('Follow user error:', err);
     }
   };
+
+
+
+
 
   const filterTabs = [
     { id: 'Invitations', label: 'Invitations' },
@@ -198,7 +200,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
 
   return (
     <div className="mhn-network-page-root">
-      {/* Top Header Navbar */}
+      {/* Header */}
       <Header 
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
@@ -207,17 +209,16 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
 
       {/* Main Container */}
       <main className="mhn-network-main-layout">
-        {currentView === 'group-detail' ? (
+        {currentView === NetworkViewModeEnum.GROUP_DETAIL ? (
           <GroupDetailView 
             groupId={selectedGroupId}
-            groupName="San Jose Sharks"
-            onBackToGroups={() => setCurrentView('groups')}
+            onBackToGroups={() => setCurrentView(NetworkViewModeEnum.GROUPS)}
           />
         ) : (
           <>
             {/* Left Column */}
             <aside className="mhn-network-col-left">
-              {currentView === 'groups' ? (
+              {currentView === NetworkViewModeEnum.GROUPS ? (
                 <ProfileSummaryCard 
                   coverUrl={resolveCoverUrl((user?.profile as any)?.coverImageUrl || (user?.profile as any)?.coverUrl, "/cover.png")}
                   location={user?.profile?.city || "-"}
@@ -235,15 +236,15 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                   followingCount="-"
                   onMenuItemClick={(item) => {
                     if (item === 'groups') {
-                      setCurrentView('groups');
+                      setCurrentView(NetworkViewModeEnum.GROUPS);
                     } else if (item === 'connectors' || item === 'connections') {
-                      setCurrentView('connections');
+                      setCurrentView(NetworkViewModeEnum.CONNECTIONS);
                     } else if (item === 'events') {
                       if (onNavigate) {
                         onNavigate('events');
                       }
                     } else {
-                      setCurrentView('network');
+                      setCurrentView(NetworkViewModeEnum.NETWORK);
                     }
                   }}
                 />

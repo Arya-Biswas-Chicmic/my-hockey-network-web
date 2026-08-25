@@ -1,6 +1,7 @@
 import { Button } from '../../common/Button';
 import { Input } from '../../common/FormControls';
 import React, { useState } from 'react';
+import { useDebounce } from '../../../hooks/use-debounce';
 import { EmptyState } from './EmptyState';
 import { NetworkSkeletonGrid } from './NetworkSkeletonLoader';
 
@@ -146,13 +147,15 @@ interface ConnectionsViewProps {
 export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick, isLoading = false }) => {
   const [activeTab, setActiveTab] = useState<'followers' | 'following'>('followers');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 800);
 
   const filteredMembers = sampleConnections.filter(
     (item) =>
       item.type === activeTab &&
-      (item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.roleTag.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.teamName.toLowerCase().includes(searchQuery.toLowerCase()))
+      (!debouncedSearchQuery.trim() ||
+        item.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        item.roleTag.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        item.teamName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()))
   );
 
   return (

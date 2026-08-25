@@ -5,7 +5,7 @@ import { ServerDownScreen } from '../components/common/server-down-screen';
 import { Toast } from '../components/common/Toast';
 import { ToastTypeEnum } from '@my-hockey-network/contracts';
 import { TOAST_EVENT, type ToastOptions } from '../utils/toast';
-import { QueryProvider } from '../query';
+import { QueryProvider, globalQueryClient } from '../query';
 import type { ThemePreference } from './theme-cookie';
 
 interface ProvidersProps {
@@ -54,9 +54,45 @@ export function Providers({ children, defaultTheme }: ProvidersProps) {
     };
   }, []);
 
-  const handleRetryConnection = () => {
-    setServerDownState((prev) => ({ ...prev, isDown: false }));
-    window.location.reload();
+  const handleRetryConnection = async () => {
+    const rawApiUrl = (import.meta as any).env?.VITE_API_BASE_URL || '';
+    const cleanBaseUrl = rawApiUrl.replace(/\/+$/, '');
+    const targetPingUrl = cleanBaseUrl ? `${cleanBaseUrl}/v1/auth/me` : '/v1/auth/me';
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(targetPingUrl, {
+        method: 'GET',
+        headers: {
+          accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'bypass-tunnel-reminder': 'true',
+          'localtunnel-skip-warning': 'true',
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (res.status < 500) {
+        setServerDownState((prev) => ({ ...prev, isDown: false }));
+        globalQueryClient.invalidateQueries('');
+        return;
+      }
+      setServerDownState((prev) => ({
+        ...prev,
+        isDown: true,
+        statusCode: res.status,
+        message: `Backend service is still unavailable (HTTP ${res.status}). Please try again shortly.`,
+      }));
+    } catch {
+      setServerDownState((prev) => ({
+        ...prev,
+        isDown: true,
+        statusCode: 500,
+        message: 'Backend server is still unreachable. Please check your network connection and try again.',
+      }));
+    }
   };
 
   return (

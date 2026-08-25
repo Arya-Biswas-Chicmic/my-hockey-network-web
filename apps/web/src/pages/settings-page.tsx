@@ -3,6 +3,7 @@ import { Input, Select, Dropdown } from '../components/common/FormControls';
 import React, { useState, useEffect } from 'react';
 import { Header } from '../components/common/Header';
 import { NoDataFound } from '../components/common/no-data-found';
+import { useDebounce } from '../hooks/use-debounce';
 import { NetworkSkeletonCard } from '../components/features/network/NetworkSkeletonLoader';
 import {
   getNotificationSettings,
@@ -11,6 +12,10 @@ import {
   removeRelationship,
 } from '@my-hockey-network/core';
 import { showSuccessToast, showErrorToast } from '../utils/toast';
+import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
+import { NavTabEnum, SettingsSubTabEnum } from '@my-hockey-network/contracts';
+
+
 
 interface SettingsPageProps {
   onNavigate?: (screen: string) => void;
@@ -18,9 +23,10 @@ interface SettingsPageProps {
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout }) => {
-  const [activeNavTab, setActiveNavTab] = useState('settings');
-  const [activeSubTab, setActiveSubTab] = useState<'general' | 'notification' | 'blocked'>('blocked');
+  const [activeNavTab, setActiveNavTab] = useState<NavTabEnum | string>(NavTabEnum.SETTINGS);
+  const [activeSubTab, setActiveSubTab] = useState<SettingsSubTabEnum>(SettingsSubTabEnum.BLOCKED);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 800);
 
   const [blockedUsers, setBlockedUsers] = useState<any[]>([]);
   const [isLoadingBlocked, setIsLoadingBlocked] = useState(true);
@@ -102,13 +108,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
       await removeRelationship(userId);
 
       // Show Toast Notification
-      showSuccessToast('User unblocked successfully!');
+      showSuccessToast(SUCCESS_MESSAGES.USER_UNBLOCKED);
 
       // Re-fetch GET API with shimmer loader enabled
       await fetchBlockedUsers(true);
     } catch (err: any) {
       console.error('❌ [SettingsPage] Unblock Error:', err);
-      showErrorToast(err, 'Failed to unblock user. Please try again.');
+      showErrorToast(err, ERROR_MESSAGES.FAILED_UNBLOCK);
     } finally {
       setUnblockingIds((prev) => prev.filter((id) => id !== userId));
     }
@@ -116,8 +122,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
 
   const filteredBlockedUsers = blockedUsers.filter(
     (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.roleTag.toLowerCase().includes(searchQuery.toLowerCase())
+      !debouncedSearchQuery.trim() ||
+      user.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      user.roleTag.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
   );
 
   // Notification Toggle Switch States matching Figma Image 30
@@ -145,14 +152,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
       ];
       await updateNotificationSettings(itemsPayload);
 
-      showSuccessToast('Notification setting updated successfully!');
+      showSuccessToast(SUCCESS_MESSAGES.NOTIFICATION_SETTING_UPDATED);
 
       // Re-fetch GET API with shimmer loader enabled after updating settings
       await fetchNotificationSettings(true);
     } catch (err: any) {
       console.warn('❌ [SettingsPage] updateNotificationSettings notice:', err?.message || err);
-      showErrorToast(err, 'Failed to update notification setting.');
+      showErrorToast(err, ERROR_MESSAGES.FAILED_NOTIFICATION_SETTING);
     } finally {
+
       setUpdatingNotifKey(null);
     }
   };
@@ -199,8 +207,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
 
   const filteredNotificationItems = notificationItems.filter(
     (item) =>
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.subtitle.toLowerCase().includes(searchQuery.toLowerCase())
+      !debouncedSearchQuery.trim() ||
+      item.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      item.subtitle.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
   );
 
   return (
@@ -239,11 +248,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                 const val = e.target.value;
                 setSearchQuery(val);
                 if (val.toLowerCase().includes('notif')) {
-                  setActiveSubTab('notification');
+                  setActiveSubTab(SettingsSubTabEnum.NOTIFICATION);
                 } else if (val.toLowerCase().includes('block')) {
-                  setActiveSubTab('blocked');
+                  setActiveSubTab(SettingsSubTabEnum.BLOCKED);
                 } else if (val.toLowerCase().includes('email') || val.toLowerCase().includes('role') || val.toLowerCase().includes('lang')) {
-                  setActiveSubTab('general');
+                  setActiveSubTab(SettingsSubTabEnum.GENERAL);
                 }
               }}
               placeholder="Search settings..."
@@ -257,20 +266,20 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
           {/* Left Sub-Navigation Menu Column */}
           <aside className="mhn-settings-sidebar">
             <Button
-              onClick={() => setActiveSubTab('general')}
-              className={`mhn-settings-subtab-btn ${activeSubTab === 'general' ? 'mhn-subtab-active' : ''}`}
+              onClick={() => setActiveSubTab(SettingsSubTabEnum.GENERAL)}
+              className={`mhn-settings-subtab-btn ${activeSubTab === SettingsSubTabEnum.GENERAL ? 'mhn-subtab-active' : ''}`}
             >
               General
             </Button>
             <Button
-              onClick={() => setActiveSubTab('notification')}
-              className={`mhn-settings-subtab-btn ${activeSubTab === 'notification' ? 'mhn-subtab-active' : ''}`}
+              onClick={() => setActiveSubTab(SettingsSubTabEnum.NOTIFICATION)}
+              className={`mhn-settings-subtab-btn ${activeSubTab === SettingsSubTabEnum.NOTIFICATION ? 'mhn-subtab-active' : ''}`}
             >
               Notification
             </Button>
             <Button
-              onClick={() => setActiveSubTab('blocked')}
-              className={`mhn-settings-subtab-btn ${activeSubTab === 'blocked' ? 'mhn-subtab-active' : ''}`}
+              onClick={() => setActiveSubTab(SettingsSubTabEnum.BLOCKED)}
+              className={`mhn-settings-subtab-btn ${activeSubTab === SettingsSubTabEnum.BLOCKED ? 'mhn-subtab-active' : ''}`}
             >
               Blocked Users
             </Button>
@@ -278,7 +287,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
 
           {/* Right Content Area */}
           <section className="mhn-settings-content-area">
-            {activeSubTab === 'notification' && (
+            {activeSubTab === SettingsSubTabEnum.NOTIFICATION && (
               <div className="mhn-notification-settings-list">
                 {isLoadingNotifications ? (
                   [1, 2, 3, 4, 5].map((n) => (
@@ -332,7 +341,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
               </div>
             )}
 
-            {activeSubTab === 'general' && (
+            {activeSubTab === SettingsSubTabEnum.GENERAL && (
               <div className="mhn-general-settings-view">
                 <h3 className="mhn-settings-section-heading">Account & General Settings</h3>
                 <div className="mhn-general-setting-field">
@@ -366,7 +375,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
               </div>
             )}
 
-            {activeSubTab === 'blocked' && (
+            {activeSubTab === SettingsSubTabEnum.BLOCKED && (
               <div className="mhn-blocked-users-view">
                 {isLoadingBlocked ? (
                   <div className="mhn-blocked-users-grid">

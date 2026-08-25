@@ -7,7 +7,9 @@ import { Spinner } from '../../common/Spinner';
 import { useAuth } from '../../../hooks/use-auth';
 import { PostCommentSection } from './PostCommentSection';
 import { useFeedPermissions } from '../../../hooks/use-feed-permissions';
-import { showSuccessToast, showErrorToast } from '../../../utils/toast';
+import { showSuccessToast, showErrorToast, showInfoToast } from '../../../utils/toast';
+import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
+
 
 export interface FeedPostProps {
   id: string;
@@ -119,13 +121,13 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
     try {
       await deletePost(id);
       setIsDeleteModalOpen(false);
-      showSuccessToast('Post deleted successfully!');
+      showSuccessToast(SUCCESS_MESSAGES.POST_DELETED);
 
       if (onDeleteSuccess) {
-        onDeleteSuccess(id, 'Post deleted successfully!');
+        onDeleteSuccess(id, SUCCESS_MESSAGES.POST_DELETED);
       }
       if (onShareSuccess) {
-        onShareSuccess('Post deleted successfully!');
+        onShareSuccess(SUCCESS_MESSAGES.POST_DELETED);
       }
       if (onRepostComplete) {
         onRepostComplete();
@@ -137,7 +139,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
       }, 300);
     } catch (err: any) {
       console.error('❌ Delete Post error:', err);
-      showErrorToast(err, 'Failed to delete post. Please try again.');
+      showErrorToast(err, ERROR_MESSAGES.FAILED_DELETE_POST);
     } finally {
       setIsDeleting(false);
     }
@@ -151,13 +153,13 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
       await updatePost(id, { body: editContentInput.trim() });
       setPostContent(editContentInput.trim());
       setIsEditModalOpen(false);
-      showSuccessToast('Post updated successfully!');
+      showSuccessToast(SUCCESS_MESSAGES.POST_UPDATED);
       if (onUpdateSuccess) {
         onUpdateSuccess(id, editContentInput.trim());
       }
     } catch (err: any) {
       console.error('❌ Update Post error:', err);
-      showErrorToast(err, 'Failed to update post. Please try again.');
+      showErrorToast(err, ERROR_MESSAGES.FAILED_UPDATE_POST);
     } finally {
       setIsUpdating(false);
     }
@@ -184,12 +186,20 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
       if (prevLiked) {
         await unlikePost(id);
       } else {
-        await likePost(id, 'LIKE');
+        const res = await likePost(id, 'LIKE');
+        if ((res as any)?.pendingGuardianApproval || (res as any)?.message === 'REACTION_PENDING_APPROVAL') {
+          showInfoToast('Your reaction has been submitted and is waiting for parent/guardian approval.');
+          setIsLiked(prevLiked);
+          setLikes(prevLikes);
+        }
       }
     } catch (err: any) {
       console.error(`❌ [FeedPostCard] Reaction API Error:`, err);
       setIsLiked(prevLiked);
       setLikes(prevLikes);
+      if (err?.statusCode === 403 && (err?.message?.includes('GUARDIAN_DISABLED') || err?.message?.includes('guardian'))) {
+        showErrorToast(err, ERROR_MESSAGES.GUARDIAN_DISABLED_THIS_ACTION);
+      }
     } finally {
       setIsLiking(false);
     }
@@ -241,7 +251,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
       }
     } catch (err: any) {
       console.error(`❌ [FeedPostCard] Repost/Undo Repost API Error:`, err);
-      showErrorToast(err, 'Failed to update repost.');
+      showErrorToast(err, ERROR_MESSAGES.FAILED_REPOST);
     } finally {
       setIsSharing(false);
     }
@@ -282,7 +292,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
       }
     } catch (err: any) {
       console.error(`❌ [FeedPostCard] Follow/Unfollow API Error:`, err);
-      showErrorToast(err, 'Failed to update follow status.');
+      showErrorToast(err, ERROR_MESSAGES.FAILED_FOLLOW);
     } finally {
       setIsFollowingLoading(false);
     }

@@ -13,8 +13,13 @@ import { Spinner } from '../components/common/Spinner';
 import { DeleteCareerModal } from '../components/common/DeleteCareerModal';
 import { useAuth } from '../hooks/use-auth';
 import { resolveMediaUrl, resolveCoverUrl } from '../utils/mediaUtils';
+import { isEmailValid } from '@my-hockey-network/validation';
 import { showSuccessToast, showErrorToast } from '../utils/toast';
+import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
+import { NavTabEnum, ProfileTabEnum, ProfileAboutSectionEnum, PostAudienceEnum } from '@my-hockey-network/contracts';
 import { ApprovalCodeModal } from '../components/supervision/ApprovalCodeModal';
+
+
 import {
   createPost,
   getUserPosts,
@@ -78,7 +83,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         setTimeout(() => setCoverUploadMsg(null), 3000);
       }
     } catch (err: any) {
-      showErrorToast(err, 'Failed to upload cover image. Please try again.');
+      showErrorToast(err, ERROR_MESSAGES.FAILED_UPLOAD_COVER);
     } finally {
       setIsUploadingCover(false);
       if (e.target) {
@@ -110,7 +115,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         await loadAuthMe(true, true);
       }
     } catch (err: any) {
-      showErrorToast(err, 'Failed to upload profile picture. Please try again.');
+      showErrorToast(err, ERROR_MESSAGES.FAILED_UPLOAD_AVATAR);
     } finally {
       setIsUploadingAvatar(false);
       if (e.target) {
@@ -118,9 +123,9 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       }
     }
   };
-  const [activeNavTab, setActiveNavTab] = useState('profile');
-  const [activeProfileTab, setActiveProfileTab] = useState<'posts' | 'media' | 'stats' | 'about' | 'guardian-requests'>('about');
-  const [activeAboutSection, setActiveAboutSection] = useState<'intro' | 'career' | 'details'>('intro');
+  const [activeNavTab, setActiveNavTab] = useState<NavTabEnum | string>(NavTabEnum.PROFILE);
+  const [activeProfileTab, setActiveProfileTab] = useState<ProfileTabEnum>(ProfileTabEnum.ABOUT);
+  const [activeAboutSection, setActiveAboutSection] = useState<ProfileAboutSectionEnum>(ProfileAboutSectionEnum.INTRO);
 
   const [pendingGuardianReqs, setPendingGuardianReqs] = useState<any[]>([]);
   const [isGuardianReqsLoading, setIsGuardianReqsLoading] = useState<boolean>(false);
@@ -145,7 +150,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   };
 
   React.useEffect(() => {
-    if (activeProfileTab === 'guardian-requests') {
+    if (activeProfileTab === ProfileTabEnum.GUARDIAN_REQUESTS) {
       fetchPendingGuardianRequestsList();
     }
   }, [activeProfileTab]);
@@ -155,10 +160,10 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     setGuardianReqActionLoading(true);
     try {
       const res = await acceptGuardianRequest(code);
-      showSuccessToast(res.message || 'Guardian request approved successfully!');
+      showSuccessToast(res.message || SUCCESS_MESSAGES.GUARDIAN_REQUEST_APPROVED);
       fetchPendingGuardianRequestsList();
     } catch (err: any) {
-      showErrorToast(err, 'Failed to approve request. Please check code.');
+      showErrorToast(err, ERROR_MESSAGES.FAILED_APPROVE_REQUEST);
       throw err;
     } finally {
       setGuardianReqActionLoading(false);
@@ -170,14 +175,15 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     setGuardianReqActionLoading(true);
     try {
       const res = await declineGuardianRequest(code);
-      showSuccessToast(res.message || 'Guardian request declined.');
+      showSuccessToast(res.message || SUCCESS_MESSAGES.GUARDIAN_REQUEST_DECLINED);
       fetchPendingGuardianRequestsList();
     } catch (err: any) {
-      showErrorToast(err, 'Failed to decline request.');
+      showErrorToast(err, ERROR_MESSAGES.FAILED_DECLINE_REQUEST);
     } finally {
       setGuardianReqActionLoading(false);
     }
   };
+
 
   const [searchParams] = useSearchParams();
   const location = useLocation();
@@ -210,12 +216,19 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     (activeProfile as any)?.coverImageKey ||
     (isOwnProfile ? (user as any)?.coverImageUrl : null);
   const liveCoverImage = resolveCoverUrl(rawCover, '/cover.png');
-  const liveRole = (activeProfile as any)?.roleTag || (activeProfile as any)?.type || (isOwnProfile ? user?.primaryRole : 'PLAYER') || 'PLAYER';
-  const liveRoleUpper = String(liveRole).toUpperCase();
-  const isPlayer = liveRoleUpper === 'PLAYER';
-  const isCoach = liveRoleUpper === 'COACH';
-  const isParent = liveRoleUpper === 'PARENT';
-  const canHaveCareer = isPlayer || isCoach;
+  const rawRole =
+    (activeProfile as any)?.primaryRole ||
+    (activeProfile as any)?.profileType ||
+    (activeProfile as any)?.type ||
+    (isOwnProfile ? user?.primaryRole : null) ||
+    (activeProfile as any)?.roleTag ||
+    'PLAYER';
+  const liveRole = (activeProfile as any)?.roleTag || String(rawRole);
+  const liveRoleUpper = String(rawRole).toUpperCase();
+  const isPlayer = liveRoleUpper === 'PLAYER' || liveRoleUpper.includes('PLAYER') || liveRoleUpper.includes('CENTER') || liveRoleUpper.includes('WING') || liveRoleUpper.includes('DEFENSE') || liveRoleUpper.includes('GOALTENDER');
+  const isCoach = liveRoleUpper === 'COACH' || liveRoleUpper.includes('COACH');
+  const isParent = liveRoleUpper === 'PARENT' || liveRoleUpper.includes('PARENT');
+  const canHaveCareer = isPlayer || isCoach || (!isParent && liveRoleUpper !== 'PARENT');
 
   // Live profile field fallbacks
   const liveBio = activeProfile?.bio || 'Competitive ice hockey player focused on teamwork, discipline, and continuous improvement on and off the ice.';
@@ -288,7 +301,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       setTimeout(() => setIntroSaveMsg(null), 3000);
     } catch (err: any) {
       console.error('❌ Save Intro error:', err);
-      showErrorToast(err, 'Failed to save intro details');
+      showErrorToast(err, ERROR_MESSAGES.FAILED_SAVE_INTRO);
     } finally {
       setIsSavingIntro(false);
     }
@@ -324,7 +337,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       setTimeout(() => setDetailsSaveMsg(null), 3000);
     } catch (err: any) {
       console.error('❌ Save Details error:', err);
-      showErrorToast(err, 'Failed to save personal details');
+      showErrorToast(err, ERROR_MESSAGES.FAILED_SAVE_PERSONAL_DETAILS);
     } finally {
       setIsSavingDetails(false);
     }
@@ -424,13 +437,19 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     postImage?: string,
     privacySettings?: { audience: string; shareWith?: string; dontShareWith?: string; locationTag?: string }
   ) => {
-    let audienceEnum: 'PUBLIC' | 'CONNECTIONS' | 'GROUP' | 'CUSTOM' = 'PUBLIC';
-    if (privacySettings?.audience === 'Connections') audienceEnum = 'CONNECTIONS';
-    if (privacySettings?.audience === 'Groups') audienceEnum = 'GROUP';
-    if (privacySettings?.audience === 'Custom') audienceEnum = 'CUSTOM';
+    let audienceEnum: PostAudienceEnum = PostAudienceEnum.PUBLIC;
+    if (privacySettings?.audience === 'Connections') audienceEnum = PostAudienceEnum.CONNECTIONS;
+    if (privacySettings?.audience === 'Groups') audienceEnum = PostAudienceEnum.GROUP;
+    if (privacySettings?.audience === 'Custom') audienceEnum = PostAudienceEnum.PRIVATE;
 
-    const parseEmails = (str?: string) =>
-      str ? str.split(',').map((e) => e.trim()).filter((e) => e.length > 0) : undefined;
+    const parseEmails = (str?: string) => {
+      if (!str || !str.trim()) return undefined;
+      const emails = str
+        .split(/[, \n;]+/)
+        .map((e) => e.trim())
+        .filter((e) => isEmailValid(e));
+      return emails.length > 0 ? emails : undefined;
+    };
 
     const dto = {
       content,
@@ -637,7 +656,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         });
 
         setCareerEntries((prev) => (prev || []).map((t) => (t.id === editingTeamId ? updated : t)));
-        showSuccessToast('Career team updated successfully!');
+        showSuccessToast(SUCCESS_MESSAGES.CAREER_UPDATED);
       } else {
         // POST /v1/profiles/me/career
         const created = await createCareerEntry({
@@ -650,13 +669,13 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         });
 
         setCareerEntries((prev) => [created, ...(prev || [])]);
-        showSuccessToast('Career team created successfully!');
+        showSuccessToast(SUCCESS_MESSAGES.CAREER_CREATED);
       }
 
       resetTeamForm();
     } catch (err: any) {
       console.error('❌ Save Career Team Error:', err);
-      showErrorToast(err, 'Failed to save career team.');
+      showErrorToast(err, ERROR_MESSAGES.FAILED_SAVE_CAREER_TEAM);
     } finally {
       setIsSavingTeam(false);
     }
@@ -668,13 +687,13 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     try {
       await deleteCareerEntry(id);
       setCareerEntries((prev) => (prev || []).filter((t) => t.id !== id));
-      showSuccessToast('Career team removed successfully.');
+      showSuccessToast(SUCCESS_MESSAGES.CAREER_REMOVED);
       if (editingTeamId === id) {
         resetTeamForm();
       }
     } catch (err: any) {
       console.error('❌ Delete Career Team Error:', err);
-      showErrorToast(err, 'Failed to remove career team.');
+      showErrorToast(err, ERROR_MESSAGES.FAILED_REMOVE_CAREER_TEAM);
     } finally {
       setIsDeletingTeamId(null);
     }
@@ -874,7 +893,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   <h2 className="mhn-profile-hero-name" title={liveName}>{liveName}</h2>
                   <div className="mhn-profile-action-buttons">
                     <Button
-                      onClick={() => showSuccessToast('Profile link copied to clipboard!')}
+                      onClick={() => showSuccessToast(SUCCESS_MESSAGES.PROFILE_LINK_COPIED)}
                       className="mhn-btn-share-profile"
                     >
                       <div className="share-profile-text">Share Profile</div>
@@ -929,40 +948,40 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             {/* Profile Content Navigation Tabs Bar */}
             <div className="mhn-profile-tabs-bar">
               <Button
-                onClick={() => setActiveProfileTab('posts')}
-                className={`mhn-profile-tab-btn ${activeProfileTab === 'posts' ? 'mhn-profile-tab-active' : ''}`}
+                onClick={() => setActiveProfileTab(ProfileTabEnum.POSTS)}
+                className={`mhn-profile-tab-btn ${activeProfileTab === ProfileTabEnum.POSTS ? 'mhn-profile-tab-active' : ''}`}
               >
                 <span>Posts</span>
-                {activeProfileTab === 'posts' && <div className="mhn-profile-tab-indicator" />}
+                {activeProfileTab === ProfileTabEnum.POSTS && <div className="mhn-profile-tab-indicator" />}
               </Button>
               <Button
-                onClick={() => setActiveProfileTab('media')}
-                className={`mhn-profile-tab-btn ${activeProfileTab === 'media' ? 'mhn-profile-tab-active' : ''}`}
+                onClick={() => setActiveProfileTab(ProfileTabEnum.MEDIA)}
+                className={`mhn-profile-tab-btn ${activeProfileTab === ProfileTabEnum.MEDIA ? 'mhn-profile-tab-active' : ''}`}
               >
                 <span>Media</span>
-                {activeProfileTab === 'media' && <div className="mhn-profile-tab-indicator" />}
+                {activeProfileTab === ProfileTabEnum.MEDIA && <div className="mhn-profile-tab-indicator" />}
               </Button>
               <Button
-                onClick={() => setActiveProfileTab('stats')}
-                className={`mhn-profile-tab-btn ${activeProfileTab === 'stats' ? 'mhn-profile-tab-active' : ''}`}
+                onClick={() => setActiveProfileTab(ProfileTabEnum.STATS)}
+                className={`mhn-profile-tab-btn ${activeProfileTab === ProfileTabEnum.STATS ? 'mhn-profile-tab-active' : ''}`}
               >
                 <span>Stats</span>
-                {activeProfileTab === 'stats' && <div className="mhn-profile-tab-indicator" />}
+                {activeProfileTab === ProfileTabEnum.STATS && <div className="mhn-profile-tab-indicator" />}
               </Button>
               <Button
-                onClick={() => setActiveProfileTab('about')}
-                className={`mhn-profile-tab-btn ${activeProfileTab === 'about' ? 'mhn-profile-tab-active' : ''}`}
+                onClick={() => setActiveProfileTab(ProfileTabEnum.ABOUT)}
+                className={`mhn-profile-tab-btn ${activeProfileTab === ProfileTabEnum.ABOUT ? 'mhn-profile-tab-active' : ''}`}
               >
                 <span>About</span>
-                {activeProfileTab === 'about' && <div className="mhn-profile-tab-indicator" />}
+                {activeProfileTab === ProfileTabEnum.ABOUT && <div className="mhn-profile-tab-indicator" />}
               </Button>
               {(liveRole.toUpperCase() === 'PARENT' || (user as any)?.roles?.includes('PARENT') || user?.primaryRole === 'PARENT') && (
                 <Button
-                  onClick={() => setActiveProfileTab('guardian-requests')}
-                  className={`mhn-profile-tab-btn ${activeProfileTab === 'guardian-requests' ? 'mhn-profile-tab-active' : ''}`}
+                  onClick={() => setActiveProfileTab(ProfileTabEnum.GUARDIAN_REQUESTS)}
+                  className={`mhn-profile-tab-btn ${activeProfileTab === ProfileTabEnum.GUARDIAN_REQUESTS ? 'mhn-profile-tab-active' : ''}`}
                 >
                   <span>Guardian Requests</span>
-                  {activeProfileTab === 'guardian-requests' && <div className="mhn-profile-tab-indicator" />}
+                  {activeProfileTab === ProfileTabEnum.GUARDIAN_REQUESTS && <div className="mhn-profile-tab-indicator" />}
                 </Button>
               )}
             </div>
@@ -971,7 +990,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           {/* Tab Content Panel */}
           <div>
             {/* 1. POSTS TAB */}
-            {activeProfileTab === 'posts' && (
+            {activeProfileTab === ProfileTabEnum.POSTS && (
               <div className="mhn-posts-container-card">
                 <div className="mhn-posts-header-bar">
                   <h3 className="mhn-posts-title">Posts</h3>
@@ -1013,7 +1032,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                             isSelf={true}
                             onNavigate={onNavigate}
                             onDeleteSuccess={(deletedId, msg) => {
-                              showSuccessToast(msg || 'Post deleted successfully!');
+                              showSuccessToast(msg || SUCCESS_MESSAGES.POST_DELETED);
                               setLiveUserPosts((prev) => prev.filter((p) => p.id !== deletedId));
                             }}
                           />
@@ -1030,7 +1049,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             )}
 
             {/* 2. MEDIA TAB */}
-            {activeProfileTab === 'media' && (
+            {activeProfileTab === ProfileTabEnum.MEDIA && (
               <div className="mhn-profile-tab-content-card-full mhn-media-card-override">
                 <div className="mhn-media-grid">
                   {mediaPhotos.map((photo, idx) => (
@@ -1043,7 +1062,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             )}
 
             {/* 3. STATS TAB */}
-            {activeProfileTab === 'stats' && (
+            {activeProfileTab === ProfileTabEnum.STATS && (
               <div className="mhn-profile-tab-content-card-full">
                 <div className="mhn-profile-stats-container">
                   {/* 1. Filter Dropdowns Row */}
@@ -1053,7 +1072,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       options={['2025-26', '2024-25']}
                       onChange={(val) => setSelectedSeason(val)}
                       placeholder=""
-                      style={{ width: '140px' }}
+                      style={{ width: '160px' }}
                     />
 
                     <Dropdown
@@ -1061,7 +1080,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       options={['Regular Season', 'Playoffs']}
                       onChange={(val) => setSelectedSeasonType(val)}
                       placeholder=""
-                      style={{ width: '160px' }}
+                      style={{ width: '200px' }}
                     />
 
                     <Dropdown
@@ -1069,7 +1088,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       options={['Miles • MI', 'KM • KPH']}
                       onChange={(val) => setSelectedUnit(val)}
                       placeholder=""
-                      style={{ width: '140px' }}
+                      style={{ width: '160px' }}
                     />
                   </div>
 
@@ -1311,40 +1330,40 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             )}
 
             {/* 4. ABOUT TAB */}
-            {activeProfileTab === 'about' && (
+            {activeProfileTab === ProfileTabEnum.ABOUT && (
               <div className="mhn-profile-tab-content-card-full mhn-about-card-padding-override">
                 <div className="mhn-about-2col-container">
                   {/* Left Sidebar */}
                   <div className="mhn-about-sidebar">
                     <h3 className="mhn-about-sidebar-title">About</h3>
 
-                    <nav className="mhn-about-menu-nav">
+                    <aside className="mhn-about-sidebar-card">
                       <Button
-                        onClick={() => setActiveAboutSection('intro')}
-                        className={`mhn-about-menu-btn ${activeAboutSection === 'intro' ? 'mhn-about-btn-active' : ''}`}
+                        onClick={() => setActiveAboutSection(ProfileAboutSectionEnum.INTRO)}
+                        className={`mhn-about-menu-btn ${activeAboutSection === ProfileAboutSectionEnum.INTRO ? 'mhn-about-btn-active' : ''}`}
                       >
                         Intro
                       </Button>
                       {canHaveCareer && (
                         <Button
-                          onClick={() => setActiveAboutSection('career')}
-                          className={`mhn-about-menu-btn ${activeAboutSection === 'career' ? 'mhn-about-btn-active' : ''}`}
+                          onClick={() => setActiveAboutSection(ProfileAboutSectionEnum.CAREER)}
+                          className={`mhn-about-menu-btn ${activeAboutSection === ProfileAboutSectionEnum.CAREER ? 'mhn-about-btn-active' : ''}`}
                         >
                           Career
                         </Button>
                       )}
                       <Button
-                        onClick={() => setActiveAboutSection('details')}
-                        className={`mhn-about-menu-btn ${activeAboutSection === 'details' ? 'mhn-about-btn-active' : ''}`}
+                        onClick={() => setActiveAboutSection(ProfileAboutSectionEnum.DETAILS)}
+                        className={`mhn-about-menu-btn ${activeAboutSection === ProfileAboutSectionEnum.DETAILS ? 'mhn-about-btn-active' : ''}`}
                       >
-                        Personal details
+                        Personal Details
                       </Button>
-                    </nav>
+                    </aside>
                   </div>
 
                   {/* Right Detail Panel */}
                   <div className="mhn-about-main-panel">
-                    {activeAboutSection === 'intro' && (
+                    {activeAboutSection === ProfileAboutSectionEnum.INTRO && (
                       <div className="mhn-about-intro-form">
                         {/* Bio */}
                         <div className="mhn-about-field-group">
@@ -1477,7 +1496,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       </div>
                     )}
 
-                    {activeAboutSection === 'career' && canHaveCareer && (
+                    {activeAboutSection === ProfileAboutSectionEnum.CAREER && canHaveCareer && (
                       <div className="mhn-about-section-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         {/* Teams Header */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
@@ -1738,7 +1757,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       </div>
                     )}
 
-                    {activeAboutSection === 'details' && (
+                    {activeAboutSection === ProfileAboutSectionEnum.DETAILS && (
                       <div className="mhn-about-section-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         <PersonalDetailsFields
                           values={{
@@ -1816,7 +1835,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             )}
 
             {/* 5. GUARDIAN REQUESTS TAB (PARENT Role Only) */}
-            {activeProfileTab === 'guardian-requests' && (
+            {activeProfileTab === ProfileTabEnum.GUARDIAN_REQUESTS && (
               <div className="mhn-posts-container-card" style={{ padding: '24px' }}>
                 <div className="mhn-posts-header-bar" style={{ marginBottom: '20px' }}>
                   <h3 className="mhn-posts-title">Pending Guardian Requests</h3>

@@ -12,3 +12,4 @@ export * from './supervision-page';
 export * from './onboarding-page';
 export * from './guardian-approval-page';
 export * from './request-sent-page';
+export * from './help-page';

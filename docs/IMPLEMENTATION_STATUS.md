@@ -1,6 +1,6 @@
 # Implementation status
 
-Last reviewed: 2026-08-24
+Last reviewed: 2026-08-25
 
 ## Completed
 
@@ -49,6 +49,28 @@ Last reviewed: 2026-08-24
 - Created `DeleteCareerModal` component styled identically to `LogoutModal` (modal backdrop, pop-in animation, team name prompt, red danger delete action with loading state) for confirmation before deleting career team entries.
 - Implemented dynamic backend error handling in `@my-hockey-network/api-client` (parsing ngrok `ERR_NGROK_3200` offline pages, 502/503 HTML gateway errors, network failures, and backend JSON error envelopes) and centralized all web toast messages into a single utility file `apps/web/src/utils/toast.ts`.
 - Standardized TypeScript enums into dedicated files in `packages/contracts/src/enums/` (`headers.enum.ts`, `roles.enum.ts`, `permissions.enum.ts`, `auth.enum.ts`, `toast.enum.ts`), exported from `@my-hockey-network/contracts`, and refactored API client, domain permissions, and web toast modules to consume typed enums.
+- Implemented 59-second countdown timer (`00:59`) on OTP verification screen (`VerifyEmailForm`), turning text color red during the last 10 seconds (`<= 10s`) and revealing the active `Resend OTP` button at `00:00`.
+- Standardized cover image resolution in mediaUtils and components across Home, My Network, and Profile cards to default to high-res professional banner /cover.png whenever user coverUrl is null or missing.
+- Centralized all hardcoded user-facing strings, toasts, validation alerts, error fallbacks, and helper texts across web/mobile applications and shared packages into structured constants (`ERROR_MESSAGES`, `SUCCESS_MESSAGES`, `VALIDATION_MESSAGES`, `HELPER_MESSAGES`, `TOAST_MESSAGES`) in `@my-hockey-network/constants`.
+- Centralized all hardcoded UI navigation tabs, page main tabs, subtabs, view modes, sections, and auth modes into strongly-typed TypeScript enums (`NavTabEnum`, `SupervisionMainTabEnum`, `SupervisionViewModeEnum`, `ProfileTabEnum`, `ProfileAboutSectionEnum`, `SettingsSubTabEnum`, `NetworkViewModeEnum`, `AuthModeEnum`, `FeedSortEnum`) in `@my-hockey-network/contracts/enums/ui.enum.ts` and refactored state and conditionals across web pages.
+- Implemented global application-level `ServerStatusWrapper` at root level (`apps/web/src/theme/providers.tsx`) catching HTTP 502/503/504 and network disconnects from `@my-hockey-network/api-client`, blocking the entire viewport (`100vw` x `100vh`, `zIndex: 99999`), disabling all user interaction, and providing an active ping-check reconnect retry mechanism that automatically restores app state upon server recovery.
+- Expanded `SupervisionControlKeyEnum` in `packages/contracts/src/enums/permissions.enum.ts` and refactored `fetchControlsForWard` in `supervision-page.tsx` to eliminate hardcoded supervision control key strings.
+- Enforced strict numeric digit (`0-9`) input restrictions across all OTP verification fields (`VerifyEmailForm`, `ApprovalCodeModal`) via regex sanitization on paste/type, `e.preventDefault()` on non-digit keystrokes, and `inputMode="numeric"` / `pattern="[0-9]*"` HTML5 attributes.
+- Implemented search input debouncing via `useDebounce` hook across all search inputs in the web application (`home-page.tsx`, `my-network-page.tsx`, `events-page.tsx`, `supervision-page.tsx`, `settings-page.tsx`, `ChatSidebar.tsx`, `ConnectionsView.tsx`, `GroupsView.tsx`, `GroupDetailView.tsx`), delaying feed API requests (`/v1/feed?query=...`) and expensive list filters until 800ms after typing pauses.
+- Resolved 400 Bad Request post creation privacy validation errors (`POST /v1/posts`) by translating `Custom` privacy settings to `audienceEnum = 'PRIVATE'` (matching backend schema `"PUBLIC" | "HOCKEY_NETWORK" | "CONNECTIONS" | "GROUP" | "PRIVATE"`), adding real-time field validation for custom `shareWithEmails` / `dontShareWithEmails` textareas in `CreatePostModal.tsx`, and filtering out invalid email strings using `isEmailValid` from `@my-hockey-network/validation`.
+- Created `PostAudienceEnum` in `@my-hockey-network/contracts/enums/posts.enum.ts` (`PUBLIC`, `HOCKEY_NETWORK`, `CONNECTIONS`, `GROUP`, `PRIVATE`) and updated `CreatePostDTO` (`@my-hockey-network/core`) and web handlers (`home-page.tsx`, `profile-page.tsx`) to consume the centralized backend enum.
+- Created dedicated `/help` page (`HelpPage` in `apps/web/src/pages/help-page.tsx`) featuring real-time debounced topic search, category pills (Account & Profile, Players & Teams, Messaging, Notifications, Privacy & Safety, Technical Support), expandable FAQ accordions, ticket submission form with file upload preview, and direct support contact cards. Integrated route into `ROUTE_MAP`, `AppRouter`, `NavTabEnum.HELP`, and Header user dropdown menu.
+- Created `HeaderSkeleton` component (`apps/web/src/components/common/HeaderSkeleton.tsx`) with dark navy gradient background (`#051020` -> `#0a1b36`) and `.mhn-header-shimmer-box` animation to display a professional topbar shimmer matching the real header layout (Left Logo, 5 Center Nav item placeholders, Right Avatar/Name pill) across application loading states.
+- Integrated full Post, Comment & Reaction Guardian Approval flow (`/v1/posts`, `/v1/approvals`). Minor/player actions held for guardian approval (`pendingGuardianApproval: true`, `isDraft: true`) display centralized pending notification (`HELPER_MESSAGES.GUARDIAN_APPROVAL_SUBMITTED: "Your post has been submitted and is waiting for parent/guardian approval."`) without adding drafts to active feed. Parent supervision queue (`supervision-page.tsx`) renders action badges (`Post Approval`, `Comment Approval`, `Reaction Approval`), post subject body previews, and executes `approveRequest` (`mode: 'SINGLE_USE'`) to publish posts (`POST_PUBLISHED`) or `declineRequest` to leave posts in draft state.
+
+
+
+
+
+
+
+
+
 
 ## Current quality gates
 
@@ -58,8 +80,8 @@ Last reviewed: 2026-08-24
 - Production web build must pass.
 - Web/native UI ownership and npm-only dependency management checks must pass.
 
-Latest measured shared-code coverage: 92.54% statements, 86.45% branches, 100% functions, and
-93.19% lines. The suite currently contains 48 tests across 8 test files. The latest web, Android,
+Latest measured shared-code coverage: 93.44% statements, 86.45% branches, 100% functions, and
+93.83% lines. The suite currently contains 74 tests across 12 test files. The latest web, Android,
 and iOS production bundle commands pass.
 
 ## Maintainability backlog

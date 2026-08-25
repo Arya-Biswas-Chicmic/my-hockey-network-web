@@ -5,7 +5,7 @@ import { CreateAccountForm, VerifyEmailForm, LoginForm, GuardianApprovalModal, R
 import { ParentOnboardingModal } from '../parent';
 import { DEFAULT_ROLE_OPTIONS, DEFAULT_SELECTED_ROLE_IDS } from '../../../constants/onboarding';
 import { requestOtp, verifyOtp, submitOnboarding, sendGuardianRequest, calculateAge, UserRole } from '@my-hockey-network/core';
-import type { OtpVerifyResponse } from '@my-hockey-network/contracts';
+import { type OtpVerifyResponse, AuthModeEnum } from '@my-hockey-network/contracts';
 import { webAuthStorage } from '../../../platform/auth-storage';
 import { useAuth } from '../../../hooks/use-auth';
 import { formatDobToIso } from '../../../utils/guardianUtils';
@@ -16,9 +16,9 @@ interface OnboardingModalProps {
   onComplete?: (data: { selectedRoles: string[]; accountData?: { fullName: string; email: string; dob: string; parentEmail?: string }; onboardingResult?: any }) => void;
 }
 
-export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 'login', onComplete }) => {
+export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = AuthModeEnum.LOGIN, onComplete }) => {
   const { setAuthSession, loadAuthMe, showToast } = useAuth();
-  const [authMode, setAuthMode] = useState<'signup' | 'login'>(initialMode);
+  const [authMode, setAuthMode] = useState<AuthModeEnum>(String(initialMode) === 'signup' ? AuthModeEnum.SIGNUP : AuthModeEnum.LOGIN);
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1); // 1: Role, 2: CreateAccount, 3: VerifyOTP, 4: GuardianApproval, 5: RequestSent, 6: ParentOnboarding
   const [loginStep, setLoginStep] = useState<1 | 2>(1);
   const [loginEmail, setLoginEmail] = useState<string>('');
@@ -41,13 +41,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
 
   // Mode Switch Handlers
   const handleSwitchToLogin = () => {
-    setAuthMode('login');
+    setAuthMode(AuthModeEnum.LOGIN);
     setLoginStep(1);
     setErrorMessage(null);
   };
 
   const handleSwitchToSignup = () => {
-    setAuthMode('signup');
+    setAuthMode(AuthModeEnum.SIGNUP);
     setStep(1);
     setErrorMessage(null);
   };

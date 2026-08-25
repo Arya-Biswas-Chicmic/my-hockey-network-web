@@ -8,6 +8,7 @@ export const paths = {
   settings: '/settings',
   supervision: '/supervision',
   eventDetail: '/event-detail',
+  help: '/help',
   auth: {
     onboarding: '/onboarding',
     guardian: '/guardian',

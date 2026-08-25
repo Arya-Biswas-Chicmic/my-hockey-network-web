@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from './use-auth';
 import { getMySupervisionPermissions } from '@my-hockey-network/core';
+import { ERROR_MESSAGES } from '@my-hockey-network/constants';
 import {
   evaluateFeedPermissions,
   canCreatePost as checkCanCreatePost,
@@ -76,13 +77,14 @@ export function useFeedPermissions(onNavigate?: (route: string) => void): UseFee
     }
 
     if (actionKey && supervisionControls && supervisionControls[actionKey] === false) {
-      showToast('Your parent/guardian has disabled this feature.', 'error');
+      showToast(ERROR_MESSAGES.PARENT_DISABLED_FEATURE, 'error');
       return false;
     }
 
     if (onAllowed) onAllowed();
     return true;
   };
+
 
   return {
     permissions,
