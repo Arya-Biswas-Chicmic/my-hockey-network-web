@@ -1,6 +1,6 @@
 # Component catalog and reuse policy
 
-Last reviewed: 2026-08-21
+Last reviewed: 2026-08-25
 
 ## Rule
 

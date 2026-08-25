@@ -3081,11 +3081,10 @@
 .mhn-profile-team-name {
   font-size: 11px;
   font-weight: 600;
+  color: #1e293b;
   word-break: break-word;
   overflow-wrap: anywhere;
   max-width: 100%;
-}
-  color: #1e293b;
 }
 
 .mhn-network-stats-row {
