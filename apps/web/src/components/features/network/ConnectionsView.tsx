@@ -329,12 +329,12 @@ export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick
               </div>
 
               {/* User Name */}
-              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: '0 0 2px 0' }}>
+              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: '0 0 2px 0', wordBreak: 'break-word', overflowWrap: 'anywhere', maxWidth: '100%' }}>
                 {member.name}
               </h4>
 
               {/* Role Tag */}
-              <p style={{ fontSize: '12px', color: '#64748B', margin: '0 0 8px 0', fontWeight: 500 }}>
+              <p style={{ fontSize: '12px', color: '#64748B', margin: '0 0 8px 0', fontWeight: 500, wordBreak: 'break-word', overflowWrap: 'anywhere', maxWidth: '100%' }}>
                 {member.roleTag}
               </p>
 
@@ -348,19 +348,21 @@ export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick
                   fontWeight: 600,
                   color: '#1860C3',
                   marginBottom: '6px',
+                  maxWidth: '100%',
+                  boxSizing: 'border-box',
                 }}
               >
                 {member.teamLogo && (
                   <img
                     src={member.teamLogo}
                     alt={member.teamName}
-                    style={{ width: '16px', height: '16px', objectFit: 'contain' }}
+                    style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/HC.png';
                     }}
                   />
                 )}
-                <span>{member.teamName}</span>
+                <span style={{ wordBreak: 'break-word', overflowWrap: 'anywhere', maxWidth: '100%' }}>{member.teamName}</span>
               </div>
 
               {/* Location Line */}

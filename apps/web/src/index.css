@@ -3021,6 +3021,11 @@
   font-weight: 600;
   color: #0C1014;
   margin: 0 0 2px 0;
+  width: 100%;
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .mhn-network-user-role {
@@ -3028,6 +3033,10 @@
   font-weight: 400;
   color: #000000E5;
   margin: 0 0 4px 0;
+  width: 100%;
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .mhn-profile-location-line {
@@ -3038,12 +3047,18 @@
   font-size: 11px;
   color: #64748b;
   margin-bottom: 8px;
+  width: 100%;
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .location2 {
   font-size: 12px;
   font-weight: 400;
   color: #000000E5;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .mhn-profile-team-badge {
@@ -3052,17 +3067,24 @@
   gap: 6px;
   border-radius: 20px;
   padding: 3px 10px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .mhn-profile-team-logo {
   width: 21px;
   height: 25px;
   object-fit: cover;
+  flex-shrink: 0;
 }
 
 .mhn-profile-team-name {
   font-size: 11px;
   font-weight: 600;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
   color: #1e293b;
 }
 
@@ -5665,6 +5687,9 @@
   font-weight: 600;
   color: #0f172a;
   margin: 2px 0 0 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
 }
 
 .mhn-profile-hero-location {
@@ -5674,6 +5699,9 @@
   margin-top: 2px;
   display: block;
   text-align: left;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
 }
 
 .mhn-profile-action-buttons {

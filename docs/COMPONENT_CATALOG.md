@@ -15,7 +15,7 @@ concepts across platforms rather than forcing DOM/native markup into one compone
 - `common/Button`: generic button foundation; currently underused and its variants need completion.
 - `common/Header`: reused across the authenticated web pages.
 - `common/Spinner`, `Toast`, `PendingBanner`, `NoDataFound`, `ServerDown`: reusable feedback/state UI.
-- `ProfileSummaryCard`: reused by Home and Network.
+- `ProfileSummaryCard`: reused by Home and Network; updated with word-break and overflow containment for display names and team handles.
 - `GuardianApprovalModal` and `RequestSentCard`: reused in onboarding and dedicated auth pages.
 - Feature components exist for events, feed/posts, messaging, network/groups, notifications, profile,
   and onboarding. Search the appropriate feature folder before adding another card/modal/view.
