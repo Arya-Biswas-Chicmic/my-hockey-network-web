@@ -9,6 +9,7 @@ import type { OtpVerifyResponse } from '@my-hockey-network/contracts';
 import { webAuthStorage } from '../../../platform/auth-storage';
 import { useAuth } from '../../../hooks/use-auth';
 import { formatDobToIso } from '../../../utils/guardianUtils';
+import { extractErrorMessage } from '../../../utils/toast';
 
 interface OnboardingModalProps {
   initialMode?: 'signup' | 'login';
@@ -81,7 +82,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
           handleSwitchToLogin();
         }, 1200);
       } else {
-        setErrorMessage(err.message || 'Failed to send verification code. Please check details and try again.');
+        setErrorMessage(extractErrorMessage(err, 'Failed to send verification code. Please check details and try again.'));
       }
     } finally {
       setLoading(false);
@@ -145,7 +146,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
         await finalizeOnboarding(undefined, verifyRes);
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Verification failed. Please check your code and try again.');
+      setErrorMessage(extractErrorMessage(err, 'Verification failed. Please check your code and try again.'));
     } finally {
       setLoading(false);
     }
@@ -200,7 +201,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
         onComplete({ selectedRoles, accountData: { ...accountData, parentEmail }, onboardingResult });
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to complete profile onboarding.');
+      setErrorMessage(extractErrorMessage(err, 'Failed to complete profile onboarding.'));
     } finally {
       setLoading(false);
     }
@@ -217,7 +218,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
       // Move to Step 5: Request Sent! Confirmation Card (Image 2 right screen)
       setStep(5);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to send guardian request. Please check email address.');
+      setErrorMessage(extractErrorMessage(err, 'Failed to send guardian request. Please check email address.'));
     } finally {
       setLoading(false);
     }
@@ -249,7 +250,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
       if (err.statusCode === 404 || err.key === 'USER_NOT_FOUND') {
         setErrorMessage('No account found with this email. Please Sign Up first.');
       } else {
-        setErrorMessage(err.message || 'Failed to send login code. Please check email and try again.');
+        setErrorMessage(extractErrorMessage(err, 'Failed to send login code. Please check email and try again.'));
       }
     } finally {
       setLoading(false);
@@ -283,7 +284,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
         });
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Verification code invalid. Please try again.');
+      setErrorMessage(extractErrorMessage(err, 'Verification code invalid. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -307,7 +308,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
       setResendNotice(msg);
       showToast(msg, 'success');
     } catch (err: any) {
-      const msg = err.message || `Failed to send verification code to ${targetEmail}. Please try again.`;
+      const msg = extractErrorMessage(err, `Failed to send verification code to ${targetEmail}. Please try again.`);
       setErrorMessage(msg);
       showToast(msg, 'error');
     } finally {
@@ -397,6 +398,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
               onContinue={handleRequestSentContinue}
               onSelectTournament={handleRequestSentContinue}
               onSelectCommunity={handleRequestSentContinue}
+              loading={loading}
             />
           )}
           {step === 6 && (

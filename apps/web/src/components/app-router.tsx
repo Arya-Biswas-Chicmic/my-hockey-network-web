@@ -25,7 +25,11 @@ function RouteTree() {
   const { handleLogout } = useAuth();
   const navigateTo = (route: AppRoute | string, extraData?: any) => {
     const definition = ROUTE_MAP[route as AppRoute];
-    const targetPath = definition?.path ?? `/${String(route).replace(/^\//, '')}`;
+    let targetPath = definition?.path ?? `/${String(route).replace(/^\//, '')}`;
+    const targetUserId = extraData?.userId || extraData?.selectedWardId || extraData?.childId;
+    if (targetUserId) {
+      targetPath = `${targetPath}?userId=${encodeURIComponent(targetUserId)}`;
+    }
     navigate(targetPath, { state: extraData });
   };
   const logout = async () => {

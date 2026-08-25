@@ -1,4 +1,4 @@
-import type { AuthMeResponse } from '@my-hockey-network/contracts';
+import { PermissionControlKey, UserRoleEnum, type AuthMeResponse } from '@my-hockey-network/contracts';
 
 export type FeedPermissionReason =
   | 'UNAUTHENTICATED'
@@ -27,11 +27,35 @@ export interface FeedPermissionResult {
  */
 export function isProfileComplete(user: AuthMeResponse | null): boolean {
   if (!user) return false;
-  if (typeof user.isProfileComplete === 'boolean') {
-    return user.isProfileComplete;
+  const rawUser = user as any;
+
+  if (typeof rawUser.isProfileCompleted === 'boolean') {
+    return rawUser.isProfileCompleted;
   }
+  if (typeof rawUser.isProfileComplete === 'boolean') {
+    return rawUser.isProfileComplete;
+  }
+  if (typeof rawUser.data?.isProfileCompleted === 'boolean') {
+    return rawUser.data.isProfileCompleted;
+  }
+  if (typeof rawUser.data?.isProfileComplete === 'boolean') {
+    return rawUser.data.isProfileComplete;
+  }
+  if (typeof rawUser.profile?.isProfileCompleted === 'boolean') {
+    return rawUser.profile.isProfileCompleted;
+  }
+  if (typeof rawUser.profile?.isProfileComplete === 'boolean') {
+    return rawUser.profile.isProfileComplete;
+  }
+  if (typeof rawUser.data?.profile?.isProfileCompleted === 'boolean') {
+    return rawUser.data.profile.isProfileCompleted;
+  }
+  if (typeof rawUser.data?.profile?.isProfileComplete === 'boolean') {
+    return rawUser.data.profile.isProfileComplete;
+  }
+
   // Fallback profile inspection
-  const profile = user.profile;
+  const profile = user.profile || rawUser.data?.profile;
   if (!profile) return false;
   return Boolean(profile.displayName && profile.id);
 }
@@ -48,7 +72,7 @@ export function requiresGuardianApproval(user: AuthMeResponse | null): boolean {
   // Role/minor fallback: minors with PLAYER or COACH roles require guardian approval
   const role = (user.primaryRole || user.profile?.type || '').toUpperCase();
   const isMinor = user.profile?.isMinor ?? false;
-  return isMinor && (role === 'PLAYER' || role === 'COACH');
+  return isMinor && (role === UserRoleEnum.PLAYER || role === UserRoleEnum.COACH);
 }
 
 /**
@@ -107,7 +131,7 @@ export function evaluateFeedPermissions(
     };
   }
 
-  if (controls && controls.VIEW_FEED === false) {
+  if (controls && controls[PermissionControlKey.VIEW_FEED] === false) {
     return {
       allowed: false,
       reason: 'SUPERVISION_CONTROL_RESTRICTED',
@@ -131,7 +155,7 @@ export function canCreatePost(
   controls?: Record<string, boolean | string> | null
 ): boolean {
   if (!evaluateFeedPermissions(user, controls).allowed) return false;
-  if (controls && controls.CREATE_POST === false) return false;
+  if (controls && controls[PermissionControlKey.CREATE_POST] === false) return false;
   return true;
 }
 
@@ -176,7 +200,7 @@ export function canFollowOthers(
   controls?: Record<string, boolean | string> | null
 ): boolean {
   if (!evaluateFeedPermissions(user, controls).allowed) return false;
-  if (controls && controls.FOLLOW_OTHERS === false) return false;
+  if (controls && controls[PermissionControlKey.FOLLOW_OTHERS] === false) return false;
   return true;
 }
 
@@ -185,7 +209,7 @@ export function canSendMessages(
   controls?: Record<string, boolean | string> | null
 ): boolean {
   if (!evaluateFeedPermissions(user, controls).allowed) return false;
-  if (controls && controls.SEND_MESSAGES === false) return false;
+  if (controls && controls[PermissionControlKey.SEND_MESSAGES] === false) return false;
   return true;
 }
 
@@ -194,6 +218,6 @@ export function canCreateGroupChats(
   controls?: Record<string, boolean | string> | null
 ): boolean {
   if (!evaluateFeedPermissions(user, controls).allowed) return false;
-  if (controls && controls.CREATE_GROUP_CHATS === false) return false;
+  if (controls && controls[PermissionControlKey.CREATE_GROUP_CHATS] === false) return false;
   return true;
 }

@@ -1,10 +1,11 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { AuthMeResponse, OtpVerifyResponse } from '@my-hockey-network/contracts';
+import { QueryKeys, type AuthMeResponse, type OtpVerifyResponse } from '@my-hockey-network/contracts';
 import { getMySupervisionPermissions } from '@my-hockey-network/core';
-import { Toast } from '../components/common/Toast';
 import { webAuth } from '../platform/auth-service';
 import { webAuthStorage } from '../platform/auth-storage';
+import { globalQueryClient } from '../query';
+import { showToast as showCentralToast } from '../utils/toast';
 
 export interface AuthContextType {
   user: AuthMeResponse | null;
@@ -38,21 +39,16 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [hasBootstrapped, setHasBootstrapped] = useState(false);
   const [supervisionPermissions, setSupervisionPermissions] = useState<Record<string, boolean> | null>(null);
   const [isSupervisionPermissionsLoading, setIsSupervisionPermissionsLoading] = useState<boolean>(false);
-  const [toast, setToast] = useState<{
-    message: string;
-    type: 'success' | 'error' | 'info';
-    actionText?: string;
-    onActionClick?: () => void;
-  } | null>(null);
-  const authMePromise = useRef<Promise<AuthMeResponse | null> | null>(null);
   const isLoggingOut = useRef(false);
+
+  const userRef = useRef(user);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   const loadAuthMe = useCallback(async (silent = false, force = false): Promise<AuthMeResponse | null> => {
     if (isLoggingOut.current) return null;
-    if (force) authMePromise.current = null;
-    if (authMePromise.current) return authMePromise.current;
 
-    // Do NOT hit /v1/auth/me on guest/onboarding pages or unless user has active access token / session cookie / active user state
     const token = webAuthStorage.getAccessToken();
     const hasSessionCookie =
       typeof document !== 'undefined' &&
@@ -62,32 +58,35 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       typeof window !== 'undefined' &&
       (window.location.pathname.startsWith('/onboarding') || window.location.pathname.startsWith('/login'));
 
-    const hasStoredSession = Boolean(token || hasSessionCookie || user);
+    const currentUser = userRef.current;
+    const hasStoredSession = Boolean(token || hasSessionCookie || currentUser);
 
-    if ((!hasStoredSession || (isGuestRoute && !user)) && !force) {
-      if (!user) setUser(null);
+    if ((!hasStoredSession || (isGuestRoute && !currentUser)) && !force) {
+      if (!currentUser) setUser(null);
       if (!silent) setIsLoading(false);
       return null;
     }
 
     if (!silent) setIsLoading(true);
 
-    authMePromise.current = webAuth
-      .getMe()
-      .then((profile) => {
-        if (profile) setUser(profile);
-        return profile;
-      })
-      .catch((err: any) => {
-        console.warn('GET /v1/auth/me error:', err?.message || err);
-        setUser(null);
-        return null;
-      })
-      .finally(() => {
-        authMePromise.current = null;
-        if (!silent) setIsLoading(false);
-      });
-    return authMePromise.current;
+    try {
+      const profile = await globalQueryClient.fetchQuery<AuthMeResponse | null>(
+        QueryKeys.AUTH_ME,
+        async () => {
+          return await webAuth.getMe();
+        },
+        { forceRefetch: force, staleTime: 5 * 60 * 1000 }
+      );
+
+      if (profile) setUser(profile);
+      return profile;
+    } catch (err: any) {
+      console.warn('GET /v1/auth/me error:', err?.message || err);
+      setUser(null);
+      return null;
+    } finally {
+      if (!silent) setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -104,11 +103,14 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       const isParent = user.primaryRole === 'PARENT' || user.roleAssignments?.some((r: any) => r.role === 'PARENT');
       const isCoach = user.primaryRole === 'COACH' || user.roleAssignments?.some((r: any) => r.role === 'COACH');
 
-      // Do NOT hit for PARENT or COACH. Hit ONLY for PLAYER / Minor Wards.
       if (!isParent && !isCoach) {
         setIsSupervisionPermissionsLoading(true);
         try {
-          const res = await getMySupervisionPermissions();
+          const res = await globalQueryClient.fetchQuery(
+            QueryKeys.SUPERVISION_PERMISSIONS,
+            async () => getMySupervisionPermissions(),
+            { staleTime: 5 * 60 * 1000 }
+          );
           if (res?.controlsMap) {
             setSupervisionPermissions(res.controlsMap as Record<string, boolean>);
           }
@@ -155,7 +157,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const assertSupervisionPermission = useCallback(
     (controlKey: string, allowedAction: () => void) => {
       if (!checkSupervisionPermission(controlKey)) {
-        setToast({ message: 'Your parent did not give permission for this feature.', type: 'error' });
+        showCentralToast({ message: 'Your parent did not give permission for this feature.', type: 'error' });
         return;
       }
       allowedAction();
@@ -169,7 +171,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       if (!token) {
         setUser(null);
         setSession(null);
-        setToast({ message: 'Your session expired. Please sign in again.', type: 'error' });
+        showCentralToast({ message: 'Your session expired. Please sign in again.', type: 'error' });
       }
     };
     window.addEventListener('mhn:unauthorized', handleUnauthorized);
@@ -185,15 +187,15 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const handleLogout = async () => {
     if (isLoggingOut.current) return;
     isLoggingOut.current = true;
-    setIsLoading(true);
     try {
       await webAuth.logout();
+    } catch (err) {
+      console.warn('⚠️ Logout API call warning:', err);
     } finally {
       setUser(null);
       setSession(null);
-      setIsLoading(false);
       isLoggingOut.current = false;
-      setToast({ message: 'Logged out successfully.', type: 'success' });
+      showCentralToast({ message: 'Logged out successfully.', type: 'success' });
     }
   };
 
@@ -213,21 +215,12 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         setAuthSession,
         loadAuthMe,
         handleLogout,
-        hideToast: () => setToast(null),
+        hideToast: () => undefined,
         showToast: (message, type = 'error', actionText, onActionClick) =>
-          setToast({ message, type, actionText, onActionClick }),
+          showCentralToast({ message, type, actionText, onActionClick }),
       }}
     >
       {children}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          actionText={toast.actionText}
-          onActionClick={toast.onActionClick}
-          onClose={() => setToast(null)}
-        />
-      )}
     </AuthContext.Provider>
   );
 }

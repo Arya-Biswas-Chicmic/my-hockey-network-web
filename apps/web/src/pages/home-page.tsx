@@ -1,6 +1,6 @@
-import { Input, Select } from '../components/common/FormControls';
+import { Input, Select, Dropdown } from '../components/common/FormControls';
 import React, { useState, useEffect, useRef } from 'react';
-import { Header, PendingBanner, Toast, NoDataFound, ServerDown } from '../components/common';
+import { Header, PendingBanner, NoDataFound, ServerDown } from '../components/common';
 import { ProfileSummaryCard } from '../components/features/home/ProfileSummaryCard';
 import { FeedPostCard, FeedPostProps } from '../components/features/home/FeedPostCard';
 import { MatchesWidget } from '../components/features/home/MatchesWidget';
@@ -10,10 +10,13 @@ import { CreatePostModal } from '../components/features/home/CreatePostModal';
 import { EmptyState } from '../components/features/network/EmptyState';
 import { HomeSkeletonLoader, FeedPostSkeleton } from '../components/features/home/HomeSkeletonLoader';
 import { AuthMeResponse, createPost, getFeed, uploadMediaFile, completeMediaUpload } from '@my-hockey-network/core';
+import { QueryKeys } from '@my-hockey-network/contracts';
 import { useAuth } from '../hooks/use-auth';
+import { globalQueryClient } from '../query';
 
 import { resolveCoverUrl } from '../utils/mediaUtils';
 import { useFeedPermissions } from '../hooks/use-feed-permissions';
+import { showSuccessToast, showErrorToast, showInfoToast } from '../utils/toast';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -29,7 +32,6 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [isCreatingPost, setIsCreatingPost] = useState<boolean>(false);
   const [userSession] = useState<AuthMeResponse | null>(null);
   const [isPageLoading, setIsPageLoading] = useState<boolean>(true);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [feedPosts, setFeedPosts] = useState<FeedPostProps[]>([]);
   const [sortBy, setSortBy] = useState<'RECENT' | 'POPULAR' | 'TRENDING'>('RECENT');
   const [feedError, setFeedError] = useState<{ isServerError: boolean; message?: string; statusCode?: number } | null>(null);
@@ -50,12 +52,18 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     try {
       const q = queryTerm !== undefined ? queryTerm : searchQuery;
       const s = sortTerm !== undefined ? sortTerm : sortBy;
+      const cacheKey = `${QueryKeys.FEED_POSTS}:${s}:${q || ''}`;
 
-      const feedResValue = await getFeed({
-        query: q && q.trim().length >= 2 ? q.trim() : undefined,
-        sortBy: s,
-        limit: 20,
-      });
+      const feedResValue = await globalQueryClient.fetchQuery(
+        cacheKey,
+        () =>
+          getFeed({
+            query: q && q.trim().length >= 2 ? q.trim() : undefined,
+            sortBy: s,
+            limit: 20,
+          }),
+        { staleTime: 5 * 60 * 1000 }
+      );
 
       const feedData = (feedResValue as any)?.data || feedResValue;
       const itemsList = feedData?.items || (Array.isArray(feedData) ? feedData : []);
@@ -225,7 +233,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       const isPendingApproval = res?.message === 'POST_PENDING_APPROVAL' || res?.data?.pendingGuardianApproval || res?.pendingGuardianApproval;
 
       if (isPendingApproval) {
-        setToast({ message: 'Post submitted for guardian approval', type: 'info' });
+        showInfoToast('Post submitted for guardian approval');
       } else {
         const newPost: FeedPostProps = {
           id: res?.data?.post?.id || res?.id || `pending-post-${feedPosts.length + 1}`,
@@ -240,11 +248,12 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           isFollowing: false,
         };
         setFeedPosts([newPost, ...feedPosts]);
-        setToast({ message: 'Post added successfully', type: 'success' });
+        globalQueryClient.invalidateQueries(QueryKeys.FEED_POSTS);
+        showSuccessToast('Post added successfully');
       }
       setIsCreatePostOpen(false);
     } catch (err: any) {
-      setToast({ message: err.message || 'Failed to create post. Please try again.', type: 'error' });
+      showErrorToast(err, 'Failed to create post. Please try again.');
     } finally {
       setIsCreatingPost(false);
     }
@@ -294,7 +303,6 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           <ProfileSummaryCard
             coverUrl={resolveCoverUrl((user?.profile as any)?.coverImageUrl || (user?.profile as any)?.coverUrl, "/cover.png")}
             location={user?.profile?.city || "-"}
-            teamName="HC Bloemendaal"
             teamLogo="/HC.png"
             followers="-"
             following="-"
@@ -323,19 +331,18 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 />
               </div>
 
-              <div className="mhn-feed-filter-wrapper">
-                <Select
+              <div className="mhn-feed-sort-wrapper">
+                <Dropdown
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="mhn-feed-filter-select"
-                >
-                  <option value="RECENT">Newest First</option>
-                  <option value="POPULAR">Most Popular</option>
-                  <option value="TRENDING">Trending (48h)</option>
-                </Select>
-                <svg className="mhn-feed-filter-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
+                  options={[
+                    { value: 'RECENT', label: 'Sort by' },
+                    { value: 'RECENT', label: 'Newest First' },
+                    { value: 'POPULAR', label: 'Most Popular' },
+                    { value: 'TRENDING', label: 'Trending (48h)' },
+                  ]}
+                  onChange={(val) => setSortBy(val as any)}
+                  placeholder=""
+                />
               </div>
             </div>
           )}
@@ -367,7 +374,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   onNavigate={onNavigate}
                   onFollowChange={handleFollowChange}
                   onDeleteSuccess={(deletedId, msg) => {
-                    setToast({ message: msg || 'Post deleted successfully!', type: 'success' });
+                    showSuccessToast(msg || 'Post deleted successfully!');
                     setFeedPosts((prev) => prev.filter((p) => p.id !== deletedId));
                     const profileId = userSession?.profile?.id || userSession?.id;
                     fetchFeedPosts(profileId, searchQuery, sortBy, true);
@@ -407,14 +414,6 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           isLoading={isCreatingPost}
           userName={currentUserName}
           userAvatar={currentUserAvatar}
-        />
-      )}
-
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
         />
       )}
     </div>

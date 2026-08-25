@@ -3,6 +3,9 @@ import { AuthProvider } from '../contexts/auth-context';
 import { ThemeProvider } from '../components/core/theme-provider';
 import { ServerDownScreen } from '../components/common/server-down-screen';
 import { Toast } from '../components/common/Toast';
+import { ToastTypeEnum } from '@my-hockey-network/contracts';
+import { TOAST_EVENT, type ToastOptions } from '../utils/toast';
+import { QueryProvider } from '../query';
 import type { ThemePreference } from './theme-cookie';
 
 interface ProvidersProps {
@@ -20,10 +23,7 @@ export function Providers({ children, defaultTheme }: ProvidersProps) {
     statusCode: 502,
   });
 
-  const [toastState, setToastState] = useState<{
-    message: string;
-    type?: 'success' | 'info' | 'error';
-  } | null>(null);
+  const [toastState, setToastState] = useState<ToastOptions | null>(null);
 
   useEffect(() => {
     const handleServerDown = (event: CustomEvent) => {
@@ -34,20 +34,23 @@ export function Providers({ children, defaultTheme }: ProvidersProps) {
       });
     };
 
-    const handleToast = (event: CustomEvent) => {
+    const handleToast = (event: CustomEvent<ToastOptions>) => {
       if (event.detail && event.detail.message) {
         setToastState({
           message: event.detail.message,
-          type: event.detail.type || 'error',
+          type: event.detail.type || ToastTypeEnum.ERROR,
+          actionText: event.detail.actionText,
+          onActionClick: event.detail.onActionClick,
+          duration: event.detail.duration,
         });
       }
     };
 
     window.addEventListener('mhn:server-down' as any, handleServerDown);
-    window.addEventListener('mhn:toast' as any, handleToast);
+    window.addEventListener(TOAST_EVENT as any, handleToast);
     return () => {
       window.removeEventListener('mhn:server-down' as any, handleServerDown);
-      window.removeEventListener('mhn:toast' as any, handleToast);
+      window.removeEventListener(TOAST_EVENT as any, handleToast);
     };
   }, []);
 
@@ -58,25 +61,30 @@ export function Providers({ children, defaultTheme }: ProvidersProps) {
 
   return (
     <ThemeProvider defaultTheme={defaultTheme}>
-      <AuthProvider>
-        {children}
+      <QueryProvider>
+        <AuthProvider>
+          {children}
 
-        {toastState && (
-          <Toast
-            message={toastState.message}
-            type={toastState.type}
-            onClose={() => setToastState(null)}
-          />
-        )}
+          {toastState && (
+            <Toast
+              message={toastState.message}
+              type={toastState.type}
+              actionText={toastState.actionText}
+              onActionClick={toastState.onActionClick}
+              duration={toastState.duration}
+              onClose={() => setToastState(null)}
+            />
+          )}
 
-        {serverDownState.isDown && (
-          <ServerDownScreen
-            statusCode={serverDownState.statusCode}
-            message={serverDownState.message}
-            onRetry={handleRetryConnection}
-          />
-        )}
-      </AuthProvider>
+          {serverDownState.isDown && (
+            <ServerDownScreen
+              statusCode={serverDownState.statusCode}
+              message={serverDownState.message}
+              onRetry={handleRetryConnection}
+            />
+          )}
+        </AuthProvider>
+      </QueryProvider>
     </ThemeProvider>
   );
 }

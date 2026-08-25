@@ -27,6 +27,19 @@ export const PlayerAddedSuccessStep: React.FC<PlayerAddedSuccessStepProps> = ({
     }
   };
 
+  const formatShortPlayerName = (name: string, maxLen = 14): string => {
+    if (!name) return 'Player';
+    const trimmed = name.trim();
+    if (trimmed.length <= maxLen) return trimmed;
+    const words = trimmed.split(/\s+/);
+    if (words.length > 1 && words[0].length <= maxLen) {
+      return `${words[0]}...`;
+    }
+    return `${trimmed.slice(0, maxLen)}...`;
+  };
+
+  const displayNameShort = formatShortPlayerName(playerName, 14);
+
   return (
     <div className="mhn-parent-step-container" style={{ textAlign: 'center', maxWidth: '380px' }}>
       <div className="mhn-parent-icon-circle mhn-green">
@@ -36,12 +49,12 @@ export const PlayerAddedSuccessStep: React.FC<PlayerAddedSuccessStepProps> = ({
       </div>
 
       <h2 className="mhn-parent-step-title">
-        {playerName || 'Player'} has been {type === 'link' ? 'invited' : 'added'}
+        {displayNameShort} has been {type === 'link' ? 'invited' : 'added'}
       </h2>
       <p className="mhn-parent-step-desc" style={{ marginBottom: '32px' }}>
         {type === 'link'
           ? `Invitation sent to ${childEmail}. Waiting for player to accept code.`
-          : `You're now managing ${playerName || 'Noah'}'s hockey profile.`}
+          : `You're now managing ${displayNameShort}'s hockey profile.`}
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

@@ -1,2 +1,3 @@
-# Netlify single-page application fallback
+# Netlify API proxy to backend & single-page application fallback
+/v1/* https://reposeful-kareen-controllingly.ngrok-free.dev/v1/:splat 200!
 /* /index.html 200

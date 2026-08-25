@@ -1,8 +1,9 @@
+import { ClientTypeEnum, EntityTypeEnum, RelationshipDirectionEnum, RelationshipStatusEnum, RelationshipTypeEnum } from '@my-hockey-network/contracts';
 import { apiFetch } from './client';
 import { API_ENDPOINTS } from './urls';
 
 export interface TargetEntity {
-  type: 'USER' | 'PROFILE' | 'GROUP' | 'ORGANIZATION';
+  type: EntityTypeEnum | 'USER' | 'PROFILE' | 'GROUP' | 'ORGANIZATION';
   id: string;
 }
 
@@ -31,8 +32,8 @@ export interface RelationshipItem {
   sourceId?: string;
   targetType?: string;
   targetId?: string;
-  type: string;
-  status: string;
+  type: RelationshipTypeEnum | string;
+  status: RelationshipStatusEnum | string;
   requestedById?: string;
   requestReason?: string | null;
   approvedById?: string | null;
@@ -50,7 +51,7 @@ export interface RelationshipItem {
 /**
  * Follow a user, profile, or group
  */
-export async function followUser(target: TargetEntity, clientType: 'web' | 'mobile' = 'web'): Promise<{ relationship: RelationshipItem; pendingGuardianApproval?: boolean }> {
+export async function followUser(target: TargetEntity, clientType: ClientTypeEnum | 'web' | 'mobile' = ClientTypeEnum.WEB): Promise<{ relationship: RelationshipItem; pendingGuardianApproval?: boolean }> {
   return apiFetch<{ relationship: RelationshipItem; pendingGuardianApproval?: boolean }>(API_ENDPOINTS.RELATIONSHIPS.FOLLOW, {
     method: 'POST',
     body: JSON.stringify({ target }),
@@ -62,10 +63,10 @@ export async function followUser(target: TargetEntity, clientType: 'web' | 'mobi
  */
 export async function findRelationshipEdgeId(
   targetProfileId: string,
-  clientType: 'web' | 'mobile' = 'web'
+  clientType: ClientTypeEnum | 'web' | 'mobile' = ClientTypeEnum.WEB
 ): Promise<string | null> {
   try {
-    const res = await getRelationships({ type: 'FOLLOW', direction: 'outgoing' }, clientType);
+    const res = await getRelationships({ type: RelationshipTypeEnum.FOLLOW, direction: RelationshipDirectionEnum.OUTGOING }, clientType);
     const items = res?.items || (res as any)?.data?.items || [];
 
     const found = items.find((item: any) => {
@@ -90,7 +91,7 @@ export async function findRelationshipEdgeId(
 /**
  * Remove / Revoke a relationship via DELETE /v1/relationships/:id (unfollow / remove)
  */
-export async function removeRelationship(relationshipId: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ message?: string; success?: boolean }> {
+export async function removeRelationship(relationshipId: string, clientType: ClientTypeEnum | 'web' | 'mobile' = ClientTypeEnum.WEB): Promise<{ message?: string; success?: boolean }> {
   return apiFetch<{ message?: string; success?: boolean }>(`${API_ENDPOINTS.RELATIONSHIPS.BASE}/${relationshipId}`, {
     method: 'DELETE',
   }, clientType);
@@ -103,7 +104,7 @@ export async function removeRelationship(relationshipId: string, clientType: 'we
  */
 export async function unfollowUser(
   targetOrRelationshipId: string | TargetEntity,
-  clientType: 'web' | 'mobile' = 'web'
+  clientType: ClientTypeEnum | 'web' | 'mobile' = ClientTypeEnum.WEB
 ): Promise<{ message?: string; success?: boolean }> {
   const targetId = typeof targetOrRelationshipId === 'string'
     ? targetOrRelationshipId
@@ -117,7 +118,7 @@ export async function unfollowUser(
   } catch (err: any) {
     console.warn('⚠️ [relationshipsApi] DELETE edge failed, falling back to follow toggle:', err);
     const targetObj = typeof targetOrRelationshipId === 'string'
-      ? { type: 'PROFILE', id: targetId }
+      ? { type: EntityTypeEnum.PROFILE, id: targetId }
       : targetOrRelationshipId;
 
     return await apiFetch<{ message?: string; success?: boolean }>(API_ENDPOINTS.RELATIONSHIPS.FOLLOW, {
@@ -130,7 +131,7 @@ export async function unfollowUser(
 /**
  * Send connection request
  */
-export async function sendConnectionRequest(target: TargetEntity, reason?: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ relationship: RelationshipItem }> {
+export async function sendConnectionRequest(target: TargetEntity, reason?: string, clientType: ClientTypeEnum | 'web' | 'mobile' = ClientTypeEnum.WEB): Promise<{ relationship: RelationshipItem }> {
   return apiFetch<{ relationship: RelationshipItem }>(API_ENDPOINTS.RELATIONSHIPS.CONNECTIONS, {
     method: 'POST',
     body: JSON.stringify({ target, reason }),
@@ -141,8 +142,8 @@ export async function sendConnectionRequest(target: TargetEntity, reason?: strin
  * Fetch relationship lists (Followers, Connections, Pending Requests)
  */
 export async function getRelationships(
-  params?: { type?: string; status?: string; direction?: 'outgoing' | 'incoming'; query?: string; q?: string },
-  clientType: 'web' | 'mobile' = 'web'
+  params?: { type?: RelationshipTypeEnum | string; status?: RelationshipStatusEnum | string; direction?: RelationshipDirectionEnum | 'outgoing' | 'incoming'; query?: string; q?: string },
+  clientType: ClientTypeEnum | 'web' | 'mobile' = ClientTypeEnum.WEB
 ): Promise<{ items: RelationshipItem[] }> {
   const queryParams = new URLSearchParams();
   if (params?.type) queryParams.set('type', params.type);
@@ -161,7 +162,7 @@ export async function getRelationships(
 /**
  * Accept a relationship request
  */
-export async function acceptRelationship(id: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ relationship: RelationshipItem }> {
+export async function acceptRelationship(id: string, clientType: ClientTypeEnum | 'web' | 'mobile' = ClientTypeEnum.WEB): Promise<{ relationship: RelationshipItem }> {
   return apiFetch<{ relationship: RelationshipItem }>(`${API_ENDPOINTS.RELATIONSHIPS.BASE}/${id}/accept`, {
     method: 'POST',
   }, clientType);

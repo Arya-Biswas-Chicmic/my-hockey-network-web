@@ -1,13 +1,3 @@
-export enum UserRole {
-  PLAYER = 'PLAYER',
-  PARENT = 'PARENT',
-  COACH = 'COACH',
-  STAFF = 'STAFF',
-}
+import { AccessLevelEnum, UserRoleEnum } from '@my-hockey-network/contracts';
 
-export enum AccessLevel {
-  LIMITED = 'LIMITED',
-  SUPERVISED = 'SUPERVISED',
-  PARENT_MANAGED = 'PARENT_MANAGED',
-  INDEPENDENT = 'INDEPENDENT',
-}
+export { UserRoleEnum as UserRole, AccessLevelEnum as AccessLevel };

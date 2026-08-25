@@ -1,6 +1,7 @@
 import { Button } from '../components/common/Button';
 import { Input, Select, Textarea } from '../components/common/FormControls';
 import React, { useState } from 'react';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { Header } from '../components/common/Header';
 import { PendingBanner } from '../components/common/PendingBanner';
 import { NoDataFound } from '../components/common/no-data-found';
@@ -9,10 +10,10 @@ import { CreatePostModal } from '../components/features/home/CreatePostModal';
 import { EditProfileModal, EditProfileFormData, ProfileSkeletonLoader } from '../components/features/profile';
 import { FeedPostSkeleton } from '../components/features/home/HomeSkeletonLoader';
 import { Spinner } from '../components/common/Spinner';
-import { Toast } from '../components/common/Toast';
 import { DeleteCareerModal } from '../components/common/DeleteCareerModal';
 import { useAuth } from '../hooks/use-auth';
 import { resolveMediaUrl, resolveCoverUrl } from '../utils/mediaUtils';
+import { showSuccessToast, showErrorToast } from '../utils/toast';
 import { ApprovalCodeModal } from '../components/supervision/ApprovalCodeModal';
 import {
   createPost,
@@ -28,7 +29,13 @@ import {
   deleteCareerEntry,
   CareerEntry,
 } from '@my-hockey-network/core';
+import { QueryKeys } from '@my-hockey-network/contracts';
+import { globalQueryClient, useQuery } from '../query';
 import { useFeedPermissions } from '../hooks/use-feed-permissions';
+import { validateProfileField, validateCareerField } from '@my-hockey-network/validation';
+import { Dropdown } from '../components/common/FormControls';
+import { CareerFormFields } from '../components/features/profile/CareerFormFields';
+import { PersonalDetailsFields } from '../components/features/profile/PersonalDetailsFields';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -41,7 +48,6 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const coverFileInputRef = React.useRef<HTMLInputElement>(null);
   const [isUploadingCover, setIsUploadingCover] = useState<boolean>(false);
   const [coverUploadMsg, setCoverUploadMsg] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   const handleOpenCreatePost = () => {
     if (requirePermission()) {
@@ -72,7 +78,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         setTimeout(() => setCoverUploadMsg(null), 3000);
       }
     } catch (err: any) {
-      setToast({ message: err.message || 'Failed to upload cover image. Please try again.', type: 'error' });
+      showErrorToast(err, 'Failed to upload cover image. Please try again.');
     } finally {
       setIsUploadingCover(false);
       if (e.target) {
@@ -104,7 +110,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         await loadAuthMe(true, true);
       }
     } catch (err: any) {
-      setToast({ message: err.message || 'Failed to upload profile picture. Please try again.', type: 'error' });
+      showErrorToast(err, 'Failed to upload profile picture. Please try again.');
     } finally {
       setIsUploadingAvatar(false);
       if (e.target) {
@@ -149,10 +155,10 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     setGuardianReqActionLoading(true);
     try {
       const res = await acceptGuardianRequest(code);
-      setToast({ message: res.message || 'Guardian request approved successfully!', type: 'success' });
+      showSuccessToast(res.message || 'Guardian request approved successfully!');
       fetchPendingGuardianRequestsList();
     } catch (err: any) {
-      setToast({ message: err.message || 'Failed to approve request. Please check code.', type: 'error' });
+      showErrorToast(err, 'Failed to approve request. Please check code.');
       throw err;
     } finally {
       setGuardianReqActionLoading(false);
@@ -164,36 +170,64 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     setGuardianReqActionLoading(true);
     try {
       const res = await declineGuardianRequest(code);
-      setToast({ message: res.message || 'Guardian request declined.', type: 'success' });
+      showSuccessToast(res.message || 'Guardian request declined.');
       fetchPendingGuardianRequestsList();
     } catch (err: any) {
-      setToast({ message: err.message || 'Failed to decline request.', type: 'error' });
+      showErrorToast(err, 'Failed to decline request.');
     } finally {
       setGuardianReqActionLoading(false);
     }
   };
 
-  const liveName = user?.profile?.displayName || (user as any)?.displayName || 'Player';
-  const rawAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl;
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const targetUserId =
+    searchParams.get('userId') ||
+    searchParams.get('selectedWardId') ||
+    searchParams.get('childId') ||
+    (location.state as any)?.userId ||
+    (location.state as any)?.selectedWardId ||
+    (location.state as any)?.childId;
+
+  const ownProfileId = user?.profile?.id || (user as any)?.profileId || (user as any)?.id;
+  const effectiveProfileId = targetUserId || ownProfileId || null;
+  const isOwnProfile = !targetUserId || targetUserId === ownProfileId || targetUserId === user?.id;
+
+  const { data: targetProfileRes } = useQuery(
+    effectiveProfileId ? `${QueryKeys.USER_PROFILE}:${effectiveProfileId}` : null,
+    effectiveProfileId ? () => getProfile(effectiveProfileId) : null,
+    { staleTime: 0 }
+  );
+
+  const activeProfile = targetProfileRes?.profile || (targetProfileRes as any)?.data?.profile || (isOwnProfile ? user?.profile : null);
+
+  const liveName = activeProfile?.displayName || (activeProfile as any)?.name || (isOwnProfile ? (user as any)?.displayName : '') || 'Player';
+  const rawAvatar = activeProfile?.avatarUrl || (isOwnProfile ? (user as any)?.avatarUrl : null);
   const liveAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
   const rawCover =
-    (user?.profile as any)?.coverImageUrl ||
-    (user?.profile as any)?.coverUrl ||
-    (user?.profile as any)?.coverImageKey ||
-    (user as any)?.coverImageUrl ||
-    (user as any)?.coverUrl ||
-    (user as any)?.coverImageKey;
+    (activeProfile as any)?.coverImageUrl ||
+    (activeProfile as any)?.coverUrl ||
+    (activeProfile as any)?.coverImageKey ||
+    (isOwnProfile ? (user as any)?.coverImageUrl : null);
   const liveCoverImage = resolveCoverUrl(rawCover, '/cover.png');
-  const liveRole = user?.primaryRole || user?.profile?.type || 'PLAYER';
-  const isPlayer = liveRole.toUpperCase() === 'PLAYER';
+  const liveRole = (activeProfile as any)?.roleTag || (activeProfile as any)?.type || (isOwnProfile ? user?.primaryRole : 'PLAYER') || 'PLAYER';
+  const liveRoleUpper = String(liveRole).toUpperCase();
+  const isPlayer = liveRoleUpper === 'PLAYER';
+  const isCoach = liveRoleUpper === 'COACH';
+  const isParent = liveRoleUpper === 'PARENT';
+  const canHaveCareer = isPlayer || isCoach;
 
-  // Live profile field fallbacks from GET /v1/auth/me
-  const liveBio = user?.profile?.bio || 'Competitive ice hockey player focused on teamwork, discipline, and continuous improvement on and off the ice.';
-  const livePosition = user?.profile?.position || 'Center';
-  const liveJersey = user?.profile?.jerseyNumber !== null && user?.profile?.jerseyNumber !== undefined ? String(user.profile.jerseyNumber) : '97';
-  const liveCity = user?.profile?.city || '-';
-  const liveDob = user?.profile?.dateOfBirth ? new Date(user?.profile?.dateOfBirth).toLocaleDateString() : '01-01-2001';
-  const liveGender = user?.profile?.genderCategory || 'Male';
+  // Live profile field fallbacks
+  const liveBio = activeProfile?.bio || 'Competitive ice hockey player focused on teamwork, discipline, and continuous improvement on and off the ice.';
+  const livePosition = activeProfile?.position || 'Center';
+  const liveJersey = activeProfile?.jerseyNumber !== null && activeProfile?.jerseyNumber !== undefined ? String(activeProfile.jerseyNumber) : '97';
+  const liveCity = activeProfile?.location || activeProfile?.city || '-';
+  const rawDob =
+    activeProfile?.dateOfBirth ||
+    (activeProfile as any)?.dob ||
+    (isOwnProfile ? user?.profile?.dateOfBirth || (user as any)?.dateOfBirth || (user as any)?.dob : null);
+  const liveDob = rawDob ? (String(rawDob).includes('T') ? String(rawDob).split('T')[0] : String(rawDob)) : '';
+  const liveGender = activeProfile?.genderCategory || 'Male';
 
   // Intro Form States matching Image 11
   const [bioText, setBioText] = useState(liveBio);
@@ -209,20 +243,32 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [isSavingDetails, setIsSavingDetails] = useState(false);
   const [introSaveMsg, setIntroSaveMsg] = useState<string | null>(null);
   const [detailsSaveMsg, setDetailsSaveMsg] = useState<string | null>(null);
+  const [introErrors, setIntroErrors] = useState<Record<string, string>>({});
+  const [detailsErrors, setDetailsErrors] = useState<Record<string, string>>({});
 
   // Synchronize inputs with live user profile data
   React.useEffect(() => {
-    if (user?.profile) {
-      setBioText(user.profile.bio || '');
-      setPositionText(user.profile.position || '');
-      setJerseyText(user.profile.jerseyNumber !== null && user.profile.jerseyNumber !== undefined ? String(user.profile.jerseyNumber) : '');
-      setLocationText(user.profile.city || '');
-      setDobText(user.profile.dateOfBirth ? user.profile.dateOfBirth.split('T')[0] : '');
-      setGenderText(user.profile.genderCategory || '');
-    }
-  }, [user]);
+    setBioText(liveBio);
+    setPositionText(livePosition);
+    setJerseyText(liveJersey);
+    setLocationText(liveCity);
+    setDobText(liveDob);
+    setGenderText(liveGender);
+  }, [liveBio, livePosition, liveJersey, liveCity, liveDob, liveGender]);
 
   const handleSaveIntro = async () => {
+    const errs: Record<string, string> = {};
+    const bioErr = validateProfileField('bio', bioText);
+    if (bioErr) errs.bio = bioErr;
+    const jerseyErr = validateProfileField('jerseyNumber', jerseyText);
+    if (jerseyErr) errs.jerseyNumber = jerseyErr;
+
+    if (Object.keys(errs).length > 0) {
+      setIntroErrors(errs);
+      return;
+    }
+
+    setIntroErrors({});
     setIsSavingIntro(true);
     setIntroSaveMsg(null);
     try {
@@ -242,13 +288,25 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       setTimeout(() => setIntroSaveMsg(null), 3000);
     } catch (err: any) {
       console.error('❌ Save Intro error:', err);
-      setToast({ message: err.message || 'Failed to save intro details', type: 'error' });
+      showErrorToast(err, 'Failed to save intro details');
     } finally {
       setIsSavingIntro(false);
     }
   };
 
   const handleSaveDetails = async () => {
+    const errs: Record<string, string> = {};
+    const cityErr = validateProfileField('city', locationText);
+    if (cityErr) errs.city = cityErr;
+    const dobErr = validateProfileField('dateOfBirth', dobText);
+    if (dobErr) errs.dateOfBirth = dobErr;
+
+    if (Object.keys(errs).length > 0) {
+      setDetailsErrors(errs);
+      return;
+    }
+
+    setDetailsErrors({});
     setIsSavingDetails(true);
     setDetailsSaveMsg(null);
     try {
@@ -266,7 +324,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       setTimeout(() => setDetailsSaveMsg(null), 3000);
     } catch (err: any) {
       console.error('❌ Save Details error:', err);
-      setToast({ message: err.message || 'Failed to save personal details', type: 'error' });
+      showErrorToast(err, 'Failed to save personal details');
     } finally {
       setIsSavingDetails(false);
     }
@@ -280,27 +338,21 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [isPostsLoading, setIsPostsLoading] = useState(true);
   const [liveUserPosts, setLiveUserPosts] = useState<any[]>([]);
 
-  // Fetch author posts when profile mounts (GET /v1/posts?authorProfileId=...)
+  const { data: postsRes, isLoading: isPostsLoading } = useQuery(
+    effectiveProfileId ? `${QueryKeys.USER_POSTS}:${effectiveProfileId}` : null,
+    effectiveProfileId ? () => getUserPosts(effectiveProfileId) : null,
+    { staleTime: 0 }
+  );
+
   React.useEffect(() => {
-    const profileId = user?.profile?.id || user?.id;
-    if (profileId) {
-      setIsPostsLoading(true);
-      getUserPosts(profileId)
-        .then((res) => {
-          if (res?.items && Array.isArray(res.items)) {
-            setLiveUserPosts(res?.items);
-          }
-        })
-        .finally(() => {
-          setIsPostsLoading(false);
-        });
+    if (postsRes?.items && Array.isArray(postsRes.items)) {
+      setLiveUserPosts(postsRes.items);
     } else {
-      setIsPostsLoading(false);
+      setLiveUserPosts([]);
     }
-  }, [user]);
+  }, [postsRes]);
 
   const handleSaveProfile = async (data: EditProfileFormData) => {
 
@@ -337,24 +389,27 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       avatarUrl: avatarUrlToSend,
     };
 
-
     try {
       const res = await updateAuthProfile(dto);
       if (res) {
         setUserProfile(res);
+        globalQueryClient.invalidateQueries(QueryKeys.AUTH_ME);
+        await loadAuthMe(true, true);
+
+        // Update local preview state
+        if (data?.position) setPositionText(data?.position);
+        if (data?.jerseyNumber) setJerseyText(data?.jerseyNumber);
+        if (data?.bio) setBioText(data?.bio);
+        if (data?.city) setLocationText(data?.city);
+        if (data?.genderCategory) setGenderText(data?.genderCategory);
+        if (data?.dateOfBirth) setDobText(data?.dateOfBirth);
+
+        return res;
       }
     } catch (err: any) {
-      console.error(' [ProfilePage] Update Profile Error:', err);
+      console.error('❌ [ProfilePage] Update Profile Error:', err);
       throw err;
     }
-
-    // Update local preview state
-    if (data?.position) setPositionText(data?.position);
-    if (data?.jerseyNumber) setJerseyText(data?.jerseyNumber);
-    if (data?.bio) setBioText(data?.bio);
-    if (data?.city) setLocationText(data?.city);
-    if (data?.genderCategory) setGenderText(data?.genderCategory);
-    if (data?.dateOfBirth) setDobText(data?.dateOfBirth);
   };
 
   const handleTabChange = (tab: string) => {
@@ -468,28 +523,19 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [isDeletingTeamId, setIsDeletingTeamId] = useState<string | null>(null);
   const [deletingEntryTarget, setDeletingEntryTarget] = useState<CareerEntry | null>(null);
 
-  // Load real profile data and career entries from API
+  // Load real profile data and career entries from targetProfileRes
   React.useEffect(() => {
-    let isMounted = true;
-    async function loadProfileData() {
-      const pid = user?.profile?.id || user?.id;
-      if (!pid) return;
-      try {
-        const res = await getProfile(pid);
-        if (isMounted && res?.profile) {
-          if (res.profile.careerEntries !== undefined) {
-            setCareerEntries(res.profile.careerEntries);
-          }
-        }
-      } catch (err) {
-        console.warn('Profile career entries load notice:', err);
-      }
+    const entries =
+      (targetProfileRes as any)?.data?.profile?.career ||
+      (targetProfileRes as any)?.data?.profile?.careerEntries ||
+      (targetProfileRes as any)?.profile?.career ||
+      (targetProfileRes as any)?.profile?.careerEntries ||
+      (targetProfileRes as any)?.career ||
+      (targetProfileRes as any)?.careerEntries;
+    if (entries !== undefined && entries !== null && Array.isArray(entries)) {
+      setCareerEntries(entries);
     }
-    loadProfileData();
-    return () => {
-      isMounted = false;
-    };
-  }, [user]);
+  }, [targetProfileRes]);
 
   // Form Fields matching specification
   const [teamNameInput, setTeamNameInput] = useState('');
@@ -501,6 +547,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [endMonthInput, setEndMonthInput] = useState('');
   const [endYearInput, setEndYearInput] = useState('');
   const [teamDescInput, setTeamDescInput] = useState('');
+  const [careerErrors, setCareerErrors] = useState<Record<string, string>>({});
 
   const resetTeamForm = () => {
     setEditingTeamId(null);
@@ -513,6 +560,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     setEndMonthInput('');
     setEndYearInput('');
     setTeamDescInput('');
+    setCareerErrors({});
     setIsAddTeamFormOpen(false);
   };
 
@@ -532,8 +580,45 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   };
 
   const handleSaveTeam = async () => {
-    if (!teamNameInput.trim() || isSavingTeam) return;
+    const careerData = {
+      teamName: teamNameInput,
+      position: teamPositionInput,
+      location: teamCityInput,
+      note: teamDescInput,
+      startMonth: startMonthInput,
+      startYear: startYearInput,
+      endMonth: endMonthInput,
+      endYear: endYearInput,
+      isCurrentPlaying: isCurrentPlayingInput,
+    };
 
+    const errs: Record<string, string> = {};
+    const teamNameErr = validateCareerField('teamName', teamNameInput, careerData);
+    if (teamNameErr) errs.teamName = teamNameErr;
+    const posErr = validateCareerField('position', teamPositionInput, careerData);
+    if (posErr) errs.position = posErr;
+    const locErr = validateCareerField('location', teamCityInput, careerData);
+    if (locErr) errs.location = locErr;
+    const noteErr = validateCareerField('note', teamDescInput, careerData);
+    if (noteErr) errs.note = noteErr;
+    const startMonthErr = validateCareerField('startMonth', startMonthInput, careerData);
+    if (startMonthErr) errs.startMonth = startMonthErr;
+    const startYrErr = validateCareerField('startYear', startYearInput, careerData);
+    if (startYrErr) errs.startYear = startYrErr;
+
+    if (!isCurrentPlayingInput) {
+      const endMonthErr = validateCareerField('endMonth', endMonthInput, careerData);
+      if (endMonthErr) errs.endMonth = endMonthErr;
+      const endYrErr = validateCareerField('endYear', endYearInput, careerData);
+      if (endYrErr) errs.endYear = endYrErr;
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setCareerErrors(errs);
+      return;
+    }
+
+    setCareerErrors({});
     setIsSavingTeam(true);
 
     try {
@@ -552,7 +637,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         });
 
         setCareerEntries((prev) => (prev || []).map((t) => (t.id === editingTeamId ? updated : t)));
-        setToast({ message: 'Career team updated successfully!', type: 'success' });
+        showSuccessToast('Career team updated successfully!');
       } else {
         // POST /v1/profiles/me/career
         const created = await createCareerEntry({
@@ -565,13 +650,13 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         });
 
         setCareerEntries((prev) => [created, ...(prev || [])]);
-        setToast({ message: 'Career team created successfully!', type: 'success' });
+        showSuccessToast('Career team created successfully!');
       }
 
       resetTeamForm();
     } catch (err: any) {
       console.error('❌ Save Career Team Error:', err);
-      setToast({ message: err.message || 'Failed to save career team.', type: 'error' });
+      showErrorToast(err, 'Failed to save career team.');
     } finally {
       setIsSavingTeam(false);
     }
@@ -583,13 +668,13 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     try {
       await deleteCareerEntry(id);
       setCareerEntries((prev) => (prev || []).filter((t) => t.id !== id));
-      setToast({ message: 'Career team removed successfully.', type: 'success' });
+      showSuccessToast('Career team removed successfully.');
       if (editingTeamId === id) {
         resetTeamForm();
       }
     } catch (err: any) {
       console.error('❌ Delete Career Team Error:', err);
-      setToast({ message: err.message || 'Failed to remove career team.', type: 'error' });
+      showErrorToast(err, 'Failed to remove career team.');
     } finally {
       setIsDeletingTeamId(null);
     }
@@ -700,20 +785,22 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               )}
 
               {/* Edit Cover Pencil Button */}
-              <Button
-                className="mhn-btn-edit-cover"
-                aria-label="Edit cover photo"
-                onClick={handleEditCoverClick}
-                disabled={isUploadingCover}
-                title="Upload new cover image"
-                style={{ zIndex: 6 }}
-              >
-                {isUploadingCover ? (
-                  <Spinner size="sm" color="#1860C3" />
-                ) : (
-                  <img src="/edit2.png" className="edit2-icon" alt="edit-icon" />
-                )}
-              </Button>
+              {isOwnProfile && (
+                <Button
+                  className="mhn-btn-edit-cover"
+                  aria-label="Edit cover photo"
+                  onClick={handleEditCoverClick}
+                  disabled={isUploadingCover}
+                  title="Upload new cover image"
+                  style={{ zIndex: 6 }}
+                >
+                  {isUploadingCover ? (
+                    <Spinner size="sm" color="#1860C3" />
+                  ) : (
+                    <img src="/edit2.png" className="edit2-icon" alt="edit-icon" />
+                  )}
+                </Button>
+              )}
 
               {coverUploadMsg && (
                 <div
@@ -760,59 +847,82 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 </div>
 
                 {/* Profile Picture Edit Badge Button */}
-                <Button
-                  type="button"
-                  className="mhn-avatar-edit-badge"
-                  onClick={handleEditAvatarClick}
-                  disabled={isUploadingAvatar}
-                  title="Change profile picture"
-                  aria-label="Change profile picture"
-                >
-                  {isUploadingAvatar ? (
-                    <Spinner size="sm" color="#FFFFFF" />
-                  ) : (
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                      <circle cx="12" cy="13" r="4" />
-                    </svg>
-                  )}
-                </Button>
+                {isOwnProfile && (
+                  <Button
+                    type="button"
+                    className="mhn-avatar-edit-badge"
+                    onClick={handleEditAvatarClick}
+                    disabled={isUploadingAvatar}
+                    title="Change profile picture"
+                    aria-label="Change profile picture"
+                  >
+                    {isUploadingAvatar ? (
+                      <Spinner size="sm" color="#FFFFFF" />
+                    ) : (
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                        <circle cx="12" cy="13" r="4" />
+                      </svg>
+                    )}
+                  </Button>
+                )}
               </div>
 
               {/* User Meta & Action Buttons */}
               <div className="mhn-profile-meta-and-actions">
-                <div className="mhn-profile-text-meta">
-                  <h2 className="mhn-profile-hero-name">{liveName}</h2>
-                  <div className="mhn-profile-hero-stats">
-                    <span><strong>{user?.counts?.followers ?? 0}</strong> Followers</span>
-                    <span><strong>{user?.counts?.following ?? 0}</strong> Following</span>
-                  </div>
-                  <p className="mhn-profile-hero-role" style={{ marginTop: '4px' }}>
-                    {liveRole} • @HC Bloemendaal
-                  </p>
-                  <div className="mhn-profile-location-line" style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                      <circle cx="12" cy="10" r="3" />
-                    </svg>
-                    <span style={{ fontSize: '13px', color: '#64748B' }}>{liveCity}</span>
+                <div className="mhn-profile-top-info-row">
+                  <h2 className="mhn-profile-hero-name" title={liveName}>{liveName}</h2>
+                  <div className="mhn-profile-action-buttons">
+                    <Button
+                      onClick={() => showSuccessToast('Profile link copied to clipboard!')}
+                      className="mhn-btn-share-profile"
+                    >
+                      <div className="share-profile-text">Share Profile</div>
+                    </Button>
+                    {isOwnProfile && (
+                      <Button
+                        onClick={() => setIsEditProfileOpen(true)}
+                        className="mhn-btn-edit-profile"
+                      >
+                        <div className="edit-profile-text">Edit Profile</div>
+                      </Button>
+                    )}
                   </div>
                 </div>
 
-                <div className="mhn-profile-action-buttons">
-                  <Button
-                    onClick={() => setToast({ message: 'Profile link copied to clipboard!', type: 'success' })}
-                    className="mhn-btn-share-profile"
-                  >
-                    <div className="share-profile-text">Share Profile</div>
-                  </Button>
-                  <Button
-                    onClick={() => setIsEditProfileOpen(true)}
-                    className="mhn-btn-edit-profile"
-                  >
-                    <div className="edit-profile-text">Edit Profile</div>
-                  </Button>
+                <div className="mhn-profile-hero-stats">
+                  <span><strong>{user?.counts?.followers ?? 0}</strong> Followers</span>
+                  <span><strong>{user?.counts?.following ?? 0}</strong> Following</span>
                 </div>
+
+                <p className="mhn-profile-hero-role">
+                  {(() => {
+                    const primaryTeam = (careerEntries && careerEntries.length > 0 && careerEntries[0]?.teamName)
+                      ? careerEntries[0].teamName
+                      : ((targetProfileRes as any)?.data?.profile?.career?.[0]?.teamName ||
+                        (targetProfileRes as any)?.data?.profile?.careerEntries?.[0]?.teamName ||
+                        (targetProfileRes as any)?.profile?.career?.[0]?.teamName ||
+                        (targetProfileRes as any)?.profile?.careerEntries?.[0]?.teamName ||
+                        (targetProfileRes as any)?.data?.profile?.teamName ||
+                        (targetProfileRes as any)?.profile?.teamName ||
+                        (user?.profile as any)?.career?.[0]?.teamName ||
+                        (user?.profile as any)?.careerEntries?.[0]?.teamName ||
+                        (user?.profile as any)?.teamName || null);
+                    const isParent = String(liveRole).toUpperCase() === 'PARENT';
+                    if (isParent) return liveRole;
+                    const teamString = primaryTeam ? ` • @${primaryTeam}` : '';
+                    if (isPlayer) {
+                      return `${positionText === 'Left Wing' ? 'LW' : positionText === 'Right Wing' ? 'RW' : positionText === 'Center' ? 'C' : positionText === 'Defense' ? 'D' : positionText === 'Goaltender' ? 'G' : (positionText || 'LW')} • #${jerseyText || '8'}${teamString}`;
+                    }
+                    return `${liveRole}${teamString}`;
+                  })()}
+                </p>
+
+                {liveCity && liveCity !== '-' && (
+                  <div className="mhn-profile-hero-location">
+                    {liveCity}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -903,7 +1013,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                             isSelf={true}
                             onNavigate={onNavigate}
                             onDeleteSuccess={(deletedId, msg) => {
-                              setToast({ message: msg || 'Post deleted successfully!', type: 'success' });
+                              showSuccessToast(msg || 'Post deleted successfully!');
                               setLiveUserPosts((prev) => prev.filter((p) => p.id !== deletedId));
                             }}
                           />
@@ -938,86 +1048,29 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 <div className="mhn-profile-stats-container">
                   {/* 1. Filter Dropdowns Row */}
                   <div className="mhn-stats-filters-row">
-                    <div className="mhn-stats-select-wrapper">
-                      <Select
-                        value={selectedSeason}
-                        onChange={(e) => setSelectedSeason(e.target.value)}
-                        onFocus={() => setActiveDropdown('season')}
-                        onBlur={() => setActiveDropdown(null)}
-                        className="mhn-stats-select"
-                      >
-                        <option value="2025-26">2025-26</option>
-                        <option value="2024-25">2024-25</option>
-                      </Select>
-                      <img
-                        src="/arrowBottom.png"
-                        alt="arrow"
-                        style={{
-                          position: 'absolute',
-                          right: '14px',
-                          top: '50%',
-                          width: '10px',
-                          height: '6px',
-                          transform: activeDropdown === 'season' ? 'translateY(-50%) rotate(180deg)' : 'translateY(-50%) rotate(0deg)',
-                          transition: 'transform 0.2s ease',
-                          pointerEvents: 'none',
-                        }}
-                      />
-                    </div>
+                    <Dropdown
+                      value={selectedSeason}
+                      options={['2025-26', '2024-25']}
+                      onChange={(val) => setSelectedSeason(val)}
+                      placeholder=""
+                      style={{ width: '140px' }}
+                    />
 
-                    <div className="mhn-stats-select-wrapper">
-                      <Select
-                        value={selectedSeasonType}
-                        onChange={(e) => setSelectedSeasonType(e.target.value)}
-                        onFocus={() => setActiveDropdown('seasonType')}
-                        onBlur={() => setActiveDropdown(null)}
-                        className="mhn-stats-select"
-                      >
-                        <option value="Regular Season">Regular Season</option>
-                        <option value="Playoffs">Playoffs</option>
-                      </Select>
-                      <img
-                        src="/arrowBottom.png"
-                        alt="arrow"
-                        style={{
-                          position: 'absolute',
-                          right: '14px',
-                          top: '50%',
-                          width: '10px',
-                          height: '6px',
-                          transform: activeDropdown === 'seasonType' ? 'translateY(-50%) rotate(180deg)' : 'translateY(-50%) rotate(0deg)',
-                          transition: 'transform 0.2s ease',
-                          pointerEvents: 'none',
-                        }}
-                      />
-                    </div>
+                    <Dropdown
+                      value={selectedSeasonType}
+                      options={['Regular Season', 'Playoffs']}
+                      onChange={(val) => setSelectedSeasonType(val)}
+                      placeholder=""
+                      style={{ width: '160px' }}
+                    />
 
-                    <div className="mhn-stats-select-wrapper">
-                      <Select
-                        value={selectedUnit}
-                        onChange={(e) => setSelectedUnit(e.target.value)}
-                        onFocus={() => setActiveDropdown('unit')}
-                        onBlur={() => setActiveDropdown(null)}
-                        className="mhn-stats-select"
-                      >
-                        <option value="Miles • MI">Miles • MI</option>
-                        <option value="KM • KPH">KM • KPH</option>
-                      </Select>
-                      <img
-                        src="/arrowBottom.png"
-                        alt="arrow"
-                        style={{
-                          position: 'absolute',
-                          right: '14px',
-                          top: '50%',
-                          width: '10px',
-                          height: '6px',
-                          transform: activeDropdown === 'unit' ? 'translateY(-50%) rotate(180deg)' : 'translateY(-50%) rotate(0deg)',
-                          transition: 'transform 0.2s ease',
-                          pointerEvents: 'none',
-                        }}
-                      />
-                    </div>
+                    <Dropdown
+                      value={selectedUnit}
+                      options={['Miles • MI', 'KM • KPH']}
+                      onChange={(val) => setSelectedUnit(val)}
+                      placeholder=""
+                      style={{ width: '140px' }}
+                    />
                   </div>
 
                   {/* 2. Season Summary Bar */}
@@ -1272,7 +1325,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       >
                         Intro
                       </Button>
-                      {isPlayer && (
+                      {canHaveCareer && (
                         <Button
                           onClick={() => setActiveAboutSection('career')}
                           className={`mhn-about-menu-btn ${activeAboutSection === 'career' ? 'mhn-about-btn-active' : ''}`}
@@ -1299,11 +1352,20 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                           <div style={{ position: 'relative' }}>
                             <Textarea
                               value={bioText}
-                              onChange={(e) => setBioText(e.target.value)}
-                              className="mhn-about-input-box mhn-about-textarea-box"
+                              onChange={(e) => {
+                                setBioText(e.target.value);
+                                if (introErrors.bio) setIntroErrors((prev) => ({ ...prev, bio: '' }));
+                              }}
+                              className={`mhn-about-input-box mhn-about-textarea-box ${introErrors.bio ? 'mhn-edit-profile-input-error' : ''}`}
                               rows={3}
                               placeholder="Write something about yourself..."
                             />
+                            {introErrors.bio && (
+                              <div className="mhn-edit-profile-field-error">
+                                <span>⚠️</span>
+                                <span>{introErrors.bio}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -1325,22 +1387,13 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
                         {/* Position (Only for Players) */}
                         {isPlayer && (
-                          <div className="mhn-about-field-group">
-                            <label className="mhn-about-field-label">Position</label>
-                            <div style={{ position: 'relative' }}>
-                              <Select
-                                value={positionText && ['Center', 'Left Wing', 'Right Wing', 'Defense', 'Goaltender'].includes(positionText) ? positionText : 'Center'}
-                                onChange={(e) => setPositionText(e.target.value)}
-                                className="mhn-about-input-box"
-                              >
-                                <option value="Center">Center</option>
-                                <option value="Left Wing">Left Wing</option>
-                                <option value="Right Wing">Right Wing</option>
-                                <option value="Defense">Defense</option>
-                                <option value="Goaltender">Goaltender</option>
-                              </Select>
-                            </div>
-                          </div>
+                          <Dropdown
+                            label="Position"
+                            value={positionText && ['Center', 'Left Wing', 'Right Wing', 'Defense', 'Goaltender'].includes(positionText) ? positionText : 'Center'}
+                            options={['Center', 'Left Wing', 'Right Wing', 'Defense', 'Goaltender']}
+                            onChange={(val) => setPositionText(val)}
+                            placeholder="Select position"
+                          />
                         )}
 
                         {/* Jersey Number (Only for Players) */}
@@ -1351,10 +1404,19 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                               <Input
                                 type="number"
                                 value={jerseyText}
-                                onChange={(e) => setJerseyText(e.target.value)}
-                                className="mhn-about-input-box"
+                                onChange={(e) => {
+                                  setJerseyText(e.target.value);
+                                  if (introErrors.jerseyNumber) setIntroErrors((prev) => ({ ...prev, jerseyNumber: '' }));
+                                }}
+                                className={`mhn-about-input-box ${introErrors.jerseyNumber ? 'mhn-edit-profile-input-error' : ''}`}
                                 placeholder="e.g. 97"
                               />
+                              {introErrors.jerseyNumber && (
+                                <div className="mhn-edit-profile-field-error">
+                                  <span>⚠️</span>
+                                  <span>{introErrors.jerseyNumber}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
@@ -1415,7 +1477,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       </div>
                     )}
 
-                    {activeAboutSection === 'career' && (
+                    {activeAboutSection === 'career' && canHaveCareer && (
                       <div className="mhn-about-section-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         {/* Teams Header */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
@@ -1462,234 +1524,32 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                               boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                             }}
                           >
-                            {/* Team Input */}
-                            <div>
-                              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                                Team
-                              </label>
-                              <Input
-                                type="text"
-                                value={teamNameInput}
-                                onChange={(e) => setTeamNameInput(e.target.value)}
-                                placeholder="Team name"
-                                style={{
-                                  width: '100%',
-                                  height: '42px',
-                                  borderRadius: '8px',
-                                  border: '1px solid #CBD5E1',
-                                  padding: '0 12px',
-                                  fontSize: '14px',
-                                  outline: 'none',
-                                }}
-                              />
-                            </div>
-
-                            {/* Position Select */}
-                            <div>
-                              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                                Position
-                              </label>
-                              <Select
-                                value={teamPositionInput}
-                                onChange={(e) => setTeamPositionInput(e.target.value)}
-                                style={{
-                                  width: '100%',
-                                  height: '42px',
-                                  borderRadius: '8px',
-                                  border: '1px solid #CBD5E1',
-                                  padding: '0 12px',
-                                  fontSize: '14px',
-                                  outline: 'none',
-                                  backgroundColor: '#FFFFFF',
-                                  color: teamPositionInput ? '#0F172A' : '#94A3B8',
-                                }}
-                              >
-                                <option value="">Select</option>
-                                <option value="Center">Center</option>
-                                <option value="Left Wing">Left Wing</option>
-                                <option value="Right Wing">Right Wing</option>
-                                <option value="Defense">Defense</option>
-                                <option value="Goaltender">Goaltender</option>
-                              </Select>
-                            </div>
-
-                            {/* City/Town Select */}
-                            <div>
-                              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                                City/Town
-                              </label>
-                              <Select
-                                value={teamCityInput}
-                                onChange={(e) => setTeamCityInput(e.target.value)}
-                                style={{
-                                  width: '100%',
-                                  height: '42px',
-                                  borderRadius: '8px',
-                                  border: '1px solid #CBD5E1',
-                                  padding: '0 12px',
-                                  fontSize: '14px',
-                                  outline: 'none',
-                                  backgroundColor: '#FFFFFF',
-                                  color: teamCityInput ? '#0F172A' : '#94A3B8',
-                                }}
-                              >
-                                <option value="">Select</option>
-                                <option value="Dagestan, Russia">Dagestan, Russia</option>
-                                <option value="Toronto, Canada">Toronto, Canada</option>
-                                <option value="Austria, Europe">Austria, Europe</option>
-                                <option value="Boston, MA">Boston, MA</option>
-                              </Select>
-                            </div>
-
-                            {/* Checkbox: I currently playing here */}
-                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>
-                              <Input
-                                type="checkbox"
-                                checked={isCurrentPlayingInput}
-                                onChange={(e) => setIsCurrentPlayingInput(e.target.checked)}
-                                style={{ width: '16px', height: '16px', accentColor: '#1860C3', cursor: 'pointer' }}
-                              />
-                              <span>I currently playing here</span>
-                            </label>
-
-                            {/* Start Date: Month + Year side-by-side */}
-                            <div>
-                              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                                Start date
-                              </label>
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <Select
-                                  value={startMonthInput}
-                                  onChange={(e) => setStartMonthInput(e.target.value)}
-                                  style={{
-                                    height: '42px',
-                                    borderRadius: '8px',
-                                    border: '1px solid #CBD5E1',
-                                    padding: '0 12px',
-                                    fontSize: '14px',
-                                    outline: 'none',
-                                    backgroundColor: '#FFFFFF',
-                                    color: startMonthInput ? '#0F172A' : '#94A3B8',
-                                  }}
-                                >
-                                  <option value="">Month</option>
-                                  <option value="January">January</option>
-                                  <option value="February">February</option>
-                                  <option value="March">March</option>
-                                  <option value="April">April</option>
-                                  <option value="May">May</option>
-                                  <option value="June">June</option>
-                                  <option value="July">July</option>
-                                  <option value="August">August</option>
-                                  <option value="September">September</option>
-                                  <option value="October">October</option>
-                                  <option value="November">November</option>
-                                  <option value="December">December</option>
-                                </Select>
-
-                                <Select
-                                  value={startYearInput}
-                                  onChange={(e) => setStartYearInput(e.target.value)}
-                                  style={{
-                                    height: '42px',
-                                    borderRadius: '8px',
-                                    border: '1px solid #CBD5E1',
-                                    padding: '0 12px',
-                                    fontSize: '14px',
-                                    outline: 'none',
-                                    backgroundColor: '#FFFFFF',
-                                    color: startYearInput ? '#0F172A' : '#94A3B8',
-                                  }}
-                                >
-                                  <option value="">Year</option>
-                                  {['2026', '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016', '2015', '2010'].map((y) => (
-                                    <option key={y} value={y}>{y}</option>
-                                  ))}
-                                </Select>
-                              </div>
-                            </div>
-
-                            {/* End Date (if !isCurrentPlayingInput) */}
-                            {!isCurrentPlayingInput && (
-                              <div>
-                                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                                  End date
-                                </label>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                  <Select
-                                    value={endMonthInput}
-                                    onChange={(e) => setEndMonthInput(e.target.value)}
-                                    style={{
-                                      height: '42px',
-                                      borderRadius: '8px',
-                                      border: '1px solid #CBD5E1',
-                                      padding: '0 12px',
-                                      fontSize: '14px',
-                                      outline: 'none',
-                                      backgroundColor: '#FFFFFF',
-                                      color: endMonthInput ? '#0F172A' : '#94A3B8',
-                                    }}
-                                  >
-                                    <option value="">Month</option>
-                                    <option value="January">January</option>
-                                    <option value="February">February</option>
-                                    <option value="March">March</option>
-                                    <option value="April">April</option>
-                                    <option value="May">May</option>
-                                    <option value="June">June</option>
-                                    <option value="July">July</option>
-                                    <option value="August">August</option>
-                                    <option value="September">September</option>
-                                    <option value="October">October</option>
-                                    <option value="November">November</option>
-                                    <option value="December">December</option>
-                                  </Select>
-
-                                  <Select
-                                    value={endYearInput}
-                                    onChange={(e) => setEndYearInput(e.target.value)}
-                                    style={{
-                                      height: '42px',
-                                      borderRadius: '8px',
-                                      border: '1px solid #CBD5E1',
-                                      padding: '0 12px',
-                                      fontSize: '14px',
-                                      outline: 'none',
-                                      backgroundColor: '#FFFFFF',
-                                      color: endYearInput ? '#0F172A' : '#94A3B8',
-                                    }}
-                                  >
-                                    <option value="">Year</option>
-                                    {['2026', '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016', '2015', '2010'].map((y) => (
-                                      <option key={y} value={y}>{y}</option>
-                                    ))}
-                                  </Select>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Description Textarea */}
-                            <div>
-                              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                                Description
-                              </label>
-                              <Textarea
-                                rows={3}
-                                value={teamDescInput}
-                                onChange={(e) => setTeamDescInput(e.target.value)}
-                                placeholder="Tell us about it"
-                                style={{
-                                  width: '100%',
-                                  borderRadius: '8px',
-                                  border: '1px solid #CBD5E1',
-                                  padding: '10px 12px',
-                                  fontSize: '14px',
-                                  outline: 'none',
-                                  fontFamily: 'inherit',
-                                  resize: 'vertical',
-                                }}
-                              />
-                            </div>
+                            <CareerFormFields
+                              values={{
+                                teamName: teamNameInput,
+                                position: teamPositionInput,
+                                location: teamCityInput,
+                                isCurrentPlaying: isCurrentPlayingInput,
+                                startMonth: startMonthInput,
+                                startYear: startYearInput,
+                                endMonth: endMonthInput,
+                                endYear: endYearInput,
+                                note: teamDescInput,
+                              }}
+                              onChange={(field, val) => {
+                                if (field === 'teamName') setTeamNameInput(val as string);
+                                if (field === 'position') setTeamPositionInput(val as string);
+                                if (field === 'location') setTeamCityInput(val as string);
+                                if (field === 'isCurrentPlaying') setIsCurrentPlayingInput(val as boolean);
+                                if (field === 'startMonth') setStartMonthInput(val as string);
+                                if (field === 'startYear') setStartYearInput(val as string);
+                                if (field === 'endMonth') setEndMonthInput(val as string);
+                                if (field === 'endYear') setEndYearInput(val as string);
+                                if (field === 'note') setTeamDescInput(val as string);
+                                if (careerErrors[field]) setCareerErrors((prev) => ({ ...prev, [field]: '' }));
+                              }}
+                              errors={careerErrors}
+                            />
 
                             {/* Buttons Row: Cancel and Save */}
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '4px' }}>
@@ -1712,16 +1572,16 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                               <Button
                                 type="button"
                                 onClick={handleSaveTeam}
-                                disabled={!teamNameInput.trim() || isSavingTeam}
+                                disabled={isSavingTeam}
                                 style={{
-                                  backgroundColor: teamNameInput.trim() && !isSavingTeam ? '#1860C3' : '#CBD5E1',
+                                  backgroundColor: !isSavingTeam ? '#1860C3' : '#CBD5E1',
                                   border: 'none',
                                   borderRadius: '8px',
                                   padding: '8px 24px',
                                   fontSize: '14px',
                                   fontWeight: 600,
                                   color: '#FFFFFF',
-                                  cursor: teamNameInput.trim() && !isSavingTeam ? 'pointer' : 'not-allowed',
+                                  cursor: !isSavingTeam ? 'pointer' : 'not-allowed',
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: '6px',
@@ -1880,60 +1740,20 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
                     {activeAboutSection === 'details' && (
                       <div className="mhn-about-section-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        {/* Location / City */}
-                        <div className="mhn-about-field-group">
-                          <label className="mhn-about-field-label">Location (City)</label>
-                          <div style={{ position: 'relative' }}>
-                            <Input
-                              type="text"
-                              value={locationText}
-                              onChange={(e) => setLocationText(e.target.value)}
-                              className="mhn-about-input-box"
-                              placeholder="e.g. Toronto, ON"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Date of Birth */}
-                        <div className="mhn-about-field-group">
-                          <label className="mhn-about-field-label">Date of Birth</label>
-                          <div style={{ position: 'relative' }}>
-                            <Input
-                              type="date"
-                              value={dobText}
-                              onChange={(e) => setDobText(e.target.value)}
-                              className="mhn-about-input-box"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Gender Category Select */}
-                        <div className="mhn-about-field-group">
-                          <label className="mhn-about-field-label">Gender</label>
-                          <div className="mhn-about-select-wrapper">
-                            <Select
-                              value={genderText || 'Male'}
-                              onChange={(e) => setGenderText(e.target.value)}
-                              className="mhn-about-select-box"
-                            >
-                              <option value="Male">Male</option>
-                              <option value="Female">Female</option>
-                            </Select>
-                            <svg
-                              className="mhn-about-select-arrow"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="#64748B"
-                              strokeWidth="2.2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <polyline points="6 9 12 15 18 9" />
-                            </svg>
-                          </div>
-                        </div>
+                        <PersonalDetailsFields
+                          values={{
+                            city: locationText,
+                            dateOfBirth: dobText,
+                            genderCategory: genderText,
+                          }}
+                          onChange={(field, val) => {
+                            if (field === 'city') setLocationText(val);
+                            if (field === 'dateOfBirth') setDobText(val);
+                            if (field === 'genderCategory') setGenderText(val);
+                            if (detailsErrors[field]) setDetailsErrors((prev) => ({ ...prev, [field]: '' }));
+                          }}
+                          errors={detailsErrors}
+                        />
 
                         {/* Save & Feedback Row */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
@@ -2038,11 +1858,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                           <h4 className="mhn-supervision-req-name">{displayName}</h4>
                           <p className="mhn-supervision-req-role">{roleTag}</p>
 
-                          {code && (
-                            <div style={{ margin: '8px 0', fontSize: '13px', color: '#0B66C2', fontWeight: 600 }}>
-                              Code: {code}
-                            </div>
-                          )}
+
 
                           <div className="mhn-supervision-req-actions" style={{ marginTop: '12px' }}>
                             <Button
@@ -2126,15 +1942,6 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           }
         }}
       />
-
-      {/* Global Toast Notification */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
     </div>
   );
 };

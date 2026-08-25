@@ -1,0 +1,17 @@
+export enum HttpHeader {
+  ACCEPT = 'Accept',
+  ACCEPT_LANGUAGE = 'Accept-Language',
+  CONTENT_TYPE = 'Content-Type',
+  AUTHORIZATION = 'Authorization',
+  X_CLIENT_TYPE = 'X-Client-Type',
+  X_CSRF_TOKEN = 'X-CSRF-Token',
+  X_XSRF_TOKEN = 'X-XSRF-Token',
+  CSRF_TOKEN = 'csrf-token',
+  MHN_AT = 'mhn_at',
+  MHN_CSRF = 'mhn_csrf',
+  X_REFRESH_TOKEN = 'X-Refresh-Token',
+  X_ACCESS_TOKEN = 'x-access-token',
+  NGROK_SKIP_BROWSER_WARNING = 'ngrok-skip-browser-warning',
+  BYPASS_TUNNEL_REMINDER = 'Bypass-Tunnel-Reminder',
+  LOCALTUNNEL_SKIP_WARNING = 'localtunnel-skip-warning',
+}

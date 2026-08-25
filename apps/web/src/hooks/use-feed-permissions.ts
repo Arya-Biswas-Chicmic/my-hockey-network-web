@@ -32,31 +32,9 @@ export interface UseFeedPermissionsResult {
 }
 
 export function useFeedPermissions(onNavigate?: (route: string) => void): UseFeedPermissionsResult {
-  const { user, showToast } = useAuth();
-  const [supervisionControls, setSupervisionControls] = useState<Record<string, boolean | string> | null>(null);
+  const { user, supervisionPermissions, showToast } = useAuth();
 
-  useEffect(() => {
-    let isMounted = true;
-    async function loadPermissions() {
-      if (!user) {
-        if (isMounted) setSupervisionControls(null);
-        return;
-      }
-      try {
-        const res = await getMySupervisionPermissions();
-        if (isMounted && res?.controlsMap) {
-          setSupervisionControls(res.controlsMap);
-        }
-      } catch (err) {
-        // Safe fallback for non-minor users or network errors
-        if (isMounted) setSupervisionControls(null);
-      }
-    }
-    loadPermissions();
-    return () => {
-      isMounted = false;
-    };
-  }, [user]);
+  const supervisionControls = (supervisionPermissions as Record<string, boolean | string> | null) ?? null;
 
   const permissions = useMemo(() => evaluateFeedPermissions(user, supervisionControls), [user, supervisionControls]);
 

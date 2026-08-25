@@ -1,3 +1,4 @@
+import { ApprovalModeEnum, ApprovalStatusEnum, ClientTypeEnum } from '@my-hockey-network/contracts';
 import { apiFetch } from './client';
 import { API_ENDPOINTS } from './urls';
 
@@ -8,7 +9,7 @@ export interface ApprovalItem {
   actionType: string;
   subjectType: string;
   subjectId: string;
-  status: 'PENDING' | 'APPROVED' | 'DECLINED' | 'EXPIRED';
+  status: ApprovalStatusEnum | 'PENDING' | 'APPROVED' | 'DECLINED' | 'EXPIRED';
   note?: string | null;
   createdAt: string;
   updatedAt?: string;
@@ -21,7 +22,7 @@ export interface ApprovalItem {
 }
 
 export interface ApproveRequestDTO {
-  mode?: 'SINGLE_USE' | 'DURATION' | 'UNBOUNDED' | 'INDEFINITE';
+  mode?: ApprovalModeEnum | 'SINGLE_USE' | 'DURATION' | 'UNBOUNDED' | 'INDEFINITE';
   expiresAt?: string; // Required when mode === 'DURATION'
   note?: string;
 }
@@ -30,8 +31,8 @@ export interface ApproveRequestDTO {
  * Fetch Guardian Approval Requests List
  */
 export async function getApprovals(
-  params?: { status?: string; minorId?: string; cursor?: string; limit?: number },
-  clientType: 'web' | 'mobile' = 'web'
+  params?: { status?: ApprovalStatusEnum | string; minorId?: string; cursor?: string; limit?: number },
+  clientType: ClientTypeEnum | 'web' | 'mobile' = ClientTypeEnum.WEB
 ): Promise<{ items: ApprovalItem[]; nextCursor?: string | null }> {
   const query = new URLSearchParams();
   if (params?.status) query.set('status', params.status);
@@ -50,7 +51,7 @@ export async function getApprovals(
 /**
  * Get Approval Item by ID
  */
-export async function getApprovalById(id: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ approval: ApprovalItem }> {
+export async function getApprovalById(id: string, clientType: ClientTypeEnum | 'web' | 'mobile' = ClientTypeEnum.WEB): Promise<{ approval: ApprovalItem }> {
   return apiFetch<{ approval: ApprovalItem }>(
     API_ENDPOINTS.APPROVALS.GET_APPROVAL(id),
     { method: 'GET' },
@@ -64,7 +65,7 @@ export async function getApprovalById(id: string, clientType: 'web' | 'mobile' =
 export async function approveRequest(
   id: string,
   dto?: ApproveRequestDTO,
-  clientType: 'web' | 'mobile' = 'web'
+  clientType: ClientTypeEnum | 'web' | 'mobile' = ClientTypeEnum.WEB
 ): Promise<{ advanced: string; approval?: ApprovalItem }> {
   return apiFetch<{ advanced: string; approval?: ApprovalItem }>(
     API_ENDPOINTS.APPROVALS.APPROVE(id),
@@ -82,7 +83,7 @@ export async function approveRequest(
 export async function declineRequest(
   id: string,
   note?: string,
-  clientType: 'web' | 'mobile' = 'web'
+  clientType: ClientTypeEnum | 'web' | 'mobile' = ClientTypeEnum.WEB
 ): Promise<{ message: string; approval?: ApprovalItem }> {
   return apiFetch<{ message: string; approval?: ApprovalItem }>(
     API_ENDPOINTS.APPROVALS.DECLINE(id),

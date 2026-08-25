@@ -2,6 +2,7 @@ import { Button } from '../../../common/Button';
 import { Input } from '../../../common/FormControls';
 import React, { useState, useRef, useEffect } from 'react';
 import { Spinner } from '../../../common/Spinner';
+import { maskEmail } from '@my-hockey-network/validation';
 
 interface VerifyEmailFormProps {
   email?: string;
@@ -106,6 +107,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
         <Button
           type="button"
           onClick={onChangeEmail}
+          disabled={loading}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -115,7 +117,8 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
             color: '#0B66C2',
             fontSize: '14px',
             fontWeight: 600,
-            cursor: 'pointer',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            opacity: loading ? 0.6 : 1,
             marginBottom: '12px',
             padding: 0,
           }}
@@ -133,7 +136,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
         </h1>
         <p className="onboarding-subtitle verify-email-subtitle">
           We sent a verification code to <br />
-          <span className="verify-email-highlight">{email}</span>
+          <span className="verify-email-highlight">{maskEmail(email)}</span>
         </p>
       </div>
 
@@ -142,105 +145,43 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
           style={{
             backgroundColor: '#F0FDF4',
             border: '1px solid #86EFAC',
+            borderRadius: '8px',
+            padding: '10px 14px',
+            marginBottom: '16px',
             color: '#166534',
-            padding: '8px 12px',
-            borderRadius: '6px',
             fontSize: '13px',
             fontWeight: 500,
-            marginBottom: '12px',
-            textAlign: 'center',
           }}
         >
-          {resendNotice}
+          ✓ {resendNotice}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="verify-email-form" style={{ position: 'relative' }}>
-        {/* 6 Digit Input Row */}
+      <form onSubmit={handleSubmit} className="verify-email-form">
         <div className="otp-inputs-row" style={{ position: 'relative' }}>
-          {code.map((digit, idx) => (
+          {code.map((digit, index) => (
             <Input
-              key={idx}
-              ref={(el) => { inputRefs.current[idx] = el; }}
+              key={index}
+              ref={(el) => {
+                inputRefs.current[index] = el;
+              }}
               type="text"
               inputMode="numeric"
               maxLength={1}
               value={digit}
-              onChange={(e) => handleChange(idx, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(idx, e)}
-              className="otp-digit-input"
+              onChange={(e) => handleChange(index, e.target.value)}
+              onKeyDown={(e) => handleKeyDown(index, e)}
+              className={`otp-digit-input ${activeError ? 'mhn-input-invalid' : ''}`}
               disabled={loading}
-              style={
-                activeError && !digit
-                  ? { borderColor: '#EA580C', backgroundColor: '#FFF7ED' }
-                  : activeError
-                  ? { borderColor: '#1D61D1' }
-                  : {}
-              }
+              autoFocus={index === 0}
             />
           ))}
         </div>
 
-        {/* Floating Tooltip Callout Bubble for OTP Error */}
+        {/* Standardized Edit Profile Reference Validation Error Format */}
         {activeError && (
-          <div
-            className="mhn-validation-tooltip-bubble"
-            style={{
-              position: 'absolute',
-              top: '68px',
-              left: '0',
-              zIndex: 100,
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #71717A',
-              borderRadius: '6px',
-              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.16)',
-              padding: '8px 12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              width: '100%',
-              fontSize: '13px',
-              color: '#18181B',
-              fontWeight: 500,
-              lineHeight: '1.35',
-            }}
-          >
-            {/* Pointer Triangle Arrow */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '-6px',
-                left: '24px',
-                width: '10px',
-                height: '10px',
-                backgroundColor: '#FFFFFF',
-                borderLeft: '1px solid #71717A',
-                borderTop: '1px solid #71717A',
-                transform: 'rotate(45deg)',
-              }}
-            />
-
-            {/* Orange Exclamation Badge */}
-            <div
-              style={{
-                width: '20px',
-                height: '20px',
-                backgroundColor: '#EA580C',
-                borderRadius: '3px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#FFFFFF',
-                fontSize: '13px',
-                fontWeight: 900,
-                flexShrink: 0,
-                lineHeight: 1,
-              }}
-            >
-              !
-            </div>
-
-            {/* Tooltip Text */}
+          <div className="mhn-edit-profile-field-error" style={{ marginTop: '12px', justifyContent: 'center' }}>
+            <span>⚠️</span>
             <span>{activeError}</span>
           </div>
         )}
@@ -249,7 +190,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
           type="submit"
           className="btn-submit btn-confirm-otp"
           disabled={loading}
-          style={{ opacity: loading ? 0.75 : 1, marginTop: activeError ? '56px' : '24px' }}
+          style={{ opacity: loading ? 0.75 : 1, marginTop: '24px' }}
         >
           {loading ? (
             <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
@@ -266,8 +207,13 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
       <Button
         type="button"
         onClick={onChangeEmail}
+        disabled={loading}
         className="auth-back-link btn-change-email"
-        style={{ marginTop: '16px' }}
+        style={{
+          marginTop: '16px',
+          opacity: loading ? 0.6 : 1,
+          cursor: loading ? 'not-allowed' : 'pointer',
+        }}
       >
         Change Email
       </Button>
@@ -278,9 +224,12 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
         <Button
           type="button"
           onClick={handleResendClick}
-          disabled={resendCooldown > 0}
+          disabled={resendCooldown > 0 || loading}
           className="auth-primary-link btn-resend-code"
-          style={{ opacity: resendCooldown > 0 ? 0.6 : 1, cursor: resendCooldown > 0 ? 'not-allowed' : 'pointer' }}
+          style={{
+            opacity: resendCooldown > 0 || loading ? 0.6 : 1,
+            cursor: resendCooldown > 0 || loading ? 'not-allowed' : 'pointer',
+          }}
         >
           {resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : 'Resend Code'}
         </Button>

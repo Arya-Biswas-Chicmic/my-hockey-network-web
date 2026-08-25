@@ -4,6 +4,8 @@ import { useAuth } from '../../hooks/use-auth';
 import { LogoutModal } from './LogoutModal';
 import { resolveMediaUrl } from '../../utils/mediaUtils';
 import { getSupervisionData } from '@my-hockey-network/core';
+import { QueryKeys } from '@my-hockey-network/contracts';
+import { useQuery } from '../../query';
 
 interface HeaderProps {
   activeTab?: string;
@@ -31,12 +33,14 @@ export const Header: React.FC<HeaderProps> = ({
   const rawAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl;
   const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
   const [activeUser, setActiveUser] = useState({ name: resolvedName, avatar: resolvedAvatar });
-  const [isFamilyLoading, setIsFamilyLoading] = useState(false);
   const [familyMembers, setFamilyMembers] = useState<Array<{ id: string; name: string; avatar: string }>>([]);
+  const isParent = Boolean(user?.primaryRole === 'PARENT' || user?.roleAssignments?.some((r: any) => r.role === 'PARENT'));
 
-  React.useEffect(() => {
-    setCurrentTab(activeTab);
-  }, [activeTab]);
+  const { data: supervisionData, isLoading: isFamilyLoading } = useQuery(
+    isParent ? QueryKeys.SUPERVISION_DATA : null,
+    isParent ? getSupervisionData : null,
+    { staleTime: 5 * 60 * 1000 }
+  );
 
   React.useEffect(() => {
     const name = user?.profile?.displayName || (user as any)?.displayName || userName || 'Player';
@@ -46,34 +50,22 @@ export const Header: React.FC<HeaderProps> = ({
   }, [user, userName]);
 
   React.useEffect(() => {
-    const isParent = user?.primaryRole === 'PARENT' || user?.roleAssignments?.some((r: any) => r.role === 'PARENT');
-    if (isParent) {
-      setIsFamilyLoading(true);
-      getSupervisionData()
-        .then((data: any) => {
-          const children = data?.children || data?.data?.children || [];
-          if (Array.isArray(children) && children.length > 0) {
-            const mapped = children.map((c: any) => ({
-              id: c.userId || c.profileId || c.id || c.displayName,
-              name: c.displayName || c.firstName || c.name || 'Child',
-              avatar: resolveMediaUrl(c.avatarUrl, c.avatar || '/userPlaceholder.png'),
-            }));
-            setFamilyMembers(mapped);
-          } else {
-            setFamilyMembers([]);
-          }
-        })
-        .catch(() => {
-          setFamilyMembers([]);
-        })
-        .finally(() => {
-          setIsFamilyLoading(false);
-        });
+    if (isParent && supervisionData) {
+      const children = (supervisionData as any)?.children || (supervisionData as any)?.data?.children || [];
+      if (Array.isArray(children) && children.length > 0) {
+        const mapped = children.map((c: any) => ({
+          id: c.userId || c.profileId || c.id || c.displayName,
+          name: c.displayName || c.firstName || c.name || 'Child',
+          avatar: resolveMediaUrl(c.avatarUrl, c.avatar || '/userPlaceholder.png'),
+        }));
+        setFamilyMembers(mapped);
+      } else {
+        setFamilyMembers([]);
+      }
     } else {
-      setIsFamilyLoading(false);
       setFamilyMembers([]);
     }
-  }, [user]);
+  }, [isParent, supervisionData]);
 
   const handleTabClick = (tabId: string) => {
     setCurrentTab(tabId);
@@ -308,9 +300,11 @@ export const Header: React.FC<HeaderProps> = ({
                                   }
                                 }}
                               >
-                                <div className="mhn-dropdown-item-left">
+                                <div className="mhn-dropdown-item-left" style={{ minWidth: 0, flex: 1 }}>
                                   <img src={member.avatar} alt={member.name} className="mhn-family-member-img" />
-                                  <span className="mhn-family-member-name">{member.name}</span>
+                                  <span className="mhn-family-member-name" title={member.name}>
+                                    {member.name.length > 18 ? `${member.name.trim().split(/\s+/).slice(0, 2).join(' ')}...` : member.name}
+                                  </span>
                                 </div>
                                 <div className="mhn-family-switch-btn" title={`View ${member.name} in Supervision`}>
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

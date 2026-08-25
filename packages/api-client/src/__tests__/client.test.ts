@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError, createApiClient, type AuthStorageAdapter } from '../index';
+import { ApiError, createApiClient, extractMessageFromEnvelope, type AuthStorageAdapter } from '../index';
 
 function storage(): AuthStorageAdapter {
   return {
@@ -156,6 +156,43 @@ describe('platform-neutral API client', () => {
     });
     await expect(parseClient.request('/feed')).rejects.toMatchObject({ statusCode: 502 });
 
+    const ngrokClient = createApiClient({
+      baseUrl: 'https://reposeful-kareen-controllingly.ngrok-free.dev/v1',
+      clientType: 'web',
+      authStorage,
+      fetchImpl: vi.fn(async () => new Response('<html><body>ERR_NGROK_3200: Endpoint offline</body></html>', { status: 502 })),
+    });
+    await expect(ngrokClient.request('/auth/otp/request')).rejects.toMatchObject({
+      statusCode: 502,
+      message: 'Backend endpoint is offline or unreachable (ERR_NGROK_3200). Please check your backend connection.',
+    });
+
+    const htmlGatewayClient = createApiClient({
+      baseUrl: 'https://api.example.test/v1',
+      clientType: 'web',
+      authStorage,
+      fetchImpl: vi.fn(async () => new Response('<html><head><title>502 Bad Gateway</title></head></html>', { status: 502 })),
+    });
+    await expect(htmlGatewayClient.request('/feed')).rejects.toMatchObject({
+      statusCode: 502,
+      message: 'Backend error (502): 502 Bad Gateway',
+    });
+
+    const arrayErrorClient = createApiClient({
+      baseUrl: 'https://api.example.test/v1',
+      clientType: 'web',
+      authStorage,
+      fetchImpl: vi.fn(async () =>
+        new Response(JSON.stringify({ success: false, statusCode: 400, message: ['email must be an email', 'code required'] }), {
+          status: 400,
+        }),
+      ),
+    });
+    await expect(arrayErrorClient.request('/auth/otp/request')).rejects.toMatchObject({
+      statusCode: 400,
+      message: 'email must be an email, code required',
+    });
+
     const errorClient = createApiClient({
       baseUrl: 'https://api.example.test/v1',
       clientType: 'web',
@@ -219,6 +256,56 @@ describe('platform-neutral API client', () => {
   it('builds ApiError keys from structured and plain failures', () => {
     expect(new ApiError(400, 'Bad', { key: 123 }).key).toBe('123');
     expect(new ApiError(400, 'Bad').key).toBe('Bad');
+  });
+
+  it('extracts messages from various envelope shapes', () => {
+    expect(extractMessageFromEnvelope(null)).toBeNull();
+    expect(extractMessageFromEnvelope({})).toBeNull();
+    expect(extractMessageFromEnvelope({ message: ['a', 'b'] })).toBe('a, b');
+    expect(extractMessageFromEnvelope({ message: '  ' })).toBeNull();
+    expect(extractMessageFromEnvelope({ error: 'Simple error' })).toBe('Simple error');
+    expect(extractMessageFromEnvelope({ error: { message: 'Nested error' } })).toBe('Nested error');
+    expect(extractMessageFromEnvelope({ data: { message: 'Data message' } })).toBe('Data message');
+    expect(extractMessageFromEnvelope({ data: { message: ['data1', 'data2'] } })).toBe('data1, data2');
+    expect(extractMessageFromEnvelope({ detail: 'Detail message' })).toBe('Detail message');
+    expect(extractMessageFromEnvelope({ details: 'Details message' })).toBe('Details message');
+  });
+
+  it('handles HTML without title, failed fetch network errors, and plain text responses', async () => {
+    const authStorage = storage();
+    const fetchFailClient = createApiClient({
+      baseUrl: 'https://api.example.test/v1',
+      clientType: 'web',
+      authStorage,
+      fetchImpl: vi.fn(async () => {
+        throw new Error('Failed to fetch');
+      }),
+    });
+    await expect(fetchFailClient.request('/feed')).rejects.toMatchObject({
+      message: 'Unable to connect to backend server. Please check your network or server URL.',
+    });
+
+    const htmlNoTitleClient = createApiClient({
+      baseUrl: 'https://api.example.test/v1',
+      clientType: 'web',
+      authStorage,
+      fetchImpl: vi.fn(async () => new Response('<html><body>No title here</body></html>', { status: 503, statusText: 'Service Unavailable' })),
+    });
+    await expect(htmlNoTitleClient.request('/feed')).rejects.toMatchObject({
+      statusCode: 503,
+      message: 'Backend service unavailable (503 Service Unavailable).',
+    });
+
+    const plainTextClient = createApiClient({
+      baseUrl: 'https://api.example.test/v1',
+      clientType: 'web',
+      authStorage,
+      fetchImpl: vi.fn(async () => new Response('Plain text error response', { status: 400 })),
+    });
+    await expect(plainTextClient.request('/feed')).rejects.toMatchObject({
+      statusCode: 400,
+      message: 'Plain text error response',
+    });
   });
 
   it('normalizes base URLs with trailing slashes during requests and token refresh', async () => {

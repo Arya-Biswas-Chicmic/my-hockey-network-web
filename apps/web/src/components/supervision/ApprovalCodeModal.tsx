@@ -22,50 +22,102 @@ export const ApprovalCodeModal: React.FC<ApprovalCodeModalProps> = ({
   onClose,
   onSubmit,
 }) => {
-  const [code, setCode] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     if (isOpen) {
-      setCode(initialCode || '');
-      setError(null);
+      if (initialCode && initialCode.length === 6) {
+        setDigits(initialCode.split(''));
+      } else {
+        setDigits(['', '', '', '', '', '']);
+      }
+      setOtpError(null);
       setTimeout(() => {
-        inputRef.current?.focus();
+        inputRefs.current[0]?.focus();
       }, 50);
     }
   }, [isOpen, initialCode]);
 
   useEffect(() => {
     if (errorMessage) {
-      setError(errorMessage);
+      setOtpError(errorMessage);
     }
   }, [errorMessage]);
 
   if (!isOpen) return null;
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-    setCode(val);
-    if (error) setError(null);
+  const triggerAutoSubmit = (codeDigits: string[]) => {
+    const fullCode = codeDigits.join('');
+    if (fullCode.length === 6 && codeDigits.every((d) => Boolean(d.trim()))) {
+      setOtpError(null);
+      onSubmit(fullCode);
+    }
+  };
+
+  const handleChange = (index: number, value: string) => {
+    if (otpError) setOtpError(null);
+
+    const newDigits = [...digits];
+
+    if (value.length > 1) {
+      // Handle paste of 6 digits
+      const pastedDigits = value.slice(0, 6).replace(/\D/g, '').split('');
+      pastedDigits.forEach((d, i) => {
+        newDigits[i] = d;
+      });
+      setDigits(newDigits);
+      const nextIndex = Math.min(pastedDigits.length, 5);
+      inputRefs.current[nextIndex]?.focus();
+      triggerAutoSubmit(newDigits);
+      return;
+    }
+
+    const cleanVal = value.replace(/\D/g, '');
+    newDigits[index] = cleanVal;
+    setDigits(newDigits);
+
+    if (cleanVal && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+
+    triggerAutoSubmit(newDigits);
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !digits[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (code.length < 6) {
-      setError('Please enter the complete 6-digit approval code.');
+    const fullCode = digits.join('');
+
+    // Pre-API Validation: All 6 digits MUST be entered before hitting API!
+    if (fullCode.length < 6 || digits.some((d) => !d.trim())) {
+      setOtpError('Please fill out all 6 digits of the verification code.');
+      const firstEmptyIdx = digits.findIndex((d) => !d.trim());
+      if (firstEmptyIdx !== -1) {
+        inputRefs.current[firstEmptyIdx]?.focus();
+      }
       return;
     }
+
+    setOtpError(null);
     try {
-      await onSubmit(code);
+      await onSubmit(fullCode);
     } catch (err: any) {
-      setError(err.message || 'Failed to approve request. Please check code.');
+      setOtpError(err.message || 'Failed to approve request. Please check code and try again.');
     }
   };
 
+  const activeError = otpError;
+
   return (
     <div className="mhn-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="mhn-modal-card" onClick={(e) => e.stopPropagation()}>
+      <div className="mhn-modal-card" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
         <div className="mhn-modal-header">
           <div className="mhn-modal-badge-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0B66C2" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -84,43 +136,50 @@ export const ApprovalCodeModal: React.FC<ApprovalCodeModalProps> = ({
         <div className="mhn-modal-body">
           <h2 className="mhn-modal-title">Approve Supervision</h2>
           <p className="mhn-modal-subtitle">
-            Enter the 6-digit approval code provided by <strong>{targetName || 'the athlete'}</strong> to establish parent supervision.
+            Enter the 6-digit approval code sent for <strong>{targetName || 'the athlete'}</strong>.
           </p>
 
           <form onSubmit={handleSubmit} className="mhn-modal-form">
-            <div className="mhn-modal-input-group">
-              <label htmlFor="approvalCodeInput" className="mhn-modal-label">
-                6-Digit Approval Code
-              </label>
-              <Input
-                ref={inputRef}
-                id="approvalCodeInput"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={6}
-                placeholder="123456"
-                className={`mhn-modal-code-input ${error ? 'mhn-input-error' : ''}`}
-                value={code}
-                onChange={handleInputChange}
-                disabled={loading}
-                autoComplete="one-time-code"
-              />
-              {error && <p className="mhn-modal-error-text">{error}</p>}
+            <div className="otp-inputs-row" style={{ justifyContent: 'center', margin: '16px 0 12px' }}>
+              {digits.map((digit, index) => (
+                <Input
+                  key={index}
+                  ref={(el) => {
+                    inputRefs.current[index] = el;
+                  }}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleChange(index, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(index, e)}
+                  className={`otp-digit-input ${activeError ? 'mhn-input-invalid' : ''}`}
+                  disabled={loading}
+                  autoFocus={index === 0}
+                />
+              ))}
             </div>
 
-            <div className="mhn-modal-actions">
+            {/* Standardized Edit Profile Reference Error UI */}
+            {activeError && (
+              <span className="mhn-edit-profile-field-error" style={{ justifyContent: 'center', marginBottom: '12px' }}>
+                <span>⚠️</span>
+                <span>{activeError}</span>
+              </span>
+            )}
+
+            <div className="mhn-modal-actions" style={{ marginTop: '20px', justifyContent: 'center' }}>
               <Button type="button" className="mhn-modal-btn-cancel" onClick={onClose} disabled={loading}>
                 Cancel
               </Button>
-              <Button type="submit" className="mhn-modal-btn-submit" disabled={loading || code.length < 6}>
+              <Button type="submit" className="mhn-modal-btn-submit" disabled={loading}>
                 {loading ? (
-                  <span className="mhn-modal-spinner-wrapper">
+                  <span className="mhn-modal-spinner-wrapper" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                     <Spinner size="sm" color="#FFFFFF" />
-                    <span>Approving...</span>
+                    <span>Confirming...</span>
                   </span>
                 ) : (
-                  'Approve Supervision'
+                  'Confirm & Approve'
                 )}
               </Button>
             </div>

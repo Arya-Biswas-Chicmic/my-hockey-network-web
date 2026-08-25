@@ -1,5 +1,5 @@
 import { Button } from '../components/common/Button';
-import { Input, Select } from '../components/common/FormControls';
+import { Input, Select, Dropdown } from '../components/common/FormControls';
 import React, { useState, useEffect } from 'react';
 import { Header } from '../components/common/Header';
 import { NoDataFound } from '../components/common/no-data-found';
@@ -10,6 +10,7 @@ import {
   getBlockedUsersSettings,
   removeRelationship,
 } from '@my-hockey-network/core';
+import { showSuccessToast, showErrorToast } from '../utils/toast';
 
 interface SettingsPageProps {
   onNavigate?: (screen: string) => void;
@@ -26,7 +27,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
   const [updatingNotifKey, setUpdatingNotifKey] = useState<string | null>(null);
   const [unblockingIds, setUnblockingIds] = useState<string[]>([]);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Load live blocked users from GET /v1/settings/blocked
   const fetchBlockedUsers = async (showSkeleton = true) => {
@@ -102,15 +102,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
       await removeRelationship(userId);
 
       // Show Toast Notification
-      setToast({ message: 'User unblocked successfully!', type: 'success' });
-      setTimeout(() => setToast(null), 3500);
+      showSuccessToast('User unblocked successfully!');
 
       // Re-fetch GET API with shimmer loader enabled
       await fetchBlockedUsers(true);
     } catch (err: any) {
       console.error('❌ [SettingsPage] Unblock Error:', err);
-      setToast({ message: err?.message || 'Failed to unblock user. Please try again.', type: 'error' });
-      setTimeout(() => setToast(null), 3500);
+      showErrorToast(err, 'Failed to unblock user. Please try again.');
     } finally {
       setUnblockingIds((prev) => prev.filter((id) => id !== userId));
     }
@@ -147,15 +145,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
       ];
       await updateNotificationSettings(itemsPayload);
 
-      setToast({ message: 'Notification setting updated successfully!', type: 'success' });
-      setTimeout(() => setToast(null), 3000);
+      showSuccessToast('Notification setting updated successfully!');
 
       // Re-fetch GET API with shimmer loader enabled after updating settings
       await fetchNotificationSettings(true);
     } catch (err: any) {
       console.warn('❌ [SettingsPage] updateNotificationSettings notice:', err?.message || err);
-      setToast({ message: 'Failed to update notification setting.', type: 'error' });
-      setTimeout(() => setToast(null), 3000);
+      showErrorToast(err, 'Failed to update notification setting.');
     } finally {
       setUpdatingNotifKey(null);
     }
@@ -209,31 +205,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
 
   return (
     <div className="mhn-settings-page-root">
-      {/* Toast Notification Alert */}
-      {toast && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '24px',
-            right: '24px',
-            zIndex: 9999,
-            padding: '12px 20px',
-            borderRadius: '8px',
-            backgroundColor: toast.type === 'success' ? '#10B981' : '#EF4444',
-            color: '#FFFFFF',
-            fontWeight: 600,
-            fontSize: '14px',
-            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-          }}
-        >
-          <span>{toast.type === 'success' ? '✅' : '❌'}</span>
-          <span>{toast.message}</span>
-        </div>
-      )}
-
       {/* Top Header Navbar */}
       <Header
         activeTab={activeNavTab}
@@ -382,13 +353,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                     className="mhn-setting-input"
                   />
                 </div>
-                <div className="mhn-general-setting-field">
-                  <label className="mhn-setting-label">Language</label>
-                  <Select className="mhn-setting-select" defaultValue="en">
-                    <option value="en">English (US)</option>
-                    <option value="de">German</option>
-                  </Select>
-                </div>
+                <Dropdown
+                  label="Language"
+                  value="en"
+                  options={[
+                    { value: 'en', label: 'English (US)' },
+                    { value: 'de', label: 'German' },
+                  ]}
+                  onChange={() => {}}
+                  placeholder=""
+                />
               </div>
             )}
 

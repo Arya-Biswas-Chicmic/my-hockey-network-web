@@ -24,6 +24,9 @@ import {
   RelationshipItem,
 } from '@my-hockey-network/core';
 
+import { QueryKeys } from '@my-hockey-network/contracts';
+import { useQuery } from '../query';
+
 interface PageProps {
   onNavigate?: (screen: string) => void;
   onLogout?: () => void;
@@ -38,115 +41,103 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [livePendingRequests, setLivePendingRequests] = useState<PendingRequestProps[]>([]);
   const [liveSuggestedUsers, setLiveSuggestedUsers] = useState<SuggestedUserProps[]>([]);
   const [apiErrorMsg, setApiErrorMsg] = useState<string | null>(null);
 
-  const loadNetworkData = async (queryTerm?: string) => {
-    setIsLoading(true);
-    setApiErrorMsg(null);
+  const qParam = debouncedSearchQuery && debouncedSearchQuery.trim().length >= 2 ? debouncedSearchQuery.trim() : undefined;
 
-    const qParam = queryTerm && queryTerm.trim().length >= 2 ? queryTerm.trim() : undefined;
+  const { data: relData, isLoading: isRelLoading, error: relError } = useQuery(
+    `${QueryKeys.NETWORK_RELATIONSHIPS}:${qParam || 'all'}`,
+    async () => getRelationships({ direction: 'incoming', status: 'PENDING', query: qParam }),
+    { staleTime: 5 * 60 * 1000 }
+  );
 
-    // 1. Pending Requests (GET /v1/relationships)
-    try {
-      const res = await getRelationships({ direction: 'incoming', status: 'PENDING', query: qParam });
+  const { data: peopleData, isLoading: isPeopleLoading } = useQuery(
+    `${QueryKeys.PEOPLE_YOU_MAY_KNOW}:${qParam || 'all'}`,
+    async () => getPeopleYouMayKnow({ limit: 10, query: qParam }),
+    { staleTime: 5 * 60 * 1000 }
+  );
 
-      if (res?.items && Array.isArray(res.items)) {
-        const mapped: PendingRequestProps[] = res.items.map((item: RelationshipItem) => {
-          const cp = item.counterparty;
-          
-          let formattedRole = cp?.roleTag || '';
-          if (!formattedRole) {
-            if (cp?.position && cp?.jerseyNumber) {
-              formattedRole = `${cp.position} • #${cp.jerseyNumber}`;
-            } else if (cp?.position) {
-              formattedRole = cp.position;
-            } else if (cp?.primaryRole || cp?.profileType) {
-              formattedRole = cp.primaryRole || cp.profileType || '-';
-            } else if (item.requestReason) {
-              formattedRole = item.requestReason;
-            } else {
-              formattedRole = '-';
-            }
-          }
+  const isLoading = isRelLoading || isPeopleLoading;
 
-          return {
-            id: item.id,
-            name: cp?.displayName || (item.source as any)?.displayName || '-',
-            avatarUrl: cp?.avatarUrl || (item.source as any)?.avatarUrl || '/userPlaceholder.png',
-            roleTag: formattedRole,
-            teamName: cp?.teamName || '-',
-            teamLogo: cp?.teamLogo || '/kcBlue.png',
-            location: cp?.location || '-',
-          };
-        });
-        setLivePendingRequests(mapped);
-      } else {
-        setLivePendingRequests([]);
-      }
-    } catch (err: any) {
-      console.warn('⚠️ [MyNetworkPage] Relationships API Error (e.g. 502):', err.message || err);
-      setLivePendingRequests([]);
+  useEffect(() => {
+    if (relError) {
+      const err = relError as any;
       if (err.statusCode === 502 || String(err.message).includes('502')) {
         setApiErrorMsg('Backend service unavailable (HTTP 502 Bad Gateway). Please try again later.');
       } else {
         setApiErrorMsg(err.message || 'Failed to load network requests.');
       }
+    } else {
+      setApiErrorMsg(null);
     }
+  }, [relError]);
 
-    // 2. People You May Know (GET /v1/recommendations/people)
-    try {
-      const peopleRes = await getPeopleYouMayKnow({ limit: 10, query: qParam });
-      if (peopleRes?.items && Array.isArray(peopleRes.items)) {
-        const mapped: SuggestedUserProps[] = peopleRes.items.map((item: any) => {
-          const prof = item.profile || item;
-          
-          let formattedRole = prof.roleTag || '';
-          if (!formattedRole) {
-            if (prof.position && prof.jerseyNumber) {
-              formattedRole = `${prof.position} • #${prof.jerseyNumber}`;
-            } else if (prof.position) {
-              formattedRole = prof.position;
-            } else {
-              formattedRole = prof.primaryRole || prof.profileType || '-';
-            }
-          }
-
-          return {
-            id: prof.id || prof.profileId || `rec_${Math.random()}`,
-            name: prof.displayName || prof.name || '-',
-            avatarUrl: prof.avatarUrl || '/userPlaceholder.png',
-            roleTag: formattedRole,
-            teamName: prof.teamName || '-',
-            teamLogo: prof.teamLogo || '/kcBlue.png',
-            location: prof.location || '-',
-            isFollowing: false,
-          };
-        });
-        setLiveSuggestedUsers(mapped);
-      } else {
-        setLiveSuggestedUsers([]);
-      }
-    } catch (err: any) {
-      console.warn('⚠️ [MyNetworkPage] People Recommendations Warning:', err.message || err);
-      setLiveSuggestedUsers([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Fetch API network data on mount & debounced search query change
   useEffect(() => {
-    if (searchQuery.trim().length === 1) return;
+    if (relData?.items && Array.isArray(relData.items)) {
+      const mapped: PendingRequestProps[] = relData.items.map((item: RelationshipItem) => {
+        const cp = item.counterparty;
+        let formattedRole = cp?.roleTag || '';
+        if (!formattedRole) {
+          if (cp?.position && cp?.jerseyNumber) {
+            formattedRole = `${cp.position} • #${cp.jerseyNumber}`;
+          } else if (cp?.position) {
+            formattedRole = cp.position;
+          } else if (cp?.primaryRole || cp?.profileType) {
+            formattedRole = cp.primaryRole || cp.profileType || '-';
+          } else if (item.requestReason) {
+            formattedRole = item.requestReason;
+          } else {
+            formattedRole = '-';
+          }
+        }
+        return {
+          id: item.id,
+          name: cp?.displayName || (item.source as any)?.displayName || '-',
+          avatarUrl: cp?.avatarUrl || (item.source as any)?.avatarUrl || '/userPlaceholder.png',
+          roleTag: formattedRole,
+          teamName: cp?.teamName || '-',
+          teamLogo: cp?.teamLogo || '/kcBlue.png',
+          location: cp?.location || '-',
+        };
+      });
+      setLivePendingRequests(mapped);
+    } else {
+      setLivePendingRequests([]);
+    }
+  }, [relData]);
 
-    const timer = setTimeout(() => {
-      loadNetworkData(debouncedSearchQuery);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [debouncedSearchQuery]);
+  useEffect(() => {
+    if (peopleData?.items && Array.isArray(peopleData.items)) {
+      const mapped: SuggestedUserProps[] = peopleData.items.map((item: any) => {
+        const prof = item.profile || item;
+        let formattedRole = prof.roleTag || '';
+        if (!formattedRole) {
+          if (prof.position && prof.jerseyNumber) {
+            formattedRole = `${prof.position} • #${prof.jerseyNumber}`;
+          } else if (prof.position) {
+            formattedRole = prof.position;
+          } else {
+            formattedRole = prof.primaryRole || prof.profileType || '-';
+          }
+        }
+        return {
+          id: prof.id || prof.profileId || `rec_${Math.random()}`,
+          name: prof.displayName || prof.name || '-',
+          avatarUrl: prof.avatarUrl || '/userPlaceholder.png',
+          roleTag: formattedRole,
+          teamName: prof.teamName || '-',
+          teamLogo: prof.teamLogo || '/kcBlue.png',
+          location: prof.location || '-',
+          isFollowing: false,
+        };
+      });
+      setLiveSuggestedUsers(mapped);
+    } else {
+      setLiveSuggestedUsers([]);
+    }
+  }, [peopleData]);
 
   const handleTabChange = (tab: string) => {
     setActiveNavTab(tab);
@@ -230,7 +221,6 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                 <ProfileSummaryCard 
                   coverUrl={resolveCoverUrl((user?.profile as any)?.coverImageUrl || (user?.profile as any)?.coverUrl, "/cover.png")}
                   location={user?.profile?.city || "-"}
-                  teamName="HC Bloemendaal"
                   teamLogo="/HC.png"
                   onPostClick={() => {
                     if (onNavigate) onNavigate('home');
@@ -240,7 +230,6 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                 <ManageNetworkCard 
                   bannerUrl={resolveCoverUrl((user?.profile as any)?.coverImageUrl || (user?.profile as any)?.coverUrl, "/cover.png")}
                   location={user?.profile?.city || "-"}
-                  teamName="HC Bloemendaal"
                   teamLogo="/HC.png"
                   followersCount="-"
                   followingCount="-"
@@ -264,21 +253,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
             {/* Right Main Content Area */}
             <section className="mhn-network-col-main">
               {apiErrorMsg && (
-                <div
-                  style={{
-                    backgroundColor: '#FEF2F2',
-                    border: '1px solid #FCA5A5',
-                    color: '#DC2626',
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    marginBottom: '16px',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                  }}
-                >
+                <div className="mhn-network-api-error-banner">
                   <span>⚠️</span>
                   <span>{apiErrorMsg}</span>
                 </div>
@@ -316,37 +291,14 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                   </div>
 
                   {/* Sub-Filter Tabs Row matching Figma Screenshot 2 */}
-                  <div
-                    className="mhn-network-filter-tabs-row"
-                    style={{
-                      display: 'flex',
-                      width: '100%',
-                      borderBottom: '1px solid #E2E8F0',
-                      marginTop: '20px',
-                      marginBottom: '24px',
-                      gap: '0',
-                    }}
-                  >
+                  <div className="mhn-network-filter-tabs-row">
                     {filterTabs.map((tab) => {
                       const isActive = activeFilterTab === tab.id;
                       return (
                         <Button
                           key={tab.id}
                           onClick={() => setActiveFilterTab(tab.id)}
-                          style={{
-                            flex: 1,
-                            padding: '14px 16px',
-                            backgroundColor: 'transparent',
-                            border: 'none',
-                            borderBottom: isActive ? '3px solid #18181B' : '3px solid transparent',
-                            marginBottom: '-1px',
-                            color: isActive ? '#18181B' : '#71717A',
-                            fontSize: '15px',
-                            fontWeight: isActive ? 700 : 500,
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease-in-out',
-                            textAlign: 'center',
-                          }}
+                          className={`mhn-network-filter-tab-btn ${isActive ? 'active' : ''}`}
                         >
                           {tab.label}
                         </Button>

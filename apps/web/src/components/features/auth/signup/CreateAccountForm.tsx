@@ -28,8 +28,65 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
   const [localError, setLocalError] = useState<string | null>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
 
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ fullName?: string; email?: string; dob?: string }>({});
+
   // Compute real-time age
   const currentAge = useMemo(() => calculateAge(dob), [dob]);
+
+  const validateFields = (
+    nameVal: string,
+    emailVal: string,
+    dobVal: string
+  ): { fullName?: string; email?: string; dob?: string } => {
+    const errs: { fullName?: string; email?: string; dob?: string } = {};
+
+    // 1. Full Name
+    const trimmedName = nameVal.trim();
+    if (!trimmedName) {
+      errs.fullName = 'Full Name is required.';
+    } else if (trimmedName.length < 2) {
+      errs.fullName = 'Full Name must be at least 2 characters.';
+    } else if (nameVal.length > 50) {
+      errs.fullName = 'Full Name cannot be more than 50 characters.';
+    }
+
+    // 2. Email Address
+    const trimmedEmail = emailVal.trim();
+    if (!trimmedEmail) {
+      errs.email = 'Email Address is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      errs.email = 'Please enter a valid email address.';
+    }
+
+    // 3. Date of Birth
+    const trimmedDob = dobVal.trim();
+    if (!trimmedDob) {
+      errs.dob = 'Date of Birth is required.';
+    } else {
+      const computedAge = calculateAge(trimmedDob);
+      if (computedAge === null) {
+        errs.dob = 'Please enter a valid date of birth (DD/MM/YYYY).';
+      } else {
+        const roleUpper = selectedRole.toUpperCase();
+        if (roleUpper === 'PARENT') {
+          if (computedAge < 18) {
+            errs.dob = 'Parent account holders must be at least 18 years old.';
+          } else if (computedAge > 100) {
+            errs.dob = 'Maximum age limit is 100 years.';
+          }
+        } else {
+          if (computedAge < 5) {
+            errs.dob = `Minimum age for ${selectedRole.toLowerCase()}s is 5 years.`;
+          } else if (computedAge > 100) {
+            errs.dob = 'Maximum age limit is 100 years.';
+          }
+        }
+      }
+    }
+
+    return errs;
+  };
 
   // Smart DOB auto-formatter: e.g. 10042020 -> 10/04/2020
   const formatDobInput = (val: string) => {
@@ -48,6 +105,9 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
     const formatted = formatDobInput(rawVal);
     setDob(formatted);
     setLocalError(null);
+    if (hasAttemptedSubmit) {
+      setFieldErrors(validateFields(fullName, email, formatted));
+    }
   };
 
   const handleCalendarClick = () => {
@@ -66,53 +126,45 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
       const parts = dateVal.split('-');
       if (parts.length === 3) {
         const [yyyy, mm, dd] = parts;
-        setDob(`${dd}/${mm}/${yyyy}`);
+        const formatted = `${dd}/${mm}/${yyyy}`;
+        setDob(formatted);
         setLocalError(null);
+        if (hasAttemptedSubmit) {
+          setFieldErrors(validateFields(fullName, email, formatted));
+        }
       }
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setHasAttemptedSubmit(true);
     setLocalError(null);
 
-    // Validate Sign Up Age Rules
-    const validation = validateSignUpAgeAndApproval(selectedRole, dob);
-    
-    // Allow minor age check to pass here; parent email is collected post-OTP
-    if (currentAge !== null) {
-      const roleUpper = selectedRole.toUpperCase();
-      if (roleUpper === 'PARENT') {
-        if (currentAge < 18) {
-          setLocalError('Parent account holders must be at least 18 years old.');
-          return;
-        }
-        if (currentAge > 100) {
-          setLocalError('Maximum age limit is 100 years.');
-          return;
-        }
-      } else {
-        if (currentAge < 5) {
-          setLocalError(`Minimum age for ${selectedRole.toLowerCase()}s is 5 years.`);
-          return;
-        }
-        if (currentAge > 100) {
-          setLocalError('Maximum age limit is 100 years.');
-          return;
-        }
-      }
-    } else if (dob) {
-      setLocalError('Please enter a valid date of birth.');
+    const errs = validateFields(fullName, email, dob);
+    setFieldErrors(errs);
+
+    if (Object.keys(errs).length > 0) {
       return;
     }
 
     if (onSignUp) {
       onSignUp({
-        fullName,
-        email,
-        dob,
+        fullName: fullName.trim(),
+        email: email.trim(),
+        dob: dob.trim(),
       });
     }
+  };
+
+  const renderFieldError = (errorMsg?: string) => {
+    if (!errorMsg) return null;
+    return (
+      <span className="mhn-edit-profile-field-error">
+        <span>⚠️</span>
+        <span>{errorMsg}</span>
+      </span>
+    );
   };
 
   return (
@@ -163,7 +215,8 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="auth-form-stack">
+      <form onSubmit={handleSubmit} className="auth-form-stack" noValidate>
+        {/* Full Name Field */}
         <div className="auth-form-group">
           <label className="auth-label" htmlFor="fullName">
             {CREATE_ACCOUNT_STRINGS.fullNameLabel}
@@ -172,15 +225,23 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
             <Input
               id="fullName"
               type="text"
-              className="auth-input"
+              maxLength={50}
+              className={`auth-input ${hasAttemptedSubmit && fieldErrors.fullName ? 'mhn-input-invalid' : ''}`}
               placeholder={CREATE_ACCOUNT_STRINGS.fullNamePlaceholder}
               value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
+              onChange={(e) => {
+                const val = e.target.value.slice(0, 50);
+                setFullName(val);
+                if (hasAttemptedSubmit) {
+                  setFieldErrors(validateFields(val, email, dob));
+                }
+              }}
             />
           </div>
+          {hasAttemptedSubmit && renderFieldError(fieldErrors.fullName)}
         </div>
 
+        {/* Email Address Field */}
         <div className="auth-form-group">
           <label className="auth-label" htmlFor="email">
             {CREATE_ACCOUNT_STRINGS.emailLabel}
@@ -189,15 +250,23 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
             <Input
               id="email"
               type="email"
-              className="auth-input"
+              maxLength={100}
+              className={`auth-input ${hasAttemptedSubmit && fieldErrors.email ? 'mhn-input-invalid' : ''}`}
               placeholder={CREATE_ACCOUNT_STRINGS.emailPlaceholder}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              onChange={(e) => {
+                const val = e.target.value;
+                setEmail(val);
+                if (hasAttemptedSubmit) {
+                  setFieldErrors(validateFields(fullName, val, dob));
+                }
+              }}
             />
           </div>
+          {hasAttemptedSubmit && renderFieldError(fieldErrors.email)}
         </div>
 
+        {/* Date of Birth Field */}
         <div className="auth-form-group">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label className="auth-label" htmlFor="dob">
@@ -217,12 +286,11 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
             <Input
               id="dob"
               type="text"
-              className="auth-input"
+              className={`auth-input ${hasAttemptedSubmit && fieldErrors.dob ? 'mhn-input-invalid' : ''}`}
               placeholder={CREATE_ACCOUNT_STRINGS.dobPlaceholder}
               value={dob}
               onChange={handleDobChange}
               maxLength={10}
-              required
             />
             <img
               src="/calendar.png"
@@ -247,6 +315,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
               }}
             />
           </div>
+          {hasAttemptedSubmit && renderFieldError(fieldErrors.dob)}
         </div>
 
         <Button type="submit" className="btn-submit" disabled={loading} style={{ opacity: loading ? 0.75 : 1 }}>

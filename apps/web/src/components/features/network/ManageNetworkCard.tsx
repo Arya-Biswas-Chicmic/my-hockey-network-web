@@ -1,6 +1,9 @@
 import { Button } from '../../common/Button';
 import React from 'react';
 import { useAuth } from '../../../hooks/use-auth';
+import { useQuery } from '../../../query';
+import { getProfile } from '@my-hockey-network/core';
+import { QueryKeys } from '@my-hockey-network/contracts';
 import { resolveMediaUrl, resolveCoverUrl } from '../../../utils/mediaUtils';
 
 interface ManageNetworkCardProps {
@@ -30,11 +33,24 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
 }) => {
   const { user } = useAuth();
 
-  const resolvedName = user?.profile?.displayName || (user as any)?.displayName || name || 'Player';
-  const resolvedRole = user?.primaryRole || user?.profile?.type || role || 'PLAYER';
-  const rawAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl || avatarUrl;
+  const profileId = user?.profile?.id || (user as any)?.profileId || (user as any)?.id;
+
+  const { data: profileRes } = useQuery(
+    profileId ? `${QueryKeys.USER_PROFILE}:${profileId}` : null,
+    profileId ? () => getProfile(profileId) : null,
+    { staleTime: 30 * 1000 }
+  );
+
+  const activeProfile = (profileRes as any)?.profile || (profileRes as any)?.data?.profile || user?.profile;
+
+  const resolvedName = activeProfile?.displayName || user?.profile?.displayName || (user as any)?.displayName || name || 'Player';
+  const resolvedRole = user?.primaryRole || activeProfile?.type || user?.profile?.type || role || 'PLAYER';
+  const rawAvatar = activeProfile?.avatarUrl || user?.profile?.avatarUrl || (user as any)?.avatarUrl || avatarUrl;
   const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
   const rawBanner =
+    (activeProfile as any)?.coverImageUrl ||
+    (activeProfile as any)?.coverUrl ||
+    (activeProfile as any)?.coverImageKey ||
     (user?.profile as any)?.coverImageUrl ||
     (user?.profile as any)?.coverUrl ||
     (user?.profile as any)?.coverImageKey ||
@@ -45,7 +61,35 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
   const resolvedFollowers = user?.counts?.followers !== undefined ? user.counts.followers : (followersCount ?? 0);
   const resolvedFollowing = user?.counts?.following !== undefined ? user.counts.following : (followingCount ?? 0);
 
-  const resolvedLocation = user?.profile?.city || (location !== 'Austria, Europe' ? location : undefined) || '-';
+  const resolvedLocation = activeProfile?.city || activeProfile?.location || user?.profile?.city || (location !== 'Austria, Europe' ? location : undefined) || '-';
+
+  const isParentRole = String(resolvedRole).toUpperCase() === 'PARENT';
+  const careerList =
+    (activeProfile as any)?.careerEntries ||
+    (activeProfile as any)?.career ||
+    (user?.profile as any)?.careerEntries ||
+    (user?.profile as any)?.career ||
+    (user as any)?.careerEntries ||
+    (user as any)?.career;
+
+  const firstCareerTeam = Array.isArray(careerList) && careerList.length > 0 ? careerList[0]?.teamName : undefined;
+
+  const userTeam =
+    firstCareerTeam ||
+    activeProfile?.teamName ||
+    (activeProfile as any)?.team ||
+    (activeProfile as any)?.academyName ||
+    (activeProfile as any)?.currentTeam ||
+    (user?.profile as any)?.teamName ||
+    (user?.profile as any)?.team ||
+    (user?.profile as any)?.academyName ||
+    (user?.profile as any)?.currentTeam ||
+    (user as any)?.teamName ||
+    (user as any)?.team ||
+    teamName ||
+    'HC Bregenzerwald';
+
+  const effectiveTeamName = !isParentRole ? userTeam : undefined;
 
   return (
     <div className="mhn-manage-network-stack">
@@ -93,18 +137,18 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
             </div>
           )}
 
-          {/* Team Badge Pill */}
-          {teamName && (
+          {/* Team Badge Pill (Only shown for Player or Coach if a team was added, never for Parent) */}
+          {effectiveTeamName && (
             <div className="mhn-profile-team-badge">
               <img 
                 src={teamLogo} 
-                alt={teamName} 
+                alt={effectiveTeamName} 
                 className="mhn-profile-team-logo"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/HC.png';
                 }}
               />
-              <span className="mhn-profile-team-name">{teamName}</span>
+              <span className="mhn-profile-team-name">{effectiveTeamName}</span>
             </div>
           )}
         </div>

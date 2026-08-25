@@ -6,6 +6,7 @@ const root = process.cwd();
 const findings = [];
 const allowedWebPrimitiveFiles = new Set([
   'apps/web/src/components/common/Button.tsx',
+  'apps/web/src/components/common/Dropdown.tsx',
   'apps/web/src/components/common/FormControls.tsx',
 ]);
 

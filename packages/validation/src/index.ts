@@ -9,3 +9,5 @@ export const otpRequestSchema = z.object({
   destination: z.string().trim().min(1),
   intent: z.enum(['SIGNUP', 'SIGNIN']),
 });
+
+export * from './profileValidation';

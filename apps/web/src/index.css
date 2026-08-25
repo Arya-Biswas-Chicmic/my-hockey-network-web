@@ -1290,6 +1290,11 @@
   font-size: 14px;
   font-weight: 600;
   color: #ffffff;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
 }
 
 .mhn-user-chevron {
@@ -1438,6 +1443,11 @@
   font-size: 13px;
   font-weight: 600;
   color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .mhn-family-switch-btn {
@@ -1652,6 +1662,12 @@
   color: #0f172a;
   margin: 0 0 2px 0;
   letter-spacing: -0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  padding: 0 8px;
+  box-sizing: border-box;
 }
 
 .mhn-profile-role {
@@ -1874,6 +1890,11 @@
   font-size: 15px;
   font-weight: 700;
   color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .mhn-audience-dropdown-container {
@@ -2291,6 +2312,26 @@
 .mhn-feed-search-input:focus {
   border-color: #1860c3;
   box-shadow: 0 0 0 3px rgba(24, 96, 195, 0.1);
+}
+
+.mhn-feed-sort-wrapper {
+  width: 125px;
+  flex-shrink: 0;
+}
+
+.mhn-feed-sort-wrapper .mhn-form-field-group {
+  width: 100%;
+}
+
+.mhn-feed-sort-wrapper .mhn-dropdown-select {
+  height: 38px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0 30px 0 12px;
+  font-size: 13px;
+  color: #334155;
+  font-weight: 500;
+  background-color: #ffffff;
 }
 
 .mhn-feed-filter-wrapper {
@@ -3845,6 +3886,52 @@
 
 .mhn-network-view-all:hover {
   text-decoration: underline;
+}
+
+/* Network API Error Banner */
+.mhn-network-api-error-banner {
+  background-color: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  color: #DC2626;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Sub-Filter Tabs Row */
+.mhn-network-filter-tabs-row {
+  display: flex;
+  width: 100%;
+  border-bottom: 1px solid #E2E8F0;
+  margin-top: 20px;
+  margin-bottom: 24px;
+  gap: 0;
+}
+
+.mhn-network-filter-tab-btn {
+  flex: 1;
+  padding: 14px 16px;
+  background-color: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  color: #71717A;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  text-align: center;
+}
+
+.mhn-network-filter-tab-btn.active {
+  border-bottom-color: #18181B;
+  color: #18181B;
+  font-weight: 700;
 }
 
 /* Suggested Users Grid & Pending Requests Grid */
@@ -5488,16 +5575,16 @@
 }
 
 .mhn-profile-avatar-inner {
-  width: 148px;
-  height: 148px;
+  width: 156px;
+  height: 156px;
   border-radius: 50%;
-  border: 4px solid #0088ff;
+  border: 4px solid #1860c3;
   background-color: #ffffff;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
 }
 
 .mhn-profile-hero-avatar-img {
@@ -5508,44 +5595,41 @@
 
 .mhn-profile-meta-and-actions {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
+  flex-direction: column;
+  gap: 4px;
   flex: 1;
-  margin-top: 16px;
-  flex-wrap: wrap;
+  margin-top: 10px;
+  width: 100%;
+  min-width: 0;
 }
 
-.mhn-profile-text-meta {
+.mhn-profile-top-info-row {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
 }
 
 .mhn-profile-hero-name {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
   color: #0f172a;
   margin: 0;
   line-height: 1.2;
-}
-
-.mhn-profile-hero-role {
-  font-size: 13px;
-  font-weight: 500;
-  color: #64748b;
-  margin: 0;
-}
-
-.mhn-profile-hero-role strong {
-  color: #0f172a;
-  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  min-width: 0;
+  flex: 1;
 }
 
 .mhn-profile-hero-stats {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   font-size: 14px;
   color: #475569;
   margin-top: 2px;
@@ -5556,10 +5640,27 @@
   font-weight: 700;
 }
 
+.mhn-profile-hero-role {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 2px 0 0 0;
+}
+
+.mhn-profile-hero-location {
+  font-size: 14px;
+  color: #475569;
+  font-weight: 400;
+  margin-top: 2px;
+  display: block;
+  text-align: left;
+}
+
 .mhn-profile-action-buttons {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .mhn-btn-share-profile {
@@ -7927,6 +8028,13 @@
   font-size: 14px;
   font-weight: 600;
   color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .mhn-ward-age {
@@ -8051,12 +8159,42 @@
   justify-content: space-between;
   padding: 10px 0;
   border-bottom: 1px solid #f1f5f9;
+  width: 100%;
+  gap: 16px;
+}
+
+.mhn-permission-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.mhn-permission-row .mhn-form-field-group {
+  margin-left: auto;
+  margin-bottom: 0;
+  flex-shrink: 0;
+  width: auto !important;
+}
+
+.mhn-permission-row .mhn-form-field-input-wrapper {
+  width: auto !important;
 }
 
 .mhn-permission-row:last-child {
   border-bottom: none;
 }
 
+.manage {
+  height: 96px;
+  width: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.secure {
+  width: 18px;
+  height: 22px;
+}
 .mhn-permission-title {
   font-size: 14px;
   font-weight: 500;
@@ -8089,6 +8227,9 @@
   color: #0C1014;
   margin: 0 0 28px 0;
   line-height: 40px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
 }
 
 .mhn-trouble-footer {
@@ -8117,8 +8258,11 @@
 .mhn-flow-subtitle {
   font-size: 18px;
   color: #44474D;
-  margin: 0 0 24px 0;
-  line-height: 28px;
+  margin: 0 0 32px 0;
+  line-height: 26px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
 }
 
 .mhn-flow-options-stack {
@@ -8389,14 +8533,14 @@
    ========================================================================== */
 .mhn-supervision-requests-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   width: 100%;
 }
 
 @media (max-width: 900px) {
   .mhn-supervision-requests-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -8723,15 +8867,19 @@
   0% {
     background-position: -250% 0;
   }
+
   100% {
     background-position: 250% 0;
   }
 }
 
 @keyframes pulseGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.6;
   }
@@ -8740,14 +8888,12 @@
 .mhn-shimmer-box,
 .mhn-skeleton-line,
 .mhn-skeleton-avatar {
-  background: linear-gradient(
-    90deg,
-    #F1F5F9 0%,
-    #E2E8F0 25%,
-    #F8FAFC 50%,
-    #E2E8F0 75%,
-    #F1F5F9 100%
-  );
+  background: linear-gradient(90deg,
+      #F1F5F9 0%,
+      #E2E8F0 25%,
+      #F8FAFC 50%,
+      #E2E8F0 75%,
+      #F1F5F9 100%);
   background-size: 250% 100%;
   animation: shimmerWave 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
@@ -9057,7 +9203,7 @@
   border: 1px solid #E2E8F0;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .mhn-notice-banner {
@@ -9113,7 +9259,8 @@
   color: #334155;
   margin-bottom: 12px;
 }
- .route-loader {
+
+.route-loader {
   display: flex;
   min-height: 100vh;
   align-items: center;
@@ -9286,13 +9433,25 @@
 }
 
 @keyframes mhnFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes mhnPopIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Custom Auth Select Dropdown */
@@ -9673,4 +9832,130 @@
   left: 20px;
 }
 
+/* Edit Profile Form Validation & Error Styling */
+.mhn-edit-profile-input {
+  width: 100%;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  padding: 0 12px;
+  font-size: 14px;
+  outline: none;
+  background-color: #ffffff;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
 
+.mhn-edit-profile-input:focus {
+  border-color: #1860c3;
+  box-shadow: 0 0 0 3px rgba(24, 96, 195, 0.15);
+}
+
+.mhn-edit-profile-input.mhn-input-invalid,
+.mhn-input-invalid,
+.mhn-edit-profile-input-error,
+.mhn-input-error,
+.mhn-dropdown-error {
+  border-color: #dc2626 !important;
+  background-color: #fef2f2 !important;
+}
+
+.mhn-edit-profile-field-error {
+  font-size: 12px;
+  color: #dc2626;
+  font-weight: 500;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mhn-edit-profile-char-count {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+  text-align: right;
+}
+
+/* Standardized Custom Dropdown & FormField Component Styling */
+.mhn-form-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.mhn-form-field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.mhn-form-field-required {
+  color: #dc2626;
+  margin-left: 2px;
+}
+
+.mhn-form-field-helper {
+  font-size: 12px;
+  font-weight: 400;
+  color: #64748b;
+}
+
+.mhn-form-field-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.mhn-dropdown-wrapper {
+  position: relative;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+}
+
+.mhn-dropdown-select {
+  width: 100%;
+  height: 42px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  padding: 0 38px 0 14px;
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+  background-color: #ffffff;
+  color: #0f172a;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mhn-dropdown-select:focus {
+  border-color: #1860c3;
+  box-shadow: 0 0 0 3px rgba(24, 96, 195, 0.15);
+}
+
+.mhn-dropdown-select.mhn-dropdown-error {
+  border-color: #dc2626 !important;
+  background-color: #fef2f2 !important;
+}
+
+.mhn-dropdown-select.mhn-dropdown-disabled {
+  background-color: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  border-color: #cbd5e1 !important;
+}
+
+.mhn-dropdown-arrow-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  object-fit: contain;
+}

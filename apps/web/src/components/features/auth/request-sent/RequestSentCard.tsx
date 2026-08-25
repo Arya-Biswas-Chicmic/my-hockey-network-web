@@ -1,5 +1,6 @@
 import { Button } from '../../../common/Button';
-import React from 'react';
+import { Spinner } from '../../../common/Spinner';
+import React, { useState } from 'react';
 import { REQUEST_SENT_STRINGS } from '@my-hockey-network/shared';
 import { RequestSentBadgeIcon, HockeyTournamentIcon, CommunityBoardIcon } from './RequestSentIcons';
 import { PublicFeatureCard } from './PublicFeatureCard';
@@ -8,13 +9,32 @@ interface RequestSentCardProps {
   onContinue?: () => void;
   onSelectTournament?: () => void;
   onSelectCommunity?: () => void;
+  loading?: boolean;
 }
 
 export const RequestSentCard: React.FC<RequestSentCardProps> = ({
-  onContinue = () => alert('Navigating to main dashboard...'),
-  onSelectTournament = () => alert('Navigating to Public Tournaments...'),
-  onSelectCommunity = () => alert('Navigating to Community Board...'),
+  onContinue,
+  onSelectTournament,
+  onSelectCommunity,
+  loading: externalLoading = false,
 }) => {
+  const [internalLoading, setInternalLoading] = useState(false);
+  const isLoading = externalLoading || internalLoading;
+
+  const handleContinueClick = async () => {
+    if (isLoading) return;
+    setInternalLoading(true);
+    try {
+      if (onContinue) {
+        await onContinue();
+      } else {
+        alert('Navigating to main dashboard...');
+      }
+    } finally {
+      setInternalLoading(false);
+    }
+  };
+
   return (
     <div className="request-sent-modal">
       <div className="request-sent-content">
@@ -44,9 +64,24 @@ export const RequestSentCard: React.FC<RequestSentCardProps> = ({
           <Button
             type="button"
             className="btn-request-sent-continue"
-            onClick={onContinue}
+            onClick={handleContinueClick}
+            disabled={isLoading}
+            style={{
+              opacity: isLoading ? 0.75 : 1,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
           >
-            {REQUEST_SENT_STRINGS.continueButton}
+            {isLoading ? (
+              <>
+                <Spinner size="sm" color="#FFFFFF" />
+                <span>Continuing...</span>
+              </>
+            ) : (
+              REQUEST_SENT_STRINGS.continueButton
+            )}
           </Button>
         </div>
 

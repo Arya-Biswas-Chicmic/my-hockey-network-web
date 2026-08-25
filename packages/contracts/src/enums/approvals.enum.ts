@@ -1,0 +1,13 @@
+export enum ApprovalStatusEnum {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  DECLINED = 'DECLINED',
+  EXPIRED = 'EXPIRED',
+}
+
+export enum ApprovalModeEnum {
+  SINGLE_USE = 'SINGLE_USE',
+  DURATION = 'DURATION',
+  UNBOUNDED = 'UNBOUNDED',
+  INDEFINITE = 'INDEFINITE',
+}

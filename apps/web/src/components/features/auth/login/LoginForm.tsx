@@ -24,31 +24,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const computeEmailError = (val: string): string | null => {
     const trimmed = val.trim();
     if (!trimmed) {
-      return 'Please fill out this field.';
-    }
-    if (!trimmed.includes('@')) {
-      return `Please include an '@' in the email address. '${trimmed}' is missing an '@'.`;
-    }
-    if (trimmed.indexOf('@') === 0) {
-      return `Please enter a part preceding '@'. '${trimmed}' is incomplete.`;
-    }
-    if (trimmed.endsWith('@')) {
-      return `Please enter a part following '@'. '${trimmed}' is incomplete.`;
-    }
-    const parts = trimmed.split('@');
-    if (parts.length > 2) {
-      return `An email address cannot contain multiple '@' symbols in '${trimmed}'.`;
-    }
-    const domain = parts[1];
-    if (!domain.includes('.')) {
-      return `Please include a valid domain (e.g. .com) in '${trimmed}'.`;
-    }
-    if (domain.endsWith('.')) {
-      return `Please enter a domain suffix after '.' in '${trimmed}'.`;
+      return 'Email Address is required.';
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmed)) {
-      return `Please enter a valid email address. '${trimmed}' is invalid.`;
+      return 'Enter a valid email address.';
     }
     return null;
   };
@@ -88,7 +68,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       </div>
 
       <form onSubmit={handleSubmit} className="auth-form-stack">
-        <div className="auth-form-group" style={{ position: 'relative' }}>
+        <div className="auth-form-group">
           <label className="auth-label" htmlFor="loginEmail">
             Email Address
           </label>
@@ -96,87 +76,22 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             <Input
               id="loginEmail"
               type="text"
-              className="auth-input"
+              className={`auth-input ${activeError ? 'mhn-input-invalid' : ''}`}
               placeholder="enter email address"
               value={email}
               onChange={handleChange}
               onBlur={() => {
                 if (email) validateEmail(email);
               }}
-              style={
-                activeError
-                  ? {
-                      borderColor: '#1D61D1',
-                      outline: 'none',
-                      boxShadow: '0 0 0 3px rgba(29, 97, 209, 0.2)',
-                    }
-                  : {}
-              }
             />
           </div>
 
-          {/* Floating Tooltip Callout Bubble (HTML5 Validation Style) */}
+          {/* Standardized Edit Profile Reference Error UI */}
           {activeError && (
-            <div
-              className="mhn-validation-tooltip-bubble"
-              style={{
-                position: 'absolute',
-                top: 'calc(100% + 6px)',
-                left: '0',
-                zIndex: 100,
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #71717A',
-                borderRadius: '6px',
-                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.16)',
-                padding: '8px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                maxWidth: '100%',
-                fontSize: '13px',
-                color: '#18181B',
-                fontWeight: 500,
-                lineHeight: '1.35',
-              }}
-            >
-              {/* Pointer Triangle Arrow */}
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '-6px',
-                  left: '18px',
-                  width: '10px',
-                  height: '10px',
-                  backgroundColor: '#FFFFFF',
-                  borderLeft: '1px solid #71717A',
-                  borderTop: '1px solid #71717A',
-                  transform: 'rotate(45deg)',
-                }}
-              />
-
-              {/* Orange Exclamation Badge */}
-              <div
-                style={{
-                  width: '20px',
-                  height: '20px',
-                  backgroundColor: '#EA580C',
-                  borderRadius: '3px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#FFFFFF',
-                  fontSize: '13px',
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  lineHeight: 1,
-                }}
-              >
-                !
-              </div>
-
-              {/* Tooltip Text */}
+            <span className="mhn-edit-profile-field-error">
+              <span>⚠️</span>
               <span>{activeError}</span>
-            </div>
+            </span>
           )}
         </div>
 

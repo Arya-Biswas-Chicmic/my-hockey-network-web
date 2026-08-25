@@ -1,6 +1,9 @@
 import { Button } from '../../common/Button';
 import React from 'react';
 import { useAuth } from '../../../hooks/use-auth';
+import { useQuery } from '../../../query';
+import { getProfile } from '@my-hockey-network/core';
+import { QueryKeys } from '@my-hockey-network/contracts';
 import { resolveMediaUrl, resolveCoverUrl } from '../../../utils/mediaUtils';
 
 interface ProfileSummaryCardProps {
@@ -28,13 +31,27 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
   following = '700',
   onPostClick
 }) => {
-  const { user } = useAuth();
+  const { user, checkSupervisionPermission, assertSupervisionPermission } = useAuth();
+  const canCreatePost = checkSupervisionPermission('create_posts');
 
-  const resolvedName = user?.profile?.displayName || (user as any)?.displayName || name || 'Player';
-  const resolvedRole = role || user?.primaryRole || user?.profile?.type || 'PLAYER';
-  const rawAvatar = user?.profile?.avatarUrl || avatarUrl;
+  const profileId = user?.profile?.id || (user as any)?.profileId || (user as any)?.id;
+
+  const { data: profileRes } = useQuery(
+    profileId ? `${QueryKeys.USER_PROFILE}:${profileId}` : null,
+    profileId ? () => getProfile(profileId) : null,
+    { staleTime: 30 * 1000 }
+  );
+
+  const activeProfile = (profileRes as any)?.profile || (profileRes as any)?.data?.profile || user?.profile;
+
+  const resolvedName = activeProfile?.displayName || user?.profile?.displayName || (user as any)?.displayName || name || 'Player';
+  const resolvedRole = role || user?.primaryRole || activeProfile?.type || user?.profile?.type || 'PLAYER';
+  const rawAvatar = activeProfile?.avatarUrl || user?.profile?.avatarUrl || avatarUrl;
   const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
   const rawCover =
+    (activeProfile as any)?.coverImageUrl ||
+    (activeProfile as any)?.coverUrl ||
+    (activeProfile as any)?.coverImageKey ||
     (user?.profile as any)?.coverImageUrl ||
     (user?.profile as any)?.coverUrl ||
     (user?.profile as any)?.coverImageKey ||
@@ -45,10 +62,35 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
   const resolvedFollowers = user?.counts?.followers !== undefined ? user.counts.followers : (followers ?? 0);
   const resolvedFollowing = user?.counts?.following !== undefined ? user.counts.following : (following ?? 0);
 
-  const resolvedLocation = user?.profile?.city || (location !== 'Austria, Europe' ? location : undefined) || '-';
+  const resolvedLocation = activeProfile?.city || activeProfile?.location || user?.profile?.city || (location !== 'Austria, Europe' ? location : undefined) || '-';
 
-  const { checkSupervisionPermission, assertSupervisionPermission } = useAuth();
-  const canCreatePost = checkSupervisionPermission('create_posts');
+  const isParentRole = String(resolvedRole).toUpperCase() === 'PARENT';
+  const careerList =
+    (activeProfile as any)?.careerEntries ||
+    (activeProfile as any)?.career ||
+    (user?.profile as any)?.careerEntries ||
+    (user?.profile as any)?.career ||
+    (user as any)?.careerEntries ||
+    (user as any)?.career;
+
+  const firstCareerTeam = Array.isArray(careerList) && careerList.length > 0 ? careerList[0]?.teamName : undefined;
+
+  const userTeam =
+    firstCareerTeam ||
+    activeProfile?.teamName ||
+    (activeProfile as any)?.team ||
+    (activeProfile as any)?.academyName ||
+    (activeProfile as any)?.currentTeam ||
+    (user?.profile as any)?.teamName ||
+    (user?.profile as any)?.team ||
+    (user?.profile as any)?.academyName ||
+    (user?.profile as any)?.currentTeam ||
+    (user as any)?.teamName ||
+    (user as any)?.team ||
+    teamName ||
+    'HC Bloemendaal';
+
+  const effectiveTeamName = !isParentRole ? userTeam : undefined;
 
   return (
     <div className="mhn-profile-summary-stack">
@@ -76,7 +118,7 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
 
         {/* User Identity Details */}
         <div className="mhn-profile-info">
-          <h3 className="mhn-profile-name">{resolvedName}</h3>
+          <h3 className="mhn-profile-name" title={resolvedName}>{resolvedName}</h3>
           <p className="mhn-profile-role">{resolvedRole}</p>
 
           {/* Location Line */}
@@ -90,11 +132,11 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
             </div>
           )}
 
-          {/* Team Pill Badge */}
-          {teamName && (
+          {/* Team Pill Badge (Only shown for Player or Coach if a team was added, never for Parent) */}
+          {effectiveTeamName && (
             <div className="mhn-profile-team-pill">
-              {teamLogo && <img src={teamLogo} alt={teamName} className="mhn-team-pill-logo" />}
-              <span className="mhn-team-pill-name">{teamName}</span>
+              {teamLogo && <img src={teamLogo} alt={effectiveTeamName} className="mhn-team-pill-logo" />}
+              <span className="mhn-team-pill-name">{effectiveTeamName}</span>
             </div>
           )}
 

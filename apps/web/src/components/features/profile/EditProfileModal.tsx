@@ -1,10 +1,15 @@
 import { Button } from '../../common/Button';
-import { Input, Select, Textarea } from '../../common/FormControls';
-import React, { useState, useEffect, useRef } from 'react';
+import { Input, Select, Textarea, Dropdown } from '../../common/FormControls';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../../hooks/use-auth';
 import { Spinner } from '../../common/Spinner';
 import { uploadMediaFile } from '@my-hockey-network/core';
 import { resolveMediaUrl } from '../../../utils/mediaUtils';
+import type { AuthMeResponse } from '@my-hockey-network/contracts';
+import { QueryKeys } from '@my-hockey-network/contracts';
+import { validateProfileField } from '@my-hockey-network/validation';
+import { globalQueryClient } from '../../../query';
+import { useReferenceData } from '../../../hooks/use-reference-data';
 
 export interface EditProfileFormData {
   firstName: string;
@@ -26,7 +31,7 @@ export interface EditProfileFormData {
 interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave?: (updatedData: EditProfileFormData) => Promise<void> | void;
+  onSave?: (updatedData: EditProfileFormData) => Promise<AuthMeResponse | void> | void;
 }
 
 const POSITION_OPTIONS = [
@@ -70,39 +75,45 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   onSave,
 }) => {
   const { user } = useAuth();
+  const { positions: refPositions } = useReferenceData();
+  const positionOptions = refPositions.length ? refPositions : POSITION_OPTIONS;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
 
-  const extractInitialValues = (): EditProfileFormData => {
-    const prof = user?.profile;
-    let dobFormatted = '';
-    if (prof?.dateOfBirth) {
-      try {
-        dobFormatted = new Date(prof?.dateOfBirth).toISOString().split('T')[0];
-      } catch {
-        dobFormatted = String(prof?.dateOfBirth);
+  const extractProfileValues = useCallback(
+    (userObj?: AuthMeResponse | null): EditProfileFormData => {
+      const prof = userObj?.profile || user?.profile;
+      let dobFormatted = '';
+      if (prof?.dateOfBirth) {
+        try {
+          const str = String(prof.dateOfBirth);
+          dobFormatted = str.includes('T') ? str.split('T')[0] : str;
+        } catch {
+          dobFormatted = String(prof.dateOfBirth);
+        }
       }
-    }
 
-    return {
-      firstName: prof?.firstName || '',
-      lastName: prof?.lastName || '',
-      displayName: prof?.displayName || (user as any)?.displayName || '',
-      bio: prof?.bio || '',
-      city: prof?.city || '',
-      dateOfBirth: dobFormatted,
-      position: prof?.position || 'Center',
-      shootsCatches: prof?.shootsCatches || 'Left',
-      jerseyNumber: prof?.jerseyNumber !== null && prof?.jerseyNumber !== undefined ? String(prof?.jerseyNumber) : '',
-      genderCategory: prof?.genderCategory || 'Male',
-      preferredLanguage: prof?.preferredLanguage || 'en',
-      defaultVisibility: prof?.defaultVisibility || 'CONNECTIONS',
-      avatarUrl: resolveMediaUrl(prof?.avatarUrl, '/userPlaceholder.png'),
-    };
-  };
+      return {
+        firstName: prof?.firstName ?? '',
+        lastName: prof?.lastName ?? '',
+        displayName: prof?.displayName ?? (userObj as any)?.displayName ?? (user as any)?.displayName ?? '',
+        bio: prof?.bio ?? '',
+        city: prof?.city ?? '',
+        dateOfBirth: dobFormatted,
+        position: prof?.position ?? 'Center',
+        shootsCatches: prof?.shootsCatches ?? 'Left',
+        jerseyNumber: prof?.jerseyNumber !== null && prof?.jerseyNumber !== undefined ? String(prof.jerseyNumber) : '',
+        genderCategory: prof?.genderCategory ?? 'Male',
+        preferredLanguage: prof?.preferredLanguage ?? 'en',
+        defaultVisibility: prof?.defaultVisibility ?? 'CONNECTIONS',
+        avatarUrl: resolveMediaUrl(prof?.avatarUrl, '/userPlaceholder.png'),
+      };
+    },
+    [user]
+  );
 
-  const [initialForm, setInitialForm] = useState<EditProfileFormData>(extractInitialValues);
-  const [formData, setFormData] = useState<EditProfileFormData>(extractInitialValues);
+  const [initialForm, setInitialForm] = useState<EditProfileFormData>(() => extractProfileValues());
+  const [formData, setFormData] = useState<EditProfileFormData>(() => extractProfileValues());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState<boolean>(false);
@@ -111,7 +122,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   // Sync form data whenever modal opens or user object updates
   useEffect(() => {
     if (isOpen) {
-      const init = extractInitialValues();
+      const init = extractProfileValues();
       setInitialForm(init);
       setFormData(init);
       setErrors({});
@@ -119,34 +130,26 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       setShowDiscardConfirm(false);
       setSelectedAvatarFile(null);
     }
-  }, [isOpen, user]);
+  }, [isOpen, user, extractProfileValues]);
 
   if (!isOpen) return null;
 
-  const userEmail = user?.email || 'saksham.garg@chicmicstudios.in';
+  const userEmail =
+    (user as any)?.email ||
+    (user as any)?.user?.email ||
+    (user?.profile as any)?.email ||
+    (user as any)?.contactEmail ||
+    (user as any)?.about?.email ||
+    '';
   const userPrimaryRole = user?.primaryRole || user?.profile?.type || 'PLAYER';
   const isPlayer = userPrimaryRole.toUpperCase() === 'PLAYER';
 
   // Compute dirty state
   const isFormDirty = JSON.stringify(initialForm) !== JSON.stringify(formData) || !!selectedAvatarFile;
 
-  const validateField = (name: keyof EditProfileFormData, value: string): string | null => {
-    if (name === 'displayName') {
-      if (!value.trim()) return 'Display Name is required.';
-      if (value.trim().length < 2) return 'Display Name must be at least 2 characters.';
-    }
-    if (name === 'jerseyNumber' && value.trim()) {
-      const num = Number(value);
-      if (isNaN(num) || num < 0 || num > 99 || !Number.isInteger(num)) {
-        return 'Jersey Number must be an integer between 0 and 99.';
-      }
-    }
-    return null;
-  };
-
   const handleChange = (field: keyof EditProfileFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    const err = validateField(field, value);
+    const err = validateProfileField(field, value);
     setErrors((prev) => {
       const updated = { ...prev };
       if (err) {
@@ -199,7 +202,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     // Validate all fields before submitting
     const newErrors: Record<string, string> = {};
     (Object.keys(formData) as Array<keyof EditProfileFormData>).forEach((key) => {
-      const err = validateField(key, formData[key] || '');
+      const err = validateProfileField(key, formData[key] || '');
       if (err) newErrors[key] = err;
     });
 
@@ -229,16 +232,26 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     // Step 3: Save profile changes (PATCH /v1/auth/profile) sending avatarKey
     try {
       if (onSave) {
-        await onSave({
+        const apiResponse = await onSave({
           ...formData,
           avatarKey: uploadedAvatarKey,
         });
+
+        if (apiResponse && (apiResponse as AuthMeResponse).profile) {
+          globalQueryClient.setQueryData(QueryKeys.AUTH_ME, apiResponse);
+          globalQueryClient.invalidateQueries(QueryKeys.USER_PROFILE);
+          const freshData = extractProfileValues(apiResponse as AuthMeResponse);
+          setInitialForm(freshData);
+          setFormData(freshData);
+        } else {
+          globalQueryClient.invalidateQueries(QueryKeys.AUTH_ME);
+          globalQueryClient.invalidateQueries(QueryKeys.USER_PROFILE);
+          const freshData = extractProfileValues(user);
+          setInitialForm(freshData);
+          setFormData(freshData);
+        }
       }
       setSaveSuccessMsg('Profile updated successfully!');
-      setInitialForm({
-        ...formData,
-        avatarKey: uploadedAvatarKey,
-      });
       setSelectedAvatarFile(null);
       setTimeout(() => {
         setSaveSuccessMsg(null);
@@ -557,20 +570,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   type="text"
                   value={formData.displayName}
                   onChange={(e) => handleChange('displayName', e.target.value)}
+                  maxLength={50}
                   placeholder="e.g. Saksham Garg"
-                  style={{
-                    width: '100%',
-                    height: '44px',
-                    borderRadius: '8px',
-                    border: errors.displayName ? '1px solid #DC2626' : '1px solid #CBD5E1',
-                    padding: '0 12px',
-                    fontSize: '14px',
-                    outline: 'none',
-                  }}
+                  className={`mhn-edit-profile-input ${errors.displayName ? 'mhn-input-invalid' : ''}`}
                 />
                 {errors.displayName && (
-                  <span style={{ fontSize: '12px', color: '#DC2626', marginTop: '4px', display: 'block' }}>
-                    {errors.displayName}
+                  <span className="mhn-edit-profile-field-error">
+                    <span>⚠️</span>
+                    <span>{errors.displayName}</span>
                   </span>
                 )}
               </div>
@@ -583,17 +590,16 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   type="text"
                   value={formData.firstName}
                   onChange={(e) => handleChange('firstName', e.target.value)}
+                  maxLength={50}
                   placeholder="e.g. Saksham"
-                  style={{
-                    width: '100%',
-                    height: '44px',
-                    borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
-                    padding: '0 12px',
-                    fontSize: '14px',
-                    outline: 'none',
-                  }}
+                  className={`mhn-edit-profile-input ${errors.firstName ? 'mhn-input-invalid' : ''}`}
                 />
+                {errors.firstName && (
+                  <span className="mhn-edit-profile-field-error">
+                    <span>⚠️</span>
+                    <span>{errors.firstName}</span>
+                  </span>
+                )}
               </div>
 
               <div>
@@ -604,17 +610,16 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   type="text"
                   value={formData.lastName}
                   onChange={(e) => handleChange('lastName', e.target.value)}
+                  maxLength={50}
                   placeholder="e.g. Garg"
-                  style={{
-                    width: '100%',
-                    height: '44px',
-                    borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
-                    padding: '0 12px',
-                    fontSize: '14px',
-                    outline: 'none',
-                  }}
+                  className={`mhn-edit-profile-input ${errors.lastName ? 'mhn-input-invalid' : ''}`}
                 />
+                {errors.lastName && (
+                  <span className="mhn-edit-profile-field-error">
+                    <span>⚠️</span>
+                    <span>{errors.lastName}</span>
+                  </span>
+                )}
               </div>
             </div>
 
@@ -628,68 +633,23 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   type="date"
                   value={formData.dateOfBirth}
                   onChange={(e) => handleChange('dateOfBirth', e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '44px',
-                    borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
-                    padding: '0 12px',
-                    fontSize: '14px',
-                    outline: 'none',
-                  }}
+                  className={`mhn-edit-profile-input ${errors.dateOfBirth ? 'mhn-input-invalid' : ''}`}
                 />
+                {errors.dateOfBirth && (
+                  <span className="mhn-edit-profile-field-error">
+                    <span>⚠️</span>
+                    <span>{errors.dateOfBirth}</span>
+                  </span>
+                )}
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Gender Category
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <Select
-                    value={formData.genderCategory}
-                    onChange={(e) => handleChange('genderCategory', e.target.value)}
-                    style={{
-                      width: '100%',
-                      height: '44px',
-                      borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
-                      padding: '0 36px 0 12px',
-                      fontSize: '14px',
-                      outline: 'none',
-                      backgroundColor: '#FFFFFF',
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
-                      MozAppearance: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {GENDER_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </Select>
-                  <svg
-                    style={{
-                      position: 'absolute',
-                      right: '12px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      pointerEvents: 'none',
-                    }}
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#64748B"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
-              </div>
+              <Dropdown
+                label="Gender Category"
+                value={formData.genderCategory}
+                options={GENDER_OPTIONS}
+                onChange={(val) => handleChange('genderCategory', val)}
+                placeholder="Select gender"
+              />
             </div>
           </div>
 
@@ -701,107 +661,21 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               </h3>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                    Position
-                  </label>
-                  <div style={{ position: 'relative' }}>
-                    <Select
-                      value={formData.position}
-                      onChange={(e) => handleChange('position', e.target.value)}
-                      style={{
-                        width: '100%',
-                        height: '44px',
-                        borderRadius: '8px',
-                        border: '1px solid #CBD5E1',
-                        padding: '0 36px 0 12px',
-                        fontSize: '14px',
-                        outline: 'none',
-                        backgroundColor: '#FFFFFF',
-                        appearance: 'none',
-                        WebkitAppearance: 'none',
-                        MozAppearance: 'none',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {POSITION_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </Select>
-                    <svg
-                      style={{
-                        position: 'absolute',
-                        right: '12px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        pointerEvents: 'none',
-                      }}
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#64748B"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </div>
-                </div>
+                <Dropdown
+                  label="Position"
+                  value={formData.position}
+                  options={positionOptions}
+                  onChange={(val) => handleChange('position', val)}
+                  placeholder="Select position"
+                />
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                    Shoots / Catches
-                  </label>
-                  <div style={{ position: 'relative' }}>
-                    <Select
-                      value={formData.shootsCatches}
-                      onChange={(e) => handleChange('shootsCatches', e.target.value)}
-                      style={{
-                        width: '100%',
-                        height: '44px',
-                        borderRadius: '8px',
-                        border: '1px solid #CBD5E1',
-                        padding: '0 36px 0 12px',
-                        fontSize: '14px',
-                        outline: 'none',
-                        backgroundColor: '#FFFFFF',
-                        appearance: 'none',
-                        WebkitAppearance: 'none',
-                        MozAppearance: 'none',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {SHOOTS_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </Select>
-                    <svg
-                      style={{
-                        position: 'absolute',
-                        right: '12px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        pointerEvents: 'none',
-                      }}
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#64748B"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </div>
-                </div>
+                <Dropdown
+                  label="Shoots / Catches"
+                  value={formData.shootsCatches}
+                  options={SHOOTS_OPTIONS}
+                  onChange={(val) => handleChange('shootsCatches', val)}
+                  placeholder="Select option"
+                />
 
                 <div>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
@@ -814,19 +688,12 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     value={formData.jerseyNumber}
                     onChange={(e) => handleChange('jerseyNumber', e.target.value)}
                     placeholder="e.g. 97"
-                    style={{
-                      width: '100%',
-                      height: '44px',
-                      borderRadius: '8px',
-                      border: errors.jerseyNumber ? '1px solid #DC2626' : '1px solid #CBD5E1',
-                      padding: '0 12px',
-                      fontSize: '14px',
-                      outline: 'none',
-                    }}
+                    className={`mhn-edit-profile-input ${errors.jerseyNumber ? 'mhn-input-invalid' : ''}`}
                   />
                   {errors.jerseyNumber && (
-                    <span style={{ fontSize: '12px', color: '#DC2626', marginTop: '4px', display: 'block' }}>
-                      {errors.jerseyNumber}
+                    <span className="mhn-edit-profile-field-error">
+                      <span>⚠️</span>
+                      <span>{errors.jerseyNumber}</span>
                     </span>
                   )}
                 </div>
@@ -844,17 +711,16 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 type="text"
                 value={formData.city}
                 onChange={(e) => handleChange('city', e.target.value)}
+                maxLength={50}
                 placeholder="e.g. Toronto, ON or Austria, Europe"
-                style={{
-                  width: '100%',
-                  height: '44px',
-                  borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
-                  padding: '0 12px',
-                  fontSize: '14px',
-                  outline: 'none',
-                }}
+                className={`mhn-edit-profile-input ${errors.city ? 'mhn-input-invalid' : ''}`}
               />
+              {errors.city && (
+                <span className="mhn-edit-profile-field-error">
+                  <span>⚠️</span>
+                  <span>{errors.city}</span>
+                </span>
+              )}
             </div>
 
             <div style={{ marginTop: '16px' }}>
@@ -866,17 +732,22 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 onChange={(e) => handleChange('bio', e.target.value)}
                 placeholder="Write a brief intro about your hockey background and goals..."
                 rows={3}
-                style={{
-                  width: '100%',
-                  borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
-                  padding: '10px 12px',
-                  fontSize: '14px',
-                  outline: 'none',
-                  fontFamily: 'inherit',
-                  resize: 'vertical',
-                }}
+                className={`mhn-edit-profile-input ${errors.bio ? 'mhn-input-invalid' : ''}`}
+                style={{ height: 'auto', minHeight: '80px', paddingTop: '10px' }}
               />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  {errors.bio && (
+                    <span className="mhn-edit-profile-field-error">
+                      <span>⚠️</span>
+                      <span>{errors.bio}</span>
+                    </span>
+                  )}
+                </div>
+                <span className="mhn-edit-profile-char-count">
+                  {formData.bio.length} / 300
+                </span>
+              </div>
             </div>
           </div>
         </form>

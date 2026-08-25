@@ -1,6 +1,6 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useState } from 'react';
 import { Button } from '../../common/Button';
-import { Input, Select } from '../../common/FormControls';
+import { Input, Dropdown, FormField } from '../../common/FormControls';
 import { calculateAge } from '@my-hockey-network/core';
 import { GUARDIAN_RELATION_OPTIONS } from '../../../utils/guardianUtils';
 
@@ -25,6 +25,8 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
   onBack,
 }) => {
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
 
   // Compute real-time age
   const currentAge = useMemo(() => calculateAge(formData.dateOfBirth), [formData.dateOfBirth]);
@@ -45,6 +47,7 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
     const rawVal = e.target.value;
     const formatted = formatDobInput(rawVal);
     onChange({ dateOfBirth: formatted });
+    setTouched((prev) => ({ ...prev, dateOfBirth: true }));
   };
 
   const handleCalendarClick = () => {
@@ -64,16 +67,60 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
       if (parts.length === 3) {
         const [yyyy, mm, dd] = parts;
         onChange({ dateOfBirth: `${dd}/${mm}/${yyyy}` });
+        setTouched((prev) => ({ ...prev, dateOfBirth: true }));
       }
     }
   };
 
+  // Field Level Validation Logic
+  const getFullNameError = (): string | null => {
+    const trimmed = formData.fullName.trim();
+    if (!trimmed) return 'Full Name is required.';
+    if (trimmed.length < 2) return 'Full Name must be at least 2 characters.';
+    if (formData.fullName.length >= 50) return 'Maximum 50 characters allowed.';
+    return null;
+  };
+
+  const getDobError = (): string | null => {
+    if (!formData.dateOfBirth) return 'Date of Birth is required.';
+    if (formData.dateOfBirth.length < 10) return 'Please enter a valid Date of Birth (DD/MM/YYYY).';
+    if (currentAge === null || currentAge < 0) return 'Please enter a valid Date of Birth.';
+    if (currentAge < 5) return 'Minimum age for player profile is 5 years.';
+    if (currentAge > 100) return 'Maximum age for player profile is 100 years.';
+    return null;
+  };
+
+  const getRelationError = (): string | null => {
+    if (!formData.guardianRelation) return 'Relationship to player is required.';
+    return null;
+  };
+
+  const getEmailError = (): string | null => {
+    const trimmed = formData.email.trim();
+    if (!trimmed) return 'Email is required.';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmed)) return 'Please enter a valid email address.';
+    return null;
+  };
+
+  const fullNameError = (touched.fullName || hasAttemptedSubmit) ? getFullNameError() : null;
+  const dobError = (touched.dateOfBirth || hasAttemptedSubmit) ? getDobError() : null;
+  const relationError = (touched.guardianRelation || hasAttemptedSubmit) ? getRelationError() : null;
+  const emailError = (touched.email || hasAttemptedSubmit) ? getEmailError() : null;
+
   const isValid =
-    formData.fullName.trim().length >= 2 &&
-    formData.dateOfBirth.length === 10 &&
-    currentAge !== null &&
-    currentAge >= 0 &&
-    formData.guardianRelation;
+    !getFullNameError() &&
+    !getDobError() &&
+    !getRelationError() &&
+    !getEmailError();
+
+  const handleContinueClick = () => {
+    setHasAttemptedSubmit(true);
+    setTouched({ fullName: true, dateOfBirth: true, guardianRelation: true, email: true });
+    if (isValid) {
+      onContinue();
+    }
+  };
 
   return (
     <div className="mhn-parent-step-container">
@@ -81,38 +128,31 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
       <p className="mhn-parent-step-desc">Tell us a little about your player.</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-        <div className="auth-form-group">
-          <label className="auth-label">Full Name</label>
-          <div className="auth-input-wrapper">
-            <Input
-              type="text"
-              className="auth-input"
-              value={formData.fullName}
-              onChange={(e) => onChange({ fullName: e.target.value })}
-              placeholder="enter your name"
-            />
-          </div>
-        </div>
+        {/* Full Name */}
+        <FormField label="Full Name" required error={fullNameError} maxLength={50} valueLength={formData.fullName?.length}>
+          <Input
+            type="text"
+            className={`auth-input ${fullNameError || (formData.fullName && formData.fullName.length >= 50) ? 'mhn-input-invalid' : ''}`}
+            value={formData.fullName}
+            onChange={(e) => {
+              onChange({ fullName: e.target.value });
+              if (!touched.fullName) setTouched((prev) => ({ ...prev, fullName: true }));
+            }}
+            onBlur={() => setTouched((prev) => ({ ...prev, fullName: true }))}
+            maxLength={50}
+            placeholder="e.g. Connor McDavid"
+          />
+        </FormField>
 
-        <div className="auth-form-group">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-            <label className="auth-label" style={{ marginBottom: 0 }}>DOB</label>
-            {currentAge !== null && currentAge >= 0 && currentAge <= 110 ? (
-              <span style={{ fontSize: '12px', fontWeight: 600, color: currentAge < 18 ? '#D97706' : '#4B5563' }}>
-                Age: {currentAge} yrs {currentAge < 18 ? '(Minor)' : ''}
-              </span>
-            ) : formData.dateOfBirth.length === 10 ? (
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#EF4444' }}>
-                Invalid Date
-              </span>
-            ) : null}
-          </div>
-          <div className="auth-input-wrapper" style={{ position: 'relative' }}>
+        {/* DOB */}
+        <FormField label="DOB" required error={dobError}>
+          <div style={{ position: 'relative' }}>
             <Input
               type="text"
-              className="auth-input"
+              className={`auth-input ${dobError ? 'mhn-input-invalid' : ''}`}
               value={formData.dateOfBirth}
               onChange={handleDobChange}
+              onBlur={() => setTouched((prev) => ({ ...prev, dateOfBirth: true }))}
               placeholder="DD/MM/YYYY"
               maxLength={10}
             />
@@ -138,45 +178,43 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
               }}
             />
           </div>
-        </div>
+        </FormField>
 
-        <div className="auth-form-group">
-          <label className="auth-label">Relationship to player</label>
-          <div className="auth-input-wrapper">
-            <Select
-              className="auth-select"
-              value={formData.guardianRelation}
-              onChange={(e: any) => onChange({ guardianRelation: e.target.value })}
-            >
-              {GUARDIAN_RELATION_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </div>
+        {/* Relationship */}
+        <Dropdown
+          label="Relationship to player"
+          required
+          value={formData.guardianRelation}
+          options={GUARDIAN_RELATION_OPTIONS}
+          onChange={(val) => {
+            onChange({ guardianRelation: val as any });
+            setTouched((prev) => ({ ...prev, guardianRelation: true }));
+          }}
+          error={relationError}
+          placeholder="Select relationship"
+        />
 
-        <div className="auth-form-group">
-          <label className="auth-label">Email (Optional)</label>
-          <div className="auth-input-wrapper">
-            <Input
-              type="email"
-              className="auth-input"
-              value={formData.email}
-              onChange={(e) => onChange({ email: e.target.value })}
-              placeholder="admin@gmail.com"
-            />
-          </div>
-        </div>
+        {/* Email */}
+        <FormField label="Email" required error={emailError}>
+          <Input
+            type="email"
+            className={`auth-input ${emailError ? 'mhn-input-invalid' : ''}`}
+            value={formData.email}
+            onChange={(e) => {
+              onChange({ email: e.target.value });
+              if (!touched.email) setTouched((prev) => ({ ...prev, email: true }));
+            }}
+            onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
+            placeholder="e.g. admin@gmail.com"
+          />
+        </FormField>
       </div>
 
       <div style={{ marginTop: '28px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <Button
           type="button"
-          disabled={!isValid}
           className="mhn-parent-btn-primary"
-          onClick={onContinue}
+          onClick={handleContinueClick}
         >
           Continue
         </Button>

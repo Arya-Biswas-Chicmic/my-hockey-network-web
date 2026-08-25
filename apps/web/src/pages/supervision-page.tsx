@@ -1,5 +1,5 @@
 import { Button } from '../components/common/Button';
-import { Input, Select } from '../components/common/FormControls';
+import { Input, Select, Dropdown, FormField } from '../components/common/FormControls';
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Header } from '../components/common/Header';
@@ -15,6 +15,8 @@ import { Spinner } from '../components/common/Spinner';
 import { useAuth } from '../hooks/use-auth';
 import { resolveMediaUrl } from '../utils/mediaUtils';
 import { GUARDIAN_RELATION_OPTIONS, formatDobToIso, formatDobInput } from '../utils/guardianUtils';
+import { QueryKeys } from '@my-hockey-network/contracts';
+import { useQuery, useQueryClient, globalQueryClient } from '../query';
 import {
   getSupervisionData,
   createManagedChild,
@@ -226,6 +228,35 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
   });
 
   const [isCreatingPlayer, setIsCreatingPlayer] = useState(false);
+  const [hasAttemptedSupervisionCreate, setHasAttemptedSupervisionCreate] = useState(false);
+  const [supervisionPlayerTouched, setSupervisionPlayerTouched] = useState<Record<string, boolean>>({});
+
+  const getSupervisionFullNameError = (): string | null => {
+    const trimmed = newPlayer.fullName.trim();
+    if (!trimmed) return 'Full Name is required.';
+    if (trimmed.length < 2) return 'Full Name must be at least 2 characters.';
+    if (newPlayer.fullName.length >= 50) return 'Maximum 50 characters allowed.';
+    return null;
+  };
+
+  const getSupervisionDobError = (): string | null => {
+    if (!newPlayer.dob) return 'Date of Birth is required.';
+    if (newPlayer.dob.length < 10) return 'Please enter a valid Date of Birth (DD/MM/YYYY).';
+    return null;
+  };
+
+  const getSupervisionRelationError = (): string | null => {
+    if (!newPlayer.relationship) return 'Relationship to player is required.';
+    return null;
+  };
+
+  const getSupervisionEmailError = (): string | null => {
+    const trimmed = newPlayer.email.trim();
+    if (!trimmed) return 'Email is required.';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmed)) return 'Please enter a valid email address.';
+    return null;
+  };
   const supervisionDateInputRef = useRef<HTMLInputElement>(null);
 
   const handleSupervisionCalendarClick = () => {
@@ -238,11 +269,24 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     }
   };
 
+  const formatShortPlayerName = (name: string, maxLen = 14): string => {
+    if (!name) return 'Player';
+    const trimmed = name.trim();
+    if (trimmed.length <= maxLen) return trimmed;
+    const words = trimmed.split(/\s+/);
+    if (words.length > 1 && words[0].length <= maxLen) {
+      return `${words[0]}...`;
+    }
+    return `${trimmed.slice(0, maxLen)}...`;
+  };
+
   const [addedPlayerName, setAddedPlayerName] = useState('Noah');
+  const [createdWardId, setCreatedWardId] = useState<string | null>(null);
 
   // Form State for "Link an existing player"
   const [linkChildEmail, setLinkChildEmail] = useState('');
   const [linkEmailError, setLinkEmailError] = useState<string | null>(null);
+  const [isSendingLinkInvite, setIsSendingLinkInvite] = useState(false);
 
   // Accordion collapsed state for Permission Categories
   const [expandedCategories, setExpandedCategories] = useState({
@@ -361,14 +405,18 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     }
   };
 
-  // Parallel simultaneous initial load on mount / when initialWardIdFromNav changes
+  const queryClient = useQueryClient();
+
+  const { data: rawSupervisionData, isLoading: isSupDataLoading } = useQuery(
+    QueryKeys.SUPERVISION_DATA,
+    getSupervisionData,
+    { staleTime: 5 * 60 * 1000 }
+  );
+
   useEffect(() => {
-    async function loadAllSupervisionData() {
-      setApiLoading(true);
-      setIsControlsLoading(true);
-      try {
-        const data = await getSupervisionData();
-        const children = data?.children || (data as any)?.data?.children || [];
+    async function processSupervisionData() {
+      if (rawSupervisionData) {
+        const children = (rawSupervisionData as any)?.children || (rawSupervisionData as any)?.data?.children || [];
         if (Array.isArray(children) && children.length > 0) {
           const mapped = children.map((c: any) => ({
             id: c.userId || c.profileId || c.id,
@@ -383,7 +431,6 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
             targetId = mapped[0].id;
           }
           setSelectedWardId(targetId);
-
           if (targetId) {
             await fetchControlsForWard(targetId);
           }
@@ -391,17 +438,12 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
           setWards([]);
           setSelectedWardId('');
         }
-      } catch (err: any) {
-        console.warn('Live supervision fetch notice:', err?.message || err);
-        setWards([]);
-        setSelectedWardId('');
-      } finally {
-        setApiLoading(false);
-        setIsControlsLoading(false);
       }
+      setApiLoading(isSupDataLoading);
+      setIsControlsLoading(isSupDataLoading);
     }
-    loadAllSupervisionData();
-  }, [initialWardIdFromNav]);
+    processSupervisionData();
+  }, [rawSupervisionData, isSupDataLoading, initialWardIdFromNav]);
 
   // When parent selects a ward from the sidebar list
   const handleSelectWard = async (wardId: string) => {
@@ -426,15 +468,44 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     const newVal = typeof currentVal === 'boolean' ? !currentVal : currentVal;
 
     const backendControl = CONTROL_KEY_TO_BACKEND_ENUM[controlKey] || controlKey.toUpperCase();
+    const stateKeyMap: Record<string, string> = {
+      view_feed: 'viewFeed',
+      create_posts: 'createPosts',
+      comment_on_posts: 'commentOnPosts',
+      react_to_posts: 'reactToPosts',
+      share_posts: 'sharePosts',
+      follow_others: 'followOthers',
+      accept_requests: 'acceptRequests',
+      who_can_follow_them: 'whoCanFollowThem',
+      who_can_send_requests: 'whoCanSendRequests',
+      send_messages: 'sendMessages',
+      receive_messages: 'receiveMessages',
+      create_group_chats: 'createGroupChats',
+      who_can_message_them: 'whoCanMessageThem',
+      message_notifications: 'messageNotifications',
+      connection_notifications: 'connectionNotifications',
+      activity_notifications: 'activityNotifications',
+      mention_notifications: 'mentionNotifications',
+    };
+    const targetPropKey = stateKeyMap[controlKey] || controlKey;
 
     setUpdatingControlKey(controlKey);
-    setter((prev: any) => ({ ...prev, [controlKey]: newVal }));
+    setter((prev: any) => ({
+      ...prev,
+      [controlKey]: newVal,
+      [targetPropKey]: newVal,
+    }));
 
     try {
       await updateSupervisionControls(selectedWardId, [{ control: backendControl, value: newVal }]);
       showToast(`${label} permission updated successfully!`, 'success');
+      await fetchControlsForWard(selectedWardId);
     } catch (err: any) {
-      setter((prev: any) => ({ ...prev, [controlKey]: currentVal }));
+      setter((prev: any) => ({
+        ...prev,
+        [controlKey]: currentVal,
+        [targetPropKey]: currentVal,
+      }));
       showToast(err.message || `Failed to update ${label} permission.`, 'error');
     } finally {
       setUpdatingControlKey(null);
@@ -667,17 +738,35 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
         email: newPlayer.email.trim() || undefined,
       });
 
-      const childProfile = res?.child || (res as any)?.data?.profile;
-      if (childProfile) {
-        const newWardItem = {
-          id: childProfile.id,
-          name: childProfile.displayName || nameToUse,
-          age: 12,
-          avatar: resolveMediaUrl(childProfile.avatarUrl, '/userPlaceholder.png'),
-        };
-        setWards((prev) => [...prev, newWardItem]);
-        setSelectedWardId(newWardItem.id);
+      const childProfile = res?.child || (res as any)?.data?.profile || (res as any)?.data?.child || (res as any)?.profile;
+      const newChildId = childProfile?.id || (res as any)?.childId || (res as any)?.id;
+      if (newChildId) {
+        setCreatedWardId(newChildId);
+        setSelectedWardId(newChildId);
       }
+
+      // Call supervision API immediately with no cache
+      try {
+        await globalQueryClient.invalidateQueries(QueryKeys.SUPERVISION_DATA);
+        const freshSupData = await getSupervisionData();
+        if (freshSupData?.children && Array.isArray(freshSupData.children)) {
+          const mapped = freshSupData.children.map((c: any) => ({
+            id: c.id,
+            name: c.displayName || c.firstName || nameToUse,
+            age: c.age || 12,
+            avatar: resolveMediaUrl(c.avatarUrl, '/userPlaceholder.png'),
+          }));
+          setWards(mapped);
+          const targetId = newChildId || (mapped.length > 0 ? mapped[mapped.length - 1].id : null);
+          if (targetId) {
+            setSelectedWardId(targetId);
+            setCreatedWardId(targetId);
+          }
+        }
+      } catch (refetchErr) {
+        console.warn('Supervision API refetch after creation notice:', refetchErr);
+      }
+
       showToast(`${nameToUse} has been added successfully!`, 'success');
       setViewMode('create-success');
     } catch (err: any) {
@@ -695,8 +784,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
       return;
     }
 
-    setApiLoading(true);
-    setIsControlsLoading(true);
+    setIsSendingLinkInvite(true);
     try {
       await sendGuardianInvite(linkChildEmail.trim());
       showToast('Guardian invitation sent successfully!', 'success');
@@ -704,8 +792,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     } catch (err: any) {
       showToast(err?.message || 'Failed to send invitation.', 'error');
     } finally {
-      setApiLoading(false);
-      setIsControlsLoading(false);
+      setIsSendingLinkInvite(false);
     }
   };
 
@@ -837,120 +924,146 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
             )}
 
             {/* STEP 2A: Form 1 - Player Details (Image 36) */}
-            {viewMode === 'create-details' && (
-              <div className="mhn-flow-container mhn-flow-form-wrapper">
-                <h2 className="mhn-flow-title">Player Details</h2>
-                <p className="mhn-flow-subtitle">Tell us a little about your player.</p>
+            {viewMode === 'create-details' && (() => {
+              const fullNameErr = (supervisionPlayerTouched.fullName || hasAttemptedSupervisionCreate) ? getSupervisionFullNameError() : null;
+              const dobErr = (supervisionPlayerTouched.dob || hasAttemptedSupervisionCreate) ? getSupervisionDobError() : null;
+              const relationErr = (supervisionPlayerTouched.relationship || hasAttemptedSupervisionCreate) ? getSupervisionRelationError() : null;
+              const emailErr = (supervisionPlayerTouched.email || hasAttemptedSupervisionCreate) ? getSupervisionEmailError() : null;
 
-                <div className="mhn-form-fields-stack">
-                  <div className="mhn-form-field-group">
-                    <label className="mhn-form-field-label">Full Name</label>
-                    <Input
-                      type="text"
-                      value={newPlayer.fullName}
-                      onChange={(e) => setNewPlayer({ ...newPlayer, fullName: e.target.value })}
-                      placeholder="enter your name"
-                      className="mhn-form-input"
-                    />
-                  </div>
+              const isStep1Valid = !getSupervisionFullNameError() && !getSupervisionDobError() && !getSupervisionRelationError() && !getSupervisionEmailError();
 
-                  <div className="mhn-form-field-group">
-                    <label className="mhn-form-field-label">DOB</label>
-                    <div className="mhn-form-date-input-wrapper" style={{ position: 'relative' }}>
+              const handleStep1Continue = () => {
+                setHasAttemptedSupervisionCreate(true);
+                setSupervisionPlayerTouched({ fullName: true, dob: true, relationship: true, email: true });
+                if (isStep1Valid) {
+                  setViewMode('create-protect');
+                }
+              };
+
+              return (
+                <div className="mhn-flow-container mhn-flow-form-wrapper">
+                  <h2 className="mhn-flow-title">Player Details</h2>
+                  <p className="mhn-flow-subtitle">Tell us a little about your player.</p>
+
+                  <div className="mhn-form-fields-stack">
+                    <FormField label="Full Name" required error={fullNameErr} maxLength={50} valueLength={newPlayer.fullName?.length}>
                       <Input
                         type="text"
-                        value={newPlayer.dob}
-                        onChange={(e) => setNewPlayer({ ...newPlayer, dob: formatDobInput(e.target.value) })}
-                        maxLength={10}
-                        placeholder="DD/MM/YYYY"
-                        className="mhn-form-input"
-                      />
-                      <svg
-                        className="mhn-calendar-icon"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#94A3B8"
-                        strokeWidth="2"
-                        onClick={handleSupervisionCalendarClick}
-                        style={{ cursor: 'pointer', position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}
-                      >
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                        <line x1="16" y1="2" x2="16" y2="6" />
-                        <line x1="8" y1="2" x2="8" y2="6" />
-                        <line x1="3" y1="10" x2="21" y2="10" />
-                      </svg>
-                      <Input
-                        type="date"
-                        ref={supervisionDateInputRef}
+                        value={newPlayer.fullName}
                         onChange={(e) => {
-                          const dateVal = e.target.value;
-                          if (dateVal) {
-                            const parts = dateVal.split('-');
-                            if (parts.length === 3) {
-                              const [yyyy, mm, dd] = parts;
-                              setNewPlayer((prev) => ({ ...prev, dob: `${dd}/${mm}/${yyyy}` }));
-                            }
-                          }
+                          setNewPlayer({ ...newPlayer, fullName: e.target.value });
+                          if (!supervisionPlayerTouched.fullName) setSupervisionPlayerTouched((p) => ({ ...p, fullName: true }));
                         }}
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          right: '12px',
-                          width: '32px',
-                          height: '100%',
-                          opacity: 0,
-                          cursor: 'pointer',
-                          zIndex: 2,
-                        }}
+                        onBlur={() => setSupervisionPlayerTouched((p) => ({ ...p, fullName: true }))}
+                        maxLength={50}
+                        placeholder="e.g. Connor McDavid"
+                        className={`mhn-form-input ${fullNameErr || (newPlayer.fullName && newPlayer.fullName.length >= 50) ? 'mhn-input-error' : ''}`}
                       />
-                    </div>
-                  </div>
+                    </FormField>
 
-                  <div className="mhn-form-field-group">
-                    <label className="mhn-form-field-label">Relationship to player</label>
-                    <Select
+                    <FormField label="DOB" required error={dobErr}>
+                      <div className="mhn-form-date-input-wrapper" style={{ position: 'relative' }}>
+                        <Input
+                          type="text"
+                          value={newPlayer.dob}
+                          onChange={(e) => {
+                            setNewPlayer({ ...newPlayer, dob: formatDobInput(e.target.value) });
+                            if (!supervisionPlayerTouched.dob) setSupervisionPlayerTouched((p) => ({ ...p, dob: true }));
+                          }}
+                          onBlur={() => setSupervisionPlayerTouched((p) => ({ ...p, dob: true }))}
+                          maxLength={10}
+                          placeholder="DD/MM/YYYY"
+                          className={`mhn-form-input ${dobErr ? 'mhn-input-error' : ''}`}
+                        />
+                        <svg
+                          className="mhn-calendar-icon"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#94A3B8"
+                          strokeWidth="2"
+                          onClick={handleSupervisionCalendarClick}
+                          style={{ cursor: 'pointer', position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}
+                        >
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        <Input
+                          type="date"
+                          ref={supervisionDateInputRef}
+                          onChange={(e) => {
+                            const dateVal = e.target.value;
+                            if (dateVal) {
+                              const parts = dateVal.split('-');
+                              if (parts.length === 3) {
+                                const [yyyy, mm, dd] = parts;
+                                setNewPlayer((prev) => ({ ...prev, dob: `${dd}/${mm}/${yyyy}` }));
+                                setSupervisionPlayerTouched((p) => ({ ...p, dob: true }));
+                              }
+                            }
+                          }}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            right: '12px',
+                            width: '32px',
+                            height: '100%',
+                            opacity: 0,
+                            cursor: 'pointer',
+                            zIndex: 2,
+                          }}
+                        />
+                      </div>
+                    </FormField>
+
+                    <Dropdown
+                      label="Relationship to player"
+                      required
+                      error={relationErr}
                       value={newPlayer.relationship}
-                      onChange={(e) => setNewPlayer({ ...newPlayer, relationship: e.target.value })}
-                      className="mhn-form-select"
-                    >
-                      {GUARDIAN_RELATION_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
-
-                  <div className="mhn-form-field-group">
-                    <label className="mhn-form-field-label">Email</label>
-                    <Input
-                      type="email"
-                      value={newPlayer.email}
-                      onChange={(e) => setNewPlayer({ ...newPlayer, email: e.target.value })}
-                      placeholder="admin@gmail.com"
-                      className="mhn-form-input"
+                      options={GUARDIAN_RELATION_OPTIONS}
+                      onChange={(val) => {
+                        setNewPlayer({ ...newPlayer, relationship: val });
+                        setSupervisionPlayerTouched((p) => ({ ...p, relationship: true }));
+                      }}
+                      placeholder="Select relationship"
                     />
+
+                    <FormField label="Email" required error={emailErr}>
+                      <Input
+                        type="email"
+                        value={newPlayer.email}
+                        onChange={(e) => {
+                          setNewPlayer({ ...newPlayer, email: e.target.value });
+                          if (!supervisionPlayerTouched.email) setSupervisionPlayerTouched((p) => ({ ...p, email: true }));
+                        }}
+                        onBlur={() => setSupervisionPlayerTouched((p) => ({ ...p, email: true }))}
+                        placeholder="admin@gmail.com"
+                        className={`mhn-form-input ${emailErr ? 'mhn-input-error' : ''}`}
+                      />
+                    </FormField>
+                  </div>
+
+                  <div className="mhn-form-actions-stack">
+                    <Button
+                      className="mhn-btn-solid-blue"
+                      onClick={handleStep1Continue}
+                    >
+                      Continue
+                    </Button>
+                    <Button
+                      className="mhn-btn-outline"
+                      onClick={() => setViewMode('choice')}
+                    >
+                      Back
+                    </Button>
                   </div>
                 </div>
-
-                <div className="mhn-form-actions-stack">
-                  <Button
-                    className="mhn-btn-solid-blue"
-                    onClick={() => setViewMode('create-protect')}
-                  >
-                    Continue
-                  </Button>
-                  <Button
-                    className="mhn-btn-outline"
-                    onClick={() => setViewMode('choice')}
-                  >
-                    Back
-                  </Button>
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* STEP 2A: Form 2 - Protect Profile (Image 37) */}
             {viewMode === 'create-protect' && (
@@ -1085,20 +1198,30 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                   <img src='/CheckCircle.png' alt='check-circle' className='checkCircle' />
                 </div>
 
-                <h2 className="mhn-flow-title">{addedPlayerName} has been added</h2>
-                <p className="mhn-flow-subtitle">You're now managing {addedPlayerName}'s hockey profile.</p>
+                <h2 className="mhn-flow-title">{formatShortPlayerName(addedPlayerName, 14)} has been added</h2>
+                <p className="mhn-flow-subtitle">You're now managing {formatShortPlayerName(addedPlayerName, 14)}'s hockey profile.</p>
 
                 <div className="mhn-form-actions-stack mhn-form-actions-narrow">
                   <Button
                     className="mhn-btn-solid-blue"
                     onClick={() => {
                       setViewMode('main');
+                      const targetId = createdWardId || selectedWardId;
                       if (onNavigate) {
-                        onNavigate('profile', { selectedWardId, childId: selectedWardId, childName: addedPlayerName });
+                        onNavigate('profile', { selectedWardId: targetId, userId: targetId, childId: targetId, childName: addedPlayerName });
                       }
                     }}
+                    title={`Go to ${addedPlayerName}'s Profile`}
+                    style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '100%',
+                      display: 'block',
+                      textAlign: 'center',
+                    }}
                   >
-                    Go to {addedPlayerName}'s Profile
+                    Go to {formatShortPlayerName(addedPlayerName, 14)}'s Profile
                   </Button>
                   <Button
                     className="mhn-btn-outline"
@@ -1141,8 +1264,11 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                   <Button
                     className="mhn-btn-solid-blue"
                     onClick={handleSendLinkInvitation}
+                    disabled={isSendingLinkInvite}
+                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   >
-                    Send Invitation
+                    {isSendingLinkInvite && <Spinner size="sm" color="#FFFFFF" />}
+                    <span>{isSendingLinkInvite ? 'Sending Invitation...' : 'Send Invitation'}</span>
                   </Button>
                   <Button
                     className="mhn-btn-outline"
@@ -1218,300 +1344,294 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                     isControlsLoading ? (
                       <PermissionSkeletonLoader />
                     ) : (
-                    <div className="mhn-supervision-permissions-stack">
-                      {/* 1. Home Section Accordion */}
-                      <div className={`mhn-supervision-accordion ${expandedCategories.home ? 'mhn-accordion-expanded' : ''}`}>
-                        <div
-                          className="mhn-accordion-header"
-                          onClick={() => toggleCategory('home')}
-                        >
-                          <div className="mhn-accordion-title-left">
-                            <img src='/home.png' className='home' />
-                            <span className='superTitle'>Home</span>
-                          </div>
-                          <svg
-                            className={`mhn-accordion-chevron ${expandedCategories.home ? 'mhn-chevron-up' : ''}`}
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#64748B"
-                            strokeWidth="2"
+                      <div className="mhn-supervision-permissions-stack">
+                        {/* 1. Home Section Accordion */}
+                        <div className={`mhn-supervision-accordion ${expandedCategories.home ? 'mhn-accordion-expanded' : ''}`}>
+                          <div
+                            className="mhn-accordion-header"
+                            onClick={() => toggleCategory('home')}
                           >
-                            <polyline points="6 9 12 15 18 9" />
-                          </svg>
+                            <div className="mhn-accordion-title-left">
+                              <img src='/home.png' className='home' />
+                              <span className='superTitle'>Home</span>
+                            </div>
+                            <svg
+                              className={`mhn-accordion-chevron ${expandedCategories.home ? 'mhn-chevron-up' : ''}`}
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="#64748B"
+                              strokeWidth="2"
+                            >
+                              <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                          </div>
+
+                          {expandedCategories.home && (
+                            <div className="mhn-accordion-body">
+                              {/* View feed */}
+                              <div className="mhn-permission-row">
+                                <div className="mhn-permission-meta">
+                                  <h4 className="mhn-permission-title">View feed</h4>
+                                  <p className="mhn-permission-subtitle">Can see posts from their network</p>
+                                </div>
+                                {renderToggleSwitch('view_feed', 'View feed', homePermissions.viewFeed, setHomePermissions)}
+                              </div>
+
+                              {/* Create posts */}
+                              <div className="mhn-permission-row">
+                                <div className="mhn-permission-meta">
+                                  <h4 className="mhn-permission-title">Create posts</h4>
+                                  <p className="mhn-permission-subtitle">Can publish posts to their network</p>
+                                </div>
+                                {renderToggleSwitch('create_posts', 'Create posts', homePermissions.createPosts, setHomePermissions)}
+                              </div>
+
+                              {/* Comment on posts */}
+                              <div className="mhn-permission-row">
+                                <div className="mhn-permission-meta">
+                                  <h4 className="mhn-permission-title">Comment on posts</h4>
+                                  <p className="mhn-permission-subtitle">Can leave comments on others' posts</p>
+                                </div>
+                                {renderToggleSwitch('comment_on_posts', 'Comment on posts', homePermissions.commentOnPosts, setHomePermissions)}
+                              </div>
+
+                              {/* React to posts */}
+                              <div className="mhn-permission-row">
+                                <div className="mhn-permission-meta">
+                                  <h4 className="mhn-permission-title">React to posts</h4>
+                                  <p className="mhn-permission-subtitle">Can like, celebrate, or react to content</p>
+                                </div>
+                                {renderToggleSwitch('react_to_posts', 'React to posts', homePermissions.reactToPosts, setHomePermissions)}
+                              </div>
+
+                              {/* Share posts */}
+                              <div className="mhn-permission-row">
+                                <div className="mhn-permission-meta">
+                                  <h4 className="mhn-permission-title">Share posts</h4>
+                                  <p className="mhn-permission-subtitle">Can reshare content to their feed</p>
+                                </div>
+                                {renderToggleSwitch('share_posts', 'Share posts', homePermissions.sharePosts, setHomePermissions)}
+                              </div>
+                            </div>
+                          )}
                         </div>
 
-                        {expandedCategories.home && (
-                          <div className="mhn-accordion-body">
-                            {/* View feed */}
-                            <div className="mhn-permission-row">
-                              <div className="mhn-permission-meta">
-                                <h4 className="mhn-permission-title">View feed</h4>
-                                <p className="mhn-permission-subtitle">Can see posts from their network</p>
-                              </div>
-                              {renderToggleSwitch('view_feed', 'View feed', homePermissions.viewFeed, setHomePermissions)}
-                            </div>
-
-                            {/* Create posts */}
-                            <div className="mhn-permission-row">
-                              <div className="mhn-permission-meta">
-                                <h4 className="mhn-permission-title">Create posts</h4>
-                                <p className="mhn-permission-subtitle">Can publish posts to their network</p>
-                              </div>
-                              {renderToggleSwitch('create_posts', 'Create posts', homePermissions.createPosts, setHomePermissions)}
-                            </div>
-
-                            {/* Comment on posts */}
-                            <div className="mhn-permission-row">
-                              <div className="mhn-permission-meta">
-                                <h4 className="mhn-permission-title">Comment on posts</h4>
-                                <p className="mhn-permission-subtitle">Can leave comments on others' posts</p>
-                              </div>
-                              {renderToggleSwitch('comment_on_posts', 'Comment on posts', homePermissions.commentOnPosts, setHomePermissions)}
-                            </div>
-
-                            {/* React to posts */}
-                            <div className="mhn-permission-row">
-                              <div className="mhn-permission-meta">
-                                <h4 className="mhn-permission-title">React to posts</h4>
-                                <p className="mhn-permission-subtitle">Can like, celebrate, or react to content</p>
-                              </div>
-                              {renderToggleSwitch('react_to_posts', 'React to posts', homePermissions.reactToPosts, setHomePermissions)}
-                            </div>
-
-                            {/* Share posts */}
-                            <div className="mhn-permission-row">
-                              <div className="mhn-permission-meta">
-                                <h4 className="mhn-permission-title">Share posts</h4>
-                                <p className="mhn-permission-subtitle">Can reshare content to their feed</p>
-                              </div>
-                              {renderToggleSwitch('share_posts', 'Share posts', homePermissions.sharePosts, setHomePermissions)}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 2. My Network Section Accordion */}
-                      <div className={`mhn-supervision-accordion ${expandedCategories.network ? 'mhn-accordion-expanded' : ''}`}>
-                        <div
-                          className="mhn-accordion-header"
-                          onClick={() => toggleCategory('network')}
-                        >
-                          <div className="mhn-accordion-title-left">
-                            <img src='/myNetwork.png' className='home' />
-                            <span className='superTitle'>My Network</span>
-                          </div>
-                          <svg
-                            className={`mhn-accordion-chevron ${expandedCategories.network ? 'mhn-chevron-up' : ''}`}
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#64748B"
-                            strokeWidth="2"
+                        {/* 2. My Network Section Accordion */}
+                        <div className={`mhn-supervision-accordion ${expandedCategories.network ? 'mhn-accordion-expanded' : ''}`}>
+                          <div
+                            className="mhn-accordion-header"
+                            onClick={() => toggleCategory('network')}
                           >
-                            <polyline points="6 9 12 15 18 9" />
-                          </svg>
+                            <div className="mhn-accordion-title-left">
+                              <img src='/myNetwork.png' className='home' />
+                              <span className='superTitle'>My Network</span>
+                            </div>
+                            <svg
+                              className={`mhn-accordion-chevron ${expandedCategories.network ? 'mhn-chevron-up' : ''}`}
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="#64748B"
+                              strokeWidth="2"
+                            >
+                              <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                          </div>
+
+                          {expandedCategories.network && (
+                            <div className="mhn-accordion-body">
+                              {/* Follow others */}
+                              <div className="mhn-permission-row">
+                                <div className="mhn-permission-meta">
+                                  <h4 className="mhn-permission-title">Follow others</h4>
+                                  <p className="mhn-permission-subtitle">Can follow people and pages</p>
+                                </div>
+                                {renderToggleSwitch('follow_others', 'Follow others', networkPermissions.followOthers, setNetworkPermissions)}
+                              </div>
+
+                              {/* Who can follow them */}
+                              <div className="mhn-permission-row">
+                                <div className="mhn-permission-meta">
+                                  <h4 className="mhn-permission-title">Who can follow them</h4>
+                                  <p className="mhn-permission-subtitle">Controls who can subscribe to their updates</p>
+                                </div>
+                                <Dropdown
+                                  value={networkPermissions.whoCanFollowThem}
+                                  options={['Everyone', 'Connections Only', 'Nobody']}
+                                  onChange={(val) => handleToggleControl('who_can_follow_them', 'Who can follow them', val, setNetworkPermissions)}
+                                  disabled={updatingControlKey === 'who_can_follow_them'}
+                                  placeholder=""
+                                  style={{ width: '180px' }}
+                                />
+                              </div>
+
+                              {/* Who can send connection requests */}
+                              <div className="mhn-permission-row">
+                                <div className="mhn-permission-meta">
+                                  <h4 className="mhn-permission-title">Who can send connection requests</h4>
+                                  <p className="mhn-permission-subtitle">Limits incoming connection requests</p>
+                                </div>
+                                <Dropdown
+                                  value={networkPermissions.whoCanSendRequests}
+                                  options={['Everyone', 'Connections Only', 'Nobody']}
+                                  onChange={(val) => handleToggleControl('who_can_send_requests', 'Who can send requests', val, setNetworkPermissions)}
+                                  disabled={updatingControlKey === 'who_can_send_requests'}
+                                  placeholder=""
+                                  style={{ width: '180px' }}
+                                />
+                              </div>
+
+                              {/* Accept connection requests */}
+                              <div className="mhn-permission-row">
+                                <div className="mhn-permission-meta">
+                                  <h4 className="mhn-permission-title">Accept connection requests</h4>
+                                  <p className="mhn-permission-subtitle">Can accept incoming requests from others</p>
+                                </div>
+                                {renderToggleSwitch('accept_requests', 'Accept connection requests', networkPermissions.acceptRequests, setNetworkPermissions)}
+                              </div>
+                            </div>
+                          )}
                         </div>
 
-                        {expandedCategories.network && (
-                          <div className="mhn-accordion-body">
-                            {/* Follow others */}
-                            <div className="mhn-permission-row">
-                              <div className="mhn-permission-meta">
-                                <h4 className="mhn-permission-title">Follow others</h4>
-                                <p className="mhn-permission-subtitle">Can follow people and pages</p>
-                              </div>
-                              {renderToggleSwitch('follow_others', 'Follow others', networkPermissions.followOthers, setNetworkPermissions)}
-                            </div>
-
-                            {/* Who can follow them */}
-                            <div className="mhn-permission-row">
-                              <div className="mhn-permission-meta">
-                                <h4 className="mhn-permission-title">Who can follow them</h4>
-                                <p className="mhn-permission-subtitle">Controls who can subscribe to their updates</p>
-                              </div>
-                              <Select
-                                value={networkPermissions.whoCanFollowThem}
-                                onChange={(e) => handleToggleControl('who_can_follow_them', 'Who can follow them', e.target.value, setNetworkPermissions)}
-                                className="mhn-permission-select"
-                                disabled={updatingControlKey === 'who_can_follow_them'}
-                              >
-                                <option value="Everyone">Everyone</option>
-                                <option value="Connections Only">Connections Only</option>
-                                <option value="Nobody">Nobody</option>
-                              </Select>
-                            </div>
-
-                            {/* Who can send connection requests */}
-                            <div className="mhn-permission-row">
-                              <div className="mhn-permission-meta">
-                                <h4 className="mhn-permission-title">Who can send connection requests</h4>
-                                <p className="mhn-permission-subtitle">Limits incoming connection requests</p>
-                              </div>
-                              <Select
-                                value={networkPermissions.whoCanSendRequests}
-                                onChange={(e) => handleToggleControl('who_can_send_requests', 'Who can send requests', e.target.value, setNetworkPermissions)}
-                                className="mhn-permission-select"
-                                disabled={updatingControlKey === 'who_can_send_requests'}
-                              >
-                                <option value="Everyone">Everyone</option>
-                                <option value="Connections Only">Connections Only</option>
-                                <option value="Nobody">Nobody</option>
-                              </Select>
-                            </div>
-
-                            {/* Accept connection requests */}
-                            <div className="mhn-permission-row">
-                              <div className="mhn-permission-meta">
-                                <h4 className="mhn-permission-title">Accept connection requests</h4>
-                                <p className="mhn-permission-subtitle">Can accept incoming requests from others</p>
-                              </div>
-                              {renderToggleSwitch('accept_requests', 'Accept connection requests', networkPermissions.acceptRequests, setNetworkPermissions)}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 3. Messaging Section Accordion */}
-                      <div className={`mhn-supervision-accordion ${expandedCategories.messaging ? 'mhn-accordion-expanded' : ''}`}>
-                        <div
-                          className="mhn-accordion-header"
-                          onClick={() => toggleCategory('messaging')}
-                        >
-                          <div className="mhn-accordion-title-left">
-                            <img src='/messaging2.png' className='home' />
-                            <span className='superTitle'>Messaging</span>
-                          </div>
-                          <svg
-                            className={`mhn-accordion-chevron ${expandedCategories.messaging ? 'mhn-chevron-up' : ''}`}
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#64748B"
-                            strokeWidth="2"
+                        {/* 3. Messaging Section Accordion */}
+                        <div className={`mhn-supervision-accordion ${expandedCategories.messaging ? 'mhn-accordion-expanded' : ''}`}>
+                          <div
+                            className="mhn-accordion-header"
+                            onClick={() => toggleCategory('messaging')}
                           >
-                            <polyline points="6 9 12 15 18 9" />
-                          </svg>
+                            <div className="mhn-accordion-title-left">
+                              <img src='/messaging2.png' className='home' />
+                              <span className='superTitle'>Messaging</span>
+                            </div>
+                            <svg
+                              className={`mhn-accordion-chevron ${expandedCategories.messaging ? 'mhn-chevron-up' : ''}`}
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="#64748B"
+                              strokeWidth="2"
+                            >
+                              <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                          </div>
+
+                          {expandedCategories.messaging && (
+                            <div className="mhn-accordion-body">
+                              {/* Send messages */}
+                              <div className="mhn-permission-row">
+                                <div className="mhn-permission-meta">
+                                  <h4 className="mhn-permission-title">Send messages</h4>
+                                  <p className="mhn-permission-subtitle">Can initiate and reply to conversations</p>
+                                </div>
+                                {renderToggleSwitch('send_messages', 'Send messages', messagingPermissions.sendMessages, setMessagingPermissions)}
+                              </div>
+
+                              {/* Receive messages */}
+                              <div className="mhn-permission-row">
+                                <div className="mhn-permission-meta">
+                                  <h4 className="mhn-permission-title">Receive messages</h4>
+                                  <p className="mhn-permission-subtitle">Others can send them messages</p>
+                                </div>
+                                {renderToggleSwitch('receive_messages', 'Receive messages', messagingPermissions.receiveMessages, setMessagingPermissions)}
+                              </div>
+
+                              {/* Create group chats */}
+                              <div className="mhn-permission-row">
+                                <div className="mhn-permission-meta">
+                                  <h4 className="mhn-permission-title">Create group chats</h4>
+                                  <p className="mhn-permission-subtitle">Can start group conversations</p>
+                                </div>
+                                {renderToggleSwitch('create_group_chats', 'Create group chats', messagingPermissions.createGroupChats, setMessagingPermissions)}
+                              </div>
+
+                              {/* Who can message them */}
+                              <div className="mhn-permission-row">
+                                <div className="mhn-permission-meta">
+                                  <h4 className="mhn-permission-title">Who can message them</h4>
+                                  <p className="mhn-permission-subtitle">Controls who can start a conversation</p>
+                                </div>
+                                <Dropdown
+                                  value={messagingPermissions.whoCanMessageThem}
+                                  options={['Connections Only', 'Everyone', 'Nobody']}
+                                  onChange={(val) => handleToggleControl('who_can_message_them', 'Who can message them', val, setMessagingPermissions)}
+                                  disabled={updatingControlKey === 'who_can_message_them'}
+                                  placeholder=""
+                                  style={{ width: '180px' }}
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
 
-                        {expandedCategories.messaging && (
-                          <div className="mhn-accordion-body">
-                            {/* Send messages */}
-                            <div className="mhn-permission-row">
-                              <div className="mhn-permission-meta">
-                                <h4 className="mhn-permission-title">Send messages</h4>
-                                <p className="mhn-permission-subtitle">Can initiate and reply to conversations</p>
-                              </div>
-                              {renderToggleSwitch('send_messages', 'Send messages', messagingPermissions.sendMessages, setMessagingPermissions)}
-                            </div>
-
-                            {/* Receive messages */}
-                            <div className="mhn-permission-row">
-                              <div className="mhn-permission-meta">
-                                <h4 className="mhn-permission-title">Receive messages</h4>
-                                <p className="mhn-permission-subtitle">Others can send them messages</p>
-                              </div>
-                              {renderToggleSwitch('receive_messages', 'Receive messages', messagingPermissions.receiveMessages, setMessagingPermissions)}
-                            </div>
-
-                            {/* Create group chats */}
-                            <div className="mhn-permission-row">
-                              <div className="mhn-permission-meta">
-                                <h4 className="mhn-permission-title">Create group chats</h4>
-                                <p className="mhn-permission-subtitle">Can start group conversations</p>
-                              </div>
-                              {renderToggleSwitch('create_group_chats', 'Create group chats', messagingPermissions.createGroupChats, setMessagingPermissions)}
-                            </div>
-
-                            {/* Who can message them */}
-                            <div className="mhn-permission-row">
-                              <div className="mhn-permission-meta">
-                                <h4 className="mhn-permission-title">Who can message them</h4>
-                                <p className="mhn-permission-subtitle">Controls who can start a conversation</p>
-                              </div>
-                              <Select
-                                value={messagingPermissions.whoCanMessageThem}
-                                onChange={(e) => handleToggleControl('who_can_message_them', 'Who can message them', e.target.value, setMessagingPermissions)}
-                                className="mhn-permission-select"
-                                disabled={updatingControlKey === 'who_can_message_them'}
-                              >
-                                <option value="Connections Only">Connections Only</option>
-                                <option value="Everyone">Everyone</option>
-                                <option value="Nobody">Nobody</option>
-                              </Select>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 4. Notifications Section Accordion */}
-                      <div className={`mhn-supervision-accordion ${expandedCategories.notifications ? 'mhn-accordion-expanded' : ''}`}>
-                        <div
-                          className="mhn-accordion-header"
-                          onClick={() => toggleCategory('notifications')}
-                        >
-                          <div className="mhn-accordion-title-left">
-                            <img src='/notifications.png' className='home' />
-                            <span className='superTitle'>Notifications</span>
-                          </div>
-                          <svg
-                            className={`mhn-accordion-chevron ${expandedCategories.notifications ? 'mhn-chevron-up' : ''}`}
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#64748B"
-                            strokeWidth="2"
+                        {/* 4. Notifications Section Accordion */}
+                        <div className={`mhn-supervision-accordion ${expandedCategories.notifications ? 'mhn-accordion-expanded' : ''}`}>
+                          <div
+                            className="mhn-accordion-header"
+                            onClick={() => toggleCategory('notifications')}
                           >
-                            <polyline points="6 9 12 15 18 9" />
-                          </svg>
-                        </div>
-
-                        {expandedCategories.notifications && (
-                          <div className="mhn-accordion-body">
-                            {/* Message notifications */}
-                            <div className="mhn-permission-row">
-                              <div className="mhn-permission-meta">
-                                <h4 className="mhn-permission-title">Message notifications</h4>
-                                <p className="mhn-permission-subtitle">Get notified when they receive a message</p>
-                              </div>
-                              {renderToggleSwitch('message_notifications', 'Message notifications', notificationPermissions.messageNotifications, setNotificationPermissions)}
+                            <div className="mhn-accordion-title-left">
+                              <img src='/notifications.png' className='home' />
+                              <span className='superTitle'>Notifications</span>
                             </div>
-
-                            {/* Connection request notifications */}
-                            <div className="mhn-permission-row">
-                              <div className="mhn-permission-meta">
-                                <h4 className="mhn-permission-title">Connection request notifications</h4>
-                                <p className="mhn-permission-subtitle">Get notified about incoming requests</p>
-                              </div>
-                              {renderToggleSwitch('connection_notifications', 'Connection notifications', notificationPermissions.connectionNotifications, setNotificationPermissions)}
-                            </div>
-
-                            {/* Activity notifications */}
-                            <div className="mhn-permission-row">
-                              <div className="mhn-permission-meta">
-                                <h4 className="mhn-permission-title">Activity notifications</h4>
-                                <p className="mhn-permission-subtitle">Reactions, comments on their posts</p>
-                              </div>
-                              {renderToggleSwitch('activity_notifications', 'Activity notifications', notificationPermissions.activityNotifications, setNotificationPermissions)}
-                            </div>
-
-                            {/* Mention notifications */}
-                            <div className="mhn-permission-row">
-                              <div className="mhn-permission-meta">
-                                <h4 className="mhn-permission-title">Mention notifications</h4>
-                                <p className="mhn-permission-subtitle">Get notified when someone mentions them</p>
-                              </div>
-                              {renderToggleSwitch('mention_notifications', 'Mention notifications', notificationPermissions.mentionNotifications, setNotificationPermissions)}
-                            </div>
+                            <svg
+                              className={`mhn-accordion-chevron ${expandedCategories.notifications ? 'mhn-chevron-up' : ''}`}
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="#64748B"
+                              strokeWidth="2"
+                            >
+                              <polyline points="6 9 12 15 18 9" />
+                            </svg>
                           </div>
-                        )}
+
+                          {expandedCategories.notifications && (
+                            <div className="mhn-accordion-body">
+                              {/* Message notifications */}
+                              <div className="mhn-permission-row">
+                                <div className="mhn-permission-meta">
+                                  <h4 className="mhn-permission-title">Message notifications</h4>
+                                  <p className="mhn-permission-subtitle">Get notified when they receive a message</p>
+                                </div>
+                                {renderToggleSwitch('message_notifications', 'Message notifications', notificationPermissions.messageNotifications, setNotificationPermissions)}
+                              </div>
+
+                              {/* Connection request notifications */}
+                              <div className="mhn-permission-row">
+                                <div className="mhn-permission-meta">
+                                  <h4 className="mhn-permission-title">Connection request notifications</h4>
+                                  <p className="mhn-permission-subtitle">Get notified about incoming requests</p>
+                                </div>
+                                {renderToggleSwitch('connection_notifications', 'Connection notifications', notificationPermissions.connectionNotifications, setNotificationPermissions)}
+                              </div>
+
+                              {/* Activity notifications */}
+                              <div className="mhn-permission-row">
+                                <div className="mhn-permission-meta">
+                                  <h4 className="mhn-permission-title">Activity notifications</h4>
+                                  <p className="mhn-permission-subtitle">Reactions, comments on their posts</p>
+                                </div>
+                                {renderToggleSwitch('activity_notifications', 'Activity notifications', notificationPermissions.activityNotifications, setNotificationPermissions)}
+                              </div>
+
+                              {/* Mention notifications */}
+                              <div className="mhn-permission-row">
+                                <div className="mhn-permission-meta">
+                                  <h4 className="mhn-permission-title">Mention notifications</h4>
+                                  <p className="mhn-permission-subtitle">Get notified when someone mentions them</p>
+                                </div>
+                                {renderToggleSwitch('mention_notifications', 'Mention notifications', notificationPermissions.mentionNotifications, setNotificationPermissions)}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )
+                    )
                   )}
 
                   {/* Content for Requests Tab */}
@@ -1525,9 +1645,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
                       {/* Pending Requests List */}
                       <div>
-                        <h3 className="mhn-supervision-section-subtitle">
-                          Pending Minor Approval Requests ({livePendingRequests.length})
-                        </h3>
+
 
                         {isRequestsLoading ? (
                           <GuardianRequestSkeleton />
@@ -1540,89 +1658,229 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                           <div className="mhn-supervision-requests-grid">
                             {livePendingRequests.map((req: any, idx: number) => {
                               const reqId = req.id || `req_${idx}`;
-                              const child = req.child || {};
-                              const displayName = child.displayName || req.displayName || req.name || 'Minor Athlete';
-                              const rawAvatar = child.avatarUrl || req.avatarUrl;
+                              const isApprovalItem = Boolean(req.isApprovalItem);
+
+                              const child = req.child || req.minorCard || req.minor || {};
+                              const requester = req.requester || req.minorCard || req.minor || {};
+
+                              const displayName = isApprovalItem
+                                ? (req.requester?.displayName || req.minorCard?.displayName || req.minor?.displayName || 'Connection Request')
+                                : (child.displayName || req.displayName || req.name || 'Minor Athlete');
+
+                              const rawAvatar = isApprovalItem
+                                ? (req.requester?.avatarUrl || req.minorCard?.avatarUrl || req.minor?.avatarUrl)
+                                : (child.avatarUrl || req.avatarUrl);
+
                               const avatarUrl = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
-                              const roleTag = child.roleTag || child.primaryRole || child.profileType || req.roleTag || 'PLAYER';
-                              const teamName = child.teamName || req.teamName || null;
-                              const teamLogo = child.teamLogo || req.teamLogo ? resolveMediaUrl(child.teamLogo || req.teamLogo, '/HC.png') : null;
-                              const location = child.location || req.location || null;
+
+                              const roleTag = isApprovalItem
+                                ? (req.requester?.roleTag || req.minorCard?.roleTag || (req.requester?.primaryRole ? String(req.requester.primaryRole) : 'Parent'))
+                                : (child.roleTag || (child.position ? `${child.position}${child.jerseyNumber ? ` • #${child.jerseyNumber}` : ''}` : child.primaryRole || child.profileType || 'PLAYER'));
+
+                              const teamName = isApprovalItem
+                                ? (req.requester?.teamName || req.minorCard?.teamName)
+                                : (child.teamName || req.teamName);
+
+                              const teamLogo = (isApprovalItem ? req.requester?.teamLogo : child.teamLogo)
+                                ? resolveMediaUrl(isApprovalItem ? req.requester.teamLogo : child.teamLogo, '/HC.png')
+                                : '/HC.png';
+
+                              const location = isApprovalItem
+                                ? (req.requester?.location || req.minorCard?.location || req.minor?.city || 'Austria, Europe')
+                                : (child.location || req.location || child.city || 'Austria, Europe');
+
                               const code = req.code || req.devCode || req.inviteCode;
 
                               return (
-                                <div key={reqId} className="mhn-supervision-req-card">
-                                  <div className="mhn-supervision-req-avatar-wrapper">
+                                <div
+                                  key={reqId}
+                                  className="mhn-supervision-req-card"
+                                  style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    textAlign: 'center',
+                                    padding: '24px 20px 20px',
+                                    borderRadius: '16px',
+                                    background: '#FFFFFF',
+                                    border: '1px solid #E2E8F0',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                                    width: '100%',
+                                    minWidth: 0,
+                                    boxSizing: 'border-box',
+                                  }}
+                                >
+                                  {/* Centered Large Circular Avatar */}
+                                  <div style={{ position: 'relative', marginBottom: '12px' }}>
                                     <img
                                       src={avatarUrl}
                                       alt={displayName}
-                                      className="mhn-supervision-req-avatar"
+                                      style={{
+                                        width: '72px',
+                                        height: '72px',
+                                        borderRadius: '50%',
+                                        objectFit: 'cover',
+                                        border: '2px solid #F1F5F9',
+                                      }}
                                       onError={(e) => {
                                         (e.target as HTMLImageElement).src = '/userPlaceholder.png';
                                       }}
                                     />
                                   </div>
-                                  <h4 className="mhn-supervision-req-name">{displayName}</h4>
-                                  <p className="mhn-supervision-req-role">{roleTag}</p>
 
+                                  {/* Centered Name */}
+                                  <h4
+                                    title={displayName}
+                                    style={{
+                                      fontSize: '16px',
+                                      fontWeight: 700,
+                                      color: '#0F172A',
+                                      margin: '0 0 4px 0',
+                                      lineHeight: '1.3',
+                                      width: '100%',
+                                      maxWidth: '100%',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                      wordBreak: 'break-all',
+                                    }}
+                                  >
+                                    {displayName}
+                                  </h4>
+
+                                  {/* Centered Role Tag */}
+                                  <p
+                                    style={{
+                                      fontSize: '13px',
+                                      color: '#64748B',
+                                      margin: '0 0 10px 0',
+                                      fontWeight: 500,
+                                      width: '100%',
+                                      maxWidth: '100%',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
+                                    {roleTag}
+                                  </p>
+
+                                  {/* Centered Team Pill */}
                                   {teamName && (
-                                    <div className="mhn-supervision-req-team-pill">
-                                      {teamLogo && (
-                                        <img
-                                          src={teamLogo}
-                                          alt="Team"
-                                          className="mhn-supervision-req-team-logo"
-                                          onError={(e) => {
-                                            (e.target as HTMLImageElement).style.display = 'none';
-                                          }}
-                                        />
-                                      )}
-                                      <span>{teamName}</span>
+                                    <div
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '6px',
+                                        fontSize: '12px',
+                                        fontWeight: 600,
+                                        color: '#0B66C2',
+                                        marginBottom: '6px',
+                                        maxWidth: '100%',
+                                      }}
+                                    >
+                                      <img
+                                        src={teamLogo}
+                                        alt="Team"
+                                        style={{ width: '16px', height: '16px', borderRadius: '4px', objectFit: 'cover', flexShrink: 0 }}
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).style.display = 'none';
+                                        }}
+                                      />
+                                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{teamName}</span>
                                     </div>
                                   )}
 
+                                  {/* Centered Location */}
                                   {location && (
-                                    <div className="mhn-supervision-req-location">
-                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2">
+                                    <div
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '4px',
+                                        fontSize: '12px',
+                                        color: '#64748B',
+                                        marginBottom: '16px',
+                                        maxWidth: '100%',
+                                      }}
+                                    >
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" style={{ flexShrink: 0 }}>
                                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                                         <circle cx="12" cy="10" r="3" />
                                       </svg>
-                                      <span>{location}</span>
+                                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{location}</span>
                                     </div>
                                   )}
 
-                                  <div className="mhn-supervision-req-actions">
+                                  {/* Action Buttons Row */}
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '10px',
+                                      width: '100%',
+                                      marginTop: 'auto',
+                                    }}
+                                  >
                                     <Button
                                       type="button"
-                                      className="mhn-supervision-btn-ignore"
+                                      style={{
+                                        flex: 1,
+                                        height: '36px',
+                                        borderRadius: '8px',
+                                        border: '1px solid #CBD5E1',
+                                        background: '#FFFFFF',
+                                        color: '#334155',
+                                        fontSize: '13px',
+                                        fontWeight: 600,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                      }}
                                       disabled={requestActionLoading}
                                       onClick={() => {
-                                        if (req.isApprovalItem) {
+                                        if (isApprovalItem) {
                                           handleDeclineApprovalItem(reqId);
                                         } else {
                                           handleDeclineCodeSubmit(code || reqId);
                                         }
                                       }}
                                     >
-                                      Decline
+                                      {isApprovalItem ? 'Ignore' : 'Decline'}
                                     </Button>
                                     <Button
                                       type="button"
-                                      className="mhn-supervision-btn-accept"
+                                      style={{
+                                        flex: 1,
+                                        height: '36px',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        background: '#0B66C2',
+                                        color: '#FFFFFF',
+                                        fontSize: '13px',
+                                        fontWeight: 600,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                      }}
                                       disabled={requestActionLoading}
                                       onClick={() => {
-                                        if (req.isApprovalItem) {
+                                        if (isApprovalItem) {
                                           handleApproveApprovalItem(reqId);
                                         } else {
                                           setApprovalModalConfig({
                                             isOpen: true,
                                             targetName: displayName,
-                                            code: code || '',
+                                            code: '',
                                           });
                                         }
                                       }}
                                     >
-                                      Approve
+                                      {isApprovalItem ? 'Accept' : 'Approve'}
                                     </Button>
                                   </div>
                                 </div>

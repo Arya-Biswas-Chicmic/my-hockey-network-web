@@ -2,12 +2,12 @@ import { Button } from '../../common/Button';
 import { Textarea } from '../../common/FormControls';
 import React, { useState, useEffect } from 'react';
 import { likePost, unlikePost, repostPost, updatePost, deletePost, followUser, unfollowUser } from '@my-hockey-network/core';
-import { Toast } from '../../common/Toast';
 import { Spinner } from '../../common/Spinner';
 
 import { useAuth } from '../../../hooks/use-auth';
 import { PostCommentSection } from './PostCommentSection';
 import { useFeedPermissions } from '../../../hooks/use-feed-permissions';
+import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 
 export interface FeedPostProps {
   id: string;
@@ -108,8 +108,6 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   const [isDeleted, setIsDeleted] = useState(false);
   const [relationshipId, setRelationshipId] = useState<string | null>(null);
 
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-
   if (isDeleted) {
     return null;
   }
@@ -121,7 +119,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
     try {
       await deletePost(id);
       setIsDeleteModalOpen(false);
-      setToast({ message: 'Post deleted successfully!', type: 'success' });
+      showSuccessToast('Post deleted successfully!');
 
       if (onDeleteSuccess) {
         onDeleteSuccess(id, 'Post deleted successfully!');
@@ -138,8 +136,8 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         setIsDeleted(true);
       }, 300);
     } catch (err: any) {
-      console.error(`❌ [FeedPostCard] Delete post error:`, err);
-      setToast({ message: err.message || 'Failed to delete post. Please try again.', type: 'error' });
+      console.error('❌ Delete Post error:', err);
+      showErrorToast(err, 'Failed to delete post. Please try again.');
     } finally {
       setIsDeleting(false);
     }
@@ -153,13 +151,13 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
       await updatePost(id, { body: editContentInput.trim() });
       setPostContent(editContentInput.trim());
       setIsEditModalOpen(false);
-      setToast({ message: 'Post updated successfully!', type: 'success' });
+      showSuccessToast('Post updated successfully!');
       if (onUpdateSuccess) {
         onUpdateSuccess(id, editContentInput.trim());
       }
     } catch (err: any) {
-      console.error(`❌ [FeedPostCard] Edit post error:`, err);
-      setToast({ message: err.message || 'Failed to update post. Please try again.', type: 'error' });
+      console.error('❌ Update Post error:', err);
+      showErrorToast(err, 'Failed to update post. Please try again.');
     } finally {
       setIsUpdating(false);
     }
@@ -214,7 +212,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         if (onShareSuccess) {
           onShareSuccess(msg);
         } else {
-          setToast({ message: msg, type: 'success' });
+          showSuccessToast(msg);
         }
 
         if (onRepostComplete) {
@@ -234,7 +232,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         if (onShareSuccess) {
           onShareSuccess(msg);
         } else {
-          setToast({ message: msg, type: 'success' });
+          showSuccessToast(msg);
         }
 
         if (onRepostComplete) {
@@ -243,7 +241,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
       }
     } catch (err: any) {
       console.error(`❌ [FeedPostCard] Repost/Undo Repost API Error:`, err);
-      setToast({ message: err.message || 'Failed to update repost.', type: 'error' });
+      showErrorToast(err, 'Failed to update repost.');
     } finally {
       setIsSharing(false);
     }
@@ -268,10 +266,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
           onFollowChange(targetKey, false);
         }
 
-        setToast({
-          message: `Unfollowed ${authorName}`,
-          type: 'success',
-        });
+        showSuccessToast(`Unfollowed ${authorName}`);
       } else {
         const res = await followUser({ type: 'PROFILE', id: targetKey });
 
@@ -283,14 +278,11 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
           onFollowChange(targetKey, true);
         }
 
-        setToast({
-          message: res?.pendingGuardianApproval ? `Follow requested for ${authorName}` : `You are now following ${authorName}`,
-          type: 'success',
-        });
+        showSuccessToast(res?.pendingGuardianApproval ? `Follow requested for ${authorName}` : `You are now following ${authorName}`);
       }
     } catch (err: any) {
       console.error(`❌ [FeedPostCard] Follow/Unfollow API Error:`, err);
-      setToast({ message: err.message || 'Failed to update follow status.', type: 'error' });
+      showErrorToast(err, 'Failed to update follow status.');
     } finally {
       setIsFollowingLoading(false);
     }
@@ -766,14 +758,6 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
             </div>
           </div>
         </div>
-      )}
-
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
       )}
     </article>
   );
