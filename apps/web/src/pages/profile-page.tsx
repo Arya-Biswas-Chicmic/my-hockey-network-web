@@ -35,12 +35,12 @@ import {
   CareerEntry,
 } from '@my-hockey-network/core';
 import { QueryKeys } from '@my-hockey-network/contracts';
-import { globalQueryClient, useQuery } from '../query';
-import { useFeedPermissions } from '../hooks/use-feed-permissions';
+import { globalQueryClient, useQuery } from '@/query';
+import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { validateProfileField, validateCareerField } from '@my-hockey-network/validation';
-import { Dropdown } from '../components/common/FormControls';
-import { CareerFormFields } from '../components/features/profile/CareerFormFields';
-import { PersonalDetailsFields } from '../components/features/profile/PersonalDetailsFields';
+import { Dropdown } from '@/components/common/FormControls';
+import { CareerFormFields } from '@/components/features/profile/CareerFormFields';
+import { PersonalDetailsFields } from '@/components/features/profile/PersonalDetailsFields';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
