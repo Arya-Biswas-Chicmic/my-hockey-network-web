@@ -1,4 +1,4 @@
-import type { OnboardingDTO } from '../interfaces/api';
+import type { OnboardingDTO } from '@/interfaces/api';
 
 export function validateOnboardingForm(dto: Partial<OnboardingDTO>): { isValid: boolean; error?: string } {
   if (!dto.roles || dto.roles.length === 0) {

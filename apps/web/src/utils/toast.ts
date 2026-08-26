@@ -48,6 +48,21 @@ export function extractErrorMessage(error: unknown, fallbackMessage: string = ER
   return fallbackMessage;
 }
 
+export function getApiErrorStatus(error: unknown): number | undefined {
+  if (error instanceof ApiError) return error.statusCode;
+  if (typeof error !== 'object' || error === null) return undefined;
+  const value = error as Record<string, unknown>;
+  const status = value.statusCode ?? value.status;
+  return typeof status === 'number' ? status : undefined;
+}
+
+export function getApiErrorKey(error: unknown): string | undefined {
+  if (error instanceof ApiError) return error.key;
+  if (typeof error !== 'object' || error === null) return undefined;
+  const key = (error as Record<string, unknown>).key;
+  return typeof key === 'string' ? key : undefined;
+}
+
 /**
  * Centralized dispatcher function to show a Toast notification across the app.
  */
@@ -66,12 +81,18 @@ export function showSuccessToast(message: string, actionText?: string, onActionC
   showToast({ message, type: ToastTypeEnum.SUCCESS, actionText, onActionClick });
 }
 
-export function showErrorToast(errorOrMessage: unknown, actionText?: string, onActionClick?: () => void): void {
-  const message = typeof errorOrMessage === 'string' ? errorOrMessage : extractErrorMessage(errorOrMessage, ERROR_MESSAGES.ACTION_FAILED);
+export function showErrorToast(
+  errorOrMessage: unknown,
+  fallbackMessage?: string,
+  actionText?: string,
+  onActionClick?: () => void,
+): void {
+  const message = typeof errorOrMessage === 'string'
+    ? errorOrMessage
+    : fallbackMessage ?? extractErrorMessage(errorOrMessage, ERROR_MESSAGES.ACTION_FAILED);
   showToast({ message, type: ToastTypeEnum.ERROR, actionText, onActionClick });
 }
 
 export function showInfoToast(message: string, actionText?: string, onActionClick?: () => void): void {
   showToast({ message, type: ToastTypeEnum.INFO, actionText, onActionClick });
 }
-

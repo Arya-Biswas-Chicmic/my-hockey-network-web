@@ -6,8 +6,14 @@ const root = process.cwd();
 const findings = [];
 const allowedWebPrimitiveFiles = new Set([
   'apps/web/src/components/common/Button.tsx',
-  'apps/web/src/components/common/Dropdown.tsx',
   'apps/web/src/components/common/FormControls.tsx',
+]);
+const allowedCustomSvgFiles = new Set([
+  'apps/web/src/components/icons/BrandIcons.tsx',
+  'apps/web/src/components/icons/HockeyAnalyticsVisuals.tsx',
+  'apps/web/src/components/features/auth/guardian/GuardianBackgroundShapes.tsx',
+  'apps/web/src/components/features/auth/guardian/GuardianIcons.tsx',
+  'apps/web/src/components/features/auth/request-sent/RequestSentIcons.tsx',
 ]);
 
 function sourceFiles(directory, extensions = /\.(tsx|jsx)$/) {
@@ -20,10 +26,20 @@ function sourceFiles(directory, extensions = /\.(tsx|jsx)$/) {
 
 for (const file of sourceFiles(path.join(root, 'apps/web/src'))) {
   const relativePath = path.relative(root, file);
-  if (allowedWebPrimitiveFiles.has(relativePath)) continue;
   const text = fs.readFileSync(file, 'utf8');
-  const matches = text.match(/<(?:button|input|select|textarea)\b/g);
-  if (matches) findings.push(`${relativePath}: ${matches.length} raw web control(s)`);
+  if (!allowedWebPrimitiveFiles.has(relativePath)) {
+    const matches = text.match(/<(?:button|input|select|textarea)\b/g);
+    if (matches) findings.push(`${relativePath}: ${matches.length} raw web control(s)`);
+  }
+  if (/\bstyle\s*=\s*\{\{/.test(text)) {
+    findings.push(`${relativePath}: replace inline style objects with Tailwind or an existing class`);
+  }
+  if (/<form\b/.test(text) && !/from\s+['"]formik['"]/.test(text)) {
+    findings.push(`${relativePath}: semantic web forms must use Formik state and validation`);
+  }
+  if (/<svg\b/.test(text) && !allowedCustomSvgFiles.has(relativePath)) {
+    findings.push(`${relativePath}: use Lucide or an approved reusable custom icon component instead of inline SVG`);
+  }
 }
 
 for (const file of sourceFiles(path.join(root, 'apps/mobile/src/screens'))) {
@@ -46,6 +62,9 @@ for (const file of sourceFiles(path.join(root, 'apps/web/src'), /\.(ts|tsx|js|js
   if (/from\s+['"]@react-navigation(?:\/|['"])/.test(text)) {
     findings.push(`${relativePath}: web must use React Router, not React Navigation`);
   }
+  if (/(?:from\s+|import\s*\(?\s*)['"]\.\.?\//.test(text)) {
+    findings.push(`${relativePath}: use the @/ source alias instead of a relative import`);
+  }
 }
 
 for (const file of sourceFiles(path.join(root, 'apps/mobile/src'), /\.(ts|tsx|js|jsx)$/)) {
@@ -57,10 +76,23 @@ for (const file of sourceFiles(path.join(root, 'apps/mobile/src'), /\.(ts|tsx|js
   if (/from\s+['"]react-router(?:-dom)?(?:\/|['"])/.test(text) || /\bwindow\.location\b/.test(text)) {
     findings.push(`${relativePath}: mobile must use React Navigation, not browser URL routing`);
   }
+  if (/(?:from\s+|import\s*\(?\s*)['"]\.\.?\//.test(text)) {
+    findings.push(`${relativePath}: use the @/ source alias instead of a relative import`);
+  }
 }
 
 for (const file of sourceFiles(path.join(root, 'packages'), /\.(tsx|jsx)$/)) {
   findings.push(`${path.relative(root, file)}: shared packages must not contain platform UI`);
+}
+
+for (const sourceRoot of ['apps/web/src', 'apps/mobile/src', 'packages']) {
+  for (const file of sourceFiles(path.join(root, sourceRoot), /\.(ts|tsx)$/)) {
+    const relativePath = path.relative(root, file);
+    const text = fs.readFileSync(file, 'utf8');
+    if (/:\s*any\b|\bas\s+any\b|<any(?:,|>)/.test(text)) {
+      findings.push(`${relativePath}: explicit any is forbidden; model the contract or use unknown with narrowing`);
+    }
+  }
 }
 
 if (findings.length > 0) {

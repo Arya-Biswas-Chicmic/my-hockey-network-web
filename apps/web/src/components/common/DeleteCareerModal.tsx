@@ -1,5 +1,5 @@
-import { Button } from './Button';
-import { Spinner } from './Spinner';
+import { Button } from '@/components/common/Button';
+import { Spinner } from '@/components/common/Spinner';
 import React from 'react';
 
 interface DeleteCareerModalProps {

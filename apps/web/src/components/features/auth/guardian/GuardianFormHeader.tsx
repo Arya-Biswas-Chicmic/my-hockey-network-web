@@ -1,6 +1,6 @@
 import React from 'react';
 import { GUARDIAN_APPROVAL_STRINGS } from '@my-hockey-network/shared';
-import { FamilyBadgeIcon } from './GuardianIcons';
+import { FamilyBadgeIcon } from '@/components/features/auth/guardian/GuardianIcons';
 
 export const GuardianFormHeader: React.FC = () => {
   return (

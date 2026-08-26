@@ -1,9 +1,14 @@
-import { Button } from '../../common/Button';
-import { Input } from '../../common/FormControls';
-import React, { useState } from 'react';
-import { useDebounce } from '../../../hooks/use-debounce';
-import { EmptyState } from './EmptyState';
-import { NetworkSkeletonGrid } from './NetworkSkeletonLoader';
+import { useMemo, useState } from 'react';
+import { getRelationships, type RelationshipItem } from '@my-hockey-network/core';
+import { RelationshipDirectionEnum, RelationshipTypeEnum } from '@my-hockey-network/contracts';
+import { Button } from '@/components/common/Button';
+import { Input } from '@/components/common/FormControls';
+import { useDebounce } from '@/hooks/use-debounce';
+import { useQuery } from '@/query';
+import { resolveMediaUrl } from '@/utils/mediaUtils';
+import { Search } from 'lucide-react';
+import { EmptyState } from '@/components/features/network/EmptyState';
+import { NetworkSkeletonGrid } from '@/components/features/network/NetworkSkeletonLoader';
 
 export interface ConnectionMember {
   id: string;
@@ -16,292 +21,87 @@ export interface ConnectionMember {
   type: 'followers' | 'following';
 }
 
-const sampleConnections: ConnectionMember[] = [
-  {
-    id: 'c1',
-    name: 'Connor McDavid',
-    avatarUrl: '/connor.png',
-    roleTag: 'C • #97',
-    teamName: 'HC Bloemendaal',
-    teamLogo: '/kcBlue.png',
-    location: 'Austria ,Europe',
-    type: 'followers',
-  },
-  {
-    id: 'c2',
-    name: 'Lucas Bennett',
-    avatarUrl: '/lucas.png',
-    roleTag: 'Head Coach • U16 AAA',
-    teamName: 'HC Bloemendaal',
-    teamLogo: '/kcBlue.png',
-    location: 'Austria ,Europe',
-    type: 'followers',
-  },
-  {
-    id: 'c3',
-    name: 'Columbus Blue Jackets',
-    avatarUrl: '/columbus.png',
-    roleTag: 'Team',
-    teamName: 'HC Bloemendaal',
-    teamLogo: '/kcBlue.png',
-    location: 'Austria ,Europe',
-    type: 'followers',
-  },
-  {
-    id: 'c4',
-    name: 'Jack Hughes',
-    avatarUrl: '/jack.png',
-    roleTag: 'C • #86',
-    teamName: 'HC Bloemendaal',
-    teamLogo: '/kcBlue.png',
-    location: 'Austria ,Europe',
-    type: 'followers',
-  },
-  {
-    id: 'c5',
-    name: 'Connor McDavid',
-    avatarUrl: '/connor.png',
-    roleTag: 'C • #97',
-    teamName: 'HC Bloemendaal',
-    teamLogo: '/kcBlue.png',
-    location: 'Austria ,Europe',
-    type: 'followers',
-  },
-  {
-    id: 'c6',
-    name: 'Lucas Bennett',
-    avatarUrl: '/lucas.png',
-    roleTag: 'Head Coach • U16 AAA',
-    teamName: 'HC Bloemendaal',
-    teamLogo: '/kcBlue.png',
-    location: 'Austria ,Europe',
-    type: 'followers',
-  },
-  {
-    id: 'c7',
-    name: 'Columbus Blue Jackets',
-    avatarUrl: '/columbus.png',
-    roleTag: 'Team',
-    teamName: 'HC Bloemendaal',
-    teamLogo: '/kcBlue.png',
-    location: 'Austria ,Europe',
-    type: 'followers',
-  },
-  {
-    id: 'c8',
-    name: 'Jack Hughes',
-    avatarUrl: '/jack.png',
-    roleTag: 'C • #86',
-    teamName: 'HC Bloemendaal',
-    teamLogo: '/kcBlue.png',
-    location: 'Austria ,Europe',
-    type: 'followers',
-  },
-  {
-    id: 'c9',
-    name: 'Connor McDavid',
-    avatarUrl: '/connor.png',
-    roleTag: 'C • #97',
-    teamName: 'HC Bloemendaal',
-    teamLogo: '/kcBlue.png',
-    location: 'Austria ,Europe',
-    type: 'followers',
-  },
-  {
-    id: 'c10',
-    name: 'Lucas Bennett',
-    avatarUrl: '/lucas.png',
-    roleTag: 'Head Coach • U16 AAA',
-    teamName: 'HC Bloemendaal',
-    teamLogo: '/kcBlue.png',
-    location: 'Austria ,Europe',
-    type: 'followers',
-  },
-  {
-    id: 'c11',
-    name: 'Columbus Blue Jackets',
-    avatarUrl: '/columbus.png',
-    roleTag: 'Team',
-    teamName: 'HC Bloemendaal',
-    teamLogo: '/kcBlue.png',
-    location: 'Austria ,Europe',
-    type: 'followers',
-  },
-  {
-    id: 'c12',
-    name: 'Jack Hughes',
-    avatarUrl: '/jack.png',
-    roleTag: 'C • #86',
-    teamName: 'HC Bloemendaal',
-    teamLogo: '/kcBlue.png',
-    location: 'Austria ,Europe',
-    type: 'followers',
-  },
-];
-
 interface ConnectionsViewProps {
   onMessageClick?: (member: ConnectionMember) => void;
   isLoading?: boolean;
 }
 
-export const ConnectionsView: React.FC<ConnectionsViewProps> = ({ onMessageClick, isLoading = false }) => {
-  const [activeTab, setActiveTab] = useState<'followers' | 'following'>('followers');
+function toConnectionMember(relationship: RelationshipItem, type: ConnectionMember['type']): ConnectionMember | null {
+  const profile = relationship.counterparty;
+  if (!profile?.id || !profile.displayName) return null;
+  const position = profile.position
+    ? `${profile.position}${profile.jerseyNumber ? ` • #${profile.jerseyNumber}` : ''}`
+    : '';
+  return {
+    id: profile.id,
+    name: profile.displayName,
+    avatarUrl: resolveMediaUrl(profile.avatarUrl),
+    roleTag: profile.roleTag || position || profile.primaryRole || profile.profileType || 'Member',
+    teamName: profile.teamName || '',
+    teamLogo: profile.teamLogo || undefined,
+    location: profile.location || '',
+    type,
+  };
+}
+
+export function ConnectionsView({ onMessageClick, isLoading = false }: ConnectionsViewProps) {
+  const [activeTab, setActiveTab] = useState<ConnectionMember['type']>('followers');
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 800);
-
-  const filteredMembers = sampleConnections.filter(
-    (item) =>
-      item.type === activeTab &&
-      (!debouncedSearchQuery.trim() ||
-        item.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        item.roleTag.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        item.teamName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()))
+  const direction = activeTab === 'followers'
+    ? RelationshipDirectionEnum.INCOMING
+    : RelationshipDirectionEnum.OUTGOING;
+  const relationshipsQuery = useQuery(
+    `relationships:${direction}:${debouncedSearchQuery.trim().toLowerCase()}`,
+    () => getRelationships({ type: RelationshipTypeEnum.FOLLOW, direction, query: debouncedSearchQuery }),
+    { staleTime: 5 * 60 * 1000 },
+  );
+  const members = useMemo(
+    () => (relationshipsQuery.data?.items || [])
+      .map((relationship) => toConnectionMember(relationship, activeTab))
+      .filter((member): member is ConnectionMember => member !== null),
+    [relationshipsQuery.data, activeTab],
   );
 
   return (
     <div className="mhn-connections-view-container mhn-w-full">
-      {/* 1. Page Header Title matching Figma */}
-      <h2 className="mhn-connections-title">
-        Connections
-      </h2>
-
-      {/* 2. Full Width Search Input Bar */}
-      <div
-        className="mhn-connections-search-wrapper"
-      >
-        <svg
-          className="mhn-connections-search-icon"
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#94A3B8"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        <Input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search"
-          className="mhn-connections-search-input"
-        />
+      <h2 className="mhn-connections-title">Connections</h2>
+      <div className="mhn-connections-search-wrapper">
+        <Search className="mhn-connections-search-icon" size={18} aria-hidden="true" />
+        <Input type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search connections" aria-label="Search connections" className="mhn-connections-search-input" />
       </div>
-
-      {/* 3. Followers / Following Sub-Tabs matching Figma Screenshot */}
-      <div
-        className="mhn-connections-tabs-row"
-      >
-        <Button
-          onClick={() => setActiveTab('followers')}
-          className={`mhn-connections-tab-btn ${activeTab === 'followers' ? 'active' : ''}`}
-        >
-          Followers
-        </Button>
-
-        <Button
-          onClick={() => setActiveTab('following')}
-          className={`mhn-connections-tab-btn ${activeTab === 'following' ? 'active' : ''}`}
-        >
-          Following
-        </Button>
+      <div className="mhn-connections-tabs-row" role="tablist" aria-label="Connection direction">
+        {(['followers', 'following'] as const).map((tab) => (
+          <Button key={tab} type="button" role="tab" aria-selected={activeTab === tab} onClick={() => setActiveTab(tab)} className={`mhn-connections-tab-btn ${activeTab === tab ? 'active' : ''}`}>
+            {tab === 'followers' ? 'Followers' : 'Following'}
+          </Button>
+        ))}
       </div>
-
-      {/* 4. 4-Column Grid of Connection Cards matching Figma */}
-      {isLoading ? (
+      {isLoading || relationshipsQuery.isLoading ? (
         <NetworkSkeletonGrid count={8} />
-      ) : filteredMembers.length === 0 ? (
-        <EmptyState 
-          title="No Connections Found"
-          message="There are no connections or followers matching your criteria."
-          iconType="connections"
-        />
+      ) : relationshipsQuery.error ? (
+        <EmptyState title="Unable to Load Connections" message="Connections could not be loaded. Please try again." iconType="server-error" actionLabel="Retry" onAction={() => void relationshipsQuery.refetch({ forceRefetch: true })} />
+      ) : members.length === 0 ? (
+        <EmptyState title="No Connections Found" message="There are no connections matching your criteria." iconType="connections" />
       ) : (
-        <div
-          className="mhn-network-skeleton-grid"
-        >
-          {filteredMembers.map((member) => (
-            <div
-              key={member.id}
-              className="mhn-connection-member-card"
-            >
-              {/* Avatar Circle with blue ring */}
-              <div
-                className="mhn-connection-avatar-ring"
-              >
-                <img
-                  src={member.avatarUrl}
-                  alt={member.name}
-                  className="mhn-connection-avatar-img"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-                  }}
-                />
-              </div>
-
-              {/* User Name */}
-              <h4 className="mhn-connection-member-name">
-                {member.name}
-              </h4>
-
-              {/* Role Tag */}
-              <p className="mhn-connection-member-role">
-                {member.roleTag}
-              </p>
-
-              {/* Team Pill Badge */}
-              <div
-                className="mhn-connection-team-pill"
-              >
-                {member.teamLogo && (
-                  <img
-                    src={member.teamLogo}
-                    alt={member.teamName}
-                    className="mhn-connection-team-logo"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/HC.png';
-                    }}
-                  />
-                )}
-                <span>{member.teamName}</span>
-              </div>
-
-              {/* Location Line */}
-              <div
-                className="mhn-connection-location-line"
-              >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#64748B"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                  <circle cx="12" cy="10" r="3" />
-                </svg>
-                <span>{member.location}</span>
-              </div>
-
-              {/* Primary Action Button: Message */}
-              <Button
-                type="button"
-                onClick={() => onMessageClick && onMessageClick(member)}
-                className="mhn-btn-connection-message"
-              >
-                Message
-              </Button>
-            </div>
+        <div className="mhn-network-skeleton-grid">
+          {members.map((member) => (
+            <article key={member.id} className="mhn-connection-member-card">
+              <div className="mhn-connection-avatar-ring"><img src={member.avatarUrl} alt="" className="mhn-connection-avatar-img" /></div>
+              <h4 className="mhn-connection-member-name">{member.name}</h4>
+              <p className="mhn-connection-member-role">{member.roleTag}</p>
+              {member.teamName && (
+                <div className="mhn-connection-team-pill">
+                  {member.teamLogo && <img src={member.teamLogo} alt="" className="mhn-connection-team-logo" />}
+                  <span>{member.teamName}</span>
+                </div>
+              )}
+              {member.location && <p className="mhn-connection-location-line">{member.location}</p>}
+              <Button type="button" onClick={() => onMessageClick?.(member)} className="mhn-btn-connection-message" disabled={!onMessageClick}>Message</Button>
+            </article>
           ))}
         </div>
       )}
     </div>
   );
-};
+}

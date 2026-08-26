@@ -17,9 +17,9 @@ import {
   BRAND_COLORS,
   CREATE_ACCOUNT_STRINGS,
 } from '@my-hockey-network/shared';
-import { ROUTES } from '../../navigation/constants';
-import { RootStackParamList } from '../../navigation/types';
-import { mobileAuth } from '../../platform/auth-service';
+import { ROUTES } from '@/navigation/constants';
+import { RootStackParamList } from '@/navigation/types';
+import { mobileAuth } from '@/platform/auth-service';
 import { emailSchema, otpSchema } from '@my-hockey-network/validation';
 import Button from '@components/Button';
 import Input from '@components/Input';

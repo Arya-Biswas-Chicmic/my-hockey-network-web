@@ -4,7 +4,7 @@ import { ThemeColors } from '@theme/constants';
 import { _scaleText } from '@utils/utility';
 
 import { FONT } from '@utils/constants';
-import { HEADER_HEIGHT } from './constants';
+import { HEADER_HEIGHT } from '@/components/Header/constants';
 
 const styles = (Colors: ThemeColors) =>
   StyleSheet.create({

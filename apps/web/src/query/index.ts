@@ -1,3 +1,3 @@
-export * from './query-client';
-export * from './query-context';
-export * from './use-query';
+export * from '@/query/query-client';
+export * from '@/query/query-context';
+export * from '@/query/use-query';

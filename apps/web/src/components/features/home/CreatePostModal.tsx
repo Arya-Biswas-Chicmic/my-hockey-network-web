@@ -1,9 +1,11 @@
-import { Button } from '../../common/Button';
-import { Input, Textarea } from '../../common/FormControls';
+import { Button } from '@/components/common/Button';
+import { Input, Textarea } from '@/components/common/FormControls';
 import React, { useState, useRef } from 'react';
-import { useAuth } from '../../../hooks/use-auth';
-import { resolveMediaUrl } from '../../../utils/mediaUtils';
+import { useAuth } from '@/hooks/use-auth';
+import { resolveMediaUrl } from '@/utils/mediaUtils';
 import { isEmailValid } from '@my-hockey-network/validation';
+import { useFormik, type FormikErrors } from 'formik';
+import { ChevronDown, ChevronLeft, Image, LoaderCircle, MapPin, X } from 'lucide-react';
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -19,6 +21,17 @@ interface CreatePostModalProps {
   userAvatar?: string;
 }
 
+interface CreatePostFormValues {
+  content: string;
+  audience: 'Everyone' | 'Groups' | 'Custom';
+  shareWithEmails: string;
+  dontShareWithEmails: string;
+  locationTag: string;
+}
+
+const parseEmailList = (input: string) =>
+  input.split(/[, \n;]+/).map((email) => email.trim()).filter(Boolean);
+
 export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   isOpen,
   onClose,
@@ -28,28 +41,67 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   userAvatar,
 }) => {
   const { user } = useAuth();
-  const resolvedName = user?.profile?.displayName || (user as any)?.displayName || userName || 'Player';
-  const rawAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl || userAvatar;
+  const resolvedName = user?.profile?.displayName || userName || 'Player';
+  const rawAvatar = user?.profile?.avatarUrl || userAvatar;
   const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
 
   const [screen, setScreen] = useState<'create' | 'audience' | 'custom'>('create');
-  const [content, setContent] = useState('');
-  const [audience, setAudience] = useState<'Everyone' | 'Groups' | 'Custom'>('Everyone');
   const [tempAudience, setTempAudience] = useState<'Everyone' | 'Groups' | 'Custom'>('Everyone');
-  const [shareWithEmails, setShareWithEmails] = useState('');
-  const [dontShareWithEmails, setDontShareWithEmails] = useState('');
-  const [customError, setCustomError] = useState<string | null>(null);
-
   const [postImage, setPostImage] = useState<string | null>(null);
   const [postImageFile, setPostImageFile] = useState<File | null>(null);
-  const [locationTag, setLocationTag] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const formik = useFormik<CreatePostFormValues>({
+    initialValues: {
+      content: '',
+      audience: 'Everyone',
+      shareWithEmails: '',
+      dontShareWithEmails: '',
+      locationTag: '',
+    },
+    validate: (values) => {
+      const errors: FormikErrors<CreatePostFormValues> = {};
+      const invalidShare = parseEmailList(values.shareWithEmails).filter((email) => !isEmailValid(email));
+      const invalidExcluded = parseEmailList(values.dontShareWithEmails).filter((email) => !isEmailValid(email));
+      if (invalidShare.length) errors.shareWithEmails = `Invalid email: ${invalidShare.join(', ')}`;
+      if (invalidExcluded.length) errors.dontShareWithEmails = `Invalid email: ${invalidExcluded.join(', ')}`;
+      return errors;
+    },
+    onSubmit: (values) => {
+      if ((!values.content.trim() && !postImage && !postImageFile) || isLoading) return;
+      onSubmit(
+        values.content.trim(),
+        postImage || undefined,
+        {
+          audience: values.audience,
+          shareWith: values.shareWithEmails.trim() || undefined,
+          dontShareWith: values.dontShareWithEmails.trim() || undefined,
+          locationTag: values.locationTag || undefined,
+        },
+        postImageFile || undefined
+      );
+    },
+  });
+
+  const { values, errors } = formik;
+  const customError = errors.shareWithEmails || errors.dontShareWithEmails;
 
   if (!isOpen) return null;
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type.toLowerCase())) {
+        setImageError('Choose a JPG, PNG, or WebP image.');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setImageError('The image must be 10 MB or smaller.');
+        return;
+      }
+      setImageError(null);
       setPostImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -57,23 +109,6 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       };
       reader.readAsDataURL(file);
     }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if ((!content.trim() && !postImage && !postImageFile) || isLoading) return;
-
-    onSubmit(
-      content.trim(),
-      postImage || undefined,
-      {
-        audience,
-        shareWith: shareWithEmails || undefined,
-        dontShareWith: dontShareWithEmails || undefined,
-        locationTag: locationTag || undefined,
-      },
-      postImageFile || undefined
-    );
   };
 
   const handleAudienceOptionClick = (opt: 'Everyone' | 'Groups' | 'Custom') => {
@@ -94,10 +129,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
             <div className="mhn-modal-header">
               <h2 className="mhn-modal-title">Create post</h2>
               <Button className="mhn-modal-close-btn" onClick={onClose} aria-label="Close modal">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                <X size={18} aria-hidden="true" />
               </Button>
             </div>
 
@@ -117,25 +149,24 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   type="button"
                   className="mhn-audience-pill"
                   onClick={() => {
-                    setTempAudience(audience);
+                    setTempAudience(values.audience);
                     setScreen('audience');
                   }}
                 >
-                  <span>{audience}</span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
+                  <span>{values.audience}</span>
+                  <ChevronDown size={12} aria-hidden="true" />
                 </Button>
               </div>
             </div>
 
             {/* Post Textarea Content */}
-            <form onSubmit={handleSubmit} className="mhn-modal-form">
+            <form onSubmit={formik.handleSubmit} className="mhn-modal-form" noValidate>
               <Textarea
                 className="mhn-modal-textarea"
                 placeholder="What do you want to talk about?"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
+                name="content"
+                value={values.content}
+                onChange={formik.handleChange}
                 rows={5}
                 autoFocus
               />
@@ -147,25 +178,24 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   <Button
                     type="button"
                     className="mhn-modal-remove-img-btn"
-                    onClick={() => setPostImage(null)}
+                    onClick={() => {
+                      setPostImage(null);
+                      setPostImageFile(null);
+                      setImageError(null);
+                      if (fileInputRef.current) fileInputRef.current.value = '';
+                    }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
+                    <X size={14} aria-hidden="true" />
                   </Button>
                 </div>
               )}
 
               {/* Attached Location Tag */}
-              {locationTag && (
+              {values.locationTag && (
                 <div className="mhn-modal-location-tag">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0091FF" strokeWidth="2">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
-                  <span>{locationTag}</span>
-                  <Button type="button" onClick={() => setLocationTag(null)}>×</Button>
+                  <MapPin size={14} aria-hidden="true" />
+                  <span>{values.locationTag}</span>
+                  <Button type="button" onClick={() => void formik.setFieldValue('locationTag', '')}>×</Button>
                 </div>
               )}
 
@@ -174,9 +204,11 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 type="file"
                 ref={fileInputRef}
                 onChange={handleImageSelect}
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 className="mhn-display-none"
               />
+
+              {imageError && <p className="mhn-edit-profile-field-error">{imageError}</p>}
 
               {/* Action Toolbar */}
               <div className="mhn-modal-toolbar">
@@ -188,21 +220,17 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                     onClick={() => fileInputRef.current?.click()}
                     title="Add photo"
                   >
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#0091FF">
-                      <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71z" />
-                    </svg>
+                    <Image size={22} aria-hidden="true" />
                   </Button>
 
                   {/* Location Icon Button */}
                   <Button
                     type="button"
                     className="mhn-modal-icon-btn"
-                    onClick={() => setLocationTag(locationTag ? null : 'Austria, Europe')}
+                    onClick={() => void formik.setFieldValue('locationTag', values.locationTag ? '' : 'Austria, Europe')}
                     title="Add location"
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#0091FF">
-                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-                    </svg>
+                    <MapPin size={20} aria-hidden="true" />
                   </Button>
                 </div>
               </div>
@@ -211,15 +239,12 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               <div className="mhn-modal-submit-row">
                 <Button
                   type="submit"
-                  disabled={(!content.trim() && !postImage) || isLoading}
-                  className={`mhn-modal-submit-btn ${(content.trim() || postImage) && !isLoading ? 'active' : 'disabled'}`}
+                  disabled={(!values.content.trim() && !postImage) || isLoading}
+                  className={`mhn-modal-submit-btn ${(values.content.trim() || postImage) && !isLoading ? 'active' : 'disabled'}`}
                 >
                   {isLoading ? (
                     <span className="mhn-btn-loading-flex">
-                      <svg className="mhn-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
-                        <path d="M12 2a10 10 0 0 1 10 10" fill="currentColor" />
-                      </svg>
+                      <LoaderCircle className="mhn-spin" size={16} aria-hidden="true" />
                       Posting...
                     </span>
                   ) : (
@@ -241,9 +266,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 onClick={() => setScreen('create')}
                 aria-label="Back"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
+                <ChevronLeft size={18} aria-hidden="true" />
               </Button>
               <h2 className="mhn-modal-title">Post Audience</h2>
               <Button
@@ -252,10 +275,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 onClick={onClose}
                 aria-label="Close"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                <X size={18} aria-hidden="true" />
               </Button>
             </div>
 
@@ -306,7 +326,11 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 type="button"
                 className="mhn-audience-footer-btn"
                 onClick={() => {
-                  setAudience(tempAudience);
+                  void formik.setFieldValue('audience', tempAudience);
+                  if (tempAudience !== 'Custom') {
+                    void formik.setFieldValue('shareWithEmails', '');
+                    void formik.setFieldValue('dontShareWithEmails', '');
+                  }
                   setScreen('create');
                 }}
               >
@@ -326,9 +350,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 onClick={() => setScreen('audience')}
                 aria-label="Back"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
+                <ChevronLeft size={18} aria-hidden="true" />
               </Button>
               <h2 className="mhn-modal-title">Custom privacy</h2>
               <Button
@@ -337,10 +359,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 onClick={onClose}
                 aria-label="Close"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                <X size={18} aria-hidden="true" />
               </Button>
             </div>
 
@@ -351,11 +370,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 <Textarea
                   className="mhn-custom-textarea"
                   placeholder="Type mail of the users (e.g. user@example.com)"
-                  value={shareWithEmails}
-                  onChange={(e) => {
-                    setShareWithEmails(e.target.value);
-                    if (customError) setCustomError(null);
-                  }}
+                  name="shareWithEmails"
+                  value={values.shareWithEmails}
+                  onChange={formik.handleChange}
                   rows={3}
                 />
               </div>
@@ -366,11 +383,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 <Textarea
                   className="mhn-custom-textarea"
                   placeholder="Type mail of the users (e.g. user@example.com)"
-                  value={dontShareWithEmails}
-                  onChange={(e) => {
-                    setDontShareWithEmails(e.target.value);
-                    if (customError) setCustomError(null);
-                  }}
+                  name="dontShareWithEmails"
+                  value={values.dontShareWithEmails}
+                  onChange={formik.handleChange}
                   rows={3}
                 />
               </div>
@@ -392,7 +407,6 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   type="button"
                   className="mhn-btn-custom-cancel"
                   onClick={() => {
-                    setCustomError(null);
                     setScreen('audience');
                   }}
                 >
@@ -401,25 +415,10 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 <Button
                   type="button"
                   className="mhn-btn-custom-done"
-                  onClick={() => {
-                    const parseResult = (input: string) => {
-                      if (!input.trim()) return [];
-                      return input.split(/[, \n;]+/).map((e) => e.trim()).filter(Boolean);
-                    };
-
-                    const shareTokens = parseResult(shareWithEmails);
-                    const dontShareTokens = parseResult(dontShareWithEmails);
-                    const invalidShare = shareTokens.filter((t) => !isEmailValid(t));
-                    const invalidDontShare = dontShareTokens.filter((t) => !isEmailValid(t));
-                    const allInvalid = [...invalidShare, ...invalidDontShare];
-
-                    if (allInvalid.length > 0) {
-                      setCustomError(`Invalid email address: "${allInvalid.join(', ')}". Please enter valid email addresses.`);
-                      return;
-                    }
-
-                    setCustomError(null);
-                    setAudience('Custom');
+                  onClick={async () => {
+                    const validationErrors = await formik.validateForm();
+                    if (validationErrors.shareWithEmails || validationErrors.dontShareWithEmails) return;
+                    await formik.setFieldValue('audience', 'Custom');
                     setScreen('create');
                   }}
                 >

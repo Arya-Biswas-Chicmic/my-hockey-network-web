@@ -1,2 +1,2 @@
-export * from './EditProfileModal';
-export * from './ProfileSkeletonLoader';
+export * from '@/components/features/profile/EditProfileModal';
+export * from '@/components/features/profile/ProfileSkeletonLoader';

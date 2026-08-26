@@ -3,7 +3,7 @@ import type { StyleProp, ViewStyle } from 'react-native';
 
 import useStyles from '@hooks/useStyles';
 
-import styles from './styles';
+import styles from '@/components/Button/styles';
 
 export type ButtonProps = {
   title: string;

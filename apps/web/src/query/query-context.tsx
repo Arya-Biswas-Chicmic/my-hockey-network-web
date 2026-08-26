@@ -1,8 +1,6 @@
-import React, { createContext, useContext, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { globalQueryClient, QueryClient } from './query-client';
-
-const QueryClientContext = createContext<QueryClient>(globalQueryClient);
+import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import { globalQueryClient, type QueryClient } from '@/query/query-client';
 
 export interface QueryProviderProps {
   client?: QueryClient;
@@ -10,15 +8,7 @@ export interface QueryProviderProps {
 }
 
 export function QueryProvider({ client = globalQueryClient, children }: Readonly<QueryProviderProps>) {
-  const queryClient = useMemo(() => client, [client]);
-
-  return (
-    <QueryClientContext.Provider value={queryClient}>
-      {children}
-    </QueryClientContext.Provider>
-  );
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
-export function useQueryClient(): QueryClient {
-  return useContext(QueryClientContext);
-}
+export { useQueryClient };

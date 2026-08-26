@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Formik, Form } from 'formik';
 import { Button } from '@/components/common/Button';
-import { Input } from '@/components/common/FormControls';
+import React, { useState, useEffect } from 'react';
 import { Spinner } from '@/components/common/Spinner';
-import { FormError } from '@/components/common/form/FormError';
-import { maskEmail, yupOtpSchema, OtpFormValues } from '@my-hockey-network/validation';
+import { maskEmail, sixDigitOtpSchema } from '@my-hockey-network/validation';
+import { useFormik } from 'formik';
+import { OtpCodeInput } from '@/components/common/OtpCodeInput';
+import { ArrowLeft } from 'lucide-react';
 
 interface VerifyEmailFormProps {
   email?: string;
@@ -26,10 +26,17 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
   resendNotice = null,
 }) => {
   const [resendCooldown, setResendCooldown] = useState<number>(59);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const formik = useFormik({
+    initialValues: { code: '' },
+    validate: ({ code }) => {
+      const result = sixDigitOtpSchema.safeParse(code);
+      return result.success ? {} : { code: result.error.issues[0]?.message };
+    },
+    onSubmit: ({ code }) => onConfirm?.(code),
+  });
 
   useEffect(() => {
-    let timer: any;
+    let timer: ReturnType<typeof setInterval> | undefined;
     if (resendCooldown > 0) {
       timer = setInterval(() => {
         setResendCooldown((prev) => prev - 1);
@@ -46,16 +53,11 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
     setResendCooldown(59);
   };
 
+  const activeError =
+    ((formik.touched.code || formik.submitCount > 0) ? formik.errors.code : null) || errorMessage;
+
   const formattedTimer = `00:${resendCooldown.toString().padStart(2, '0')}`;
   const isLastTenSeconds = resendCooldown <= 10 && resendCooldown > 0;
-
-  const initialValues: OtpFormValues = { otp: '' };
-
-  const handleFormSubmit = (values: OtpFormValues) => {
-    if (onConfirm) {
-      onConfirm(values.otp.trim());
-    }
-  };
 
   return (
     <div className="onboarding-form verify-email-form-container">
@@ -66,9 +68,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
           disabled={loading}
           className="mhn-btn-back-link"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
+          <ArrowLeft size={18} strokeWidth={2.5} />
           <span>Back</span>
         </Button>
       )}
@@ -85,113 +85,41 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
 
       {resendNotice && (
         <div className="mhn-resend-notice-card">
-          {resendNotice}
+          ✓ {resendNotice}
         </div>
       )}
 
-      <Formik<OtpFormValues>
-        initialValues={initialValues}
-        validationSchema={yupOtpSchema}
-        onSubmit={handleFormSubmit}
-        validateOnBlur
-        validateOnChange
-      >
-        {({ values, setFieldValue, setFieldTouched, errors, touched, isSubmitting }) => {
-          const otpDigits = values.otp.padEnd(6, '').slice(0, 6).split('');
-          const activeError = (touched.otp && errors.otp) || errorMessage;
+      <form onSubmit={formik.handleSubmit} className="verify-email-form" noValidate>
+        <OtpCodeInput
+          value={formik.values.code}
+          onChange={(code) => void formik.setFieldValue('code', code, true)}
+          error={activeError}
+          disabled={loading}
+          className="mhn-relative-container"
+        />
 
-          const handleDigitChange = (index: number, val: string) => {
-            const cleanVal = val.replace(/\D/g, '');
-            if (val.length > 1) {
-              const digits = cleanVal.slice(0, 6);
-              setFieldValue('otp', digits);
-              setFieldTouched('otp', true, true);
-              const nextIndex = Math.min(digits.length, 5);
-              inputRefs.current[nextIndex]?.focus();
-              return;
-            }
+        {/* Standardized Edit Profile Reference Validation Error Format */}
+        {activeError && (
+          <div className="mhn-edit-profile-field-error mhn-error-center-margin">
+            <span>{activeError}</span>
+          </div>
+        )}
 
-            const currentArr = values.otp.padEnd(6, '').slice(0, 6).split('');
-            currentArr[index] = cleanVal.slice(0, 1);
-            const newOtp = currentArr.join('').trimEnd();
-            setFieldValue('otp', newOtp);
-            setFieldTouched('otp', true, true);
-
-            if (cleanVal && index < 5) {
-              inputRefs.current[index + 1]?.focus();
-            }
-          };
-
-          const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-            if (e.key === 'Backspace') {
-              if (!otpDigits[index] && index > 0) {
-                inputRefs.current[index - 1]?.focus();
-              }
-              return;
-            }
-            if (
-              e.key === 'Tab' ||
-              e.key === 'ArrowLeft' ||
-              e.key === 'ArrowRight' ||
-              e.key === 'Delete' ||
-              e.key === 'Enter' ||
-              e.ctrlKey ||
-              e.metaKey
-            ) {
-              return;
-            }
-            if (!/^\d$/.test(e.key)) {
-              e.preventDefault();
-            }
-          };
-
-          return (
-            <Form className="verify-email-form">
-              <div className="otp-inputs-row mhn-relative-container">
-                {[0, 1, 2, 3, 4, 5].map((index) => (
-                  <Input
-                    key={index}
-                    ref={(el) => {
-                      inputRefs.current[index] = el;
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={1}
-                    value={otpDigits[index] || ''}
-                    onChange={(e) => handleDigitChange(index, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(index, e)}
-                    className={`otp-digit-input ${activeError ? 'mhn-input-invalid' : ''}`}
-                    disabled={loading || isSubmitting}
-                    autoFocus={index === 0}
-                  />
-                ))}
-              </div>
-
-              {activeError && (
-                <div className="mhn-edit-profile-field-error mhn-error-center-margin">
-                  <span>{activeError}</span>
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                className={`btn-submit btn-confirm-otp mhn-btn-confirm-margin ${loading || isSubmitting ? 'mhn-loading' : ''}`}
-                disabled={loading || isSubmitting}
-              >
-                {loading || isSubmitting ? (
-                  <span className="mhn-btn-loading-flex">
-                    <Spinner size="sm" color="#FFFFFF" />
-                    <span>Verifying...</span>
-                  </span>
-                ) : (
-                  'Confirm'
-                )}
-              </Button>
-            </Form>
-          );
-        }}
-      </Formik>
+        <Button
+          type="submit"
+          className={`btn-submit btn-confirm-otp mhn-btn-confirm-margin ${loading ? 'mhn-loading' : ''}`}
+          disabled={loading}
+        >
+          {loading ? (
+            <span className="mhn-btn-loading-flex">
+              <Spinner size="sm" color="#FFFFFF" />
+              <span>Verifying...</span>
+            </span>
+          ) : (
+            'Confirm'
+          )}
+        </Button>
+      </form>
 
       {/* Change Email */}
       <Button

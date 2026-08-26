@@ -6,16 +6,16 @@ import {
   loginUser,
   logoutUser,
 } from '@redux/CommonReducer';
-import { mobileAuth } from '../platform/auth-service';
-import { mobileAuthStorage } from '../platform/auth-storage';
+import { mobileAuth } from '@/platform/auth-service';
+import { mobileAuthStorage } from '@/platform/auth-storage';
 import OnboardingScreen from '@screens/Onboarding';
 import ForgotPasswordScreen from '@screens/ForgotPassword';
 import LoginScreen from '@screens/Login';
 import SignupScreen from '@screens/Signup';
 
-import { ROUTES } from './constants';
-import MainTabs from './MainTabs';
-import { RootStackParamList } from './types';
+import { ROUTES } from '@/navigation/constants';
+import MainTabs from '@/navigation/MainTabs';
+import { RootStackParamList } from '@/navigation/types';
 
 import {
   NavigationContainer,

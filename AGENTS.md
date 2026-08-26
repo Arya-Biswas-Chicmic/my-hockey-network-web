@@ -7,15 +7,22 @@ folder. Follow them strictly. Do not replace established architecture with a par
 
 Read these files before implementation:
 
-1. `PROJECT_CONTEXT.md`
-2. `docs/codebase_architecture_guide.md`
-3. `docs/NAVIGATION.md`
-4. `docs/COMPONENT_CATALOG.md`
-5. `docs/ENVIRONMENT_CONFIGURATION.md`
-6. `docs/SECURITY_REGISTER.md`
-7. `docs/TESTING_STRATEGY.md`
-8. `docs/DOCUMENTATION_POLICY.md`
-9. `docs/IMPLEMENTATION_STATUS.md`
+1. `docs/FRONTEND_ARCHITECTURE.md`
+2. `docs/PROJECT_CONTEXT.md`
+3. `docs/codebase_architecture_guide.md`
+4. `docs/NAVIGATION.md`
+5. `docs/COMPONENT_CATALOG.md`
+6. `docs/ENVIRONMENT_CONFIGURATION.md`
+7. `docs/SECURITY_REGISTER.md`
+8. `docs/TESTING_STRATEGY.md`
+9. `docs/DOCUMENTATION_POLICY.md`
+10. `docs/IMPLEMENTATION_STATUS.md`
+11. `docs/FRONTEND_DEVELOPMENT_GUIDELINES.md`
+12. `docs/NEXTJS_MIGRATION_PLAN.md`
+13. `docs/WEB_SEO_AND_RENDERING_STRATEGY.md`
+14. `docs/THIRD_PARTY_AND_DEPENDENCY_POLICY.md`
+15. `docs/ADMIN_PANEL_ALIGNMENT.md`
+16. `docs/MOBILE_SETUP.md` when mobile setup, navigation, runtime, or build behavior is relevant
 
 Inspect the relevant existing code before editing. Search for an existing component, hook, API
 operation, contract, validation schema, state transition, token, and helper before creating one.
@@ -33,6 +40,24 @@ operation, contract, validation schema, state transition, token, and helper befo
   build-environment globals. Inject platform behavior through adapters.
 - Reuse an existing platform component and add typed variants before creating another component.
   A new component is allowed only for genuinely distinct semantics or reusable feature composition.
+- Follow the responsibility and file-size review rules in `docs/FRONTEND_DEVELOPMENT_GUIDELINES.md`.
+  Prefer 100–200 focused lines and review files over 300 lines for meaningful decomposition; never
+  split mechanically merely to satisfy a count.
+- Next.js migration is approved but explicitly paused. Read `docs/NEXTJS_MIGRATION_PLAN.md`. Do not
+  begin migration, install its dependencies, add App Router files, switch form libraries, change
+  lockfiles/package managers, or alter build/deployment configuration until the owner explicitly
+  instructs the team to start. Until then, maintain the current Vite/npm/React Router/Formik code.
+- During the authorized migration, follow the route-level SEO/rendering matrix instead of making
+  every route ISR. Never cache authenticated or personalized output. Use Next.js built-ins before an
+  SEO dependency and follow `docs/WEB_SEO_AND_RENDERING_STRATEGY.md`.
+- React Hook Form with Zod is the approved target web form system, based on the reviewed Admin Panel
+  pattern. Formik remains current until migration starts and must then be replaced coherently.
+- Every new dependency requires the written built-in-first and security review in
+  `docs/THIRD_PARTY_AND_DEPENDENCY_POLICY.md`. Candidate services listed there are not pre-approved.
+- Use `@/` for imports within each application. Relative application imports are rejected.
+- Do not use explicit `any`. Extend contracts or accept `unknown` and narrow it safely.
+- Use Lucide for ordinary web UI icons. Custom brand/illustration SVG is allowed only in the
+  approved reusable icon components enforced by `npm run components:check`.
 
 ## Routing and navigation
 
@@ -46,6 +71,8 @@ operation, contract, validation schema, state transition, token, and helper befo
   containers, screens, transitions, tab bars, and navigation parameters cannot.
 - Preserve authentication bootstrap behavior: web guards wait for `/auth/me`; mobile chooses the
   authenticated or guest navigator only after SecureStore/session bootstrap completes.
+- TanStack Query owns web server-state fetching, cache, retry, and invalidation. It does not replace
+  React Router. Do not introduce another custom query cache.
 
 ## Environment and security
 
@@ -55,6 +82,9 @@ operation, contract, validation schema, state transition, token, and helper befo
   cookies, authorization headers, or private keys.
 - Web authentication uses backend httpOnly cookies with CSRF held in memory. Mobile credentials use
   Expo SecureStore. Never persist bearer credentials in localStorage, AsyncStorage, or Redux.
+- Shared API operations use the injected native-fetch client. Do not call `fetch()` directly or add
+  Axios. The only allowlisted direct fetch is the signed object-storage upload in `mediaApi.ts`,
+  which must not receive API cookies or authorization headers.
 - Do not add credential-bearing logs, debug cURL output, obfuscated source, or unreviewed generated
   code. All normal npm workflows must retain the obfuscation/security prechecks.
 
@@ -64,6 +94,8 @@ For every implementation change in `apps/`, `packages/`, `scripts/`, or root con
 
 1. Add or update proportionate unit/integration tests.
 2. Maintain at least 80% statements, branches, functions, and lines in covered shared code.
+   Test changes at the unit and integration layers and add/update Playwright production smoke tests
+   for affected critical journeys. Coverage does not replace route, accessibility, or smoke checks.
 3. Update the relevant Markdown context files in the same change. This maintenance is permanently
    authorized by the project owner; do not wait for separate approval.
 4. Update `docs/IMPLEMENTATION_STATUS.md` and any architecture, navigation, security, testing,

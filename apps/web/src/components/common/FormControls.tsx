@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, useId } from 'react';
 import type {
   InputHTMLAttributes,
   SelectHTMLAttributes,
@@ -6,6 +6,7 @@ import type {
 } from 'react';
 
 import { sanitizeEmailInput, sanitizeNameInput, normalizeNameBlur } from '@my-hockey-network/validation';
+import { FormField } from '@/components/common/FormField';
 
 export interface EnhancedInputProps extends InputHTMLAttributes<HTMLInputElement> {
   isNameInput?: boolean;
@@ -18,6 +19,7 @@ export const Input = forwardRef<HTMLInputElement, EnhancedInputProps>(
     {
       onChange,
       onBlur,
+      onKeyDown,
       type,
       id,
       name,
@@ -94,9 +96,7 @@ export const Input = forwardRef<HTMLInputElement, EnhancedInputProps>(
         e.preventDefault();
         return;
       }
-      if (props.onKeyDown) {
-        props.onKeyDown(e);
-      }
+      onKeyDown?.(e);
     };
 
     return (
@@ -120,12 +120,70 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
 );
 Select.displayName = 'Select';
 
+export interface DropdownOption {
+  value: string;
+  label: string;
+}
+
+export interface DropdownProps {
+  label?: string;
+  placeholder?: string;
+  value?: string;
+  options: Array<DropdownOption | string>;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  error?: string | null;
+  required?: boolean;
+  className?: string;
+  id?: string;
+  name?: string;
+}
+
+export function Dropdown({
+  label,
+  placeholder = 'Select',
+  value = '',
+  options,
+  onChange,
+  disabled = false,
+  error,
+  required = false,
+  className = '',
+  id,
+  name,
+}: DropdownProps) {
+  const generatedId = useId();
+  const selectId = id || generatedId;
+  const normalizedOptions = options.map((option) =>
+    typeof option === 'string' ? { value: option, label: option } : option,
+  );
+
+  return (
+    <FormField label={label} required={required} error={error} className={className} htmlFor={selectId}>
+      <div className="mhn-dropdown-wrapper">
+        <Select
+          id={selectId}
+          name={name}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          disabled={disabled}
+          className={`mhn-dropdown-select ${error ? 'mhn-dropdown-error' : ''} ${disabled ? 'mhn-dropdown-disabled' : ''}`}
+        >
+          {placeholder && <option value="">{placeholder}</option>}
+          {normalizedOptions.map((option) => (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          ))}
+        </Select>
+        <img src="/arrowBottom.png" alt="" aria-hidden="true" className="mhn-dropdown-arrow-icon" />
+      </div>
+    </FormField>
+  );
+}
+
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
   (props, ref) => <textarea ref={ref} {...props} />,
 );
 Textarea.displayName = 'Textarea';
 
-export { Dropdown } from './Dropdown';
-export type { DropdownProps, DropdownOption } from './Dropdown';
-export { FormField } from './FormField';
-export type { FormFieldProps } from './FormField';
+export { FormField } from '@/components/common/FormField';
+export type { FormFieldProps } from '@/components/common/FormField';

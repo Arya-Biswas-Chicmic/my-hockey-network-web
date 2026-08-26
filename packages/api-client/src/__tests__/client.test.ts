@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError, createApiClient, extractMessageFromEnvelope, type AuthStorageAdapter } from '../index';
+import { ApiError, createApiClient, extractMessageFromEnvelope, type ApiClientOptions, type AuthStorageAdapter } from '../index';
 
 function storage(): AuthStorageAdapter {
   return {
@@ -14,6 +14,7 @@ function storage(): AuthStorageAdapter {
 describe('platform-neutral API client', () => {
   it('does not log credentials or request bodies', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
     const fetchImpl = vi.fn(async () =>
       new Response(JSON.stringify({ success: true, statusCode: 200, message: 'ok', data: { ok: true } }), {
         status: 200,
@@ -33,8 +34,10 @@ describe('platform-neutral API client', () => {
     });
 
     expect(log).not.toHaveBeenCalled();
+    expect(info).not.toHaveBeenCalled();
     expect(fetchImpl).toHaveBeenCalledOnce();
     log.mockRestore();
+    info.mockRestore();
   });
 
   it('treats an unauthenticated auth bootstrap as a silent result', async () => {
@@ -157,7 +160,7 @@ describe('platform-neutral API client', () => {
     await expect(parseClient.request('/feed')).rejects.toMatchObject({ statusCode: 502 });
 
     const ngrokClient = createApiClient({
-      baseUrl: 'https://reposeful-kareen-controllingly.ngrok-free.dev/v1',
+      baseUrl: 'https://offline-tunnel.example.test/v1',
       clientType: 'web',
       authStorage,
       fetchImpl: vi.fn(async () => new Response('<html><body>ERR_NGROK_3200: Endpoint offline</body></html>', { status: 502 })),
@@ -209,6 +212,58 @@ describe('platform-neutral API client', () => {
     });
   });
 
+  it('announces JSON server failures and accepts empty successful responses', async () => {
+    const onServerDown = vi.fn();
+    const serverClient = createApiClient({
+      baseUrl: 'https://api.example.test/v1',
+      clientType: 'web',
+      authStorage: storage(),
+      onServerDown,
+      fetchImpl: vi.fn(async () =>
+        new Response(
+          JSON.stringify({ success: false, statusCode: 503, message: 'Maintenance', data: null }),
+          { status: 503 },
+        ),
+      ),
+    });
+
+    await expect(serverClient.request('/feed')).rejects.toMatchObject({
+      statusCode: 503,
+      message: 'Maintenance',
+    });
+    expect(onServerDown).toHaveBeenCalledWith(503, 'Maintenance');
+
+    const emptyResponseClient = createApiClient({
+      baseUrl: 'https://api.example.test/v1',
+      clientType: 'web',
+      authStorage: storage(),
+      fetchImpl: vi.fn(async () => new Response(null, { status: 204 })),
+    });
+    await expect(emptyResponseClient.request('/notifications/read-all')).resolves.toBeUndefined();
+  });
+
+  it('keeps mutation server failures local instead of announcing a global outage', async () => {
+    const onServerDown = vi.fn();
+    const client = createApiClient({
+      baseUrl: 'https://api.example.test/v1',
+      clientType: 'web',
+      authStorage: storage(),
+      onServerDown,
+      fetchImpl: vi.fn(async () =>
+        new Response(
+          JSON.stringify({ success: false, statusCode: 502, message: 'Bad Gateway', data: null }),
+          { status: 502 },
+        ),
+      ),
+    });
+
+    await expect(client.request('/posts/post-real-123', {
+      method: 'PATCH',
+      body: JSON.stringify({ body: 'Updated text' }),
+    })).rejects.toMatchObject({ statusCode: 502 });
+    expect(onServerDown).not.toHaveBeenCalled();
+  });
+
   it('sets defaults without replacing caller-provided security headers', async () => {
     const fetchImpl = vi.fn(async () =>
       new Response(JSON.stringify({ success: true, statusCode: 200, message: 'ok', data: true }), { status: 200 }),
@@ -249,7 +304,7 @@ describe('platform-neutral API client', () => {
       createApiClient({
         baseUrl: 'https://api.example.test/v1',
         clientType: 'web',
-      } as any),
+      } as unknown as ApiClientOptions),
     ).toThrow('createApiClient requires an authStorage or sessionAdapter.');
   });
 

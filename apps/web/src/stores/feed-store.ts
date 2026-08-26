@@ -1,4 +1,4 @@
-import type { FeedPostProps } from '../components/features/home/FeedPostCard';
+import type { FeedPostProps } from '@/components/features/home/FeedPostCard';
 
 export class FeedStore {
   private static posts: FeedPostProps[] = [];

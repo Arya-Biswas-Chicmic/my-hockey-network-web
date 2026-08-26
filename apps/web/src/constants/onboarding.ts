@@ -1,4 +1,4 @@
-import type { RoleOption } from '../types/onboarding';
+import type { RoleOption } from '@/types/onboarding';
 
 export const DEFAULT_ROLE_OPTIONS: RoleOption[] = [
   {

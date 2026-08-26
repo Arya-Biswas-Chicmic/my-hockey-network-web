@@ -1,5 +1,5 @@
 import { loadAsync } from 'expo-font';
-import { mobileEnvironment } from '../platform/environment';
+import { mobileEnvironment } from '@/platform/environment';
 
 export const API_BASE_URL = mobileEnvironment.apiBaseUrl;
 

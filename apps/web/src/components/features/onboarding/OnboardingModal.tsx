@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
-import { OnboardingIllustration } from './OnboardingIllustration';
-import { RoleSelectionForm } from './RoleSelectionForm';
-import { CreateAccountForm, VerifyEmailForm, LoginForm, GuardianApprovalModal, RequestSentCard } from '../auth';
-import { ParentOnboardingModal } from '../parent';
-import { DEFAULT_ROLE_OPTIONS, DEFAULT_SELECTED_ROLE_IDS } from '../../../constants/onboarding';
+import { OnboardingIllustration } from '@/components/features/onboarding/OnboardingIllustration';
+import { RoleSelectionForm } from '@/components/features/onboarding/RoleSelectionForm';
+import { CreateAccountForm, VerifyEmailForm, LoginForm, GuardianApprovalModal, RequestSentCard } from '@/components/features/auth';
+import { ParentOnboardingModal } from '@/components/features/parent';
+import { DEFAULT_ROLE_OPTIONS, DEFAULT_SELECTED_ROLE_IDS } from '@/constants/onboarding';
 import { requestOtp, verifyOtp, submitOnboarding, sendGuardianRequest, calculateAge, UserRole } from '@my-hockey-network/core';
-import { type OtpVerifyResponse, AuthModeEnum } from '@my-hockey-network/contracts';
-import { webAuthStorage } from '../../../platform/auth-storage';
-import { useAuth } from '../../../hooks/use-auth';
-import { formatDobToIso } from '../../../utils/guardianUtils';
-import { extractErrorMessage } from '../../../utils/toast';
+import { type AuthMeResponse, type OnboardingResponse, type OtpVerifyResponse, AuthModeEnum } from '@my-hockey-network/contracts';
+import { webAuthStorage } from '@/platform/auth-storage';
+import { useAuth } from '@/hooks/use-auth';
+import { formatDobToIso } from '@/utils/guardianUtils';
+import { extractErrorMessage, getApiErrorKey, getApiErrorStatus } from '@/utils/toast';
 
 interface OnboardingModalProps {
   initialMode?: 'signup' | 'login';
-  onComplete?: (data: { selectedRoles: string[]; accountData?: { fullName: string; email: string; dob: string; parentEmail?: string }; onboardingResult?: any }) => void;
+  onComplete?: (data: { selectedRoles: string[]; accountData?: { fullName: string; email: string; dob: string; parentEmail?: string }; onboardingResult?: OnboardingResponse | AuthMeResponse }) => void;
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = AuthModeEnum.LOGIN, onComplete }) => {
@@ -74,8 +74,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
         intent: 'SIGNUP',
       });
       setStep(3);
-    } catch (err: any) {
-      if (err.statusCode === 409 || err.key === 'USER_ALREADY_EXISTS') {
+    } catch (err: unknown) {
+      if (getApiErrorStatus(err) === 409 || getApiErrorKey(err) === 'USER_ALREADY_EXISTS') {
         setErrorMessage(extractErrorMessage(err, 'An account with this email already exists. Please sign in or use a different email.'));
       } else {
         setErrorMessage(extractErrorMessage(err, 'Failed to send verification code. Please check details and try again.'));
@@ -125,13 +125,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
             dateOfBirth: isoDob,
             preferredLanguage: 'en',
           });
-          if (onboardingRes) {
-            webAuthStorage.saveSession(onboardingRes as any);
-            setHasCompletedPreOnboarding(true);
-          }
-        } catch (onboardingErr: any) {
+          if (onboardingRes) setHasCompletedPreOnboarding(true);
+        } catch (onboardingErr: unknown) {
           console.warn('Parent onboarding pre-submit notice:', onboardingErr);
-          const is409 = onboardingErr?.status === 409 || onboardingErr?.statusCode === 409 || String(onboardingErr?.message || '').toLowerCase().includes('already');
+          const is409 = getApiErrorStatus(onboardingErr) === 409 || extractErrorMessage(onboardingErr).toLowerCase().includes('already');
           if (is409) {
             setHasCompletedPreOnboarding(true);
           }
@@ -141,7 +138,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
         // Adult: Complete Onboarding immediately
         await finalizeOnboarding(undefined, verifyRes);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setErrorMessage(extractErrorMessage(err, 'Verification failed. Please check your code and try again.'));
     } finally {
       setLoading(false);
@@ -166,7 +163,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
 
       const isoDob = formatDobToIso(accountData.dob);
 
-      let onboardingResult;
+      let onboardingResult: OnboardingResponse | undefined;
       if (!hasCompletedPreOnboarding) {
         try {
           onboardingResult = await submitOnboarding({
@@ -177,26 +174,23 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
             preferredLanguage: 'en',
           });
           setHasCompletedPreOnboarding(true);
-        } catch (err: any) {
+        } catch (err: unknown) {
           // If onboarding was already completed (e.g. pre-submitted in step 3 or by backend), treat 409 as success
-          const is409 = err?.status === 409 || err?.statusCode === 409 || String(err?.message || '').toLowerCase().includes('already');
+          const is409 = getApiErrorStatus(err) === 409 || extractErrorMessage(err).toLowerCase().includes('already');
           if (!is409) {
             throw err;
           }
         }
       }
 
-      const sessionToSet = onboardingResult || activeSession;
-      if (sessionToSet) {
-        setAuthSession(sessionToSet as any);
-      }
+      if (activeSession) setAuthSession(activeSession);
 
       await loadAuthMe(true, true);
 
       if (onComplete) {
         onComplete({ selectedRoles, accountData: { ...accountData, parentEmail }, onboardingResult });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setErrorMessage(extractErrorMessage(err, 'Failed to complete profile onboarding.'));
     } finally {
       setLoading(false);
@@ -213,7 +207,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
       setAccountData((prev) => ({ ...prev, parentEmail }));
       // Move to Step 5: Request Sent! Confirmation Card (Image 2 right screen)
       setStep(5);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setErrorMessage(extractErrorMessage(err, 'Failed to send guardian request. Please check email address.'));
     } finally {
       setLoading(false);
@@ -242,8 +236,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
         intent: 'SIGNIN',
       });
       setLoginStep(2);
-    } catch (err: any) {
-      if (err.statusCode === 404 || err.key === 'USER_NOT_FOUND') {
+    } catch (err: unknown) {
+      if (getApiErrorStatus(err) === 404 || getApiErrorKey(err) === 'USER_NOT_FOUND') {
         setErrorMessage('No account found with this email. Please Sign Up first.');
       } else {
         setErrorMessage(extractErrorMessage(err, 'Failed to send login code. Please check email and try again.'));
@@ -276,10 +270,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
         onComplete({
           selectedRoles: profile?.roleAssignments?.map((r) => r.role) || ['PLAYER'],
           accountData: { fullName: profile?.profile?.displayName || 'User', email: loginEmail, dob: '' },
-          onboardingResult: profile,
+          onboardingResult: profile ?? undefined,
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setErrorMessage(extractErrorMessage(err, 'Verification code invalid. Please try again.'));
     } finally {
       setLoading(false);
@@ -303,7 +297,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
       const msg = `A new verification code was sent to ${targetEmail}`;
       setResendNotice(msg);
       showToast(msg, 'success');
-    } catch (err: any) {
+    } catch (err: unknown) {
       const msg = extractErrorMessage(err, `Failed to send verification code to ${targetEmail}. Please try again.`);
       setErrorMessage(msg);
       showToast(msg, 'error');

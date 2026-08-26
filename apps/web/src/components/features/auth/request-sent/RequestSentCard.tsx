@@ -1,9 +1,10 @@
-import { Button } from '../../../common/Button';
-import { Spinner } from '../../../common/Spinner';
+import { Button } from '@/components/common/Button';
+import { Spinner } from '@/components/common/Spinner';
 import React, { useState } from 'react';
 import { REQUEST_SENT_STRINGS } from '@my-hockey-network/shared';
-import { RequestSentBadgeIcon, HockeyTournamentIcon, CommunityBoardIcon } from './RequestSentIcons';
-import { PublicFeatureCard } from './PublicFeatureCard';
+import { RequestSentBadgeIcon, HockeyTournamentIcon, CommunityBoardIcon } from '@/components/features/auth/request-sent/RequestSentIcons';
+import { PublicFeatureCard } from '@/components/features/auth/request-sent/PublicFeatureCard';
+import { showInfoToast } from '@/utils/toast';
 
 interface RequestSentCardProps {
   onContinue?: () => void;
@@ -28,7 +29,7 @@ export const RequestSentCard: React.FC<RequestSentCardProps> = ({
       if (onContinue) {
         await onContinue();
       } else {
-        alert('Navigating to main dashboard...');
+        showInfoToast('Continue is unavailable until navigation is configured.');
       }
     } finally {
       setInternalLoading(false);

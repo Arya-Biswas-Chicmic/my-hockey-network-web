@@ -1,3 +1,2 @@
-# Netlify API proxy to backend & single-page application fallback
-/v1/* https://reposeful-kareen-controllingly.ngrok-free.dev/v1/:splat 200!
+# Single-page application fallback. The API origin comes from VITE_API_BASE_URL.
 /* /index.html 200

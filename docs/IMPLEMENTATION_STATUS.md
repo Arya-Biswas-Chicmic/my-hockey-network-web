@@ -4,6 +4,9 @@ Last reviewed: 2026-08-26
 
 ## Completed
 
+- Imported home screen components and home-page from refactor/imports-and-styles branch.
+- Fixed CORS preflight header rejection by sending only server-allowlisted headers in API client.
+
 - Established npm workspaces for reusable web/mobile code.
 - Added contracts, domain, API client, auth, validation, and design-token packages.
 - Added web and mobile platform adapters for environment and credential storage.
@@ -64,7 +67,69 @@ Last reviewed: 2026-08-26
 - Integrated full Post, Comment & Reaction Guardian Approval flow (`/v1/posts`, `/v1/approvals`). Minor/player actions held for guardian approval (`pendingGuardianApproval: true`, `isDraft: true`) display centralized pending notification (`HELPER_MESSAGES.GUARDIAN_APPROVAL_SUBMITTED: "Your post has been submitted and is waiting for parent/guardian approval."`) without adding drafts to active feed. Parent supervision queue (`supervision-page.tsx`) renders action badges (`Post Approval`, `Comment Approval`, `Reaction Approval`), post subject body previews, and executes `approveRequest` (`mode: 'SINGLE_USE'`) to publish posts (`POST_PUBLISHED`) or `declineRequest` to leave posts in draft state.
 - Created separate standalone GitHub repository `https://github.com/Arya-Biswas-Chicmic/my-hockey-network-web` under permitted account, pushed complete codebase (`main` and `feature/fixes-stable`), configured root `vercel.json` SPA build rules (`buildCommand: "npm run build:web"`, `outputDirectory: "apps/web/dist"`), connected to Vercel (`chicmic/my-hockey-network`), and deployed production application to `https://my-hockey-network.vercel.app`.
 - Refactored web component presentation code, replaced all static inline JS style objects across web pages (`home-page.tsx`, `settings-page.tsx`, `profile-page.tsx`, `supervision-page.tsx`) with modular, reusable CSS utility and component classes in `index.css`, and passed repository verification checks (`npm run verify`).
-- Standardized form state management and validation across all web forms (`CreateAccountForm`, `LoginForm`, `VerifyEmailForm`, `GuardianApprovalForm`, `EditProfileModal`, `CareerFormFields`, `ApprovalCodeModal`, `HelpPage`) using Formik + Yup (`createAccountSchema`, `loginSchema`, `otpSchema`, `guardianApprovalSchema`, `editProfileSchema`, `careerSchema`, `createPlayerSchema`, `linkPlayerSchema`, `approvalCodeSchema`, `helpTicketSchema`), created reusable Formik controls (`FormikInput`, `FormikSelect`, `FormikDateInput`, `FormError`), added unit tests (`schemas.test.ts`), and passed monorepo verification checks (`npm run verify`).
+- Removed credential-bearing cURL output and all web bearer-token persistence, restored unconditional
+  cookie-based `/auth/me` bootstrap, and expanded the security baseline to detect renamed loggers,
+  browser token keys, and temporary origins in deployment configuration.
+- Removed checked-in ngrok/Vite proxy origins, tunnel headers, and fixed development/preview ports.
+  Web and mobile now fail fast on their platform-specific ignored environment variable.
+- Corrected public guardian/request-sent routes, moved role-guard notifications out of render, made
+  onboarding completion depend on the backend completion timestamp, and added route-level lazy loading.
+- Added Formik and centralized web form validators for authentication and support reporting; added
+  jsdom form and route-guard integration tests.
+- Consolidated Dropdown into the existing FormControls primitive, removed inline-style escape hatches,
+  added label associations, removed the last web inline style, and used Tailwind utilities for the
+  desktop Home center-only scrolling shell.
+- Removed fake ticket submission success and browser alert placeholders, repaired stale feed updates,
+  removed dead Home session state, and made fallback feed keys deterministic.
+- Replaced production connection/group/group-detail sample records with real relationship, group,
+  member, group-post, join/leave, and group-post creation API flows; removed unused mock-data modules.
+- Applied non-breaking npm advisory remediations. Expo/Metro's remaining advisories require a separately
+  tested Expo SDK 57 migration and are recorded in the security register instead of being force-installed.
+- Migrated every semantic web `<form>` to Formik, including profile editing, post creation, comments,
+  authentication, guardian approval, OTP verification, and support. Added shared OTP and form-control
+  primitives plus integration coverage for auth and feed-content submission behavior.
+- Added real relationship/group/group-post data flows and removed production mock records. Connections,
+  groups, group membership, and group posts now use the shared configured API client.
+- Completed shared response interception for network failures, HTML/plain-text failures, JSON 5xx
+  envelopes, unauthorized refresh/retry, and successful empty 204 responses. Web JSON 5xx failures now
+  consistently activate the global server-down recovery screen.
+- Confirmed and tested BrowserRouter web routing with hydrated guest/auth/parent role guards, and
+  React Navigation native-stack/bottom-tab ownership on mobile.
+- Replaced the custom web query cache with TanStack Query while retaining React Router for URLs.
+  Query tests cover caching, request deduplication, retry behavior, and prefix invalidation.
+- Standardized all app-local imports on `@/` aliases in Vite, TypeScript, Babel, and Vitest.
+- Removed production and test explicit `any`; ESLint and repository checks now reject regressions.
+- Replaced ordinary inline web SVG markup with Lucide icons. Brand, onboarding illustration, and
+  hockey analytics SVGs are isolated in approved reusable components.
+- Confirmed the shared HTTP transport remains native fetch (not Axios), added enforcement against
+  direct feature fetch calls, and retained only the credential-free signed media upload exception.
+- Verified web cookie authentication uses `credentials: 'include'` and `/auth/me`; documented why
+  HttpOnly cookies are invisible to JavaScript and the required backend credentialed-CORS flags.
+- Added mandatory frontend development guidelines covering existing-code-first reuse, feature-based
+  boundaries, single responsibility, focused file-size targets, component composition, and explicit
+  separation between the active Vite/npm/Formik architecture and the approved, paused Next.js stack.
+- Recorded Next.js App Router as the approved target for the web portal and added a phased migration
+  plan. Implementation remains paused until explicit owner instruction; no application dependencies,
+  source, lockfiles, routing, or build configuration have been changed for the migration.
+- Reviewed the separate Admin Panel as a Next.js architectural reference and documented which
+  patterns should align (RHF/Zod, shadcn primitives, TanStack Query, focused Zustand, Vitest/RTL,
+  Playwright, aliases and coverage) and which must not be copied (Axios, admin business UI and its
+  single-app structure).
+- Added the paused web SEO/rendering/ISR policy and the built-in-first third-party dependency policy.
+  No migration dependency, application file, cache behavior, or deployment configuration changed.
+- Normalized feed API responses in `@my-hockey-network/core` via `normalizeFeedResponse`, unwrapping
+  `{ post, reason }` feed items, propagating `feedReason` (including `SELF`) to Home feed mapping,
+  and requiring real post IDs instead of synthetic fallback keys.
+- Added `normalizePostId` validation before post mutations to reject missing or placeholder IDs and
+  prevent invalid PATCH/DELETE/comment/reaction requests.
+- Stopped swallowing user-post and comment fetch failures as empty arrays; errors now propagate to
+  callers for accurate error UI.
+- Scoped global server-down recovery to read/navigation requests only; mutation 5xx failures stay
+  local to feature toasts instead of blocking the entire viewport.
+- Synced `FeedPostCard` local state when feed props refresh and wired optimistic post-update callbacks
+  on Home and Profile after edit/delete actions.
+- Fixed `showErrorToast` to accept a feature-safe fallback message as the second argument instead of
+  misusing the action-label slot.
 
 
 
@@ -84,14 +149,18 @@ Last reviewed: 2026-08-26
 - Production web build must pass.
 - Web/native UI ownership and npm-only dependency management checks must pass.
 
-Latest measured shared-code coverage: 93.44% statements, 86.45% branches, 100% functions, and
-93.83% lines. The suite currently contains 74 tests across 12 test files. The latest web, Android,
-and iOS production bundle commands pass.
+Latest measured enforced-code coverage: 93.07% statements, 85.76% branches, 97.56% functions, and
+93.84% lines. The suite currently contains 87 tests across 17 test files. Web form validation,
+secure storage behavior, query behavior, and route/form integration are now represented in addition
+to shared logic. The latest web, Android, and iOS production bundle commands pass.
 
 ## Maintainability backlog
 
-- Split the largest presentation files (`profile-page`, `supervision-page`, `EditProfileModal`).
-- Replace remaining legacy `any` response normalization with contracts.
-- Add route-level lazy loading to reduce the web entry bundle.
+- Split the largest presentation files (`profile-page`, `supervision-page`, `EditProfileModal`) without
+  creating duplicate primitives.
 - Expand UI integration/e2e coverage as stable Figma screens are implemented.
-- Review and remediate dependency audit findings without forced breaking upgrades.
+- Migrate Expo SDK 54 to a patched SDK in a dedicated native change, then re-run Android/iOS regression tests.
+- Execute the approved Next.js web migration only after the owner explicitly starts it and resolves
+  the kickoff decisions in `NEXTJS_MIGRATION_PLAN.md`.
+- At migration kickoff, create the route inventory, rendering/indexing matrix, dependency decision
+  records, and measured performance/accessibility baselines before converting feature routes.

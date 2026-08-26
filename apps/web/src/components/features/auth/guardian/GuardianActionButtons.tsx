@@ -1,4 +1,4 @@
-import { Button } from '../../../common/Button';
+import { Button } from '@/components/common/Button';
 import React from 'react';
 import { GUARDIAN_APPROVAL_STRINGS } from '@my-hockey-network/shared';
 

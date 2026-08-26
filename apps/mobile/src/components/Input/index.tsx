@@ -14,7 +14,7 @@ import {
 
 import useStyles from '@hooks/useStyles';
 
-import styles from './styles';
+import styles from '@/components/Input/styles';
 
 export type InputProps = Omit<
   TextInputProps,

@@ -1,6 +1,6 @@
 # Component catalog and reuse policy
 
-Last reviewed: 2026-08-25
+Last reviewed: 2026-08-26
 
 ## Rule
 
@@ -10,9 +10,18 @@ when it represents a distinct reusable behavior or feature composition. Web Reac
 Native presentation remain separate; share contracts, state machines, validation, tokens, and props
 concepts across platforms rather than forcing DOM/native markup into one component.
 
+Prefer 100–200 focused lines and review components over 300 lines for meaningful decomposition by
+responsibility. Do not create trivial wrappers solely to satisfy a line-count target. Follow the
+page → feature/container → feature component → existing platform primitive hierarchy described in
+`FRONTEND_DEVELOPMENT_GUIDELINES.md`.
+
 ## Existing web primitives and shared compositions
 
 - `common/Button`: generic button foundation; currently underused and its variants need completion.
+- `common/FormControls`: the single web `Input`, `Select`, `Textarea`, accessible `Dropdown`, and
+  `FormField` implementation. Do not create a second control file or accept inline style objects.
+- `common/OtpCodeInput`: the accessible six-digit OTP input reused by email verification and
+  guardian approval.
 - `common/Header`: reused across the authenticated web pages.
 - `common/Spinner`, `Toast`, `PendingBanner`, `NoDataFound`, `ServerDown`: reusable feedback/state UI.
 - `ProfileSummaryCard`: reused by Home and Network; updated with word-break and overflow containment for display names and team handles.
@@ -34,11 +43,30 @@ those primitive implementations. Mobile Signup now uses the existing native Butt
 ScreenWrapper. `design-system` is retained as a compatibility facade over canonical `design-tokens`.
 `npm run components:check` prevents raw controls from returning to web features or mobile screens.
 It also rejects React Native/mobile presentation imports from web, React DOM/web presentation imports
-from mobile, and JSX presentation inside shared packages. Therefore web common components are used
-only by web, and mobile common components are used only by mobile.
+from mobile, inline web style objects, non-Formik semantic web forms, and JSX presentation inside
+shared packages. It rejects relative app imports, explicit `any`, and inline SVG outside the approved
+custom icon components. Ordinary web icons come from Lucide; branded and analytics visuals remain
+isolated under reusable icon/illustration components. Therefore web common components are used only by web, and mobile common components
+are used only by mobile.
+
+Formik owns state, touched, validation-error, and submission behavior for every semantic web form:
+login, signup, guardian approval, OTP verification, support tickets, profile editing, post creation,
+and comments. Validators live in `apps/web/src/validation/forms.ts` or shared validation packages and
+reuse Zod/domain rules. New substantial web forms must follow this pattern.
 
 ## Required consolidation before new screen work
 
 1. Add feature-specific variants to existing primitives instead of introducing parallel controls.
 2. Add a Storybook or component showcase as approved Figma implementation begins.
 3. Add component-level interaction and accessibility tests screen-by-screen.
+
+## Next.js migration reuse gate
+
+The future web primitive layer will adapt project-owned shadcn/ui components rather than allowing
+feature folders to generate private copies. Before each migrated screen, map every existing control,
+card, dialog, feedback state, and layout composition to reuse, extend, refactor, or retire. Record new
+reusable primitives here and cover their meaningful variants and interactions.
+
+React Hook Form providers/field adapters must be shared by web forms while Zod schemas remain in the
+platform-neutral validation boundary where possible. Mobile may reuse those schemas and domain
+rules, but never the web form controls or shadcn presentation.

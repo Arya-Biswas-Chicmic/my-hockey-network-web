@@ -1,4 +1,4 @@
-import { PATHS } from './paths';
+import { PATHS } from '@/config/paths';
 
 export const PUBLIC_ROUTES = [
   PATHS.ONBOARDING,

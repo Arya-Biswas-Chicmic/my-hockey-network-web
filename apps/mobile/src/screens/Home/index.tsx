@@ -1,6 +1,6 @@
 import { Image, Pressable, Text, View } from 'react-native';
 
-import styles from './styles';
+import styles from '@/screens/Home/styles';
 
 import useImages from '@hooks/useImages';
 import useStyles from '@hooks/useStyles';

@@ -5,10 +5,6 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/v1/:path*",
-      "destination": "https://reposeful-kareen-controllingly.ngrok-free.dev/v1/:path*"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getStoredThemePreference, setStoredThemePreference, ThemePreference } from '../../theme/theme-cookie';
+import { getStoredThemePreference, setStoredThemePreference, ThemePreference } from '@/theme/theme-cookie';
 
 interface ThemeContextType {
   theme: ThemePreference;

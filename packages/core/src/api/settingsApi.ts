@@ -20,6 +20,7 @@ export interface BlockedCounterpartyDTO {
   id?: string;
   profileId?: string;
   displayName?: string;
+  name?: string;
   avatarUrl?: string | null;
   profileType?: string;
   primaryRole?: string;
@@ -29,6 +30,7 @@ export interface BlockedCounterpartyDTO {
   teamName?: string;
   teamLogo?: string;
   location?: string;
+  city?: string;
   isMinor?: boolean;
   verificationStatus?: string;
 }
@@ -49,10 +51,25 @@ export interface BlockedUserDTO {
   displayName?: string;
   name?: string;
   roleTag?: string;
+  position?: string | null;
+  jerseyNumber?: number | null;
+  primaryRole?: string;
   avatarUrl?: string | null;
   teamName?: string;
   teamLogo?: string;
   location?: string;
+  city?: string;
+}
+
+interface NotificationSettingsResponse {
+  items?: NotificationSettingItem[];
+  data?: { items?: NotificationSettingItem[] };
+}
+
+interface BlockedUsersResponse {
+  items?: BlockedUserDTO[];
+  blockedUsers?: BlockedUserDTO[];
+  data?: { items?: BlockedUserDTO[] };
 }
 
 /**
@@ -61,7 +78,7 @@ export interface BlockedUserDTO {
 export async function getNotificationSettings(
   clientType: 'web' | 'mobile' = 'web'
 ): Promise<{ items: NotificationSettingItem[] }> {
-  const res = await apiFetch<any>(
+  const res = await apiFetch<NotificationSettingsResponse>(
     API_ENDPOINTS.SETTINGS.NOTIFICATIONS,
     { method: 'GET' },
     clientType
@@ -77,8 +94,8 @@ export async function getNotificationSettings(
 export async function updateNotificationSettings(
   items: NotificationSettingItem[],
   clientType: 'web' | 'mobile' = 'web'
-): Promise<any> {
-  return apiFetch<any>(
+): Promise<{ items?: NotificationSettingItem[]; message?: string }> {
+  return apiFetch<{ items?: NotificationSettingItem[]; message?: string }>(
     API_ENDPOINTS.SETTINGS.NOTIFICATIONS,
     {
       method: 'PUT',
@@ -94,7 +111,7 @@ export async function updateNotificationSettings(
 export async function getBlockedUsersSettings(
   clientType: 'web' | 'mobile' = 'web'
 ): Promise<{ items: BlockedUserDTO[] }> {
-  const res = await apiFetch<any>(
+  const res = await apiFetch<BlockedUsersResponse>(
     API_ENDPOINTS.SETTINGS.BLOCKED,
     { method: 'GET' },
     clientType

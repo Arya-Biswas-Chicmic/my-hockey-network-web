@@ -1,5 +1,6 @@
-import { Button } from './Button';
+import { Button } from '@/components/common/Button';
 import React from 'react';
+import { Spinner } from '@/components/common/Spinner';
 
 interface LogoutModalProps {
   isOpen: boolean;
@@ -41,12 +42,12 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({
         </p>
 
         {/* Action Buttons */}
-        <div className="mhn-delete-modal-actions">
+        <div className="mhn-logout-modal-actions">
           <Button
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="mhn-btn-modal-cancel"
+            className="mhn-btn-logout-cancel"
           >
             Cancel
           </Button>
@@ -54,14 +55,11 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
-            className="mhn-btn-modal-danger"
+            className="mhn-btn-logout-confirm"
           >
             {isLoading ? (
               <>
-                <svg className="mhn-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
-                  <path d="M12 2a10 10 0 0 1 10 10" fill="currentColor" />
-                </svg>
+                <Spinner size="sm" color="currentColor" />
                 <span>Logging out...</span>
               </>
             ) : (

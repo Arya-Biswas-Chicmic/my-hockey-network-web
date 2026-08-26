@@ -1,2 +1,2 @@
-export { CreateAccountModal } from './CreateAccountModal';
-export { CreateAccountForm } from './CreateAccountForm';
+export { CreateAccountModal } from '@/components/features/auth/signup/CreateAccountModal';
+export { CreateAccountForm } from '@/components/features/auth/signup/CreateAccountForm';

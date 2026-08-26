@@ -1,5 +1,6 @@
-import { Button } from '../../common/Button';
+import { Button } from '@/components/common/Button';
 import React from 'react';
+import { Clock, MapPin } from 'lucide-react';
 
 export interface EventItem {
   id: string;
@@ -59,18 +60,12 @@ export const UpcomingEventsWidget: React.FC<UpcomingEventsWidgetProps> = ({
               <h4 className="mhn-event-title">{event.title}</h4>
               
               <div className="mhn-event-info-line">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
-                </svg>
+                <Clock size={14} aria-hidden="true" />
                 <span>{event.time}</span>
               </div>
 
               <div className="mhn-event-info-line">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                  <circle cx="12" cy="10" r="3"/>
-                </svg>
+                <MapPin size={14} aria-hidden="true" />
                 <span>{event.location}</span>
               </div>
             </div>

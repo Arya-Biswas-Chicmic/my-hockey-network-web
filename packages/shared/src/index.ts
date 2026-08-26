@@ -18,7 +18,6 @@ export {
   GUARDIAN_APPROVAL_STRINGS,
   REQUEST_SENT_STRINGS,
   STORAGE_KEYS,
-  API_URLS,
   REGEX_PATTERNS,
 } from '@my-hockey-network/constants';
 

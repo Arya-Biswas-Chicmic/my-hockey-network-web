@@ -1,1 +1,1 @@
-export * from '../interfaces/relationship';
+export * from '@/interfaces/relationship';

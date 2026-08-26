@@ -1,5 +1,5 @@
 import React from 'react';
-import { DotGridPattern, CircleShape, ChevronShape } from './GuardianBackgroundShapes';
+import { DotGridPattern, CircleShape, ChevronShape } from '@/components/features/auth/guardian/GuardianBackgroundShapes';
 
 export const GuardianPanelBackground: React.FC = () => {
   return (

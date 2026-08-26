@@ -1,11 +1,11 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { QueryKeys, type AuthMeResponse, type OtpVerifyResponse } from '@my-hockey-network/contracts';
-import { getMySupervisionPermissions } from '@my-hockey-network/core';
-import { webAuth } from '../platform/auth-service';
-import { webAuthStorage } from '../platform/auth-storage';
-import { globalQueryClient } from '../query';
-import { showToast as showCentralToast } from '../utils/toast';
+import { getMySupervisionPermissions, getProfile } from '@my-hockey-network/core';
+import { webAuth } from '@/platform/auth-service';
+import { webAuthStorage } from '@/platform/auth-storage';
+import { globalQueryClient } from '@/query';
+import { showToast as showCentralToast } from '@/utils/toast';
 
 export interface AuthContextType {
   user: AuthMeResponse | null;
@@ -41,28 +41,11 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [isSupervisionPermissionsLoading, setIsSupervisionPermissionsLoading] = useState<boolean>(false);
   const isLoggingOut = useRef(false);
 
-  const userRef = useRef(user);
-  useEffect(() => {
-    userRef.current = user;
-  }, [user]);
-
   const loadAuthMe = useCallback(async (silent = false, force = false): Promise<AuthMeResponse | null> => {
     if (isLoggingOut.current) return null;
 
-    const token = webAuthStorage.getAccessToken();
-    const hasSessionCookie =
-      typeof document !== 'undefined' &&
-      Boolean(document.cookie && /mhn_at|mhn_csrf|mhn_session|access_token|refresh_token|connect\.sid/i.test(document.cookie));
-
-    const isGuestRoute =
-      typeof window !== 'undefined' &&
-      (window.location.pathname.startsWith('/onboarding') || window.location.pathname.startsWith('/login'));
-
-    const currentUser = userRef.current;
-    const hasStoredSession = Boolean(token || hasSessionCookie || currentUser);
-
-    if ((!hasStoredSession || (isGuestRoute && !currentUser)) && !force) {
-      if (!currentUser) setUser(null);
+    // Do not re-fetch /auth/me if already bootstrapped as logged out, unless explicitly forced
+    if (hasBootstrapped && user === null && !force) {
       if (!silent) setIsLoading(false);
       return null;
     }
@@ -70,24 +53,34 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     if (!silent) setIsLoading(true);
 
     try {
-      const profile = await globalQueryClient.fetchQuery<AuthMeResponse | null>(
-        QueryKeys.AUTH_ME,
-        async () => {
-          return await webAuth.getMe();
-        },
-        { forceRefetch: force, staleTime: 5 * 60 * 1000 }
-      );
+      if (force) {
+        await globalQueryClient.invalidateQueries({ queryKey: [QueryKeys.AUTH_ME] });
+      }
+      const profile = await globalQueryClient.fetchQuery<AuthMeResponse | null>({
+        queryKey: [QueryKeys.AUTH_ME],
+        queryFn: () => webAuth.getMe(),
+        staleTime: 5 * 60 * 1000,
+      });
 
-      if (profile) setUser(profile);
+      if (profile) {
+        setUser(profile);
+        const myProfileId = profile.profile?.id || profile.id;
+        if (myProfileId) {
+          void globalQueryClient.fetchQuery({
+            queryKey: [`${QueryKeys.USER_PROFILE}:${myProfileId}`],
+            queryFn: () => getProfile(myProfileId),
+            staleTime: 5 * 60 * 1000,
+          });
+        }
+      }
       return profile;
-    } catch (err: any) {
-      console.warn('GET /v1/auth/me error:', err?.message || err);
+    } catch {
       setUser(null);
       return null;
     } finally {
       if (!silent) setIsLoading(false);
     }
-  }, []);
+  }, [hasBootstrapped, user]);
 
   useEffect(() => {
     void loadAuthMe().finally(() => setHasBootstrapped(true));
@@ -100,22 +93,21 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         setSupervisionPermissions(null);
         return;
       }
-      const isParent = user.primaryRole === 'PARENT' || user.roleAssignments?.some((r: any) => r.role === 'PARENT');
-      const isCoach = user.primaryRole === 'COACH' || user.roleAssignments?.some((r: any) => r.role === 'COACH');
+      const isParent = user.primaryRole === 'PARENT' || user.roleAssignments?.some((assignment) => assignment.role === 'PARENT');
+      const isCoach = user.primaryRole === 'COACH' || user.roleAssignments?.some((assignment) => assignment.role === 'COACH');
 
       if (!isParent && !isCoach) {
         setIsSupervisionPermissionsLoading(true);
         try {
-          const res = await globalQueryClient.fetchQuery(
-            QueryKeys.SUPERVISION_PERMISSIONS,
-            async () => getMySupervisionPermissions(),
-            { staleTime: 5 * 60 * 1000 }
-          );
+          const res = await globalQueryClient.fetchQuery({
+            queryKey: [QueryKeys.SUPERVISION_PERMISSIONS],
+            queryFn: () => getMySupervisionPermissions(),
+            staleTime: 5 * 60 * 1000,
+          });
           if (res?.controlsMap) {
             setSupervisionPermissions(res.controlsMap as Record<string, boolean>);
           }
-        } catch (err: any) {
-          console.warn('Minor supervision permissions notice:', err?.message || err);
+        } catch {
           setSupervisionPermissions(null);
         } finally {
           setIsSupervisionPermissionsLoading(false);
@@ -132,8 +124,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const checkSupervisionPermission = useCallback(
     (controlKey: string): boolean => {
       if (!user) return true;
-      const isParent = user.primaryRole === 'PARENT' || user.roleAssignments?.some((r: any) => r.role === 'PARENT');
-      const isCoach = user.primaryRole === 'COACH' || user.roleAssignments?.some((r: any) => r.role === 'COACH');
+      const isParent = user.primaryRole === 'PARENT' || user.roleAssignments?.some((assignment) => assignment.role === 'PARENT');
+      const isCoach = user.primaryRole === 'COACH' || user.roleAssignments?.some((assignment) => assignment.role === 'COACH');
 
       // Parent and Coach always have full permission
       if (isParent || isCoach) return true;
@@ -167,12 +159,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
   useEffect(() => {
     const handleUnauthorized = () => {
-      const token = webAuthStorage.getAccessToken();
-      if (!token) {
-        setUser(null);
-        setSession(null);
-        showCentralToast({ message: 'Your session expired. Please sign in again.', type: 'error' });
-      }
+      setUser(null);
+      setSession(null);
+      showCentralToast({ message: 'Your session expired. Please sign in again.', type: 'error' });
     };
     window.addEventListener('mhn:unauthorized', handleUnauthorized);
     return () => window.removeEventListener('mhn:unauthorized', handleUnauthorized);
@@ -192,8 +181,15 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     } catch (err) {
       console.warn('[auth-context] Logout API call warning:', err);
     } finally {
+      // Clear TanStack Query cache completely for all keys
+      globalQueryClient.clear();
+
+      // Clear auth storage session
+      await webAuthStorage.clearSession();
+
       setUser(null);
       setSession(null);
+      setSupervisionPermissions(null);
       isLoggingOut.current = false;
       showCentralToast({ message: 'Logged out successfully.', type: 'success' });
     }

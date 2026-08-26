@@ -42,24 +42,15 @@ export interface ApiClient {
   request<T>(path: string, options?: RequestInit): Promise<T>;
 }
 
-export function formatCurlCommand(url: string, method: string, headers: Headers, body?: BodyInit | null): string {
-  const lines: string[] = [`curl -X ${method} "${url}"`];
-  headers.forEach((value, key) => {
-    lines.push(`  -H "${key}: ${value}"`);
-  });
-  if (body != null) {
-    const bodyStr = typeof body === 'string' ? body : String(body);
-    if (bodyStr && bodyStr !== '{}') {
-      lines.push(`  -d '${bodyStr}'`);
-    }
-  }
-  return lines.join(' \\\n');
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
 }
 
-export function extractMessageFromEnvelope(envelope: any): string | null {
-  if (!envelope) return null;
+export function extractMessageFromEnvelope(value: unknown): string | null {
+  if (!isRecord(value)) return null;
+  const envelope = value;
   if (Array.isArray(envelope.message)) {
-    return envelope.message.join(', ');
+    return envelope.message.map(String).join(', ');
   }
   if (typeof envelope.message === 'string' && envelope.message.trim()) {
     return envelope.message;
@@ -67,10 +58,10 @@ export function extractMessageFromEnvelope(envelope: any): string | null {
   if (typeof envelope.error === 'string' && envelope.error.trim()) {
     return envelope.error;
   }
-  if (envelope.error && typeof envelope.error === 'object' && typeof envelope.error.message === 'string') {
+  if (isRecord(envelope.error) && typeof envelope.error.message === 'string') {
     return envelope.error.message;
   }
-  if (envelope.data && typeof envelope.data === 'object') {
+  if (isRecord(envelope.data)) {
     if (typeof envelope.data.message === 'string' && envelope.data.message.trim()) {
       return envelope.data.message;
     }
@@ -100,23 +91,15 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     headers.set(HttpHeader.ACCEPT, 'application/json');
     headers.set(HttpHeader.ACCEPT_LANGUAGE, 'en');
     headers.set(HttpHeader.X_CLIENT_TYPE, options.clientType);
-    headers.set(HttpHeader.NGROK_SKIP_BROWSER_WARNING, 'true');
-    headers.set(HttpHeader.BYPASS_TUNNEL_REMINDER, 'true');
-    headers.set(HttpHeader.LOCALTUNNEL_SKIP_WARNING, 'true');
-
     const [accessToken, csrfToken] = await Promise.all([
       storage.getAccessToken(),
       storage.getCsrfToken(),
     ]);
     if (accessToken) {
       if (!headers.has(HttpHeader.AUTHORIZATION)) headers.set(HttpHeader.AUTHORIZATION, `Bearer ${accessToken}`);
-      if (!headers.has(HttpHeader.MHN_AT)) headers.set(HttpHeader.MHN_AT, accessToken);
     }
     if (csrfToken) {
       if (!headers.has(HttpHeader.X_CSRF_TOKEN)) headers.set(HttpHeader.X_CSRF_TOKEN, csrfToken);
-      if (!headers.has(HttpHeader.X_XSRF_TOKEN)) headers.set(HttpHeader.X_XSRF_TOKEN, csrfToken);
-      if (!headers.has(HttpHeader.CSRF_TOKEN)) headers.set(HttpHeader.CSRF_TOKEN, csrfToken);
-      if (!headers.has(HttpHeader.MHN_CSRF)) headers.set(HttpHeader.MHN_CSRF, csrfToken);
     }
     return headers;
   };
@@ -163,11 +146,11 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
 
     const url = buildUrl(path);
 
-    if (typeof console !== 'undefined' && typeof console.info === 'function') {
-      console.info(`📡 [API Call] ${method} ${url}\n${formatCurlCommand(url, method, headers, body)}`);
-    }
-
     const notifyServerDown = (statusCode: number, message: string) => {
+      // A failed mutation belongs to its form/card error state. Replacing the entire
+      // application with a server-down screen for one POST/PATCH/DELETE hides the
+      // actionable error and makes unrelated pages appear unavailable.
+      if (method !== 'GET') return;
       void options.onServerDown?.(statusCode, message);
     };
 
@@ -206,6 +189,10 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
       void storage.saveSession({ accessToken: cleanToken });
     }
 
+    if (response.status === 204) {
+      return undefined as T;
+    }
+
     let rawText = '';
     try {
       rawText = await response.clone().text();
@@ -217,7 +204,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     try {
       envelope = (await response.json()) as ApiEnvelope<T>;
       if (envelope?.data && typeof envelope.data === 'object') {
-        const dataObj = envelope.data as any;
+        const dataObj = envelope.data as Record<string, unknown>;
         if ('csrfToken' in dataObj && dataObj.csrfToken) {
           void storage.saveSession({ csrfToken: String(dataObj.csrfToken) });
         }
@@ -275,8 +262,12 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
 
     if (!response.ok || envelope.success === false) {
       const extractedMessage = extractMessageFromEnvelope(envelope) || response.statusText || 'API request failed';
+      const statusCode = envelope.statusCode || response.status;
+      if (statusCode >= 500) {
+        notifyServerDown(statusCode, extractedMessage);
+      }
       throw new ApiError(
-        envelope.statusCode || response.status,
+        statusCode,
         extractedMessage,
         envelope.data,
       );

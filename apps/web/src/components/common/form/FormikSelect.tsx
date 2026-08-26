@@ -1,7 +1,7 @@
 import React from 'react';
 import { useField } from 'formik';
-import { Select } from '../FormControls';
-import { FormError } from './FormError';
+import { Select } from '@/components/common/FormControls';
+import { FormError } from '@/components/common/form/FormError';
 import type { SelectHTMLAttributes } from 'react';
 
 export interface FormikSelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'name'> {

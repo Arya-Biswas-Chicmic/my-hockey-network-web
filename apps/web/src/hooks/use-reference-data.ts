@@ -1,5 +1,6 @@
 import { QueryKeys } from '@my-hockey-network/contracts';
-import { useQuery } from '../query';
+import { useQuery } from '@/query';
+import { webApiClient } from '@/platform/api-client';
 
 export interface ReferenceDataResponse {
   positions: Array<{ value: string; label: string }>;
@@ -29,13 +30,7 @@ const DEFAULT_REFERENCE_DATA: ReferenceDataResponse = {
 
 async function fetchReferenceData(): Promise<ReferenceDataResponse> {
   try {
-    const apiOrigin = import.meta.env.VITE_API_BASE_URL || '';
-    if (!apiOrigin) return DEFAULT_REFERENCE_DATA;
-    const res = await fetch(`${apiOrigin}/v1/reference/data`, {
-      headers: { accept: 'application/json' },
-    });
-    if (!res.ok) return DEFAULT_REFERENCE_DATA;
-    const data = await res.json();
+    const data = await webApiClient.request<Partial<ReferenceDataResponse>>('/reference/data');
     return {
       positions: data.positions?.length ? data.positions : DEFAULT_REFERENCE_DATA.positions,
       academies: data.academies?.length ? data.academies : DEFAULT_REFERENCE_DATA.academies,

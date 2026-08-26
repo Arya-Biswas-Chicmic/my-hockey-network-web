@@ -1,5 +1,6 @@
-import { Button } from '../../common/Button';
+import { Button } from '@/components/common/Button';
 import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight, Clock, MapPin } from 'lucide-react';
 
 interface EventItem {
   id: string;
@@ -167,18 +168,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onEventClick }) => {
               className="mhn-calendar-nav-btn"
               aria-label="Previous month"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
+              <ChevronLeft size={16} aria-hidden="true" />
             </Button>
             <Button
               onClick={handleNextMonth}
               className="mhn-calendar-nav-btn"
               aria-label="Next month"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
+              <ChevronRight size={16} aria-hidden="true" />
             </Button>
           </div>
         </div>
@@ -255,17 +252,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onEventClick }) => {
             >
               <h4 className="mhn-sidebar-event-title">{evt.title}</h4>
               <div className="mhn-sidebar-event-meta">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 16 14" />
-                </svg>
+                <Clock size={14} aria-hidden="true" />
                 <span>{evt.date} &nbsp; {evt.time}</span>
               </div>
               <div className="mhn-sidebar-event-meta">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                  <circle cx="12" cy="10" r="3" />
-                </svg>
+                <MapPin size={14} aria-hidden="true" />
                 <span>{evt.location}</span>
               </div>
             </div>

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Header } from '../components/common/Header';
-import { PendingBanner } from '../components/common/PendingBanner';
-import { useFeedPermissions } from '../hooks/use-feed-permissions';
-import { ChatSidebar } from '../components/features/messaging/ChatSidebar';
-import { ChatConversation } from '../components/features/messaging/ChatConversation';
+import { Header } from '@/components/common/Header';
+import { PendingBanner } from '@/components/common/PendingBanner';
+import { useFeedPermissions } from '@/hooks/use-feed-permissions';
+import { ChatSidebar } from '@/components/features/messaging/ChatSidebar';
+import { ChatConversation } from '@/components/features/messaging/ChatConversation';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;

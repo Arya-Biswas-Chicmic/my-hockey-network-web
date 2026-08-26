@@ -1,3 +1,3 @@
-export * from './common';
-export * from './features/auth';
-export * from './features/onboarding';
+export * from '@/components/common';
+export * from '@/components/features/auth';
+export * from '@/components/features/onboarding';

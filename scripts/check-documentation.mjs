@@ -5,7 +5,8 @@ import path from 'node:path';
 
 const root = process.cwd();
 const requiredDocuments = [
-  'PROJECT_CONTEXT.md',
+  'docs/FRONTEND_ARCHITECTURE.md',
+  'docs/PROJECT_CONTEXT.md',
   'docs/codebase_architecture_guide.md',
   'docs/IMPLEMENTATION_STATUS.md',
   'docs/SECURITY_REGISTER.md',
@@ -14,6 +15,12 @@ const requiredDocuments = [
   'docs/ENVIRONMENT_CONFIGURATION.md',
   'docs/COMPONENT_CATALOG.md',
   'docs/NAVIGATION.md',
+  'docs/FRONTEND_DEVELOPMENT_GUIDELINES.md',
+  'docs/NEXTJS_MIGRATION_PLAN.md',
+  'docs/WEB_SEO_AND_RENDERING_STRATEGY.md',
+  'docs/THIRD_PARTY_AND_DEPENDENCY_POLICY.md',
+  'docs/ADMIN_PANEL_ALIGNMENT.md',
+  'docs/MOBILE_SETUP.md',
 ];
 const maintainedDocuments = new Set(requiredDocuments);
 const implementationPrefixes = ['apps/', 'packages/', 'scripts/'];

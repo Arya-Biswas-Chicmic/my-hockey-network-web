@@ -29,9 +29,8 @@ export async function createCareerEntry(
   dto: CreateCareerEntryDto,
   clientType: 'web' | 'mobile' = 'web'
 ): Promise<CareerEntry> {
-  const cleanedPayload: Record<string, any> = {};
-  Object.keys(dto).forEach((key) => {
-    const val = (dto as any)[key];
+  const cleanedPayload: Record<string, unknown> = {};
+  Object.entries(dto).forEach(([key, val]) => {
     if (val !== null && val !== undefined && val !== '') {
       cleanedPayload[key] = val;
     }
@@ -56,9 +55,8 @@ export async function updateCareerEntry(
   dto: UpdateCareerEntryDto,
   clientType: 'web' | 'mobile' = 'web'
 ): Promise<CareerEntry> {
-  const cleanedPayload: Record<string, any> = {};
-  Object.keys(dto).forEach((key) => {
-    const val = (dto as any)[key];
+  const cleanedPayload: Record<string, unknown> = {};
+  Object.entries(dto).forEach(([key, val]) => {
     if (val !== undefined && val !== '') {
       cleanedPayload[key] = val;
     }

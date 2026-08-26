@@ -1,6 +1,6 @@
 # My Hockey Network frontend architecture
 
-Last reviewed: 2026-08-21
+Last reviewed: 2026-08-26
 
 The repository is an npm-workspaces monorepo. Web and mobile share contracts, business rules,
 validation, authentication use cases, API behavior, and design values. Their UI, navigation,
@@ -63,11 +63,33 @@ rejects web/native cross-imports and JSX in shared packages.
 API origins are required platform environment variables. No shared package, checked-in deployment
 file, or application module supplies a default server URL.
 
+Web server state uses TanStack Query. The compatibility hook in `apps/web/src/query` delegates to
+TanStack Query and must not become a second cache implementation. HTTP operations use the injected
+native-fetch client; feature code must not call fetch directly or introduce Axios. Application-local
+imports use `@/`. Explicit `any` is rejected. Ordinary UI icons use Lucide, while custom branded or
+data-visual SVG markup stays isolated in approved reusable icon components.
+
+Feature composition should flow from page to feature/container to focused feature components and
+existing platform primitives. Prefer 100–200-line files and review files above 300 lines for
+meaningful responsibility-based decomposition. This is a maintainability target, not permission to
+create trivial components. See `FRONTEND_DEVELOPMENT_GUIDELINES.md`.
+
+The web application is currently a Vite SPA. A coordinated migration to Next.js App Router,
+Server Components, SSR/SSG/ISR, shadcn/ui, a single replacement form system, optional Zustand,
+TanStack Table, and pnpm is approved but paused. Do not introduce target-stack pieces incrementally
+until the owner starts the migration. The target keeps the existing `apps/web`, `apps/mobile`, and
+`packages/*` ownership model; it does not flatten User Panel into the separate Admin repository.
+See `NEXTJS_MIGRATION_PLAN.md`, `WEB_SEO_AND_RENDERING_STRATEGY.md`,
+`THIRD_PARTY_AND_DEPENDENCY_POLICY.md`, and `ADMIN_PANEL_ALIGNMENT.md`.
+
 ## Routing rules
 
 - Web uses `BrowserRouter`, nested `AuthGuard`, `GuestGuard`, and `RoleGuard` routes.
 - Guards wait for the single `/auth/me` bootstrap before making redirect decisions.
 - Direct URL entry, refresh, browser history, and unknown paths all flow through the router.
+- Authenticated page modules are route-level lazy chunks behind a shared loading boundary.
+- Guardian approval and request-sent URLs are public transition routes; supervision remains behind
+  the parent role guard.
 - Mobile keeps React Navigation because native screen transitions and tab navigation differ.
 - Mobile has no browser URL router; its route-name constants identify navigator screens only.
 - Deep/universal linking is not configured and must be implemented explicitly if later required.

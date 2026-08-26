@@ -7,9 +7,9 @@ import useStyles from '@hooks/useStyles';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { TAB_ROOT_ROUTE_NAMES } from '../../navigation/tabRoutes';
+import { TAB_ROOT_ROUTE_NAMES } from '@/navigation/tabRoutes';
 
-import styles from './styles';
+import styles from '@/components/Header/styles';
 
 export type HeaderProps = {
   title?: string;

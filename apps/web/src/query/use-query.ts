@@ -1,113 +1,63 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useQueryClient } from './query-context';
-import type { QueryOptions } from './query-client';
+import { useCallback, useMemo } from 'react';
+import { useQuery as useTanStackQuery, useQueryClient } from '@tanstack/react-query';
+
+export interface QueryOptions {
+  staleTime?: number;
+  forceRefetch?: boolean;
+  enabled?: boolean;
+}
 
 export interface UseQueryResult<T> {
   data: T | null;
   isLoading: boolean;
   isFetching: boolean;
-  error: any;
+  error: unknown;
   refetch: (options?: { forceRefetch?: boolean }) => Promise<T | null>;
   setData: (updater: T | ((old: T | null) => T)) => void;
 }
 
+/** Existing call-signature facade backed entirely by TanStack Query. */
 export function useQuery<T>(
   key: string | null | undefined,
   fetcher: (() => Promise<T>) | null | undefined,
-  options?: QueryOptions & { enabled?: boolean }
+  options?: QueryOptions,
 ): UseQueryResult<T> {
   const queryClient = useQueryClient();
-  const optionEnabled = options?.enabled;
-  const enabled = (optionEnabled ?? true) && Boolean(key) && Boolean(fetcher);
-  const staleTime = options?.staleTime;
-  const optionForceRefetch = options?.forceRefetch;
-
-  const fetcherRef = useRef(fetcher);
-  useEffect(() => {
-    fetcherRef.current = fetcher;
-  }, [fetcher]);
-
-  const [data, setDataState] = useState<T | null>(() => (key ? queryClient.getQueryData<T>(key) : null));
-  const [isLoading, setIsLoading] = useState<boolean>(() => enabled && data === null);
-  const [isFetching, setIsFetching] = useState<boolean>(false);
-  const [error, setError] = useState<any>(null);
-
-  const executeFetch = useCallback(
-    async (forceRefetch = false): Promise<T | null> => {
-      const currentFetcher = fetcherRef.current;
-      if (!key || !currentFetcher || !enabled) return null;
-
-      setIsFetching(true);
-      if (queryClient.getQueryData<T>(key) === null) {
-        setIsLoading(true);
-      }
-
-      try {
-        const result = await queryClient.fetchQuery<T>(key, currentFetcher, {
-          staleTime,
-          forceRefetch: forceRefetch || optionForceRefetch,
-        });
-        setDataState(result);
-        setError(null);
-        return result;
-      } catch (err) {
-        setError(err);
-        return null;
-      } finally {
-        setIsLoading(false);
-        setIsFetching(false);
-      }
+  const enabled = (options?.enabled ?? true) && Boolean(key) && Boolean(fetcher);
+  const queryKey = useMemo(() => [key ?? 'disabled-query'] as const, [key]);
+  const query = useTanStackQuery({
+    queryKey,
+    queryFn: async () => {
+      if (!fetcher) throw new Error('Query fetcher is not configured.');
+      return fetcher();
     },
-    [key, enabled, staleTime, optionForceRefetch, queryClient]
-  );
+    enabled,
+    staleTime: options?.staleTime,
+    refetchOnMount: options?.forceRefetch ? 'always' : undefined,
+  });
 
-  useEffect(() => {
-    if (!key || !enabled) {
-      setIsLoading(false);
-      return;
-    }
-
-    // Read current cache data
-    const cachedData = queryClient.getQueryData<T>(key);
-    if (cachedData !== null) {
-      setDataState(cachedData);
-    }
-
-    // Subscribe to query client updates for this key
-    const unsubscribe = queryClient.subscribe(key, () => {
-      const updated = queryClient.getQueryData<T>(key);
-      setDataState(updated);
-    });
-
-    // Execute query (deduplicated automatically by QueryClient)
-    void executeFetch();
-
-    return () => {
-      unsubscribe();
-    };
-  }, [key, enabled, executeFetch, queryClient]);
-
-  const refetch = useCallback(
-    async (refetchOpts?: { forceRefetch?: boolean }) => {
-      return executeFetch(refetchOpts?.forceRefetch ?? true);
-    },
-    [executeFetch]
-  );
+  const refetch = useCallback(async () => {
+    if (!enabled) return null;
+    const result = await query.refetch();
+    return result.data ?? null;
+  }, [enabled, query.refetch]);
 
   const setData = useCallback(
     (updater: T | ((old: T | null) => T)) => {
-      if (key) {
-        queryClient.setQueryData(key, updater);
-      }
+      queryClient.setQueryData<T>(queryKey, (old) =>
+        typeof updater === 'function'
+          ? (updater as (value: T | null) => T)(old ?? null)
+          : updater,
+      );
     },
-    [key, queryClient]
+    [queryClient, queryKey],
   );
 
   return {
-    data,
-    isLoading,
-    isFetching,
-    error,
+    data: query.data ?? null,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    error: query.error,
     refetch,
     setData,
   };

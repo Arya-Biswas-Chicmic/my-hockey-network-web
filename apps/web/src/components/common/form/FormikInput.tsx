@@ -1,7 +1,7 @@
 import React from 'react';
 import { useField } from 'formik';
-import { Input, EnhancedInputProps } from '../FormControls';
-import { FormError } from './FormError';
+import { Input, EnhancedInputProps } from '@/components/common/FormControls';
+import { FormError } from '@/components/common/form/FormError';
 
 export interface FormikInputProps extends Omit<EnhancedInputProps, 'name'> {
   name: string;

@@ -1,6 +1,7 @@
 import React from 'react';
-import { GuardianIllustrationPanel } from './GuardianIllustrationPanel';
-import { GuardianApprovalForm } from './GuardianApprovalForm';
+import { GuardianIllustrationPanel } from '@/components/features/auth/guardian/GuardianIllustrationPanel';
+import { GuardianApprovalForm } from '@/components/features/auth/guardian/GuardianApprovalForm';
+import { showInfoToast } from '@/utils/toast';
 
 interface GuardianApprovalModalProps {
   onSendRequest?: (email: string) => void;
@@ -11,10 +12,10 @@ interface GuardianApprovalModalProps {
 }
 
 export const GuardianApprovalModal: React.FC<GuardianApprovalModalProps> = ({
-  onSendRequest = (email) => alert(`Verification request sent to: ${email}`),
-  onSignOut = () => alert('Signed out'),
+  onSendRequest = () => showInfoToast('Guardian requests are unavailable until the service is configured.'),
+  onSignOut = () => showInfoToast('Sign out is unavailable in this context.'),
   onSkip,
-  onContactSupport = () => alert('Redirecting to Support...'),
+  onContactSupport = () => showInfoToast('Support navigation is unavailable in this context.'),
   loading = false,
 }) => {
   return (

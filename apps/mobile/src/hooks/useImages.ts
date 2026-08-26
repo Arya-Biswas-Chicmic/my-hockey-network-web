@@ -1,6 +1,6 @@
 import { DARK_IMAGES, IMAGES } from '@utils/images';
 
-import useTheme from './useTheme';
+import useTheme from '@/hooks/useTheme';
 
 /*
  * Custom hook to get images based on the current theme.

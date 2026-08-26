@@ -12,8 +12,8 @@ import {
 import { RFValue } from 'react-native-responsive-fontsize';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BRAND_COLORS, ONBOARDING_STRINGS } from '@my-hockey-network/shared';
-import { ROUTES } from '../../navigation/constants';
-import { RootStackParamList } from '../../navigation/types';
+import { ROUTES } from '@/navigation/constants';
+import { RootStackParamList } from '@/navigation/types';
 
 interface MobileRoleOption {
   id: string;

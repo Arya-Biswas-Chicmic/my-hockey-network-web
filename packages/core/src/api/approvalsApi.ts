@@ -18,7 +18,7 @@ export interface ApprovalItem {
     displayName: string;
     avatarUrl?: string | null;
   };
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 export interface ApproveRequestDTO {

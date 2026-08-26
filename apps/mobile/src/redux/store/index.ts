@@ -1,5 +1,5 @@
-import CommonReducer from '../CommonReducer';
-import api from './api';
+import CommonReducer from '@/redux/CommonReducer';
+import api from '@/redux/store/api';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { combineReducers, configureStore } from '@reduxjs/toolkit';

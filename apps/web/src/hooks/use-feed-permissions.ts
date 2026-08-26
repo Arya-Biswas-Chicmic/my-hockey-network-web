@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useAuth } from './use-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { getMySupervisionPermissions } from '@my-hockey-network/core';
 import { ERROR_MESSAGES } from '@my-hockey-network/constants';
 import {

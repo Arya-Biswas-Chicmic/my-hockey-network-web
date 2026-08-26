@@ -1,5 +1,5 @@
 import React from 'react';
-import { Input, Dropdown, FormField } from '../../common/FormControls';
+import { Input, Dropdown, FormField } from '@/components/common/FormControls';
 
 export interface PersonalDetailsData {
   city: string;
@@ -22,12 +22,29 @@ const GENDER_OPTIONS = [
 function formatIsoDate(rawDob?: string | null): string {
   if (!rawDob) return '';
   const str = String(rawDob).trim();
+  if (!str || str === 'null' || str === 'undefined') return '';
+
   if (str.includes('T')) {
     return str.split('T')[0];
   }
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
     return str;
   }
+  const dmyMatch = str.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  if (dmyMatch) {
+    const p1 = parseInt(dmyMatch[1], 10);
+    const p2 = parseInt(dmyMatch[2], 10);
+    const year = dmyMatch[3];
+    if (p1 > 12) {
+      const day = String(p1).padStart(2, '0');
+      const month = String(p2).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    const month = String(p1).padStart(2, '0');
+    const day = String(p2).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   const dateObj = new Date(str);
   if (!isNaN(dateObj.getTime())) {
     const yyyy = dateObj.getFullYear();

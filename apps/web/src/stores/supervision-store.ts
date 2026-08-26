@@ -1,5 +1,5 @@
-import type { ManagedChild, SupervisionControl, SupervisionLog } from '../interfaces/supervision';
-import type { GuardianRequestItem } from '../interfaces/relationship';
+import type { ManagedChild, SupervisionControl, SupervisionLog } from '@/interfaces/supervision';
+import type { GuardianRequestItem } from '@/interfaces/relationship';
 
 export class SupervisionStore {
   private static wards: ManagedChild[] = [];

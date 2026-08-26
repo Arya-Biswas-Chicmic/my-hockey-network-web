@@ -35,7 +35,15 @@ export interface ProfileReadResponse {
   profile: {
     profileId: string;
     displayName: string;
+    name?: string;
     avatarUrl: string | null;
+    coverImageUrl?: string | null;
+    coverUrl?: string | null;
+    coverImageKey?: string | null;
+    type?: string | null;
+    profileType?: string | null;
+    primaryRole?: string | null;
+    city?: string | null;
     position?: string | null;
     jerseyNumber?: number | string | null;
     roleTag?: string | null;
@@ -43,10 +51,16 @@ export interface ProfileReadResponse {
     teamLogo?: string | null;
     location?: string | null;
     bio?: string | null;
+    dateOfBirth?: string | null;
+    dob?: string | null;
+    genderCategory?: string | null;
     age?: number | null;
     careerEntries?: CareerEntry[] | null;
+    career?: CareerEntry[] | null;
+    team?: string | null;
+    academyName?: string | null;
+    currentTeam?: string | null;
     isSelf?: boolean;
     viewerTier?: string;
-    [key: string]: any;
   };
 }

@@ -7,11 +7,12 @@ under `packages/`; UI, navigation, environment access, and credential storage re
 This repository uses **npm only**. Node.js is the JavaScript runtime; npm is the package manager.
 Do not add `yarn.lock`, `pnpm-lock.yaml`, or Bun lockfiles.
 
-Last reviewed: 2026-08-21
+Last reviewed: 2026-08-26
 
 ## Start here
 
-- [Project context](PROJECT_CONTEXT.md)
+- [Primary frontend architecture standard](docs/FRONTEND_ARCHITECTURE.md)
+- [Project context](docs/PROJECT_CONTEXT.md)
 - [Architecture](docs/codebase_architecture_guide.md)
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)
 - [Security register](docs/SECURITY_REGISTER.md)
@@ -20,6 +21,13 @@ Last reviewed: 2026-08-21
 - [Environment configuration](docs/ENVIRONMENT_CONFIGURATION.md)
 - [Component catalog and reuse policy](docs/COMPONENT_CATALOG.md)
 - [Web routing and mobile navigation](docs/NAVIGATION.md)
+- [Data fetching and cookie authentication](docs/DATA_FETCHING_AND_AUTH.md)
+- [Frontend development guidelines](docs/FRONTEND_DEVELOPMENT_GUIDELINES.md)
+- [Approved Next.js migration plan — paused](docs/NEXTJS_MIGRATION_PLAN.md)
+- [Web SEO, rendering, and ISR strategy — paused](docs/WEB_SEO_AND_RENDERING_STRATEGY.md)
+- [Third-party and dependency policy](docs/THIRD_PARTY_AND_DEPENDENCY_POLICY.md)
+- [Admin Panel alignment reference](docs/ADMIN_PANEL_ALIGNMENT.md)
+- [Mobile application setup](docs/MOBILE_SETUP.md)
 
 ## Prerequisites
 
@@ -41,13 +49,13 @@ Never commit `.env`, `.env.local`, credentials, or tokens.
 ## Run and build web
 
 ```bash
-# Development server: http://localhost:5174
+# Development server (Vite prints the selected local URL)
 npm run dev:web
 
 # Type-check and create apps/web/dist
 npm run build:web
 
-# Build, then preview production output on port 5174
+# Build, then preview production output on Vite's selected preview port
 npm run preview:web
 ```
 
@@ -92,6 +100,8 @@ non-npm lockfiles and cross-platform UI imports.
 ## Authentication and navigation
 
 - Web uses httpOnly backend cookies, in-memory CSRF, BrowserRouter, and hydrated auth/role guards.
+- Web uses TanStack Query for server state and the shared native-fetch client for HTTP. TanStack
+  Query does not replace React Router.
 - Mobile uses SecureStore credentials and React Navigation stacks/tabs; it does not use browser URL
   routing. Mobile route-name constants are navigator screen identifiers, not web paths.
 - Both applications use the same OTP, onboarding, current-user, and logout contracts/use cases.

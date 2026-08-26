@@ -1,8 +1,8 @@
 import React, { useRef, useMemo, useState } from 'react';
-import { Button } from '../../common/Button';
-import { Input, Dropdown, FormField } from '../../common/FormControls';
+import { Button } from '@/components/common/Button';
+import { Input, Dropdown, FormField } from '@/components/common/FormControls';
 import { calculateAge } from '@my-hockey-network/core';
-import { GUARDIAN_RELATION_OPTIONS } from '../../../utils/guardianUtils';
+import { GUARDIAN_RELATION_OPTIONS } from '@/utils/guardianUtils';
 
 export interface PlayerDetailsFormData {
   fullName: string;
@@ -178,7 +178,9 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
           value={formData.guardianRelation}
           options={GUARDIAN_RELATION_OPTIONS}
           onChange={(val) => {
-            onChange({ guardianRelation: val as any });
+            if (GUARDIAN_RELATION_OPTIONS.some((option) => option.value === val)) {
+              onChange({ guardianRelation: val as PlayerDetailsFormData['guardianRelation'] });
+            }
             setTouched((prev) => ({ ...prev, guardianRelation: true }));
           }}
           error={relationError}

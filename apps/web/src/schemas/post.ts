@@ -1,4 +1,4 @@
-import type { CreatePostDTO, AddCommentDTO } from '../interfaces/post';
+import type { CreatePostDTO, AddCommentDTO } from '@/interfaces/post';
 
 export function validateCreatePost(dto: Partial<CreatePostDTO>): { isValid: boolean; error?: string } {
   if (!dto.body || !dto.body.trim()) {

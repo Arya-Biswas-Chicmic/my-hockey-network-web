@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '../../common/Button';
+import { Button } from '@/components/common/Button';
 
 interface AddPlayerChoiceStepProps {
   onCreateNew: () => void;
@@ -17,17 +17,9 @@ export const AddPlayerChoiceStep: React.FC<AddPlayerChoiceStepProps> = ({
       <h2 className="mhn-parent-step-title">How would you like to add them?</h2>
 
       <div className="mhn-parent-stack-gap-16">
-        <div
-          className="mhn-parent-choice-card mhn-active"
-          onClick={onCreateNew}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') onCreateNew();
-          }}
-        >
+        <div className="mhn-parent-choice-card mhn-active" onClick={onCreateNew}>
           <div className="mhn-parent-flex-row-center-16">
-            <img src="/addPlayer.png" alt="Create player" className="add-player-img" />
+            <img src="/addPlayer.png" alt="Add Player" className="add-player-img" />
             <div>
               <div className="mhn-parent-card-title">
                 Create a new player profile
@@ -40,17 +32,9 @@ export const AddPlayerChoiceStep: React.FC<AddPlayerChoiceStepProps> = ({
           <div className="mhn-parent-chevron-blue">›</div>
         </div>
 
-        <div
-          className="mhn-parent-choice-card"
-          onClick={onLinkExisting}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') onLinkExisting();
-          }}
-        >
+        <div className="mhn-parent-choice-card" onClick={onLinkExisting}>
           <div className="mhn-parent-flex-row-center-16">
-            <img src="/linking.png" alt="Link existing player" className="add-player-img" />
+            <img src="/linking.png" alt="Link Existing" className="add-player-img" />
             <div>
               <div className="mhn-parent-card-title">
                 Link an existing player

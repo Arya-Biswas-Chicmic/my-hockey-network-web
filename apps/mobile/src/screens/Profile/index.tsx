@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import ScreenWrapper from '@components/ScreenWrapper';
 import useStyles from '@hooks/useStyles';
 
-import styles from './styles';
+import styles from '@/screens/Profile/styles';
 
 const Profile = () => {
   const { dynamicStyles } = useStyles(styles);

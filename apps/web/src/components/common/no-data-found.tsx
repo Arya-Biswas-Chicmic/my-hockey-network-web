@@ -1,5 +1,6 @@
-import { Button } from './Button';
+import { Button } from '@/components/common/Button';
 import React from 'react';
+import { SearchX } from 'lucide-react';
 
 export interface NoDataFoundProps {
   title?: string;
@@ -20,9 +21,7 @@ export const NoDataFound: React.FC<NoDataFoundProps> = ({
     <div className="mhn-no-data-card">
       <div className="mhn-no-data-icon-wrapper">
         {icon || (
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+          <SearchX size={32} strokeWidth={1.75} />
         )}
       </div>
 
