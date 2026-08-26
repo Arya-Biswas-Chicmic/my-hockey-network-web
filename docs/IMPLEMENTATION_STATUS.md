@@ -4,6 +4,9 @@ Last reviewed: 2026-08-26
 
 ## Completed
 
+- Imported home screen components and home-page from refactor/imports-and-styles branch.
+- Fixed CORS preflight header rejection by sending only server-allowlisted headers in API client.
+
 - Established npm workspaces for reusable web/mobile code.
 - Added contracts, domain, API client, auth, validation, and design-token packages.
 - Added web and mobile platform adapters for environment and credential storage.

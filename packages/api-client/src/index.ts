@@ -97,13 +97,9 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     ]);
     if (accessToken) {
       if (!headers.has(HttpHeader.AUTHORIZATION)) headers.set(HttpHeader.AUTHORIZATION, `Bearer ${accessToken}`);
-      if (!headers.has(HttpHeader.MHN_AT)) headers.set(HttpHeader.MHN_AT, accessToken);
     }
     if (csrfToken) {
       if (!headers.has(HttpHeader.X_CSRF_TOKEN)) headers.set(HttpHeader.X_CSRF_TOKEN, csrfToken);
-      if (!headers.has(HttpHeader.X_XSRF_TOKEN)) headers.set(HttpHeader.X_XSRF_TOKEN, csrfToken);
-      if (!headers.has(HttpHeader.CSRF_TOKEN)) headers.set(HttpHeader.CSRF_TOKEN, csrfToken);
-      if (!headers.has(HttpHeader.MHN_CSRF)) headers.set(HttpHeader.MHN_CSRF, csrfToken);
     }
     return headers;
   };

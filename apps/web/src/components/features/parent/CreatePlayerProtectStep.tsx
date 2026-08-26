@@ -33,11 +33,11 @@ export const CreatePlayerProtectStep: React.FC<CreatePlayerProtectStepProps> = (
       <p className="mhn-parent-step-desc">You can change these settings anytime.</p>
 
       {/* Profile Visibility Cards */}
-      <div className="mhn-mb-20">
+      <div className="mhn-mb-14">
         <div className="mhn-section-header-title">
           PROFILE VISIBILITY
         </div>
-        <div className="mhn-col-flex-gap-10">
+        <div className="mhn-col-flex-gap-8">
           <div
             className={`mhn-parent-visibility-card ${formData.profileVisibility === 'CONNECTIONS' ? 'mhn-selected' : ''}`}
             onClick={() => onChange({ profileVisibility: 'CONNECTIONS' })}
@@ -67,11 +67,11 @@ export const CreatePlayerProtectStep: React.FC<CreatePlayerProtectStepProps> = (
       </div>
 
       {/* Contact & Connections Toggles */}
-      <div className="mhn-mb-24">
+      <div className="mhn-mb-16 mhn-mt-14">
         <div className="mhn-section-header-title-mb10">
           CONTACT & CONNECTIONS
         </div>
-        <div className="mhn-col-flex-gap-12">
+        <div className="mhn-col-flex-gap-8">
           {([
             { key: 'requireApprovalAdultContact', label: 'Adult contact requests', sub: 'Require my approval' },
             { key: 'requireApprovalConnections', label: 'Connections', sub: 'Require my approval' },
@@ -97,7 +97,7 @@ export const CreatePlayerProtectStep: React.FC<CreatePlayerProtectStepProps> = (
         </div>
       </div>
 
-      <div className="mhn-col-flex-gap-8">
+      <div className="mhn-parent-actions-stack">
         <Button
           type="button"
           disabled={loading}
@@ -107,7 +107,7 @@ export const CreatePlayerProtectStep: React.FC<CreatePlayerProtectStepProps> = (
           {loading && <Spinner size="sm" color="#FFFFFF" />}
           <span>Create Player Profile</span>
         </Button>
-        <Button type="button" className="mhn-parent-btn-back" onClick={onBack}>
+        <Button type="button" className="mhn-parent-btn-secondary" onClick={onBack}>
           Back
         </Button>
       </div>

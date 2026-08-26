@@ -80,7 +80,9 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       const itemsList = feedResValue.items;
 
       if (itemsList && itemsList.length > 0) {
-        const mappedPosts: FeedPostProps[] = itemsList.map((postObj: PostItem) => {
+        const mappedPosts: FeedPostProps[] = itemsList.map((itemRaw: unknown, index: number) => {
+          const itemWrapper = itemRaw as { post?: PostItem } & PostItem;
+          const postObj: PostItem = itemWrapper.post || itemWrapper;
           const authorProf: NonNullable<PostItem['author']> = postObj.authorProfile || postObj.author || { id: '', displayName: '' };
           const authorId = postObj.authorProfileId || authorProf.id;
 
@@ -101,8 +103,10 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             authorProf.primaryRole ||
             'Official Team';
 
+          const realPostId = postObj.id || (postObj as unknown as { _id?: string; postId?: string })._id || (postObj as unknown as { _id?: string; postId?: string }).postId || `post-${authorId || 'unknown'}-${postObj.publishedAt || postObj.createdAt || index}`;
+
           return {
-            id: postObj.id,
+            id: realPostId,
             authorId: authorId || authorProf.id || authorProf.displayName,
             authorName: authorProf.displayName || '-',
             authorRole: roleSubtitle,

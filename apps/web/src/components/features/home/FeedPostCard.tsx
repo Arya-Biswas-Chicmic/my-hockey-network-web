@@ -205,6 +205,12 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
     }
 
     try {
+      if (!id || id.includes('unknown') || id.startsWith('post-')) {
+        showInfoToast('Cannot react to mock or fallback feed posts.');
+        setIsLiked(prevLiked);
+        setLikes(prevLikes);
+        return;
+      }
       if (prevLiked) {
         await unlikePost(id);
       } else {

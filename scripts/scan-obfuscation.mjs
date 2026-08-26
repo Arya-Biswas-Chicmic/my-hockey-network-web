@@ -865,7 +865,7 @@ const SEVERITY_LABEL = {
 
 function reportHuman(suspicious, errors) {
   for (const result of suspicious) {
-    console.log(`\n⚠️  ${result.filePath}  (score ${result.score})`);
+    console.log(`\n[WARNING] ${result.filePath}  (score ${result.score})`);
     const ordered = [...result.findings].sort(
       (a, b) => SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity)
     );

@@ -37,9 +37,7 @@ const DEFAULT_MESSAGES_FRIDAY: MessageItem[] = [
     senderAvatar: '/saylor.png',
     time: '02:22 AM',
     text: 'Lorem ipsum dolor sit amet,',
-    reactions: [
-      { emoji: '❤️', count: 8 }
-    ]
+    reactions: []
   }
 ];
 
