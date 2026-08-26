@@ -21,7 +21,7 @@ export default defineConfig({
     },
     proxy: {
       '/v1': {
-        target: process.env.VITE_PROXY_TARGET || 'https://reposeful-kareen-controllingly.ngrok-free.dev',
+        target: process.env.VITE_PROXY_TARGET || 'https://my-hockey-network.onrender.com',
         changeOrigin: true,
         secure: false,
         headers: {
@@ -37,6 +37,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@': path.resolve(__dirname, 'src'),
       '@my-hockey-network/types': path.resolve(__dirname, '../../packages/types/src/index.ts'),
       '@my-hockey-network/constants': path.resolve(__dirname, '../../packages/constants/src/index.ts'),
       '@my-hockey-network/design-system': path.resolve(__dirname, '../../packages/design-system/src/index.ts'),

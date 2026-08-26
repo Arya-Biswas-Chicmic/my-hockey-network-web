@@ -6,6 +6,7 @@
   "private": true,
   "dependencies": {
     "@my-hockey-network/contracts": "*",
+    "yup": "^1.7.1",
     "zod": "^4.4.3"
   }
 }

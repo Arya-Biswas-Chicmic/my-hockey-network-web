@@ -1,9 +1,11 @@
-import { Button } from '../../../common/Button';
-import { Input } from '../../../common/FormControls';
-import React, { useState, useRef, useMemo } from 'react';
+import React from 'react';
+import { Formik, Form } from 'formik';
+import { Button } from '@/components/common/Button';
+import { Spinner } from '@/components/common/Spinner';
+import { FormikInput } from '@/components/common/form/FormikInput';
+import { FormikDateInput } from '@/components/common/form/FormikDateInput';
 import { CREATE_ACCOUNT_STRINGS } from '@my-hockey-network/shared';
-import { calculateAge, validateSignUpAgeAndApproval } from '@my-hockey-network/core';
-import { Spinner } from '../../../common/Spinner';
+import { createAccountSchema, CreateAccountFormValues } from '@my-hockey-network/validation';
 
 interface CreateAccountFormProps {
   selectedRole?: string;
@@ -22,149 +24,20 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
   onSignInClick,
   loading = false,
 }) => {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [dob, setDob] = useState('');
-  const [localError, setLocalError] = useState<string | null>(null);
-  const dateInputRef = useRef<HTMLInputElement>(null);
-
-  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{ fullName?: string; email?: string; dob?: string }>({});
-
-  // Compute real-time age
-  const currentAge = useMemo(() => calculateAge(dob), [dob]);
-
-  const validateFields = (
-    nameVal: string,
-    emailVal: string,
-    dobVal: string
-  ): { fullName?: string; email?: string; dob?: string } => {
-    const errs: { fullName?: string; email?: string; dob?: string } = {};
-
-    // 1. Full Name
-    const trimmedName = nameVal.trim();
-    if (!trimmedName) {
-      errs.fullName = 'Full Name is required.';
-    } else if (trimmedName.length < 2) {
-      errs.fullName = 'Full Name must be at least 2 characters.';
-    } else if (nameVal.length > 50) {
-      errs.fullName = 'Full Name cannot be more than 50 characters.';
-    }
-
-    // 2. Email Address
-    const trimmedEmail = emailVal.trim();
-    if (!trimmedEmail) {
-      errs.email = 'Email Address is required.';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      errs.email = 'Please enter a valid email address.';
-    }
-
-    // 3. Date of Birth
-    const trimmedDob = dobVal.trim();
-    if (!trimmedDob) {
-      errs.dob = 'Date of Birth is required.';
-    } else {
-      const computedAge = calculateAge(trimmedDob);
-      if (computedAge === null) {
-        errs.dob = 'Please enter a valid date of birth (DD/MM/YYYY).';
-      } else {
-        const roleUpper = selectedRole.toUpperCase();
-        if (roleUpper === 'PARENT') {
-          if (computedAge < 18) {
-            errs.dob = 'Parent account holders must be at least 18 years old.';
-          } else if (computedAge > 100) {
-            errs.dob = 'Maximum age limit is 100 years.';
-          }
-        } else {
-          if (computedAge < 5) {
-            errs.dob = `Minimum age for ${selectedRole.toLowerCase()}s is 5 years.`;
-          } else if (computedAge > 100) {
-            errs.dob = 'Maximum age limit is 100 years.';
-          }
-        }
-      }
-    }
-
-    return errs;
+  const initialValues: CreateAccountFormValues = {
+    fullName: '',
+    email: '',
+    dob: '',
   };
 
-  // Smart DOB auto-formatter: e.g. 10042020 -> 10/04/2020
-  const formatDobInput = (val: string) => {
-    const digits = val.replace(/\D/g, '').slice(0, 8);
-    if (digits.length <= 2) {
-      return digits;
-    }
-    if (digits.length <= 4) {
-      return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-    }
-    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-  };
-
-  const handleDobChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawVal = e.target.value;
-    const formatted = formatDobInput(rawVal);
-    setDob(formatted);
-    setLocalError(null);
-    if (hasAttemptedSubmit) {
-      setFieldErrors(validateFields(fullName, email, formatted));
-    }
-  };
-
-  const handleCalendarClick = () => {
-    if (dateInputRef.current) {
-      if (typeof dateInputRef.current.showPicker === 'function') {
-        dateInputRef.current.showPicker();
-      } else {
-        dateInputRef.current.click();
-      }
-    }
-  };
-
-  const handleDatePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const dateVal = e.target.value; // Format: YYYY-MM-DD
-    if (dateVal) {
-      const parts = dateVal.split('-');
-      if (parts.length === 3) {
-        const [yyyy, mm, dd] = parts;
-        const formatted = `${dd}/${mm}/${yyyy}`;
-        setDob(formatted);
-        setLocalError(null);
-        if (hasAttemptedSubmit) {
-          setFieldErrors(validateFields(fullName, email, formatted));
-        }
-      }
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setHasAttemptedSubmit(true);
-    setLocalError(null);
-
-    const errs = validateFields(fullName, email, dob);
-    setFieldErrors(errs);
-
-    if (Object.keys(errs).length > 0) {
-      return;
-    }
-
+  const handleFormSubmit = (values: CreateAccountFormValues) => {
     if (onSignUp) {
       onSignUp({
-        fullName: fullName.trim(),
-        email: email.trim(),
-        dob: dob.trim(),
+        fullName: values.fullName.trim(),
+        email: values.email.trim(),
+        dob: values.dob.trim(),
       });
     }
-  };
-
-  const renderFieldError = (errorMsg?: string) => {
-    if (!errorMsg) return null;
-    return (
-      <span className="mhn-edit-profile-field-error">
-        <span>⚠️</span>
-        <span>{errorMsg}</span>
-      </span>
-    );
   };
 
   return (
@@ -186,116 +59,56 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
         <p className="onboarding-subtitle">{CREATE_ACCOUNT_STRINGS.subtitle}</p>
       </div>
 
-      {localError && (
-        <div className="mhn-local-error-card">
-          {localError}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="auth-form-stack" noValidate>
-        {/* Full Name Field */}
-        <div className="auth-form-group">
-          <label className="auth-label" htmlFor="fullName">
-            {CREATE_ACCOUNT_STRINGS.fullNameLabel}
-          </label>
-          <div className="auth-input-wrapper">
-            <Input
-              id="fullName"
-              type="text"
-              maxLength={50}
-              className={`auth-input ${hasAttemptedSubmit && fieldErrors.fullName ? 'mhn-input-invalid' : ''}`}
+      <Formik<CreateAccountFormValues>
+        initialValues={initialValues}
+        validationSchema={createAccountSchema(selectedRole)}
+        onSubmit={handleFormSubmit}
+        validateOnBlur
+        validateOnChange
+      >
+        {({ isSubmitting }) => (
+          <Form className="auth-form-stack" noValidate>
+            <FormikInput
+              name="fullName"
+              label={CREATE_ACCOUNT_STRINGS.fullNameLabel}
               placeholder={CREATE_ACCOUNT_STRINGS.fullNamePlaceholder}
-              value={fullName}
-              onChange={(e) => {
-                const val = e.target.value.slice(0, 50);
-                setFullName(val);
-                if (hasAttemptedSubmit) {
-                  setFieldErrors(validateFields(val, email, dob));
-                }
-              }}
+              maxLength={50}
+              isNameInput
             />
-          </div>
-          {hasAttemptedSubmit && renderFieldError(fieldErrors.fullName)}
-        </div>
 
-        {/* Email Address Field */}
-        <div className="auth-form-group">
-          <label className="auth-label" htmlFor="email">
-            {CREATE_ACCOUNT_STRINGS.emailLabel}
-          </label>
-          <div className="auth-input-wrapper">
-            <Input
-              id="email"
+            <FormikInput
+              name="email"
               type="email"
-              maxLength={100}
-              className={`auth-input ${hasAttemptedSubmit && fieldErrors.email ? 'mhn-input-invalid' : ''}`}
+              label={CREATE_ACCOUNT_STRINGS.emailLabel}
               placeholder={CREATE_ACCOUNT_STRINGS.emailPlaceholder}
-              value={email}
-              onChange={(e) => {
-                const val = e.target.value;
-                setEmail(val);
-                if (hasAttemptedSubmit) {
-                  setFieldErrors(validateFields(fullName, val, dob));
-                }
-              }}
+              maxLength={100}
+              isEmailInput
             />
-          </div>
-          {hasAttemptedSubmit && renderFieldError(fieldErrors.email)}
-        </div>
 
-        {/* Date of Birth Field */}
-        <div className="auth-form-group">
-          <div className="mhn-dob-header-row">
-            <label className="auth-label" htmlFor="dob">
-              {CREATE_ACCOUNT_STRINGS.dobLabel}
-            </label>
-            {currentAge !== null && currentAge >= 0 && currentAge <= 110 ? (
-              <span className={currentAge < 18 ? 'mhn-age-badge-under18' : 'mhn-age-badge-adult'}>
-                Age: {currentAge} yrs {currentAge < 18 ? '(Under 18)' : ''}
-              </span>
-            ) : dob.length === 10 ? (
-              <span className="mhn-age-badge-invalid">
-                Invalid Date
-              </span>
-            ) : null}
-          </div>
-          <div className="auth-input-wrapper mhn-relative-container">
-            <Input
-              id="dob"
-              type="text"
-              className={`auth-input ${hasAttemptedSubmit && fieldErrors.dob ? 'mhn-input-invalid' : ''}`}
+            <FormikDateInput
+              name="dob"
+              label={CREATE_ACCOUNT_STRINGS.dobLabel}
               placeholder={CREATE_ACCOUNT_STRINGS.dobPlaceholder}
-              value={dob}
-              onChange={handleDobChange}
-              maxLength={10}
+              showAgeBadge
             />
-            <img
-              src="/calendar.png"
-              alt="Calendar"
-              className="auth-input-icon auth-input-icon-clickable mhn-cursor-pointer"
-              onClick={handleCalendarClick}
-            />
-            <Input
-              type="date"
-              ref={dateInputRef}
-              onChange={handleDatePickerChange}
-              className="mhn-date-picker-overlay"
-            />
-          </div>
-          {hasAttemptedSubmit && renderFieldError(fieldErrors.dob)}
-        </div>
 
-        <Button type="submit" className={`btn-submit ${loading ? 'mhn-loading' : ''}`} disabled={loading}>
-          {loading ? (
-            <span className="mhn-btn-loading-flex">
-              <Spinner size="sm" color="#FFFFFF" />
-              <span>Sending Code...</span>
-            </span>
-          ) : (
-            CREATE_ACCOUNT_STRINGS.submitButton
-          )}
-        </Button>
-      </form>
+            <Button
+              type="submit"
+              className={`btn-submit ${loading || isSubmitting ? 'mhn-loading' : ''}`}
+              disabled={loading || isSubmitting}
+            >
+              {loading || isSubmitting ? (
+                <span className="mhn-btn-loading-flex">
+                  <Spinner size="sm" color="#FFFFFF" />
+                  <span>Sending Code...</span>
+                </span>
+              ) : (
+                CREATE_ACCOUNT_STRINGS.submitButton
+              )}
+            </Button>
+          </Form>
+        )}
+      </Formik>
 
       <Button
         type="button"

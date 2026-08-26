@@ -15,7 +15,7 @@ export const WhoDoYouManageStep: React.FC<WhoDoYouManageStepProps> = ({ onAddPla
       </p>
 
       <div className="mhn-flex-justify-center mhn-mb-16">
-        <img src="./manage.png" alt="Manage" className="manage" />
+        <img src="/manage.png" alt="Manage" className="manage" />
       </div>
 
       <div className="mhn-parent-card-title mhn-text-center">
@@ -26,7 +26,7 @@ export const WhoDoYouManageStep: React.FC<WhoDoYouManageStepProps> = ({ onAddPla
       </div>
 
       <div className="mhn-parent-info-banner">
-        <img src='./secure.png' alt='secure' className='secure'/>
+        <img src="/secure.png" alt="secure" className="secure" />
         <span>
           For minor players, you'll control privacy, team relationships, and contact permissions.
         </span>

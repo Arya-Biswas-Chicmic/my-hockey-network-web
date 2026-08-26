@@ -76,11 +76,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
       setStep(3);
     } catch (err: any) {
       if (err.statusCode === 409 || err.key === 'USER_ALREADY_EXISTS') {
-        setErrorMessage('An account with this email already exists. Switching to Sign In...');
-        setTimeout(() => {
-          setLoginEmail(data.email);
-          handleSwitchToLogin();
-        }, 1200);
+        setErrorMessage(extractErrorMessage(err, 'An account with this email already exists. Please sign in or use a different email.'));
       } else {
         setErrorMessage(extractErrorMessage(err, 'Failed to send verification code. Please check details and try again.'));
       }

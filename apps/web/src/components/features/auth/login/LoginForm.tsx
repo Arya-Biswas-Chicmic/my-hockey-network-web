@@ -1,7 +1,10 @@
-import { Button } from '../../../common/Button';
-import { Input } from '../../../common/FormControls';
-import React, { useState } from 'react';
-import { Spinner } from '../../../common/Spinner';
+import React from 'react';
+import { Formik, Form } from 'formik';
+import { Button } from '@/components/common/Button';
+import { Spinner } from '@/components/common/Spinner';
+import { FormikInput } from '@/components/common/form/FormikInput';
+import { FormError } from '@/components/common/form/FormError';
+import { loginSchema, LoginFormValues } from '@my-hockey-network/validation';
 
 interface LoginFormProps {
   onSignIn?: (email: string) => void;
@@ -18,47 +21,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   loading = false,
   errorMessage = null,
 }) => {
-  const [email, setEmail] = useState('');
-  const [validationError, setValidationError] = useState<string | null>(null);
-
-  const computeEmailError = (val: string): string | null => {
-    const trimmed = val.trim();
-    if (!trimmed) {
-      return 'Email Address is required.';
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmed)) {
-      return 'Enter a valid email address.';
-    }
-    return null;
+  const initialValues: LoginFormValues = {
+    email: '',
   };
 
-  const validateEmail = (val: string): boolean => {
-    const err = computeEmailError(val);
-    setValidationError(err);
-    return err === null;
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setEmail(val);
-    if (validationError) {
-      const err = computeEmailError(val);
-      setValidationError(err);
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateEmail(email)) {
-      return;
-    }
+  const handleFormSubmit = (values: LoginFormValues) => {
     if (onSignIn) {
-      onSignIn(email.trim());
+      onSignIn(values.email.trim());
     }
   };
-
-  const activeError = validationError || errorMessage;
 
   return (
     <div className="onboarding-form">
@@ -67,49 +38,42 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <p className="onboarding-subtitle">Enter your email to receive a 6-digit code to log in to your account.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="auth-form-stack">
-        <div className="auth-form-group">
-          <label className="auth-label" htmlFor="loginEmail">
-            Email Address
-          </label>
-          <div className="auth-input-wrapper">
-            <Input
-              id="loginEmail"
-              type="text"
-              className={`auth-input ${activeError ? 'mhn-input-invalid' : ''}`}
+      <Formik<LoginFormValues>
+        initialValues={initialValues}
+        validationSchema={loginSchema(false)}
+        onSubmit={handleFormSubmit}
+        validateOnBlur
+        validateOnChange
+      >
+        {({ isSubmitting }) => (
+          <Form className="auth-form-stack" noValidate>
+            <FormikInput
+              name="email"
+              type="email"
+              label="Email Address"
               placeholder="enter email address"
-              value={email}
-              onChange={handleChange}
-              onBlur={() => {
-                if (email) validateEmail(email);
-              }}
+              isEmailInput
             />
-          </div>
 
-          {/* Standardized Edit Profile Reference Error UI */}
-          {activeError && (
-            <span className="mhn-edit-profile-field-error">
-              <span>⚠️</span>
-              <span>{activeError}</span>
-            </span>
-          )}
-        </div>
+            {errorMessage && <FormError message={errorMessage} className="mhn-input-error-msg" />}
 
-        <Button
-          type="submit"
-          className={`btn-submit mhn-btn-submit-margin ${loading ? 'mhn-loading' : ''}`}
-          disabled={loading}
-        >
-          {loading ? (
-            <span className="mhn-btn-loading-flex">
-              <Spinner size="sm" color="#FFFFFF" />
-              <span>Sending Code...</span>
-            </span>
-          ) : (
-            'Sign In'
-          )}
-        </Button>
-      </form>
+            <Button
+              type="submit"
+              className={`btn-submit mhn-btn-submit-margin ${loading || isSubmitting ? 'mhn-loading' : ''}`}
+              disabled={loading || isSubmitting}
+            >
+              {loading || isSubmitting ? (
+                <span className="mhn-btn-loading-flex">
+                  <Spinner size="sm" color="#FFFFFF" />
+                  <span>Sending Code...</span>
+                </span>
+              ) : (
+                'Sign In'
+              )}
+            </Button>
+          </Form>
+        )}
+      </Formik>
 
       <Button
         type="button"

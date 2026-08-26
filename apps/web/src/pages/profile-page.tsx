@@ -1,23 +1,23 @@
-import { Button } from '../components/common/Button';
-import { Input, Select, Textarea } from '../components/common/FormControls';
+import { Button } from '@/components/common/Button';
+import { Input, Select, Textarea } from '@/components/common/FormControls';
 import React, { useState } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { Header } from '../components/common/Header';
-import { PendingBanner } from '../components/common/PendingBanner';
-import { NoDataFound } from '../components/common/no-data-found';
-import { FeedPostCard } from '../components/features/home/FeedPostCard';
-import { CreatePostModal } from '../components/features/home/CreatePostModal';
-import { EditProfileModal, EditProfileFormData, ProfileSkeletonLoader } from '../components/features/profile';
-import { FeedPostSkeleton } from '../components/features/home/HomeSkeletonLoader';
-import { Spinner } from '../components/common/Spinner';
-import { DeleteCareerModal } from '../components/common/DeleteCareerModal';
-import { useAuth } from '../hooks/use-auth';
-import { resolveMediaUrl, resolveCoverUrl } from '../utils/mediaUtils';
+import { Header } from '@/components/common/Header';
+import { PendingBanner } from '@/components/common/PendingBanner';
+import { NoDataFound } from '@/components/common/no-data-found';
+import { FeedPostCard } from '@/components/features/home/FeedPostCard';
+import { CreatePostModal } from '@/components/features/home/CreatePostModal';
+import { EditProfileModal, EditProfileFormData, ProfileSkeletonLoader } from '@/components/features/profile';
+import { FeedPostSkeleton } from '@/components/features/home/HomeSkeletonLoader';
+import { Spinner } from '@/components/common/Spinner';
+import { DeleteCareerModal } from '@/components/common/DeleteCareerModal';
+import { useAuth } from '@/hooks/use-auth';
+import { resolveMediaUrl, resolveCoverUrl } from '@/utils/mediaUtils';
 import { isEmailValid } from '@my-hockey-network/validation';
-import { showSuccessToast, showErrorToast } from '../utils/toast';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
-import { NavTabEnum, ProfileTabEnum, ProfileAboutSectionEnum, PostAudienceEnum } from '@my-hockey-network/contracts';
-import { ApprovalCodeModal } from '../components/supervision/ApprovalCodeModal';
+import { NavTabEnum, ProfileTabEnum, ProfileAboutSectionEnum, PostAudienceEnum, UserRoleEnum } from '@my-hockey-network/contracts';
+import { ApprovalCodeModal } from '@/components/supervision/ApprovalCodeModal';
 
 
 import {
@@ -222,13 +222,13 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     (activeProfile as any)?.type ||
     (isOwnProfile ? user?.primaryRole : null) ||
     (activeProfile as any)?.roleTag ||
-    'PLAYER';
+    UserRoleEnum.PLAYER;
   const liveRole = (activeProfile as any)?.roleTag || String(rawRole);
   const liveRoleUpper = String(rawRole).toUpperCase();
-  const isPlayer = liveRoleUpper === 'PLAYER' || liveRoleUpper.includes('PLAYER') || liveRoleUpper.includes('CENTER') || liveRoleUpper.includes('WING') || liveRoleUpper.includes('DEFENSE') || liveRoleUpper.includes('GOALTENDER');
-  const isCoach = liveRoleUpper === 'COACH' || liveRoleUpper.includes('COACH');
-  const isParent = liveRoleUpper === 'PARENT' || liveRoleUpper.includes('PARENT');
-  const canHaveCareer = isPlayer || isCoach || (!isParent && liveRoleUpper !== 'PARENT');
+  const isPlayer = liveRoleUpper === UserRoleEnum.PLAYER || liveRoleUpper.includes(UserRoleEnum.PLAYER) || liveRoleUpper.includes('CENTER') || liveRoleUpper.includes('WING') || liveRoleUpper.includes('DEFENSE') || liveRoleUpper.includes('GOALTENDER');
+  const isCoach = liveRoleUpper === UserRoleEnum.COACH || liveRoleUpper.includes(UserRoleEnum.COACH);
+  const isParent = liveRoleUpper === UserRoleEnum.PARENT || liveRoleUpper.includes(UserRoleEnum.PARENT);
+  const canHaveCareer = isPlayer || isCoach || (!isParent && liveRoleUpper !== UserRoleEnum.PARENT);
 
   // Live profile field fallbacks
   const liveBio = activeProfile?.bio || 'Competitive ice hockey player focused on teamwork, discipline, and continuous improvement on and off the ice.';
@@ -1355,7 +1355,6 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                             />
                             {introErrors.bio && (
                               <div className="mhn-edit-profile-field-error">
-                                <span>⚠️</span>
                                 <span>{introErrors.bio}</span>
                               </div>
                             )}
@@ -1406,7 +1405,6 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                               />
                               {introErrors.jerseyNumber && (
                                 <div className="mhn-edit-profile-field-error">
-                                  <span>⚠️</span>
                                   <span>{introErrors.jerseyNumber}</span>
                                 </div>
                               )}

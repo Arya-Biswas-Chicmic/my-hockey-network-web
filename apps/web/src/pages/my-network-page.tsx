@@ -1,19 +1,19 @@
-import { Button } from '../components/common/Button';
-import { Input } from '../components/common/FormControls';
+import { Button } from '@/components/common/Button';
+import { Input } from '@/components/common/FormControls';
 import React, { useState, useEffect } from 'react';
-import { Header, NoDataFound, ServerDown } from '../components/common';
-import { ManageNetworkCard } from '../components/features/network/ManageNetworkCard';
-import { ProfileSummaryCard } from '../components/features/home/ProfileSummaryCard';
-import { GroupsView } from '../components/features/network/GroupsView';
-import { GroupDetailView } from '../components/features/network/GroupDetailView';
-import { ConnectionsView } from '../components/features/network/ConnectionsView';
-import { PendingRequestCard, PendingRequestProps } from '../components/features/network/PendingRequestCard';
-import { SuggestedUserCard, SuggestedUserProps } from '../components/features/network/SuggestedUserCard';
-import { NetworkSkeletonGrid } from '../components/features/network/NetworkSkeletonLoader';
-import { EmptyState } from '../components/features/network/EmptyState';
-import { useDebounce } from '../hooks/use-debounce';
-import { useAuth } from '../hooks/use-auth';
-import { resolveCoverUrl } from '../utils/mediaUtils';
+import { Header, NoDataFound, ServerDown } from '@/components/common';
+import { ManageNetworkCard } from '@/components/features/network/ManageNetworkCard';
+import { ProfileSummaryCard } from '@/components/features/home/ProfileSummaryCard';
+import { GroupsView } from '@/components/features/network/GroupsView';
+import { GroupDetailView } from '@/components/features/network/GroupDetailView';
+import { ConnectionsView } from '@/components/features/network/ConnectionsView';
+import { PendingRequestCard, PendingRequestProps } from '@/components/features/network/PendingRequestCard';
+import { SuggestedUserCard, SuggestedUserProps } from '@/components/features/network/SuggestedUserCard';
+import { NetworkSkeletonGrid } from '@/components/features/network/NetworkSkeletonLoader';
+import { EmptyState } from '@/components/features/network/EmptyState';
+import { useDebounce } from '@/hooks/use-debounce';
+import { useAuth } from '@/hooks/use-auth';
+import { resolveCoverUrl } from '@/utils/mediaUtils';
 import {
   getRelationships,
   getPeopleYouMayKnow,
@@ -255,7 +255,6 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
             <section className="mhn-network-col-main">
               {apiErrorMsg && (
                 <div className="mhn-network-api-error-banner">
-                  <span>⚠️</span>
                   <span>{apiErrorMsg}</span>
                 </div>
               )}

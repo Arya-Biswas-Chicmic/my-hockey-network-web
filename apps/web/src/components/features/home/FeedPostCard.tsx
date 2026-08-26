@@ -1,15 +1,19 @@
-import { Button } from '../../common/Button';
-import { Textarea } from '../../common/FormControls';
 import React, { useState, useEffect } from 'react';
-import { likePost, unlikePost, repostPost, updatePost, deletePost, followUser, unfollowUser } from '@my-hockey-network/core';
-import { Spinner } from '../../common/Spinner';
-
-import { useAuth } from '../../../hooks/use-auth';
+import { Button } from '@/components/common/Button';
+import { Textarea } from '@/components/common/FormControls';
+import { Spinner } from '@/components/common/Spinner';
+import { useAuth } from '@/hooks/use-auth';
 import { PostCommentSection } from './PostCommentSection';
-import { useFeedPermissions } from '../../../hooks/use-feed-permissions';
-import { showSuccessToast, showErrorToast, showInfoToast } from '../../../utils/toast';
-import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
-
+import { useFeedPermissions } from '@/hooks/use-feed-permissions';
+import { formatDisplayName, formatUserAvatar, formatRoleTag } from '@/logic';
+import { usePostReaction } from '@/hooks/usePostReaction';
+import { usePostRepost } from '@/hooks/usePostRepost';
+import { usePostDelete } from '@/hooks/usePostDelete';
+import { usePostEdit } from '@/hooks/usePostEdit';
+import { followUser, unfollowUser } from '@my-hockey-network/core';
+import { ERROR_MESSAGES } from '@my-hockey-network/constants';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import { normalizeApiError } from '@/logic/errors/errorNormalizer';
 
 export interface FeedPostProps {
   id: string;
@@ -26,23 +30,7 @@ export interface FeedPostProps {
   isFollowing?: boolean;
   isSelf?: boolean;
   userReaction?: string | null;
-
-  // Repost specific properties
-  isRepost?: boolean;
-  repostedByName?: string;
   isSelfRepost?: boolean;
-  hasThirdPartyReposts?: boolean;
-  repostCommentary?: string;
-  originalPost?: {
-    id: string;
-    authorName: string;
-    authorRole?: string;
-    authorAvatar?: string;
-    authorTime?: string;
-    content: string;
-    postImage?: string;
-  };
-
   onFollowChange?: (authorKey: string, isFollowing: boolean) => void;
   onShareSuccess?: (message: string) => void;
   onRepostComplete?: () => void;
@@ -81,218 +69,86 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   const canFollow = checkSupervisionPermission('follow_others');
 
   const { requirePermission } = useFeedPermissions(onNavigate);
-  const [postContent, setPostContent] = useState(initialContent);
-  const [likes, setLikes] = useState(initialLikes);
-  const [reposts, setReposts] = useState(initialReposts);
-  const [isLiked, setIsLiked] = useState(!!userReaction);
-  const [isFollowing, setIsFollowing] = useState(initialFollowing);
-  const [isFollowingLoading, setIsFollowingLoading] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isLiking, setIsLiking] = useState(false);
-  const [isSharing, setIsSharing] = useState(false);
-  const [hasReposted, setHasReposted] = useState<boolean>(isSelfRepost || false);
-  const [userRepostId, setUserRepostId] = useState<string | null>(null);
-  const [showComments, setShowComments] = useState(false);
-  const [currentCommentsCount, setCurrentCommentsCount] = useState(commentsCount);
 
-  // Sync isFollowing state when prop changes from parent
+  // Presentational state
+  const [isFollowing, setIsFollowing] = useState<boolean>(initialFollowing);
+  const [isFollowingLoading, setIsFollowingLoading] = useState<boolean>(false);
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [showComments, setShowComments] = useState<boolean>(false);
+  const [currentCommentsCount, setCurrentCommentsCount] = useState<number>(commentsCount);
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+
   useEffect(() => {
     setIsFollowing(initialFollowing);
   }, [initialFollowing]);
 
-  // Menu & Edit/Delete States
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [editContentInput, setEditContentInput] = useState(initialContent);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isDeleted, setIsDeleted] = useState(false);
-  const [relationshipId, setRelationshipId] = useState<string | null>(null);
+  // Dedicated focused action hooks
+  const { isLiked, likesCount, isLiking, handleLike } = usePostReaction({
+    postId: id,
+    initialLiked: Boolean(userReaction),
+    initialLikes,
+  });
+
+  const { hasReposted, repostsCount, isSharing, handleShare } = usePostRepost({
+    postId: id,
+    initialReposted: isSelfRepost || false,
+    initialReposts,
+    onShareSuccess,
+    onRepostComplete,
+  });
+
+  const {
+    isDeleteModalOpen,
+    setIsDeleteModalOpen,
+    isDeleting,
+    isDeleted,
+    confirmDelete,
+  } = usePostDelete({
+    postId: id,
+    onDeleteSuccess,
+    onShareSuccess,
+    onRepostComplete,
+  });
+
+  const {
+    postContent,
+    isEditModalOpen,
+    setIsEditModalOpen,
+    editContentInput,
+    setEditContentInput,
+    isUpdating,
+    saveEdit,
+  } = usePostEdit({
+    postId: id,
+    initialContent,
+    onUpdateSuccess,
+  });
 
   if (isDeleted) {
     return null;
   }
 
-  const handleConfirmDelete = async () => {
-    if (isDeleting) return;
-    setIsDeleting(true);
-
-    try {
-      await deletePost(id);
-      setIsDeleteModalOpen(false);
-      showSuccessToast(SUCCESS_MESSAGES.POST_DELETED);
-
-      if (onDeleteSuccess) {
-        onDeleteSuccess(id, SUCCESS_MESSAGES.POST_DELETED);
-      }
-      if (onShareSuccess) {
-        onShareSuccess(SUCCESS_MESSAGES.POST_DELETED);
-      }
-      if (onRepostComplete) {
-        onRepostComplete();
-      }
-
-      // Hide card after triggering callbacks and toast
-      setTimeout(() => {
-        setIsDeleted(true);
-      }, 300);
-    } catch (err: any) {
-      console.error('❌ Delete Post error:', err);
-      showErrorToast(err, ERROR_MESSAGES.FAILED_DELETE_POST);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleSaveEdit = async () => {
-    if (isUpdating || !editContentInput.trim()) return;
-    setIsUpdating(true);
-
-    try {
-      await updatePost(id, { body: editContentInput.trim() });
-      setPostContent(editContentInput.trim());
-      setIsEditModalOpen(false);
-      showSuccessToast(SUCCESS_MESSAGES.POST_UPDATED);
-      if (onUpdateSuccess) {
-        onUpdateSuccess(id, editContentInput.trim());
-      }
-    } catch (err: any) {
-      console.error('❌ Update Post error:', err);
-      showErrorToast(err, ERROR_MESSAGES.FAILED_UPDATE_POST);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleLike = async () => {
-    if (!requirePermission('REACT_TO_POSTS')) return;
-    if (isLiking) return;
-    setIsLiking(true);
-
-    const prevLiked = isLiked;
-    const prevLikes = likes;
-
-    // Optimistic UI update
-    if (prevLiked) {
-      setLikes((prev) => Math.max(0, prev - 1));
-      setIsLiked(false);
-    } else {
-      setLikes((prev) => prev + 1);
-      setIsLiked(true);
-    }
-
-    try {
-      if (prevLiked) {
-        await unlikePost(id);
-      } else {
-        const res = await likePost(id, 'LIKE');
-        if ((res as any)?.pendingGuardianApproval || (res as any)?.message === 'REACTION_PENDING_APPROVAL') {
-          showInfoToast('Your reaction has been submitted and is waiting for parent/guardian approval.');
-          setIsLiked(prevLiked);
-          setLikes(prevLikes);
-        }
-      }
-    } catch (err: any) {
-      console.error(`❌ [FeedPostCard] Reaction API Error:`, err);
-      setIsLiked(prevLiked);
-      setLikes(prevLikes);
-      if (err?.statusCode === 403 && (err?.message?.includes('GUARDIAN_DISABLED') || err?.message?.includes('guardian'))) {
-        showErrorToast(err, ERROR_MESSAGES.GUARDIAN_DISABLED_THIS_ACTION);
-      }
-    } finally {
-      setIsLiking(false);
-    }
-  };
-
-  const handleShare = async () => {
-    if (!requirePermission('SHARE_POSTS')) return;
-    if (isSharing) return;
-    setIsSharing(true);
-
-    try {
-      if (hasReposted) {
-        const targetDeleteId = userRepostId || id;
-        await deletePost(targetDeleteId);
-        setReposts((prev) => Math.max(0, prev - 1));
-        setHasReposted(false);
-        setUserRepostId(null);
-
-        const msg = 'Repost undone successfully!';
-        if (onShareSuccess) {
-          onShareSuccess(msg);
-        } else {
-          showSuccessToast(msg);
-        }
-
-        if (onRepostComplete) {
-          onRepostComplete();
-        }
-      } else {
-        const res = await repostPost(id);
-        const createdRepostId = res?.post?.id || (res as any)?.data?.post?.id || (res as any)?.data?.id;
-
-        setReposts((prev) => prev + 1);
-        setHasReposted(true);
-        if (createdRepostId) {
-          setUserRepostId(createdRepostId);
-        }
-
-        const msg = 'Post reposted successfully!';
-        if (onShareSuccess) {
-          onShareSuccess(msg);
-        } else {
-          showSuccessToast(msg);
-        }
-
-        if (onRepostComplete) {
-          onRepostComplete();
-        }
-      }
-    } catch (err: any) {
-      console.error(`❌ [FeedPostCard] Repost/Undo Repost API Error:`, err);
-      showErrorToast(err, ERROR_MESSAGES.FAILED_REPOST);
-    } finally {
-      setIsSharing(false);
-    }
-  };
-
   const toggleFollow = async () => {
     if (isFollowingLoading) return;
     setIsFollowingLoading(true);
 
-    const prevFollowing = isFollowing;
     const targetKey = authorId || authorName;
 
     try {
-      if (prevFollowing) {
-        const targetIdOrEntity = relationshipId || { type: 'PROFILE' as const, id: targetKey };
-        await unfollowUser(targetIdOrEntity);
-
-        // Update state & notify parent to sync other buttons ONLY AFTER API SUCCESS
+      if (isFollowing) {
+        await unfollowUser({ type: 'PROFILE', id: targetKey });
         setIsFollowing(false);
-        setRelationshipId(null);
-        if (onFollowChange) {
-          onFollowChange(targetKey, false);
-        }
-
+        if (onFollowChange) onFollowChange(targetKey, false);
         showSuccessToast(`Unfollowed ${authorName}`);
       } else {
         const res = await followUser({ type: 'PROFILE', id: targetKey });
-
-        if (res?.relationship?.id) {
-          setRelationshipId(res.relationship.id);
-        }
         setIsFollowing(true);
-        if (onFollowChange) {
-          onFollowChange(targetKey, true);
-        }
-
+        if (onFollowChange) onFollowChange(targetKey, true);
         showSuccessToast(res?.pendingGuardianApproval ? `Follow requested for ${authorName}` : `You are now following ${authorName}`);
       }
-    } catch (err: any) {
-      console.error(`❌ [FeedPostCard] Follow/Unfollow API Error:`, err);
-      showErrorToast(err, ERROR_MESSAGES.FAILED_FOLLOW);
+    } catch (err: unknown) {
+      const appErr = normalizeApiError(err, ERROR_MESSAGES.FAILED_FOLLOW);
+      showErrorToast(appErr, ERROR_MESSAGES.FAILED_FOLLOW);
     } finally {
       setIsFollowingLoading(false);
     }
@@ -304,8 +160,8 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         <div className="mhn-post-author-group">
           <div className="mhn-author-avatar-box">
             <img
-              src={authorAvatar || '/userPlaceholder.png'}
-              alt={authorName}
+              src={formatUserAvatar(authorAvatar)}
+              alt={formatDisplayName(authorName)}
               className="mhn-author-avatar-img"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/userPlaceholder.png';
@@ -313,9 +169,9 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
             />
           </div>
           <div className="mhn-author-meta">
-            <h4 className="mhn-author-name">{authorName}</h4>
+            <h4 className="mhn-author-name">{formatDisplayName(authorName)}</h4>
             <span className="mhn-author-subtitle">
-              {authorRole} • {authorTime}
+              {formatRoleTag(authorRole)} • {authorTime}
             </span>
           </div>
         </div>
@@ -347,7 +203,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
           )}
 
           {isSelf && (
-            <>
+            <div className="mhn-post-menu-container">
               <Button
                 onClick={() => setIsMenuOpen((prev) => !prev)}
                 className="mhn-btn-more-options"
@@ -385,7 +241,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                   </Button>
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -419,7 +275,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
       <div className="mhn-post-footer">
         <div className="mhn-post-actions-group">
           <Button
-            onClick={() => assertSupervisionPermission('react_to_posts', handleLike)}
+            onClick={handleLike}
             disabled={isLiking}
             className={`mhn-action-item ${isLiked ? 'mhn-action-liked' : ''}`}
             aria-label="Like post"
@@ -430,14 +286,16 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
+            ) : isLiking ? (
+              <span className="like-count-icon mhn-flex-align-center mhn-flex-justify-center">
+                <Spinner size="sm" color="#1860C3" />
+              </span>
             ) : isLiked ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="#1860C3" stroke="#1860C3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="like-count-icon">
-                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
-              </svg>
+              <img src="/like.png" alt="" className="like-count-icon mhn-like-icon-red" />
             ) : (
               <img src="/like.png" alt="" className="like-count-icon" />
             )}
-            <span className={`mhn-action-count ${isLiked ? 'mhn-action-count-liked' : ''}`}>{likes}</span>
+            <span className={`mhn-action-count ${isLiked ? 'mhn-action-count-liked' : ''}`}>{likesCount}</span>
           </Button>
 
           <Button
@@ -463,35 +321,39 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
             </span>
           </Button>
 
-          {!isSelf && (
-            <Button
-              onClick={() => assertSupervisionPermission('share_posts', handleShare)}
-              disabled={isSharing}
-              className={`mhn-action-item ${hasReposted ? 'mhn-action-active' : ''} ${isSharing ? 'mhn-loading' : ''}`}
-              aria-label="Share post"
-              title={!canShare ? 'Parent did not give permission' : hasReposted ? 'Undo Repost' : 'Repost update'}
-            >
-              {!canShare ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" className="share-count-icon">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-              ) : isSharing ? (
+          <Button
+            onClick={handleShare}
+            disabled={isSharing}
+            className={`mhn-action-item ${hasReposted ? 'mhn-action-active' : ''}`}
+            aria-label="Share post"
+            title={!canShare ? 'Parent did not give permission' : hasReposted ? 'Undo Repost' : 'Repost update'}
+          >
+            {!canShare ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" className="share-count-icon">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            ) : isSharing ? (
+              <span className="share-count-icon mhn-flex-align-center mhn-flex-justify-center">
                 <Spinner size="sm" color="#1860C3" />
-              ) : (
-                <img
-                  src="/share.png"
-                  alt=""
-                  className={`share-count-icon ${hasReposted ? 'mhn-repost-icon-filter' : ''}`}
-                />
-              )}
-              <span
-                className={`mhn-action-count ${hasReposted ? 'mhn-action-count-reposted' : ''}`}
-              >
-                {reposts}
               </span>
-            </Button>
-          )}
+            ) : hasReposted ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#1860C3" stroke="#1860C3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="share-count-icon">
+                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+              </svg>
+            ) : (
+              <img
+                src="/share.png"
+                alt=""
+                className="share-count-icon"
+              />
+            )}
+            <span
+              className={`mhn-action-count ${hasReposted ? 'mhn-action-count-reposted' : ''}`}
+            >
+              {repostsCount}
+            </span>
+          </Button>
         </div>
 
         {showComments && (
@@ -537,7 +399,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                 Cancel
               </Button>
               <Button
-                onClick={handleSaveEdit}
+                onClick={saveEdit}
                 disabled={isUpdating}
                 className="mhn-btn-edit-save"
               >
@@ -597,7 +459,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
               </Button>
               <Button
                 type="button"
-                onClick={handleConfirmDelete}
+                onClick={confirmDelete}
                 disabled={isDeleting}
                 className="mhn-btn-modal-danger"
               >

@@ -1,9 +1,9 @@
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
-import { AppRoute, ROUTE_MAP } from '../config/routes';
-import { UserRole } from '../enums/role';
-import { AuthGuard } from '../guards/auth-guard';
-import { GuestGuard } from '../guards/guest-guard';
-import { RoleGuard } from '../guards/role-guard';
+import { AppRoute, ROUTE_MAP } from '@/config/routes';
+import { AuthGuard } from '@/guards/auth-guard';
+import { GuestGuard } from '@/guards/guest-guard';
+import { RoleGuard } from '@/guards/role-guard';
+import { UserRoleEnum as UserRole } from '@my-hockey-network/contracts';
 import {
   EventDetailPage,
   EventsPage,
@@ -18,8 +18,8 @@ import {
   RequestSentPage,
   SettingsPage,
   SupervisionPage,
-} from '../pages';
-import { useAuth } from '../hooks/use-auth';
+} from '@/pages';
+import { useAuth } from '@/hooks/use-auth';
 
 function RouteTree() {
   const navigate = useNavigate();

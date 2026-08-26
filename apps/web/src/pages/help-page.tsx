@@ -1,10 +1,16 @@
-import React, { useState, useRef } from 'react';
-import { Button } from '../components/common/Button';
-import { Input, Textarea, Select } from '../components/common/FormControls';
-import { Header } from '../components/common/Header';
-import { useDebounce } from '../hooks/use-debounce';
-import { showSuccessToast, showErrorToast } from '../utils/toast';
+import React, { useState, useRef, useTransition } from 'react';
+import { Formik, Form, Field } from 'formik';
+import { Button } from '@/components/common/Button';
+import { Input, Textarea, Select } from '@/components/common/FormControls';
+import { Header } from '@/components/common/Header';
+import { FormikInput } from '@/components/common/form/FormikInput';
+import { FormikSelect } from '@/components/common/form/FormikSelect';
+import { FormError } from '@/components/common/form/FormError';
+import { useAuth } from '@/hooks/use-auth';
+import { useDebounce } from '@/hooks/use-debounce';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '@my-hockey-network/constants';
+import { helpTicketSchema, HelpTicketFormValues } from '@my-hockey-network/validation';
 import { NavTabEnum } from '@my-hockey-network/contracts';
 
 interface HelpPageProps {
@@ -133,6 +139,7 @@ const FAQ_ITEMS: FaqItem[] = [
 ];
 
 export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<NavTabEnum | string>(NavTabEnum.HELP);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 800);
@@ -253,13 +260,13 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
         <section className="mhn-mb-32">
           <div className="mhn-help-pills-row">
             {[
-              { id: 'all', label: '🔍 All Topics' },
-              { id: 'account', label: '👤 Account & Profile' },
-              { id: 'network', label: '🏒 Players & Teams' },
-              { id: 'messaging', label: '💬 Messaging' },
-              { id: 'notifications', label: '🔔 Notifications' },
-              { id: 'privacy', label: '🔒 Privacy & Safety' },
-              { id: 'technical', label: '🛠️ Technical Support' },
+              { id: 'all', label: 'All Topics' },
+              { id: 'account', label: 'Account & Profile' },
+              { id: 'network', label: 'Players & Teams' },
+              { id: 'messaging', label: 'Messaging' },
+              { id: 'notifications', label: 'Notifications' },
+              { id: 'privacy', label: 'Privacy & Safety' },
+              { id: 'technical', label: 'Technical Support' },
             ].map((cat) => (
               <Button
                 key={cat.id}
@@ -276,7 +283,7 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
         <section className="mhn-help-section-card">
           <div className="mhn-toggle-row-between mhn-mb-24">
             <h2 className="mhn-parent-card-title-lg">
-              ❓ Frequently Asked Questions
+              Frequently Asked Questions
             </h2>
             <span className="mhn-comment-time">
               Showing {filteredFaqs.length} help articles
@@ -285,7 +292,6 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
 
           {filteredFaqs.length === 0 ? (
             <div className="mhn-text-center mhn-empty-state-card">
-              <div className="mhn-support-card-icon">🔍</div>
               <h3 className="mhn-parent-card-title mhn-mb-4">No matching help topics found</h3>
               <p className="mhn-parent-card-sub">Try searching with different keywords or submit a problem report below.</p>
             </div>
@@ -342,100 +348,123 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
         <section className="mhn-help-section-card">
           <div className="mhn-mb-24">
             <h2 className="mhn-parent-card-title-lg mhn-mb-6">
-              📝 Report a Problem / Submit Ticket
+              Report a Problem / Submit Ticket
             </h2>
             <p className="mhn-parent-card-sub">
               Encountered a bug, technical glitch, or login issue? Describe it below and our support team will investigate.
             </p>
           </div>
 
-          <form onSubmit={handleSubmitTicket} className="mhn-col-flex-gap-20">
-            {/* Category Selection */}
-            <div>
-              <label className="mhn-form-label-block">
-                Issue Category
-              </label>
-              <Select
-                value={ticketCategory}
-                onChange={(e) => setTicketCategory(e.target.value)}
-                className="mhn-ticket-select-input"
-              >
-                <option value="technical">🛠️ Technical / App Loading Issue</option>
-                <option value="login">🔑 Login / OTP Verification Issue</option>
-                <option value="account">👤 Account & Supervision Control</option>
-                <option value="content">🚨 Report Inappropriate Content or Abuse</option>
-                <option value="other">💬 General Inquiry / Feedback</option>
-              </Select>
-            </div>
+          <Formik<HelpTicketFormValues>
+            initialValues={{
+              subject: '',
+              category: 'technical',
+              message: '',
+              email: (user as any)?.email || 'user@example.com',
+            }}
+            validationSchema={helpTicketSchema}
+            onSubmit={async (values, { resetForm }) => {
+              setIsSubmittingTicket(true);
+              try {
+                await new Promise((resolve) => setTimeout(resolve, 800));
+                showSuccessToast(SUCCESS_MESSAGES.ACTION_COMPLETED || 'Support ticket submitted successfully! Our team will respond shortly.');
+                resetForm();
+                setAttachedFile(null);
+              } catch (err: any) {
+                showErrorToast(err, ERROR_MESSAGES.DEFAULT_UNEXPECTED);
+              } finally {
+                setIsSubmittingTicket(false);
+              }
+            }}
+            validateOnBlur
+            validateOnChange
+          >
+            {({ isSubmitting }) => (
+              <Form className="mhn-col-flex-gap-20">
+                {/* Category Selection */}
+                <FormikSelect
+                  name="category"
+                  label="Issue Category"
+                  selectClassName="mhn-ticket-select-input"
+                  options={[
+                    { value: 'technical', label: 'Technical / App Loading Issue' },
+                    { value: 'login', label: 'Login / OTP Verification Issue' },
+                    { value: 'account', label: 'Account & Supervision Control' },
+                    { value: 'content', label: 'Report Inappropriate Content or Abuse' },
+                    { value: 'other', label: 'General Inquiry / Feedback' },
+                  ]}
+                />
 
-            {/* Subject Line */}
-            <div>
-              <label className="mhn-form-label-block">
-                Subject
-              </label>
-              <Input
-                type="text"
-                placeholder="Brief summary of the issue (e.g. OTP code not arriving)"
-                value={ticketSubject}
-                onChange={(e) => setTicketSubject(e.target.value)}
-                className="mhn-ticket-select-input"
-              />
-            </div>
+                {/* Subject Line */}
+                <FormikInput
+                  name="subject"
+                  label="Subject"
+                  placeholder="Brief summary of the issue (e.g. OTP code not arriving)"
+                  inputClassName="mhn-ticket-select-input"
+                />
 
-            {/* Description */}
-            <div>
-              <label className="mhn-form-label-block">
-                Detailed Description
-              </label>
-              <Textarea
-                placeholder="Please describe what happened, expected behavior, and steps to reproduce..."
-                value={ticketDescription}
-                onChange={(e) => setTicketDescription(e.target.value)}
-                rows={4}
-                className="mhn-about-input-box"
-              />
-            </div>
+                {/* Description */}
+                <div>
+                  <label className="mhn-form-label-block">Detailed Description</label>
+                  <Field name="message">
+                    {({ field, meta }: any) => (
+                      <>
+                        <Textarea
+                          {...field}
+                          placeholder="Please describe what happened, expected behavior, and steps to reproduce..."
+                          rows={4}
+                          className={`mhn-about-input-box ${meta.touched && meta.error ? 'mhn-input-invalid' : ''}`}
+                        />
+                        {meta.touched && meta.error && (
+                          <FormError message={meta.error} className="mhn-input-error-msg" />
+                        )}
+                      </>
+                    )}
+                  </Field>
+                </div>
 
-            {/* File Upload Mockup */}
-            <div>
-              <label className="mhn-form-label-block">
-                Attach Screenshot / Log (Optional)
-              </label>
-              <Input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,.log,.pdf"
-                onChange={handleFileSelect}
-                className="mhn-display-none"
-              />
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="mhn-ticket-file-dropzone"
-              >
-                {attachedFile ? (
-                  <div className="mhn-btn-loading-flex mhn-text-center">
-                    <span>📄 {attachedFile.name}</span>
-                    <span className="mhn-comment-time">({(attachedFile.size / 1024).toFixed(1)} KB)</span>
+                {/* File Upload Mockup */}
+                <div>
+                  <label className="mhn-form-label-block">
+                    Attach Screenshot / Log (Optional)
+                  </label>
+                  <Input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,.log,.pdf"
+                    onChange={handleFileSelect}
+                    className="mhn-display-none"
+                  />
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="mhn-ticket-file-dropzone"
+                  >
+                    {attachedFile ? (
+                      <div className="mhn-btn-loading-flex mhn-text-center">
+                        <span>📄 {attachedFile.name}</span>
+                        <span className="mhn-comment-time">({(attachedFile.size / 1024).toFixed(1)} KB)</span>
+                      </div>
+                    ) : (
+                      <div className="mhn-parent-card-sub">
+                        <span>📎 Click to upload a screenshot or error log</span>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="mhn-parent-card-sub">
-                    <span>📎 Click to upload a screenshot or error log</span>
-                  </div>
-                )}
-              </div>
-            </div>
+                </div>
 
-            {/* Submit Button */}
-            <div>
-              <Button
-                type="submit"
-                disabled={isSubmittingTicket}
-                className="mhn-btn-ticket-submit"
-              >
-                {isSubmittingTicket ? 'Submitting Ticket...' : 'Submit Support Ticket'}
-              </Button>
-            </div>
-          </form>
+                {/* Submit Button */}
+                <div>
+                  <Button
+                    type="submit"
+                    disabled={isSubmittingTicket || isSubmitting}
+                    className="mhn-btn-ticket-submit"
+                  >
+                    {isSubmittingTicket || isSubmitting ? 'Submitting Ticket...' : 'Submit Support Ticket'}
+                  </Button>
+                </div>
+              </Form>
+            )}
+          </Formik>
         </section>
 
         {/* ==================== CONTACT SUPPORT CARDS ==================== */}

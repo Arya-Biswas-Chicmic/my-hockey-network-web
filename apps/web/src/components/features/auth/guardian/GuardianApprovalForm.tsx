@@ -1,7 +1,10 @@
-import { Button } from '../../../common/Button';
-import { Input } from '../../../common/FormControls';
-import React, { useState } from 'react';
+import React from 'react';
+import { Formik, Form } from 'formik';
+import * as Yup from 'yup';
+import { Button } from '@/components/common/Button';
+import { FormikInput } from '@/components/common/form/FormikInput';
 import { GUARDIAN_APPROVAL_STRINGS } from '@my-hockey-network/shared';
+import { VALIDATION_MESSAGES } from '@my-hockey-network/validation';
 import { GuardianFormHeader } from './GuardianFormHeader';
 import { GuardianActionButtons } from './GuardianActionButtons';
 
@@ -13,6 +16,14 @@ interface GuardianApprovalFormProps {
   loading?: boolean;
 }
 
+const guardianEmailSchema = Yup.object().shape({
+  email: Yup.string()
+    .transform((value) => (typeof value === 'string' ? value.replace(/\s+/g, '') : value))
+    .trim()
+    .required('Parent / Guardian Email is required.')
+    .email(VALIDATION_MESSAGES.invalidEmail),
+});
+
 export const GuardianApprovalForm: React.FC<GuardianApprovalFormProps> = ({
   onSendRequest,
   onSignOut,
@@ -20,33 +31,11 @@ export const GuardianApprovalForm: React.FC<GuardianApprovalFormProps> = ({
   onContactSupport,
   loading = false,
 }) => {
-  const [email, setEmail] = useState('');
-  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
-  const [emailError, setEmailError] = useState<string | null>(null);
+  const initialValues = { email: '' };
 
-  const validateEmail = (val: string): string | null => {
-    const trimmed = val.trim();
-    if (!trimmed) {
-      return 'Parent / Guardian Email is required.';
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      return 'Please enter a valid email address.';
-    }
-    return null;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setHasAttemptedSubmit(true);
-
-    const err = validateEmail(email);
-    setEmailError(err);
-    if (err) {
-      return;
-    }
-
+  const handleFormSubmit = (values: { email: string }) => {
     if (onSendRequest) {
-      onSendRequest(email.trim());
+      onSendRequest(values.email.trim());
     }
   };
 
@@ -54,41 +43,29 @@ export const GuardianApprovalForm: React.FC<GuardianApprovalFormProps> = ({
     <div className="guardian-form-container">
       <GuardianFormHeader />
 
-      <form onSubmit={handleSubmit} className="guardian-form-stack" noValidate>
-        <div className="auth-form-group mhn-relative-container">
-          <label className="guardian-input-label" htmlFor="guardianEmail">
-            {GUARDIAN_APPROVAL_STRINGS.emailLabel}
-          </label>
-          <div className="auth-input-wrapper">
-            <Input
-              id="guardianEmail"
+      <Formik
+        initialValues={initialValues}
+        validationSchema={guardianEmailSchema}
+        onSubmit={handleFormSubmit}
+        validateOnBlur
+        validateOnChange
+      >
+        {() => (
+          <Form className="guardian-form-stack" noValidate>
+            <FormikInput
+              name="email"
               type="email"
-              maxLength={100}
-              className={`guardian-input ${hasAttemptedSubmit && emailError ? 'mhn-edit-profile-input-error mhn-input-error-orange' : ''}`}
+              label={GUARDIAN_APPROVAL_STRINGS.emailLabel}
               placeholder={GUARDIAN_APPROVAL_STRINGS.emailPlaceholder}
-              value={email}
-              onChange={(e) => {
-                const val = e.target.value;
-                setEmail(val);
-                if (hasAttemptedSubmit) {
-                  setEmailError(validateEmail(val));
-                }
-              }}
+              maxLength={100}
+              inputClassName="guardian-input"
+              isEmailInput
             />
-          </div>
-          {hasAttemptedSubmit && emailError && (
-            <div className="mhn-validation-tooltip-bubble">
-              <div className="mhn-validation-tooltip-arrow" />
-              <div className="mhn-validation-tooltip-badge">
-                !
-              </div>
-              <span>{emailError}</span>
-            </div>
-          )}
-        </div>
 
-        <GuardianActionButtons onSignOut={onSignOut} onSkip={onSkip} loading={loading} />
-      </form>
+            <GuardianActionButtons onSignOut={onSignOut} onSkip={onSkip} loading={loading} />
+          </Form>
+        )}
+      </Formik>
 
       <div className="guardian-footer-text">
         <span className="trouble-footer">{GUARDIAN_APPROVAL_STRINGS.havingTrouble}</span>

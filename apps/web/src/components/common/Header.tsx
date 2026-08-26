@@ -1,12 +1,12 @@
 import { Button } from './Button';
 import React, { useState } from 'react';
-import { useAuth } from '../../hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { LogoutModal } from './LogoutModal';
-import { resolveMediaUrl } from '../../utils/mediaUtils';
+import { resolveMediaUrl } from '@/utils/mediaUtils';
 import { getSupervisionData } from '@my-hockey-network/core';
-import { QueryKeys } from '@my-hockey-network/contracts';
+import { QueryKeys, UserRoleEnum } from '@my-hockey-network/contracts';
 import { ERROR_MESSAGES } from '@my-hockey-network/constants';
-import { useQuery } from '../../query';
+import { useQuery } from '@/query';
 
 
 interface HeaderProps {
@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
   const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
   const [activeUser, setActiveUser] = useState({ name: resolvedName, avatar: resolvedAvatar });
   const [familyMembers, setFamilyMembers] = useState<Array<{ id: string; name: string; avatar: string }>>([]);
-  const isParent = Boolean(user?.primaryRole === 'PARENT' || user?.roleAssignments?.some((r: any) => r.role === 'PARENT'));
+  const isParent = Boolean(user?.primaryRole === UserRoleEnum.PARENT || user?.roleAssignments?.some((r: any) => r.role === UserRoleEnum.PARENT));
 
   const { data: supervisionData, isLoading: isFamilyLoading } = useQuery(
     isParent ? QueryKeys.SUPERVISION_DATA : null,

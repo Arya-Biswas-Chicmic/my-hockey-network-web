@@ -92,7 +92,7 @@ export async function getUserPosts(authorProfileId: string, limit = 20, clientTy
       nextCursor: payload?.nextCursor || null,
     };
   } catch (err: any) {
-    console.warn('⚠️ [getUserPosts] API Warning:', err.message || err);
+    console.warn('[getUserPosts] API Warning:', err.message || err);
     return { items: [] };
   }
 }
@@ -147,7 +147,7 @@ export async function getComments(postId: string, clientType: 'web' | 'mobile' =
     const items = payload?.items || (Array.isArray(payload) ? payload : []);
     return { items };
   } catch (err: any) {
-    console.warn(`⚠️ [getComments] API Warning for post ${postId}:`, err.message || err);
+    console.warn(`[getComments] API Warning for post ${postId}:`, err.message || err);
     return { items: [] };
   }
 }

@@ -83,7 +83,7 @@ export async function findRelationshipEdgeId(
 
     return found?.id || null;
   } catch (err) {
-    console.warn('⚠️ [relationshipsApi] Edge ID lookup warning:', err);
+    console.warn('[relationshipsApi] Edge ID lookup warning:', err);
     return null;
   }
 }
@@ -116,7 +116,7 @@ export async function unfollowUser(
 
     return await removeRelationship(finalEdgeId, clientType);
   } catch (err: any) {
-    console.warn('⚠️ [relationshipsApi] DELETE edge failed, falling back to follow toggle:', err);
+    console.warn('[relationshipsApi] DELETE edge failed, falling back to follow toggle:', err);
     const targetObj = typeof targetOrRelationshipId === 'string'
       ? { type: EntityTypeEnum.PROFILE, id: targetId }
       : targetOrRelationshipId;

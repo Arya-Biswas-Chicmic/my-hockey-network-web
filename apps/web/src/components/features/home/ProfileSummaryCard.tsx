@@ -4,7 +4,8 @@ import { useAuth } from '../../../hooks/use-auth';
 import { useQuery } from '../../../query';
 import { getProfile } from '@my-hockey-network/core';
 import { QueryKeys } from '@my-hockey-network/contracts';
-import { resolveMediaUrl, resolveCoverUrl } from '../../../utils/mediaUtils';
+import { formatDisplayName, formatUserAvatar, formatRoleTag } from '../../../logic';
+import { resolveCoverUrl } from '../../../utils/mediaUtils';
 
 interface ProfileSummaryCardProps {
   name?: string;
@@ -44,10 +45,15 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
 
   const activeProfile = (profileRes as any)?.profile || (profileRes as any)?.data?.profile || user?.profile;
 
-  const resolvedName = activeProfile?.displayName || user?.profile?.displayName || (user as any)?.displayName || name || 'Player';
-  const resolvedRole = role || user?.primaryRole || activeProfile?.type || user?.profile?.type || 'PLAYER';
+  const resolvedName = formatDisplayName(
+    activeProfile?.displayName || user?.profile?.displayName || (user as any)?.displayName || name,
+    activeProfile?.firstName,
+    activeProfile?.lastName,
+    'Player'
+  );
+  const resolvedRole = formatRoleTag(role || user?.primaryRole || activeProfile?.type || user?.profile?.type || 'PLAYER');
   const rawAvatar = activeProfile?.avatarUrl || user?.profile?.avatarUrl || avatarUrl;
-  const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
+  const resolvedAvatar = formatUserAvatar(rawAvatar, '/userPlaceholder.png');
   const rawCover =
     (activeProfile as any)?.coverImageUrl ||
     (activeProfile as any)?.coverUrl ||

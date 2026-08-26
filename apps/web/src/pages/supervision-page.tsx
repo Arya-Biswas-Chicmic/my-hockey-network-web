@@ -1,24 +1,23 @@
-import { Button } from '../components/common/Button';
-import { Input, Select, Dropdown, FormField } from '../components/common/FormControls';
+import { Button } from '@/components/common/Button';
+import { Input, Select, Dropdown, FormField } from '@/components/common/FormControls';
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Header } from '../components/common/Header';
-import { NoDataFound } from '../components/common/no-data-found';
-import { withRoleGuard } from '../hocs/with-role-guard';
-import { UserRole } from '../enums/role';
-import { GuardianRequestSkeleton } from '../components/supervision/guardian-request-skeleton';
-import { PermissionSkeletonLoader } from '../components/supervision/permission-skeleton-loader';
-import { SidebarWardSkeleton } from '../components/supervision/sidebar-ward-skeleton';
-import { ApprovalCodeModal } from '../components/supervision/ApprovalCodeModal';
-import { ParentOnboardingModal } from '../components/features/parent';
-import { Spinner } from '../components/common/Spinner';
-import { useAuth } from '../hooks/use-auth';
-import { useDebounce } from '../hooks/use-debounce';
-import { resolveMediaUrl } from '../utils/mediaUtils';
-import { GUARDIAN_RELATION_OPTIONS, formatDobToIso, formatDobInput } from '../utils/guardianUtils';
-import { QueryKeys, ToastTypeEnum, NavTabEnum, SupervisionMainTabEnum, SupervisionViewModeEnum, SupervisionControlKeyEnum } from '@my-hockey-network/contracts';
+import { Header } from '@/components/common/Header';
+import { NoDataFound } from '@/components/common/no-data-found';
+import { withRoleGuard } from '@/hocs/with-role-guard';
+import { GuardianRequestSkeleton } from '@/components/supervision/guardian-request-skeleton';
+import { PermissionSkeletonLoader } from '@/components/supervision/permission-skeleton-loader';
+import { SidebarWardSkeleton } from '@/components/supervision/sidebar-ward-skeleton';
+import { ApprovalCodeModal } from '@/components/supervision/ApprovalCodeModal';
+import { ParentOnboardingModal } from '@/components/features/parent';
+import { Spinner } from '@/components/common/Spinner';
+import { useAuth } from '@/hooks/use-auth';
+import { useDebounce } from '@/hooks/use-debounce';
+import { resolveMediaUrl } from '@/utils/mediaUtils';
+import { GUARDIAN_RELATION_OPTIONS, formatDobToIso, formatDobInput } from '@/utils/guardianUtils';
+import { QueryKeys, ToastTypeEnum, NavTabEnum, SupervisionMainTabEnum, SupervisionViewModeEnum, SupervisionControlKeyEnum, UserRoleEnum } from '@my-hockey-network/contracts';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
-import { useQuery, useQueryClient, globalQueryClient } from '../query';
+import { useQuery, useQueryClient, globalQueryClient } from '@/query';
 
 
 import {
@@ -1721,10 +1720,10 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                     <div
                                       className="mhn-req-action-badge"
                                     >
-                                      {req.action === 'POST_MEDIA' || req.action === 'CREATE_POST' ? '🏒 Post Approval' :
-                                       req.action === 'COMMENT_ON_POSTS' ? '💬 Comment Approval' :
-                                       req.action === 'REACT_TO_POSTS' ? '❤️ Reaction Approval' :
-                                       `🛡️ ${String(req.action).replace(/_/g, ' ')}`}
+                                      {req.action === 'POST_MEDIA' || req.action === 'CREATE_POST' ? 'Post Approval' :
+                                       req.action === 'COMMENT_ON_POSTS' ? 'Comment Approval' :
+                                       req.action === 'REACT_TO_POSTS' ? 'Reaction Approval' :
+                                       String(req.action).replace(/_/g, ' ')}
                                     </div>
                                   )}
 
@@ -1921,4 +1920,4 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
   );
 };
 
-export const SupervisionPage = withRoleGuard(SupervisionPageBase, [UserRole.PARENT]);
+export const SupervisionPage = withRoleGuard(SupervisionPageBase, [UserRoleEnum.PARENT]);
