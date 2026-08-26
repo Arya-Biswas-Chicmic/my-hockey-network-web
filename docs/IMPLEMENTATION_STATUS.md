@@ -4,6 +4,8 @@ Last reviewed: 2026-08-26
 
 ## Completed
 
+- Integrated import alias cleanup, toggle alignment, and onboarding layout fixes into feature/integrated-fixes branch.
+
 - Established npm workspaces for reusable web/mobile code.
 - Added contracts, domain, API client, auth, validation, and design-token packages.
 - Added web and mobile platform adapters for environment and credential storage.

@@ -163,7 +163,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     try {
       await webAuth.logout();
     } catch (err) {
-      console.warn('⚠️ Logout API call warning:', err);
+      console.warn('[auth-context] Logout API call warning:', err);
     } finally {
       setUser(null);
       setSession(null);

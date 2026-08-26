@@ -392,7 +392,6 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
               {customError && (
                 <div className="mhn-edit-profile-field-error mhn-mb-12">
-                  <span>⚠️</span>
                   <span>{customError}</span>
                 </div>
               )}

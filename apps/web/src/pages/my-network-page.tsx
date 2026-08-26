@@ -259,7 +259,6 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
             <section className="mhn-network-col-main">
               {apiErrorMsg && (
                 <div className="mhn-network-api-error-banner">
-                  <span>⚠️</span>
                   <span>{apiErrorMsg}</span>
                 </div>
               )}

@@ -42,7 +42,6 @@ export const FormField: React.FC<FormFieldProps> = ({
         {children}
         {activeError && (
           <div className="mhn-edit-profile-field-error">
-            <span>⚠️</span>
             <span>{activeError}</span>
           </div>
         )}

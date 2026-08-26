@@ -136,7 +136,7 @@ export const ParentOnboardingModal: React.FC<ParentOnboardingModalProps> = ({
 
         <div className="mhn-parent-form-panel">
           {errorMessage && (
-            <div className="mhn-parent-error-banner">⚠️ {errorMessage}</div>
+            <div className="mhn-parent-error-banner">{errorMessage}</div>
           )}
 
           {step === ParentOnboardingStep.WHO_MANAGE && (
