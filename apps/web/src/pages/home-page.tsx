@@ -100,8 +100,10 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             authorProf.primaryRole ||
             'Official Team';
 
+          const realPostId = postObj.id || (postObj as unknown as { _id?: string; postId?: string })._id || (postObj as unknown as { _id?: string; postId?: string }).postId || `post-${authorId || 'unknown'}-${postObj.publishedAt || postObj.createdAt || index}`;
+
           return {
-            id: postObj.id || `post-${authorId || 'unknown'}-${postObj.publishedAt || postObj.createdAt || index}`,
+            id: realPostId,
             authorId: authorId || authorProf.id || authorProf.displayName,
             authorName: authorProf.displayName || '-',
             authorRole: roleSubtitle,

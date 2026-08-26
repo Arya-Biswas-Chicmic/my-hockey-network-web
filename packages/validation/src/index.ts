@@ -17,14 +17,3 @@ export const otpRequestSchema = z.object({
 });
 
 export * from './profileValidation';
-export * from './constants/validationMessages';
-export * from './schemas/createAccount.schema';
-export * from './schemas/login.schema';
-export * from './schemas/otp.schema';
-export * from './schemas/guardianApproval.schema';
-export * from './schemas/editProfile.schema';
-export * from './schemas/career.schema';
-export * from './schemas/createPlayer.schema';
-export * from './schemas/linkPlayer.schema';
-export * from './schemas/approvalCode.schema';
-export * from './schemas/helpTicket.schema';
