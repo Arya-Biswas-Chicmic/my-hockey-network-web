@@ -80,7 +80,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       const itemsList = feedResValue.items;
 
       if (itemsList && itemsList.length > 0) {
-        const mappedPosts: FeedPostProps[] = itemsList.map((postObj: PostItem, index: number) => {
+        const mappedPosts: FeedPostProps[] = itemsList.map((postObj: PostItem) => {
           const authorProf: NonNullable<PostItem['author']> = postObj.authorProfile || postObj.author || { id: '', displayName: '' };
           const authorId = postObj.authorProfileId || authorProf.id;
 
@@ -89,7 +89,8 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           const activeMyProfileId = currentProfileId || user?.profile?.id || user?.id;
           const activeMyUserId = user?.id;
 
-          const isSelfPost = (!!activeMyProfileId && (authorProfId === activeMyProfileId || authorProf.profileId === activeMyProfileId || postObj.authorProfileId === activeMyProfileId)) ||
+          const isSelfPost = postObj.feedReason === 'SELF' ||
+            (!!activeMyProfileId && (authorProfId === activeMyProfileId || authorProf.profileId === activeMyProfileId || postObj.authorProfileId === activeMyProfileId)) ||
             (!!activeMyUserId && (authorUserId === activeMyUserId || authorProfId === activeMyUserId));
 
           const roleSubtitle = authorProf.roleTag ||
@@ -101,7 +102,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             'Official Team';
 
           return {
-            id: postObj.id || `post-${authorId || 'unknown'}-${postObj.publishedAt || postObj.createdAt || index}`,
+            id: postObj.id,
             authorId: authorId || authorProf.id || authorProf.displayName,
             authorName: authorProf.displayName || '-',
             authorRole: roleSubtitle,
@@ -390,11 +391,17 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   {...post}
                   onNavigate={onNavigate}
                   onFollowChange={handleFollowChange}
-                  onDeleteSuccess={(deletedId, msg) => {
-                    showSuccessToast(msg || SUCCESS_MESSAGES.POST_DELETED);
+                  onDeleteSuccess={(deletedId) => {
                     setFeedPosts((prev) => prev.filter((p) => p.id !== deletedId));
                     const profileId = user?.profile?.id || user?.id;
                     fetchFeedPosts(profileId, searchQuery, sortBy, true);
+                  }}
+
+                  onUpdateSuccess={(updatedId, newContent) => {
+                    setFeedPosts((previousPosts) => previousPosts.map((item) =>
+                      item.id === updatedId ? { ...item, content: newContent } : item
+                    ));
+                    void invalidateQueryPrefix(globalQueryClient, QueryKeys.FEED_POSTS);
                   }}
 
                   onRepostComplete={() => {

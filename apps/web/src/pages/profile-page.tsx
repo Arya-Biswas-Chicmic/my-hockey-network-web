@@ -996,9 +996,13 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                             userReaction={post.userReaction}
                             isSelf={true}
                             onNavigate={onNavigate}
-                            onDeleteSuccess={(deletedId, msg) => {
-                              showSuccessToast(msg || SUCCESS_MESSAGES.POST_DELETED);
+                            onDeleteSuccess={(deletedId) => {
                               setLiveUserPosts((prev) => prev.filter((p) => p.id !== deletedId));
+                            }}
+                            onUpdateSuccess={(updatedId, newContent) => {
+                              setLiveUserPosts((previousPosts) => previousPosts.map((item) =>
+                                item.id === updatedId ? { ...item, body: newContent } : item
+                              ));
                             }}
                           />
                         );

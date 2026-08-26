@@ -101,6 +101,27 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
     setIsFollowing(initialFollowing);
   }, [initialFollowing]);
 
+  useEffect(() => {
+    setPostContent(initialContent);
+    setEditContentInput(initialContent);
+  }, [initialContent]);
+
+  useEffect(() => {
+    setLikes(initialLikes);
+  }, [initialLikes]);
+
+  useEffect(() => {
+    setCurrentCommentsCount(commentsCount);
+  }, [commentsCount]);
+
+  useEffect(() => {
+    setReposts(initialReposts);
+  }, [initialReposts]);
+
+  useEffect(() => {
+    setIsLiked(Boolean(userReaction));
+  }, [userReaction]);
+
   // Menu & Edit/Delete States
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -201,6 +222,8 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
       const message = extractErrorMessage(err, '');
       if (getApiErrorStatus(err) === 403 && (message.includes('GUARDIAN_DISABLED') || message.includes('guardian'))) {
         showErrorToast(err, ERROR_MESSAGES.GUARDIAN_DISABLED_THIS_ACTION);
+      } else {
+        showErrorToast(err, 'Unable to update your reaction. Please try again.');
       }
     } finally {
       setIsLiking(false);

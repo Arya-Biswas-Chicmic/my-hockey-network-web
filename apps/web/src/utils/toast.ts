@@ -81,8 +81,15 @@ export function showSuccessToast(message: string, actionText?: string, onActionC
   showToast({ message, type: ToastTypeEnum.SUCCESS, actionText, onActionClick });
 }
 
-export function showErrorToast(errorOrMessage: unknown, actionText?: string, onActionClick?: () => void): void {
-  const message = typeof errorOrMessage === 'string' ? errorOrMessage : extractErrorMessage(errorOrMessage, ERROR_MESSAGES.ACTION_FAILED);
+export function showErrorToast(
+  errorOrMessage: unknown,
+  fallbackMessage?: string,
+  actionText?: string,
+  onActionClick?: () => void,
+): void {
+  const message = typeof errorOrMessage === 'string'
+    ? errorOrMessage
+    : fallbackMessage ?? extractErrorMessage(errorOrMessage, ERROR_MESSAGES.ACTION_FAILED);
   showToast({ message, type: ToastTypeEnum.ERROR, actionText, onActionClick });
 }
 

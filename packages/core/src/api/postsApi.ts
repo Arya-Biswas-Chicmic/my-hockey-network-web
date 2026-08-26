@@ -51,6 +51,7 @@ export interface PostItem {
   userReaction?: string | null;
   isDraft?: boolean;
   pendingGuardianApproval?: boolean;
+  feedReason?: string;
 }
 
 export interface FeedResponse {
@@ -58,7 +59,61 @@ export interface FeedResponse {
   nextCursor?: string | null;
 }
 
-type FeedApiResponse = FeedResponse | PostItem[] | { data: FeedResponse | PostItem[] };
+export interface FeedItemWrapper {
+  reason?: string;
+  postReason?: string;
+  post: PostItem;
+}
+
+interface RawFeedPage {
+  items?: Array<PostItem | FeedItemWrapper>;
+  nextCursor?: string | null;
+}
+
+type FeedPayload = RawFeedPage | Array<PostItem | FeedItemWrapper>;
+type FeedApiResponse = FeedPayload | { data?: FeedPayload };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isPostItem(value: unknown): value is PostItem {
+  return isRecord(value) && typeof value.id === 'string' && value.id.trim().length > 0;
+}
+
+function normalizePostId(postId: string): string {
+  if (typeof postId !== 'string') {
+    throw new ApiError(400, 'Post identifier is missing. Refresh the feed and try again.');
+  }
+  const normalizedId = postId.trim();
+  if (!normalizedId || normalizedId === 'undefined' || normalizedId === 'null') {
+    throw new ApiError(400, 'Post identifier is missing. Refresh the feed and try again.');
+  }
+  return normalizedId;
+}
+
+export function normalizeFeedResponse(response: FeedApiResponse): FeedResponse {
+  const payload = !Array.isArray(response) && 'data' in response && response.data
+    ? response.data
+    : response;
+  const rawItems = Array.isArray(payload) ? payload : payload.items ?? [];
+  const items = rawItems.flatMap((item): PostItem[] => {
+    if (isRecord(item) && isPostItem(item.post)) {
+      const reason = typeof item.reason === 'string'
+        ? item.reason
+        : typeof item.postReason === 'string'
+          ? item.postReason
+          : undefined;
+      return [{ ...item.post, feedReason: reason }];
+    }
+    return isPostItem(item) ? [item] : [];
+  });
+
+  return {
+    items,
+    nextCursor: Array.isArray(payload) ? null : payload.nextCursor ?? null,
+  };
+}
 
 export interface GetFeedParams {
   query?: string;
@@ -91,10 +146,12 @@ export async function getFeed(
   }
 
   try {
-    return await apiFetch<FeedResponse>(`${API_ENDPOINTS.POSTS.FEED_HOME}?${queryParams.toString()}`, { method: 'GET' }, clientType);
+    const response = await apiFetch<FeedApiResponse>(`${API_ENDPOINTS.POSTS.FEED_HOME}?${queryParams.toString()}`, { method: 'GET' }, clientType);
+    return normalizeFeedResponse(response);
   } catch (error: unknown) {
     if (error instanceof ApiError && error.statusCode === 404) {
-      return await apiFetch<FeedResponse>(`/posts/feed?${queryParams.toString()}`, { method: 'GET' }, clientType);
+      const response = await apiFetch<FeedApiResponse>(`/posts/feed?${queryParams.toString()}`, { method: 'GET' }, clientType);
+      return normalizeFeedResponse(response);
     }
     throw error;
   }
@@ -105,35 +162,19 @@ export async function getFeed(
  */
 export async function getUserPosts(authorProfileId: string, limit = 20, clientType: 'web' | 'mobile' = 'web'): Promise<FeedResponse> {
   const query = new URLSearchParams({ authorProfileId, limit: String(limit) });
-  try {
-    const response = await apiFetch<FeedApiResponse>(`${API_ENDPOINTS.POSTS.BASE}?${query.toString()}`, { method: 'GET' }, clientType);
-    let payload: FeedResponse | PostItem[];
-    if (Array.isArray(response)) {
-      payload = response;
-    } else if ('data' in response) {
-      payload = response.data;
-    } else {
-      payload = response;
-    }
-    const items = Array.isArray(payload) ? payload : payload.items;
-    return {
-      items,
-      nextCursor: Array.isArray(payload) ? null : payload.nextCursor || null,
-    };
-  } catch {
-    return { items: [] };
-  }
+  const response = await apiFetch<FeedApiResponse>(`${API_ENDPOINTS.POSTS.BASE}?${query.toString()}`, { method: 'GET' }, clientType);
+  return normalizeFeedResponse(response);
 }
 
 /** Fetch posts published to a group. */
 export async function getGroupPosts(groupId: string, limit = 20, clientType: 'web' | 'mobile' = 'web'): Promise<FeedResponse> {
   const query = new URLSearchParams({ groupId, limit: String(limit) });
-  const response = await apiFetch<FeedResponse | { data?: FeedResponse }>(
+  const response = await apiFetch<FeedApiResponse>(
     `${API_ENDPOINTS.POSTS.BASE}?${query.toString()}`,
     { method: 'GET' },
     clientType,
   );
-  return 'data' in response && response.data ? response.data : response as FeedResponse;
+  return normalizeFeedResponse(response);
 }
 
 export interface CreatePostApiResponse {
@@ -161,19 +202,21 @@ export async function createPost(dto: CreatePostDTO, clientType: 'web' | 'mobile
  * React to a Post (Like)
  */
 export async function likePost(postId: string, reactionType = 'LIKE', clientType: 'web' | 'mobile' = 'web'): Promise<{ success: boolean; pendingGuardianApproval?: boolean; message?: string }> {
-  return apiFetch<{ success: boolean; pendingGuardianApproval?: boolean; message?: string }>(API_ENDPOINTS.POSTS.REACTIONS(postId), {
+  const response = await apiFetch<{ success: boolean; pendingGuardianApproval?: boolean; message?: string } | undefined>(API_ENDPOINTS.POSTS.REACTIONS(normalizePostId(postId)), {
     method: 'POST',
     body: JSON.stringify({ type: reactionType }),
   }, clientType);
+  return response ?? { success: true };
 }
 
 /**
  * Remove reaction from a Post (Unlike)
  */
 export async function unlikePost(postId: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ success: boolean }> {
-  return apiFetch<{ success: boolean }>(API_ENDPOINTS.POSTS.REACTIONS(postId), {
+  const response = await apiFetch<{ success: boolean } | undefined>(API_ENDPOINTS.POSTS.REACTIONS(normalizePostId(postId)), {
     method: 'DELETE',
   }, clientType);
+  return response ?? { success: true };
 }
 
 /**
@@ -199,14 +242,10 @@ interface CommentsResponse {
 }
 
 export async function getComments(postId: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ items: PostCommentItem[] }> {
-  try {
-    const response = await apiFetch<CommentsResponse | PostCommentItem[]>(API_ENDPOINTS.POSTS.COMMENTS(postId), { method: 'GET' }, clientType);
-    const payload = Array.isArray(response) ? response : response.data ?? response;
-    const items = Array.isArray(payload) ? payload : payload.items ?? [];
-    return { items };
-  } catch {
-    return { items: [] };
-  }
+  const response = await apiFetch<CommentsResponse | PostCommentItem[]>(API_ENDPOINTS.POSTS.COMMENTS(normalizePostId(postId)), { method: 'GET' }, clientType);
+  const payload = Array.isArray(response) ? response : response.data ?? response;
+  const items = Array.isArray(payload) ? payload : payload.items ?? [];
+  return { items };
 }
 
 /**
@@ -217,7 +256,7 @@ export async function addComment(postId: string, text: string, clientType: 'web'
     data?: { comment?: PostCommentItem } | PostCommentItem;
     comment?: PostCommentItem;
     message?: string;
-  } & Partial<PostCommentItem>>(API_ENDPOINTS.POSTS.COMMENTS(postId), {
+  } & Partial<PostCommentItem>>(API_ENDPOINTS.POSTS.COMMENTS(normalizePostId(postId)), {
     method: 'POST',
     body: JSON.stringify({ body: text }),
   }, clientType);
@@ -239,7 +278,7 @@ export interface RepostDTO {
  * Repost / Share a Post (POST /v1/posts/{postId}/repost)
  */
 export async function repostPost(postId: string, dto: RepostDTO = {}, clientType: 'web' | 'mobile' = 'web'): Promise<{ success: boolean; post: PostItem; data?: { post?: PostItem; id?: string } }> {
-  return apiFetch<{ success: boolean; post: PostItem }>(API_ENDPOINTS.POSTS.REPOST(postId), {
+  return apiFetch<{ success: boolean; post: PostItem }>(API_ENDPOINTS.POSTS.REPOST(normalizePostId(postId)), {
     method: 'POST',
     body: JSON.stringify(dto || {}),
   }, clientType);
@@ -257,11 +296,12 @@ export interface UpdatePostDTO {
  * Update / Edit a Post (PATCH /v1/posts/:id)
  */
 export async function updatePost(postId: string, dto: UpdatePostDTO, clientType: 'web' | 'mobile' = 'web'): Promise<{ success: boolean; data?: unknown; message?: string }> {
+  const { content, ...fields } = dto;
   const payload = {
-    ...dto,
-    body: dto.body ?? dto.content,
+    ...fields,
+    body: dto.body ?? content,
   };
-  return apiFetch<{ success: boolean; data?: unknown; message?: string }>(API_ENDPOINTS.POSTS.GET_POST(postId), {
+  return apiFetch<{ success: boolean; data?: unknown; message?: string }>(API_ENDPOINTS.POSTS.GET_POST(normalizePostId(postId)), {
     method: 'PATCH',
     body: JSON.stringify(payload),
   }, clientType);
@@ -271,7 +311,7 @@ export async function updatePost(postId: string, dto: UpdatePostDTO, clientType:
  * Delete a Post (DELETE /v1/posts/:id)
  */
 export async function deletePost(postId: string, clientType: 'web' | 'mobile' = 'web'): Promise<{ success: boolean; message?: string }> {
-  return apiFetch<{ success: boolean; message?: string }>(API_ENDPOINTS.POSTS.DELETE_POST(postId), {
+  return apiFetch<{ success: boolean; message?: string }>(API_ENDPOINTS.POSTS.DELETE_POST(normalizePostId(postId)), {
     method: 'DELETE',
   }, clientType);
 }

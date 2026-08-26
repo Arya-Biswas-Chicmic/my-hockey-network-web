@@ -151,6 +151,10 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     const url = buildUrl(path);
 
     const notifyServerDown = (statusCode: number, message: string) => {
+      // A failed mutation belongs to its form/card error state. Replacing the entire
+      // application with a server-down screen for one POST/PATCH/DELETE hides the
+      // actionable error and makes unrelated pages appear unavailable.
+      if (method !== 'GET') return;
       void options.onServerDown?.(statusCode, message);
     };
 

@@ -6,7 +6,10 @@ Last reviewed: 2026-08-26
 
 - Unit tests cover domain calculations, role authorization, and validation schemas.
 - API-client tests cover headers, envelopes, network/JSON server failures, empty 204 responses, refresh
-  serialization, retry, and logout paths.
+  serialization, retry, logout paths, and mutation 5xx localization (no global outage trigger).
+- Core posts-flow tests cover feed normalization, post-ID validation, update/delete/reaction paths, and
+  comment fetch error propagation.
+- Web toast tests cover feature-safe error fallback messaging.
 - Auth integration tests exercise shared auth use cases through the real API client with mocked HTTP.
 - jsdom integration tests exercise Formik auth, OTP, post, and comment submission plus
   authenticated/role route redirects. Platform/UI tests continue to grow screen-by-screen.

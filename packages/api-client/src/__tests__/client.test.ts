@@ -242,6 +242,28 @@ describe('platform-neutral API client', () => {
     await expect(emptyResponseClient.request('/notifications/read-all')).resolves.toBeUndefined();
   });
 
+  it('keeps mutation server failures local instead of announcing a global outage', async () => {
+    const onServerDown = vi.fn();
+    const client = createApiClient({
+      baseUrl: 'https://api.example.test/v1',
+      clientType: 'web',
+      authStorage: storage(),
+      onServerDown,
+      fetchImpl: vi.fn(async () =>
+        new Response(
+          JSON.stringify({ success: false, statusCode: 502, message: 'Bad Gateway', data: null }),
+          { status: 502 },
+        ),
+      ),
+    });
+
+    await expect(client.request('/posts/post-real-123', {
+      method: 'PATCH',
+      body: JSON.stringify({ body: 'Updated text' }),
+    })).rejects.toMatchObject({ statusCode: 502 });
+    expect(onServerDown).not.toHaveBeenCalled();
+  });
+
   it('sets defaults without replacing caller-provided security headers', async () => {
     const fetchImpl = vi.fn(async () =>
       new Response(JSON.stringify({ success: true, statusCode: 200, message: 'ok', data: true }), { status: 200 }),

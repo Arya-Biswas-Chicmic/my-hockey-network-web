@@ -114,6 +114,19 @@ Last reviewed: 2026-08-26
   single-app structure).
 - Added the paused web SEO/rendering/ISR policy and the built-in-first third-party dependency policy.
   No migration dependency, application file, cache behavior, or deployment configuration changed.
+- Normalized feed API responses in `@my-hockey-network/core` via `normalizeFeedResponse`, unwrapping
+  `{ post, reason }` feed items, propagating `feedReason` (including `SELF`) to Home feed mapping,
+  and requiring real post IDs instead of synthetic fallback keys.
+- Added `normalizePostId` validation before post mutations to reject missing or placeholder IDs and
+  prevent invalid PATCH/DELETE/comment/reaction requests.
+- Stopped swallowing user-post and comment fetch failures as empty arrays; errors now propagate to
+  callers for accurate error UI.
+- Scoped global server-down recovery to read/navigation requests only; mutation 5xx failures stay
+  local to feature toasts instead of blocking the entire viewport.
+- Synced `FeedPostCard` local state when feed props refresh and wired optimistic post-update callbacks
+  on Home and Profile after edit/delete actions.
+- Fixed `showErrorToast` to accept a feature-safe fallback message as the second argument instead of
+  misusing the action-label slot.
 
 
 
