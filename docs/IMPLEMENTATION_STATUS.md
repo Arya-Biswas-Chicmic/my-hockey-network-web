@@ -4,7 +4,7 @@ Last reviewed: 2026-08-26
 
 ## Completed
 
-- Integrated import alias cleanup, toggle alignment, and onboarding layout fixes into feature/integrated-fixes branch (2026-08-26 v2).
+- Imported home screen components and home-page from refactor/imports-and-styles branch.
 - Fixed CORS preflight header rejection by sending only server-allowlisted headers in API client.
 
 - Established npm workspaces for reusable web/mobile code.

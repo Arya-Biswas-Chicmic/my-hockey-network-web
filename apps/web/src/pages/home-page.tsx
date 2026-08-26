@@ -80,7 +80,9 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       const itemsList = feedResValue.items;
 
       if (itemsList && itemsList.length > 0) {
-        const mappedPosts: FeedPostProps[] = itemsList.map((postObj: PostItem, index: number) => {
+        const mappedPosts: FeedPostProps[] = itemsList.map((itemRaw: unknown, index: number) => {
+          const itemWrapper = itemRaw as { post?: PostItem } & PostItem;
+          const postObj: PostItem = itemWrapper.post || itemWrapper;
           const authorProf: NonNullable<PostItem['author']> = postObj.authorProfile || postObj.author || { id: '', displayName: '' };
           const authorId = postObj.authorProfileId || authorProf.id;
 
