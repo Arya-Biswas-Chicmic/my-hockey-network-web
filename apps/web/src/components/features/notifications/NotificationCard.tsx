@@ -1,4 +1,5 @@
 import React from 'react';
+import { FallbackImage } from '@/components/ui/fallback-image';
 
 export interface NotificationItemProps {
   id: string;
@@ -26,13 +27,11 @@ export const NotificationCard: React.FC<NotificationItemProps> = ({
     >
       {/* User Avatar */}
       <div className="mhn-notification-avatar-box">
-        <img 
-          src={avatar} 
-          alt={senderName} 
+        <FallbackImage
+          src={avatar}
+          alt={senderName}
+          fill
           className="mhn-notification-avatar-img"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-          }}
         />
       </div>
 

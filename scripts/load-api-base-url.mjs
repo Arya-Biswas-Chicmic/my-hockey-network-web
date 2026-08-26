@@ -18,11 +18,10 @@ function readVariable(file, name) {
 
 const configuredUrl =
   process.env.API_BASE_URL ||
-  process.env.VITE_API_BASE_URL ||
   process.env.EXPO_PUBLIC_API_BASE_URL ||
   candidateFiles
     .map((file) => path.join(root, file))
-    .map((file) => readVariable(file, 'VITE_API_BASE_URL') || readVariable(file, 'EXPO_PUBLIC_API_BASE_URL'))
+    .map((file) => readVariable(file, 'API_BASE_URL') || readVariable(file, 'EXPO_PUBLIC_API_BASE_URL'))
     .find(Boolean);
 
 if (!configuredUrl) {

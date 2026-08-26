@@ -8,6 +8,7 @@ import { useQuery } from '@/query';
 import { resolveMediaUrl } from '@/utils/mediaUtils';
 import { Search } from 'lucide-react';
 import { EmptyState } from '@/components/features/network/EmptyState';
+import Image from 'next/image';
 import { NetworkSkeletonGrid } from '@/components/features/network/NetworkSkeletonLoader';
 
 export interface ConnectionMember {
@@ -87,12 +88,12 @@ export function ConnectionsView({ onMessageClick, isLoading = false }: Connectio
         <div className="mhn-network-skeleton-grid">
           {members.map((member) => (
             <article key={member.id} className="mhn-connection-member-card">
-              <div className="mhn-connection-avatar-ring"><img src={member.avatarUrl} alt="" className="mhn-connection-avatar-img" /></div>
+              <div className="mhn-connection-avatar-ring"><Image src={member.avatarUrl || '/userPlaceholder.png'} alt="" width={74} height={74} className="mhn-connection-avatar-img" /></div>
               <h4 className="mhn-connection-member-name">{member.name}</h4>
               <p className="mhn-connection-member-role">{member.roleTag}</p>
               {member.teamName && (
                 <div className="mhn-connection-team-pill">
-                  {member.teamLogo && <img src={member.teamLogo} alt="" className="mhn-connection-team-logo" />}
+                  {member.teamLogo && <Image src={member.teamLogo} alt="" width={16} height={16} className="mhn-connection-team-logo" />}
                   <span>{member.teamName}</span>
                 </div>
               )}

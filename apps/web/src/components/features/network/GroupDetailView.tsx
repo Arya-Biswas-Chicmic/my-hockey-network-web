@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Image from 'next/image';
 import {
   completeMediaUpload,
   createPost,
@@ -120,7 +121,7 @@ export function GroupDetailView({ groupId, onBackToGroups }: GroupDetailViewProp
         <aside className="mhn-group-col-left">
           <div className="mhn-group-member-card">
             <div className="mhn-group-member-banner" />
-            <div className="mhn-group-member-avatar-wrapper"><div className="mhn-group-member-avatar-circle"><img src={resolveMediaUrl(user?.profile?.avatarUrl)} alt="" className="mhn-group-member-avatar-img" /></div></div>
+            <div className="mhn-group-member-avatar-wrapper"><div className="mhn-group-member-avatar-circle"><Image src={resolveMediaUrl(user?.profile?.avatarUrl)} alt="" fill className="mhn-group-member-avatar-img" /></div></div>
             <div className="mhn-group-member-info"><h3 className="mhn-group-member-name">{user?.profile?.displayName || 'Member'}</h3><p className="mhn-group-member-joined">Group member</p></div>
           </div>
           <Button type="button" className="mhn-btn-post-in-group" onClick={() => setIsPostModalOpen(true)}>Post in Group</Button>
@@ -153,7 +154,7 @@ export function GroupDetailView({ groupId, onBackToGroups }: GroupDetailViewProp
             membersQuery.isLoading ? <div className="mhn-flex-justify-center mhn-mt-20"><Spinner /></div> :
             membersQuery.error ? <EmptyState title="Unable to Load Members" message="Group members could not be loaded." iconType="server-error" /> :
             !membersQuery.data?.items.length ? <EmptyState title="No Members Found" message="No accepted members are available." iconType="people" /> :
-            <div className="mhn-network-skeleton-grid">{membersQuery.data.items.map((member) => <article key={member.id} className="mhn-connection-member-card"><img src={resolveMediaUrl(member.profile?.avatarUrl)} alt="" className="mhn-connection-avatar-img" /><h3>{member.profile?.displayName || 'Member'}</h3><p>{member.role}</p></article>)}</div>
+            <div className="mhn-network-skeleton-grid">{membersQuery.data.items.map((member) => <article key={member.id} className="mhn-connection-member-card"><Image src={resolveMediaUrl(member.profile?.avatarUrl)} alt="" width={80} height={80} className="mhn-connection-avatar-img" /><h3>{member.profile?.displayName || 'Member'}</h3><p>{member.role}</p></article>)}</div>
           )}
         </section>
       </div>

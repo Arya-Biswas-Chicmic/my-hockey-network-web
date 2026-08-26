@@ -9,9 +9,5 @@ if command -v node >/dev/null 2>&1; then
   exec node "$COMMITLINT_CLI" --edit "$1"
 fi
 
-if command -v bun >/dev/null 2>&1; then
-  exec bun "$COMMITLINT_CLI" --edit "$1"
-fi
-
-echo "Husky commit-msg: neither Node.js nor Bun is available."
+echo "Husky commit-msg: Node.js is not available."
 exit 127

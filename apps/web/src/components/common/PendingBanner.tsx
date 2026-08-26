@@ -1,4 +1,5 @@
 import { Button } from '@/components/common/Button';
+import Image from 'next/image';
 import React from 'react';
 
 interface PendingBannerProps {
@@ -16,7 +17,7 @@ export const PendingBanner: React.FC<PendingBannerProps> = ({
     <div className="mhn-pending-banner">
       <div className="mhn-pending-banner-content">
         <div className="mhn-pending-banner-icon">
-           <img src="/info.png" className='info-icon'/>
+           <Image src="/info.png" alt="" width={20} height={20} className='info-icon'/>
         </div>
         <span className="mhn-pending-banner-text">{message}</span>
       </div>

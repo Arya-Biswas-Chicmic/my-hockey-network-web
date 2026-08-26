@@ -3,6 +3,7 @@ import { Input } from '@/components/common/FormControls';
 import React, { useState } from 'react';
 import { useDebounce } from '@/hooks/use-debounce';
 import { MoreHorizontal, Pencil, Search } from 'lucide-react';
+import { FallbackImage } from '@/components/ui/fallback-image';
 
 export interface ChatItem {
   id: string;
@@ -118,13 +119,11 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             className={`mhn-chat-item ${selectedChatId === chat.id ? 'mhn-chat-item-active' : ''}`}
           >
             <div className="mhn-chat-item-avatar-box">
-              <img
+              <FallbackImage
                 src={chat.avatar}
                 alt={chat.name}
+                fill
                 className="mhn-chat-item-avatar-img"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-                }}
               />
             </div>
 

@@ -61,3 +61,35 @@ export enum FeedSortEnum {
   POPULAR = 'POPULAR',
   TRENDING = 'TRENDING',
 }
+
+export enum CreatePostAudienceEnum {
+  EVERYONE = 'Everyone',
+  GROUPS = 'Groups',
+  CUSTOM = 'Custom',
+}
+
+export enum HockeyPositionEnum {
+  CENTER = 'Center',
+  LEFT_WING = 'Left Wing',
+  RIGHT_WING = 'Right Wing',
+  DEFENSE = 'Defense',
+  GOALTENDER = 'Goaltender',
+}
+
+export enum ShootsCatchesEnum {
+  LEFT = 'Left',
+  RIGHT = 'Right',
+}
+
+export enum GenderCategoryEnum {
+  MALE = 'Male',
+  FEMALE = 'Female',
+  NON_BINARY = 'Non-binary',
+  PREFER_NOT_TO_SAY = 'Prefer not to say',
+}
+
+export enum ProfileVisibilityEnum {
+  EVERYONE = 'EVERYONE',
+  CONNECTIONS = 'CONNECTIONS',
+  PRIVATE = 'PRIVATE',
+}

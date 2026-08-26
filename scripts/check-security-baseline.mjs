@@ -6,9 +6,11 @@ import { execFileSync } from 'node:child_process';
 const root = process.cwd();
 const findings = [];
 const sourceExtensions = new Set(['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs', '.json', '.toml']);
-const ignoredDirectories = new Set(['node_modules', 'dist', 'coverage', 'build', '.git', '__tests__']);
+const ignoredDirectories = new Set(['node_modules', 'dist', 'coverage', 'build', '.next', '.git', '__tests__']);
 const allowedNativeFetchFiles = new Set([
   'packages/core/src/api/mediaApi.ts', // Required for direct upload to a backend-issued signed storage URL.
+  'apps/web/src/app/api/backend/[...path]/route.ts', // Same-origin server BFF; browser features still use the shared client.
+  'apps/web/src/infrastructure/server/public-profile.ts', // Server-only, credential-free read for the public (public)/players/[id] page; must not use the cookie-bearing client.
 ]);
 const bannedPatterns = [
   [/logCurlCommand/, 'credential-bearing cURL logger'],
@@ -94,7 +96,6 @@ for (const packageName of ['core', 'api-client', 'auth', 'domain', 'validation']
 const forbiddenDuplicates = [
   'apps/web/src/api/client.ts',
   'apps/web/src/api/authApi.ts',
-  'apps/web/src/hooks/use-app-navigation.ts',
   'apps/web/src/services/auth-session.ts',
 ];
 for (const relativePath of forbiddenDuplicates) {

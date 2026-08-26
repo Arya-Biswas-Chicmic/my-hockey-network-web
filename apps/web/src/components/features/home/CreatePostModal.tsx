@@ -1,11 +1,16 @@
 import { Button } from '@/components/common/Button';
 import { Input, Textarea } from '@/components/common/FormControls';
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { resolveMediaUrl } from '@/utils/mediaUtils';
-import { isEmailValid } from '@my-hockey-network/validation';
-import { useFormik, type FormikErrors } from 'formik';
-import { ChevronDown, ChevronLeft, Image, LoaderCircle, MapPin, X } from 'lucide-react';
+import { createFileSchema, createPostFormSchema, IMAGE_ACCEPT, IMAGE_MIME_TYPES, type CreatePostFormValues } from '@my-hockey-network/validation';
+import { CreatePostAudienceEnum } from '@my-hockey-network/contracts';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, useWatch } from 'react-hook-form';
+import { ChevronDown, ChevronLeft, Image as ImageIcon, LoaderCircle, MapPin, X } from 'lucide-react';
+import { Form } from '@/components/ui/form';
+import { FilePickerButton } from '@/components/ui/file-picker-button';
+import { FallbackImage } from '@/components/ui/fallback-image';
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -21,17 +26,6 @@ interface CreatePostModalProps {
   userAvatar?: string;
 }
 
-interface CreatePostFormValues {
-  content: string;
-  audience: 'Everyone' | 'Groups' | 'Custom';
-  shareWithEmails: string;
-  dontShareWithEmails: string;
-  locationTag: string;
-}
-
-const parseEmailList = (input: string) =>
-  input.split(/[, \n;]+/).map((email) => email.trim()).filter(Boolean);
-
 export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   isOpen,
   onClose,
@@ -46,29 +40,22 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
 
   const [screen, setScreen] = useState<'create' | 'audience' | 'custom'>('create');
-  const [tempAudience, setTempAudience] = useState<'Everyone' | 'Groups' | 'Custom'>('Everyone');
+  const [tempAudience, setTempAudience] = useState<CreatePostAudienceEnum>(CreatePostAudienceEnum.EVERYONE);
   const [postImage, setPostImage] = useState<string | null>(null);
   const [postImageFile, setPostImageFile] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const formik = useFormik<CreatePostFormValues>({
-    initialValues: {
+  const form = useForm<CreatePostFormValues>({
+    resolver: zodResolver(createPostFormSchema),
+    mode: 'onChange',
+    defaultValues: {
       content: '',
-      audience: 'Everyone',
+      audience: CreatePostAudienceEnum.EVERYONE,
       shareWithEmails: '',
       dontShareWithEmails: '',
       locationTag: '',
     },
-    validate: (values) => {
-      const errors: FormikErrors<CreatePostFormValues> = {};
-      const invalidShare = parseEmailList(values.shareWithEmails).filter((email) => !isEmailValid(email));
-      const invalidExcluded = parseEmailList(values.dontShareWithEmails).filter((email) => !isEmailValid(email));
-      if (invalidShare.length) errors.shareWithEmails = `Invalid email: ${invalidShare.join(', ')}`;
-      if (invalidExcluded.length) errors.dontShareWithEmails = `Invalid email: ${invalidExcluded.join(', ')}`;
-      return errors;
-    },
-    onSubmit: (values) => {
+  });
+  const handleSubmit = form.handleSubmit((values) => {
       if ((!values.content.trim() && !postImage && !postImageFile) || isLoading) return;
       onSubmit(
         values.content.trim(),
@@ -81,24 +68,23 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
         },
         postImageFile || undefined
       );
-    },
   });
-
-  const { values, errors } = formik;
-  const customError = errors.shareWithEmails || errors.dontShareWithEmails;
+  const watchedValues = useWatch({ control: form.control });
+  const values = {
+    content: watchedValues.content ?? '',
+    audience: watchedValues.audience ?? CreatePostAudienceEnum.EVERYONE,
+    locationTag: watchedValues.locationTag ?? '',
+  };
+  const customError = form.formState.errors.shareWithEmails?.message || form.formState.errors.dontShareWithEmails?.message;
 
   if (!isOpen) return null;
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleImageSelect = (files: File[]) => {
+    const file = files[0];
     if (file) {
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-      if (!allowedTypes.includes(file.type.toLowerCase())) {
-        setImageError('Choose a JPG, PNG, or WebP image.');
-        return;
-      }
-      if (file.size > 10 * 1024 * 1024) {
-        setImageError('The image must be 10 MB or smaller.');
+      const result = createFileSchema({ acceptedTypes: IMAGE_MIME_TYPES, maxBytes: 10 * 1024 * 1024 }).safeParse(file);
+      if (!result.success) {
+        setImageError(result.error.issues[0]?.message ?? 'Choose a JPG, PNG, or WebP image up to 10 MB.');
         return;
       }
       setImageError(null);
@@ -111,9 +97,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     }
   };
 
-  const handleAudienceOptionClick = (opt: 'Everyone' | 'Groups' | 'Custom') => {
+  const handleAudienceOptionClick = (opt: CreatePostAudienceEnum) => {
     setTempAudience(opt);
-    if (opt === 'Custom') {
+    if (opt === CreatePostAudienceEnum.CUSTOM) {
       setScreen('custom');
     }
   };
@@ -135,13 +121,12 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
             {/* User Author & Audience Row */}
             <div className="mhn-modal-user-row">
-              <img
+              <FallbackImage
                 src={resolvedAvatar}
                 alt={resolvedName}
+                width={44}
+                height={44}
                 className="mhn-modal-user-avatar"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-                }}
               />
               <div className="mhn-modal-user-meta">
                 <span className="mhn-modal-user-name">{resolvedName}</span>
@@ -160,13 +145,11 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
             </div>
 
             {/* Post Textarea Content */}
-            <form onSubmit={formik.handleSubmit} className="mhn-modal-form" noValidate>
+            <Form methods={form} onSubmit={handleSubmit} className="mhn-modal-form" noValidate>
               <Textarea
                 className="mhn-modal-textarea"
                 placeholder="What do you want to talk about?"
-                name="content"
-                value={values.content}
-                onChange={formik.handleChange}
+                {...form.register('content')}
                 rows={5}
                 autoFocus
               />
@@ -174,6 +157,8 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               {/* Attached Image Preview */}
               {postImage && (
                 <div className="mhn-modal-image-preview-wrapper">
+                  {/* Local data: URI preview before upload — not a Next-optimizable remote asset. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={postImage} alt="Post preview" className="mhn-modal-image-preview" />
                   <Button
                     type="button"
@@ -182,7 +167,6 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                       setPostImage(null);
                       setPostImageFile(null);
                       setImageError(null);
-                      if (fileInputRef.current) fileInputRef.current.value = '';
                     }}
                   >
                     <X size={14} aria-hidden="true" />
@@ -195,18 +179,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 <div className="mhn-modal-location-tag">
                   <MapPin size={14} aria-hidden="true" />
                   <span>{values.locationTag}</span>
-                  <Button type="button" onClick={() => void formik.setFieldValue('locationTag', '')}>×</Button>
+                  <Button type="button" onClick={() => form.setValue('locationTag', '')}>×</Button>
                 </div>
               )}
-
-              {/* Hidden File Input */}
-              <Input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleImageSelect}
-                accept="image/jpeg,image/png,image/webp"
-                className="mhn-display-none"
-              />
 
               {imageError && <p className="mhn-edit-profile-field-error">{imageError}</p>}
 
@@ -214,20 +189,19 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               <div className="mhn-modal-toolbar">
                 <div className="mhn-modal-toolbar-actions">
                   {/* Photo Icon Button */}
-                  <Button
-                    type="button"
-                    className="mhn-modal-icon-btn"
-                    onClick={() => fileInputRef.current?.click()}
-                    title="Add photo"
+                  <FilePickerButton
+                    accept={IMAGE_ACCEPT}
+                    onFilesSelected={handleImageSelect}
+                    buttonProps={{ className: 'mhn-modal-icon-btn', title: 'Add photo', 'aria-label': 'Add photo' }}
                   >
-                    <Image size={22} aria-hidden="true" />
-                  </Button>
+                    <ImageIcon size={22} aria-hidden="true" />
+                  </FilePickerButton>
 
                   {/* Location Icon Button */}
                   <Button
                     type="button"
                     className="mhn-modal-icon-btn"
-                    onClick={() => void formik.setFieldValue('locationTag', values.locationTag ? '' : 'Austria, Europe')}
+                    onClick={() => form.setValue('locationTag', values.locationTag ? '' : 'Austria, Europe')}
                     title="Add location"
                   >
                     <MapPin size={20} aria-hidden="true" />
@@ -252,7 +226,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   )}
                 </Button>
               </div>
-            </form>
+            </Form>
           </>
         )}
 
@@ -288,35 +262,35 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               </div>
 
               <div className="mhn-audience-options-list">
-                <label className="mhn-audience-option-row" onClick={() => handleAudienceOptionClick('Everyone')}>
+                <label className="mhn-audience-option-row">
                   <span>Everyone</span>
                   <Input
                     type="radio"
                     name="audienceOpt"
-                    checked={tempAudience === 'Everyone'}
-                    onChange={() => handleAudienceOptionClick('Everyone')}
+                    checked={tempAudience === CreatePostAudienceEnum.EVERYONE}
+                    onChange={() => handleAudienceOptionClick(CreatePostAudienceEnum.EVERYONE)}
                     className="mhn-radio-input"
                   />
                 </label>
 
-                <label className="mhn-audience-option-row" onClick={() => handleAudienceOptionClick('Groups')}>
+                <label className="mhn-audience-option-row">
                   <span>Groups</span>
                   <Input
                     type="radio"
                     name="audienceOpt"
-                    checked={tempAudience === 'Groups'}
-                    onChange={() => handleAudienceOptionClick('Groups')}
+                    checked={tempAudience === CreatePostAudienceEnum.GROUPS}
+                    onChange={() => handleAudienceOptionClick(CreatePostAudienceEnum.GROUPS)}
                     className="mhn-radio-input"
                   />
                 </label>
 
-                <label className="mhn-audience-option-row" onClick={() => handleAudienceOptionClick('Custom')}>
+                <label className="mhn-audience-option-row">
                   <span>Custom</span>
                   <Input
                     type="radio"
                     name="audienceOpt"
-                    checked={tempAudience === 'Custom'}
-                    onChange={() => handleAudienceOptionClick('Custom')}
+                    checked={tempAudience === CreatePostAudienceEnum.CUSTOM}
+                    onChange={() => handleAudienceOptionClick(CreatePostAudienceEnum.CUSTOM)}
                     className="mhn-radio-input"
                   />
                 </label>
@@ -326,10 +300,10 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 type="button"
                 className="mhn-audience-footer-btn"
                 onClick={() => {
-                  void formik.setFieldValue('audience', tempAudience);
-                  if (tempAudience !== 'Custom') {
-                    void formik.setFieldValue('shareWithEmails', '');
-                    void formik.setFieldValue('dontShareWithEmails', '');
+                  form.setValue('audience', tempAudience);
+                  if (tempAudience !== CreatePostAudienceEnum.CUSTOM) {
+                    form.setValue('shareWithEmails', '');
+                    form.setValue('dontShareWithEmails', '');
                   }
                   setScreen('create');
                 }}
@@ -370,22 +344,18 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 <Textarea
                   className="mhn-custom-textarea"
                   placeholder="Type mail of the users (e.g. user@example.com)"
-                  name="shareWithEmails"
-                  value={values.shareWithEmails}
-                  onChange={formik.handleChange}
+                  {...form.register('shareWithEmails')}
                   rows={3}
                 />
               </div>
 
               {/* Don't share with */}
               <div className="mhn-custom-field-group">
-                <h3 className="mhn-custom-field-label">Don't share with</h3>
+                <h3 className="mhn-custom-field-label">Don&apos;t share with</h3>
                 <Textarea
                   className="mhn-custom-textarea"
                   placeholder="Type mail of the users (e.g. user@example.com)"
-                  name="dontShareWithEmails"
-                  value={values.dontShareWithEmails}
-                  onChange={formik.handleChange}
+                  {...form.register('dontShareWithEmails')}
                   rows={3}
                 />
               </div>
@@ -398,7 +368,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
               {/* Footnote note */}
               <p className="mhn-custom-footnote">
-                Anyone you include here or have on your restricted list won't be able to see this post unless you tag them. We don't let people know when you choose not to share something with them.
+                Anyone you include here or have on your restricted list won&apos;t be able to see this post unless you tag them. We don&apos;t let people know when you choose not to share something with them.
               </p>
 
               {/* Actions row */}
@@ -416,9 +386,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   type="button"
                   className="mhn-btn-custom-done"
                   onClick={async () => {
-                    const validationErrors = await formik.validateForm();
-                    if (validationErrors.shareWithEmails || validationErrors.dontShareWithEmails) return;
-                    await formik.setFieldValue('audience', 'Custom');
+                    const valid = await form.trigger(['shareWithEmails', 'dontShareWithEmails']);
+                    if (!valid) return;
+                    form.setValue('audience', CreatePostAudienceEnum.CUSTOM);
                     setScreen('create');
                   }}
                 >

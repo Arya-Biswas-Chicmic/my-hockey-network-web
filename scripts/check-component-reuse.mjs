@@ -7,6 +7,11 @@ const findings = [];
 const allowedWebPrimitiveFiles = new Set([
   'apps/web/src/components/common/Button.tsx',
   'apps/web/src/components/common/FormControls.tsx',
+  'apps/web/src/components/ui/button.tsx',
+  'apps/web/src/components/ui/file-picker-button.tsx',
+  'apps/web/src/components/ui/date-picker-button.tsx',
+  'apps/web/src/components/ui/form.tsx',
+  'apps/web/src/components/ui/slider.tsx',
 ]);
 const allowedCustomSvgFiles = new Set([
   'apps/web/src/components/icons/BrandIcons.tsx',
@@ -34,8 +39,8 @@ for (const file of sourceFiles(path.join(root, 'apps/web/src'))) {
   if (/\bstyle\s*=\s*\{\{/.test(text)) {
     findings.push(`${relativePath}: replace inline style objects with Tailwind or an existing class`);
   }
-  if (/<form\b/.test(text) && !/from\s+['"]formik['"]/.test(text)) {
-    findings.push(`${relativePath}: semantic web forms must use Formik state and validation`);
+  if (/<form\b/.test(text) && !/from\s+['"]react-hook-form['"]/.test(text)) {
+    findings.push(`${relativePath}: semantic web forms must use React Hook Form and Zod validation`);
   }
   if (/<svg\b/.test(text) && !allowedCustomSvgFiles.has(relativePath)) {
     findings.push(`${relativePath}: use Lucide or an approved reusable custom icon component instead of inline SVG`);
@@ -60,7 +65,7 @@ for (const file of sourceFiles(path.join(root, 'apps/web/src'), /\.(ts|tsx|js|js
     findings.push(`${relativePath}: web must not import mobile/native presentation`);
   }
   if (/from\s+['"]@react-navigation(?:\/|['"])/.test(text)) {
-    findings.push(`${relativePath}: web must use React Router, not React Navigation`);
+    findings.push(`${relativePath}: web must use Next.js App Router, not React Navigation`);
   }
   if (/(?:from\s+|import\s*\(?\s*)['"]\.\.?\//.test(text)) {
     findings.push(`${relativePath}: use the @/ source alias instead of a relative import`);

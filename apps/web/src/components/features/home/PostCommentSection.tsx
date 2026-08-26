@@ -1,41 +1,21 @@
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
-import React, { useState, useEffect } from 'react';
-import { getComments, addComment } from '@my-hockey-network/core';
+import React, { useState } from 'react';
+import { getComments, addComment, type PostCommentItem } from '@my-hockey-network/core';
 import { useAuth } from '@/hooks/use-auth';
 import { Spinner } from '@/components/common/Spinner';
 import { resolveMediaUrl } from '@/utils/mediaUtils';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { MessageSquare, Send } from 'lucide-react';
-import { useFormik } from 'formik';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, useWatch } from 'react-hook-form';
+import { commentFormSchema, type CommentFormValues } from '@my-hockey-network/validation';
+import { QueryKeys } from '@my-hockey-network/contracts';
+import { Form } from '@/components/ui/form';
+import { FallbackImage } from '@/components/ui/fallback-image';
 
-export interface CommentItem {
-  id: string;
-  body: string;
-  text?: string;
-  content?: string;
-  createdAt: string;
-  likeCount?: number;
-  authorProfileId?: string;
-  authorProfile?: {
-    id?: string;
-    displayName?: string;
-    avatarUrl?: string | null;
-    position?: string | null;
-    jerseyNumber?: number | null;
-    primaryRole?: string | null;
-    type?: string | null;
-  };
-  author?: {
-    id?: string;
-    displayName?: string;
-    avatarUrl?: string | null;
-    position?: string | null;
-    jerseyNumber?: number | null;
-    primaryRole?: string | null;
-    type?: string | null;
-  };
-}
+export type CommentItem = PostCommentItem;
 
 interface PostCommentSectionProps {
   postId: string;
@@ -54,26 +34,33 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
   const currentUserAvatar = resolveMediaUrl(rawUserAvatar, '/userPlaceholder.png');
   const currentUserName = user?.profile?.displayName || 'You';
 
-  const [comments, setComments] = useState<CommentItem[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isError, setIsError] = useState<boolean>(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
   const [statusNotice, setStatusNotice] = useState<string | null>(null);
 
   // Liked comments state map
   const [likedComments, setLikedComments] = useState<Record<string, { count: number; isLiked: boolean }>>({});
 
-  const commentForm = useFormik({
-    initialValues: { comment: '' },
-    validate: ({ comment }) => comment.trim() ? {} : { comment: 'Write a comment before sending.' },
-    onSubmit: async ({ comment }, helpers) => {
+  const queryClient = useQueryClient();
+  const commentsQueryKey = [QueryKeys.POST_COMMENTS, postId] as const;
+  const commentsQuery = useQuery({
+    queryKey: commentsQueryKey,
+    queryFn: () => getComments(postId),
+  });
+  const comments = (commentsQuery.data?.items ?? []) as CommentItem[];
+
+  const commentForm = useForm<CommentFormValues>({
+    resolver: zodResolver(commentFormSchema),
+    mode: 'onChange',
+    defaultValues: { comment: '' },
+  });
+  const commentValue = useWatch({ control: commentForm.control, name: 'comment' });
+  const addCommentMutation = useMutation({ mutationFn: (text: string) => addComment(postId, text) });
+  const handleCommentSubmit = commentForm.handleSubmit(async ({ comment }) => {
       if (!requirePermission('COMMENT_ON_POSTS')) return;
       const text = comment.trim();
       setStatusNotice(null);
 
       try {
-        const response = await addComment(postId, text);
+        const response = await addCommentMutation.mutateAsync(text);
         const isPendingApproval =
           response?.message === 'COMMENT_PENDING_APPROVAL' ||
           response?.comment?.pendingGuardianApproval ||
@@ -81,29 +68,38 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
 
         if (isPendingApproval) {
           setStatusNotice('Your comment has been submitted and is waiting for parent/guardian approval.');
-          helpers.resetForm();
+          commentForm.reset();
           return;
         }
 
         const commentResponse = response?.comment || {};
+        if (!commentResponse.id) {
+          await queryClient.invalidateQueries({ queryKey: commentsQueryKey });
+          commentForm.reset();
+          return;
+        }
         const rawJersey = user?.profile?.jerseyNumber;
         const parsedJersey = rawJersey !== null && rawJersey !== undefined && rawJersey !== '' ? Number(rawJersey) : null;
         const newComment: CommentItem = {
-          id: commentResponse.id || `c_${Date.now()}`,
+          id: commentResponse.id,
           body: commentResponse.body || text,
-          createdAt: commentResponse.createdAt || new Date().toISOString(),
+          createdAt: commentResponse.createdAt || '',
           likeCount: 0,
           authorProfile: {
+            id: user?.profile?.id || user?.id || 'current-user',
             displayName: currentUserName,
             avatarUrl: currentUserAvatar,
             position: user?.profile?.position || undefined,
-            jerseyNumber: parsedJersey,
+            jerseyNumber: parsedJersey ?? undefined,
             primaryRole: user?.profile?.type || 'PLAYER',
           },
         };
 
-        setComments((previous) => [newComment, ...previous]);
-        helpers.resetForm();
+        queryClient.setQueryData<Awaited<ReturnType<typeof getComments>>>(commentsQueryKey, (current) => ({
+          ...(current ?? { items: [] }),
+          items: [newComment, ...((current?.items ?? []) as CommentItem[])],
+        }));
+        commentForm.reset();
         onCommentAdded?.(comments.length + 1);
       } catch (error: unknown) {
         const apiError = error as { statusCode?: number; message?: string };
@@ -113,31 +109,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
           setStatusNotice(apiError.message || 'Failed to post comment. Please try again.');
         }
       }
-    },
   });
-
-  useEffect(() => {
-    fetchPostComments();
-  }, [postId]);
-
-  const fetchPostComments = async () => {
-    setIsLoading(true);
-    setIsError(false);
-    setErrorMsg(null);
-
-    try {
-      const res = await getComments(postId);
-
-      const itemsList = res?.items || [];
-      setComments(itemsList);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Failed to load comments.';
-      setIsError(true);
-      setErrorMsg(message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const toggleCommentLike = (commentId: string, initialCount = 0) => {
     setLikedComments((prev) => {
@@ -175,39 +147,36 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
   return (
     <div className="mhn-comment-section-container">
       {/* 1. Input Box Form */}
-      <form className="mhn-comment-input-form" onSubmit={commentForm.handleSubmit} noValidate>
-        <img
+      <Form methods={commentForm} className="mhn-comment-input-form" onSubmit={handleCommentSubmit} noValidate>
+        <FallbackImage
           src={currentUserAvatar}
           alt={currentUserName}
+          width={36}
+          height={36}
           className="mhn-comment-current-user-avatar"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-          }}
         />
         <div className="mhn-comment-input-wrapper">
           <Input
             type="text"
-            name="comment"
-            value={commentForm.values.comment}
-            onChange={commentForm.handleChange}
+            {...commentForm.register('comment')}
             placeholder="Write a comment..."
             className="mhn-comment-input-field"
-            disabled={commentForm.isSubmitting}
+            disabled={commentForm.formState.isSubmitting}
           />
           <Button
             type="submit"
-            disabled={!commentForm.values.comment.trim() || commentForm.isSubmitting}
-            className={`mhn-comment-send-btn ${commentForm.isSubmitting ? 'mhn-submitting' : ''}`}
+            disabled={!commentValue.trim() || commentForm.formState.isSubmitting}
+            className={`mhn-comment-send-btn ${commentForm.formState.isSubmitting ? 'mhn-submitting' : ''}`}
             aria-label="Send comment"
           >
-            {commentForm.isSubmitting ? (
+            {commentForm.formState.isSubmitting ? (
               <Spinner size="sm" color="#0091FF" />
             ) : (
               <Send size={18} aria-hidden="true" />
             )}
           </Button>
         </div>
-      </form>
+      </Form>
 
       {/* Notice Message Banner */}
       {statusNotice && (
@@ -217,7 +186,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
       )}
 
       {/* 2. Loading State (Shimmer Skeleton) */}
-      {isLoading ? (
+      {commentsQuery.isLoading ? (
         <div className="mhn-comment-skeleton-list">
           <div className="mhn-comment-skeleton-item">
             <div className="mhn-skeleton-avatar mhn-shimmer-box mhn-comment-skeleton-avatar" />
@@ -234,11 +203,11 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
             </div>
           </div>
         </div>
-      ) : isError ? (
+      ) : commentsQuery.isError ? (
         /* 3. Error State */
         <div className="mhn-comment-error-box">
-          <p>{errorMsg || 'Failed to load comments.'}</p>
-          <Button type="button" onClick={fetchPostComments} className="mhn-comment-retry-btn">
+          <p>{commentsQuery.error instanceof Error ? commentsQuery.error.message : 'Failed to load comments.'}</p>
+          <Button type="button" onClick={() => void commentsQuery.refetch()} className="mhn-comment-retry-btn">
             Retry
           </Button>
         </div>
@@ -252,25 +221,24 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
         /* 5. Real Comments List */
         <div className="mhn-comment-list">
           {comments.map((item) => {
-            const author = item.authorProfile || item.author || {};
-            const authorName = author.displayName || 'Network Member';
-            const authorAvatar = resolveMediaUrl(author.avatarUrl, '/userPlaceholder.png');
-            const roleText = author.position && author.jerseyNumber
+            const author = item.authorProfile ?? item.author;
+            const authorName = author?.displayName || 'Network Member';
+            const authorAvatar = resolveMediaUrl(author?.avatarUrl, '/userPlaceholder.png');
+            const roleText = author?.position && author.jerseyNumber
               ? `${author.position} • #${author.jerseyNumber}`
-              : author.position || author.primaryRole || author.type || 'Member';
+              : author?.position || author?.primaryRole || author?.type || 'Member';
             const timeText = formatRelativeTime(item.createdAt);
 
             const likeInfo = likedComments[item.id] || { count: item.likeCount || 0, isLiked: false };
 
             return (
               <div key={item.id} className="mhn-comment-card">
-                <img
+                <FallbackImage
                   src={authorAvatar}
                   alt={authorName}
+                  width={32}
+                  height={32}
                   className="mhn-comment-author-avatar"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-                  }}
                 />
                 <div className="mhn-comment-bubble-wrapper">
                   <div className="mhn-comment-bubble">

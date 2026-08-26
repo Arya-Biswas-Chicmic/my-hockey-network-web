@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import type { RoleOptionCardProps } from '@/types/onboarding';
 
 export const RoleOptionCard: React.FC<RoleOptionCardProps> = ({
@@ -23,9 +24,11 @@ export const RoleOptionCard: React.FC<RoleOptionCardProps> = ({
       <div className="role-content-left">
         {/* Role Icon */}
         <div className="role-icon-box">
-          <img
+          <Image
             src={role.icon}
             alt={role.title}
+            width={50}
+            height={48}
             className="role-icon-img"
           />
         </div>
@@ -39,9 +42,11 @@ export const RoleOptionCard: React.FC<RoleOptionCardProps> = ({
 
       {/* Custom Checkbox Image */}
       <div className="checkbox-img-box">
-        <img
+        <Image
           src={isSelected ? '/checked.png' : '/unchecked.png'}
           alt={isSelected ? 'Checked' : 'Unchecked'}
+          width={18}
+          height={18}
           className="checkbox-img"
         />
       </div>

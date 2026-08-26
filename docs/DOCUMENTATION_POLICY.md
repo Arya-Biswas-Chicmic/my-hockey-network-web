@@ -30,6 +30,6 @@ only `README.md` and `AGENTS.md` at its root because repository interfaces and c
 depend on those conventional entry points. Application folders must not contain independent Markdown
 instructions; add or update the corresponding document here instead.
 
-`npm run docs:check` verifies required files, review dates, and source/documentation changes. The
+`pnpm docs:check` verifies required files, review dates, and source/documentation changes. The
 pre-commit hook runs this check. The project owner has authorized routine updates to these files;
 contributors and coding agents should update them without requesting separate approval.

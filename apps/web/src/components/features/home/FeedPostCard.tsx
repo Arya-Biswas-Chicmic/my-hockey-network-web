@@ -1,15 +1,23 @@
 import { Button } from '@/components/common/Button';
 import { Textarea } from '@/components/common/FormControls';
 import React, { useState, useEffect } from 'react';
-import { likePost, unlikePost, repostPost, updatePost, deletePost, followUser, unfollowUser } from '@my-hockey-network/core';
+import { repostPost, followUser, unfollowUser } from '@my-hockey-network/core';
 import { Spinner } from '@/components/common/Spinner';
 
 import { useAuth } from '@/hooks/use-auth';
+import {
+  useLikePostMutation,
+  useUnlikePostMutation,
+  useUpdatePostMutation,
+  useDeletePostMutation,
+} from '@/hooks/use-post-mutations';
 import { PostCommentSection } from '@/components/features/home/PostCommentSection';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { extractErrorMessage, getApiErrorStatus, showSuccessToast, showErrorToast, showInfoToast } from '@/utils/toast';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
 import { LockKeyhole, MoreHorizontal, Pencil, ThumbsUp, Trash2 } from 'lucide-react';
+import Image from 'next/image';
+import { FallbackImage } from '@/components/ui/fallback-image';
 
 
 export interface FeedPostProps {
@@ -81,6 +89,11 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   const canShare = checkSupervisionPermission('share_posts');
   const canFollow = checkSupervisionPermission('follow_others');
 
+  const likePostMutation = useLikePostMutation();
+  const unlikePostMutation = useUnlikePostMutation();
+  const updatePostMutation = useUpdatePostMutation();
+  const deletePostMutation = useDeletePostMutation();
+
   const { requirePermission } = useFeedPermissions(onNavigate);
   const [postContent, setPostContent] = useState(initialContent);
   const [likes, setLikes] = useState(initialLikes);
@@ -141,7 +154,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
     setIsDeleting(true);
 
     try {
-      await deletePost(id);
+      await deletePostMutation.mutateAsync({ postId: id });
       setIsDeleteModalOpen(false);
       showSuccessToast(SUCCESS_MESSAGES.POST_DELETED);
 
@@ -172,7 +185,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
     setIsUpdating(true);
 
     try {
-      await updatePost(id, { body: editContentInput.trim() });
+      await updatePostMutation.mutateAsync({ postId: id, dto: { body: editContentInput.trim() } });
       setPostContent(editContentInput.trim());
       setIsEditModalOpen(false);
       showSuccessToast(SUCCESS_MESSAGES.POST_UPDATED);
@@ -212,9 +225,9 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         return;
       }
       if (prevLiked) {
-        await unlikePost(id);
+        await unlikePostMutation.mutateAsync({ postId: id });
       } else {
-        const res = await likePost(id, 'LIKE');
+        const res = await likePostMutation.mutateAsync({ postId: id });
         if (res.pendingGuardianApproval || res.message === 'REACTION_PENDING_APPROVAL') {
           showInfoToast('Your reaction has been submitted and is waiting for parent/guardian approval.');
           setIsLiked(prevLiked);
@@ -244,7 +257,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
     try {
       if (hasReposted) {
         const targetDeleteId = userRepostId || id;
-        await deletePost(targetDeleteId);
+        await deletePostMutation.mutateAsync({ postId: targetDeleteId });
         setReposts((prev) => Math.max(0, prev - 1));
         setHasReposted(false);
         setUserRepostId(null);
@@ -334,13 +347,11 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
       <div className="mhn-post-header">
         <div className="mhn-post-author-group">
           <div className="mhn-author-avatar-box">
-            <img
-              src={authorAvatar || '/userPlaceholder.png'}
+            <FallbackImage
+              src={authorAvatar}
               alt={authorName}
+              fill
               className="mhn-author-avatar-img"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-              }}
             />
           </div>
           <div className="mhn-author-meta">
@@ -428,13 +439,13 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         )}
         {postImage && (
           <div className="mhn-post-media-container">
-            <img
+            <FallbackImage
               src={postImage}
               alt="Post attachment"
+              width={800}
+              height={450}
+              hideOnError
               className="mhn-post-media-img"
-              onError={(e) => {
-                (e.target as HTMLImageElement).classList.add('mhn-display-none');
-              }}
             />
           </div>
         )}
@@ -454,7 +465,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
             ) : isLiked ? (
               <ThumbsUp size={20} fill="#1860C3" className="like-count-icon" aria-hidden="true" />
             ) : (
-              <img src="/like.png" alt="" className="like-count-icon" />
+              <Image src="/like.png" alt="" width={15} height={15} className="like-count-icon" />
             )}
             <span className={`mhn-action-count ${isLiked ? 'mhn-action-count-liked' : ''}`}>{likes}</span>
           </Button>
@@ -472,7 +483,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
             {!canComment ? (
               <LockKeyhole size={18} className="comment-count-icon" aria-hidden="true" />
             ) : (
-              <img src="/comment.png" alt="" className="comment-count-icon" />
+              <Image src="/comment.png" alt="" width={15} height={14} className="comment-count-icon" />
             )}
             <span className={`mhn-action-count ${showComments ? 'mhn-action-count-commented' : ''}`}>
               {currentCommentsCount}
@@ -492,9 +503,11 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
               ) : isSharing ? (
                 <Spinner size="sm" color="#1860C3" />
               ) : (
-                <img
+                <Image
                   src="/share.png"
                   alt=""
+                  width={14}
+                  height={14}
                   className={`share-count-icon ${hasReposted ? 'mhn-repost-icon-filter' : ''}`}
                 />
               )}

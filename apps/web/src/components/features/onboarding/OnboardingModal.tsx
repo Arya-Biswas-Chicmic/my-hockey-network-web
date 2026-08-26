@@ -37,6 +37,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Backend-issued OTP returned directly in the request response while no
+  // email service is wired up (see OtpRequestResponse.devCode/code) —
+  // prefilled into VerifyEmailForm so testers only need to press Confirm.
+  // Remove once real email delivery is live; the backend should stop
+  // returning this field in that environment.
+  const [devOtpCode, setDevOtpCode] = useState<string | null>(null);
   const [hasCompletedPreOnboarding, setHasCompletedPreOnboarding] = useState<boolean>(false);
 
   // Mode Switch Handlers
@@ -68,11 +74,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
 
     try {
       // Send OTP Request (SIGNUP)
-      await requestOtp({
+      const otpRes = await requestOtp({
         channel: 'EMAIL',
         destination: data.email,
         intent: 'SIGNUP',
       });
+      setDevOtpCode(otpRes?.devCode ?? otpRes?.code ?? null);
       setStep(3);
     } catch (err: unknown) {
       if (getApiErrorStatus(err) === 409 || getApiErrorKey(err) === 'USER_ALREADY_EXISTS') {
@@ -230,11 +237,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
     setErrorMessage(null);
 
     try {
-      await requestOtp({
+      const otpRes = await requestOtp({
         channel: 'EMAIL',
         destination: email,
         intent: 'SIGNIN',
       });
+      setDevOtpCode(otpRes?.devCode ?? otpRes?.code ?? null);
       setLoginStep(2);
     } catch (err: unknown) {
       if (getApiErrorStatus(err) === 404 || getApiErrorKey(err) === 'USER_NOT_FOUND') {
@@ -289,11 +297,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
     setResendNotice(null);
 
     try {
-      await requestOtp({
+      const otpRes = await requestOtp({
         channel: 'EMAIL',
         destination: targetEmail,
         intent: authMode === 'login' ? 'SIGNIN' : 'SIGNUP',
       });
+      setDevOtpCode(otpRes?.devCode ?? otpRes?.code ?? null);
       const msg = `A new verification code was sent to ${targetEmail}`;
       setResendNotice(msg);
       showToast(msg, 'success');
@@ -359,6 +368,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
               loading={loading}
               errorMessage={errorMessage}
               resendNotice={resendNotice}
+              prefillCode={devOtpCode}
             />
           )}
           {step === 4 && (
@@ -407,6 +417,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
               loading={loading}
               errorMessage={errorMessage}
               resendNotice={resendNotice}
+              prefillCode={devOtpCode}
             />
           )}
         </>

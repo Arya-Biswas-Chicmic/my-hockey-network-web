@@ -5,9 +5,9 @@
   "types": "src/index.ts",
   "private": true,
   "dependencies": {
-    "@my-hockey-network/api-client": "*",
-    "@my-hockey-network/auth": "*",
-    "@my-hockey-network/contracts": "*",
-    "@my-hockey-network/types": "*"
+    "@my-hockey-network/api-client": "workspace:*",
+    "@my-hockey-network/auth": "workspace:*",
+    "@my-hockey-network/contracts": "workspace:*",
+    "@my-hockey-network/types": "workspace:*"
   }
 }

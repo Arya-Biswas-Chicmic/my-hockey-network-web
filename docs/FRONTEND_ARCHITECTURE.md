@@ -1,22 +1,23 @@
 # My Hockey Network frontend architecture standard
 
 Last reviewed: 2026-08-26
-Status: approved target; Next.js migration is paused
+Status: approved target; Next.js migration is authorized and in progress
 
 ## 1. Authority and implementation status
 
 This is the primary frontend architecture document for the My Hockey Network User Panel. Every
 contributor and AI coding agent must read it before changing the frontend.
 
-The target Next.js architecture is approved, but implementation must not begin until the project
-owner explicitly authorizes migration. Until then:
+The project owner authorized the Next.js migration and implementation is underway on branch
+`changes/next-js-update`. `apps/web` now runs on Next.js App Router, pnpm workspaces, React Hook
+Form + Zod, and TanStack Query; Vite, React Router, Formik, and npm have been removed from `apps/web`.
+See `docs/IMPLEMENTATION_STATUS.md` for the current delivered-vs-remaining breakdown and
+`docs/NEXTJS_MIGRATION_PLAN.md` for the phase-by-phase status. Continue building on this
+architecture rather than reverting to the prior Vite stack:
 
-- Keep the current Vite, React Router, Formik, npm, and native-fetch implementation working.
-- Do not install Next.js, React Hook Form, shadcn/ui, Zustand, TanStack Table, Playwright, or other
-  target dependencies solely for migration.
-- Do not add App Router files, change routes, move source folders, change package managers, replace
-  the lockfile, or alter build/deployment configuration.
-- Documentation and planning may be improved without starting migration.
+- Do not reintroduce Vite, React Router, Formik, or npm to `apps/web`.
+- Do not run two permanent routing, form, package-manager, or caching architectures in parallel.
+- Follow the target structure and stack in this document for all new `apps/web` work.
 
 ## 2. Repository and application boundary
 
@@ -24,17 +25,19 @@ The User Panel remains one monorepo containing separate web and mobile applicati
 
 ```text
 apps/
-├── web/                  User-facing web application; future Next.js App Router app
+├── web/                  User-facing web application; Next.js App Router (implemented)
 └── mobile/               Expo/React Native app; React Navigation remains
 
 packages/
 ├── contracts/            API DTOs, response envelopes, roles, enums
-├── domain/               Pure business and permission rules
-├── api-client/           Platform-neutral HTTP behavior and normalized errors
-├── auth/                 Shared authentication/onboarding use cases
-├── validation/           Shared Zod schemas and form/domain rules
-├── design-tokens/        Portable colors, spacing, radii, typography values
-└── compatibility/        Existing packages retained only where still required
+├── domain/                Pure business and permission rules
+├── api-client/            Platform-neutral HTTP behavior and normalized errors
+├── auth/                  Shared authentication/onboarding use cases
+├── validation/            Shared Zod schemas and form/domain rules
+├── design-tokens/         Portable colors, spacing, radii, typography values
+└── core, shared, types, constants, utils, design-system
+                            Compatibility packages retained during migration; consolidate per
+                            `docs/NEXTJS_MIGRATION_PLAN.md` rather than deleting outright
 ```
 
 The Admin Panel remains a separate, web-only repository. It is an architectural reference, not a
@@ -64,26 +67,26 @@ Must remain platform-owned:
 Never import web UI into mobile or React Native UI into web. Maximum code reuse does not mean shared
 JSX; it means stable shared behavior underneath separate platform experiences.
 
-## 4. Approved target technology stack
+## 4. Target technology stack (implemented)
 
-| Concern | Approved target |
-| --- | --- |
-| Web framework | Latest stable Next.js compatible with the project at migration time |
-| React | React 19.x |
-| Language | Strict TypeScript supported by the selected Next.js version |
-| Web routing | Next.js App Router |
-| Rendering | Server Components by default; SSR, SSG, ISR, or dynamic rendering per route |
-| Mobile | Expo/React Native with React Navigation |
-| Styling | Tailwind CSS 4 |
-| Web primitives | Project-owned shadcn/ui-based components |
-| Forms | React Hook Form with Zod and `@hookform/resolvers` |
-| Server/API state | TanStack Query v5 for interactive client server-state |
-| Complex tables | TanStack Table |
-| Client state | Zustand only when local, URL, form, derived, or server state is insufficient |
-| Icons | Lucide; isolated project components for brand art and real illustrations |
-| Unit/integration tests | Vitest, React Testing Library, and user-event |
-| Browser smoke/e2e | Playwright |
-| Target package manager | pnpm workspaces with one root lockfile |
+| Concern | Target | Status |
+| --- | --- | --- |
+| Web framework | Next.js | Next.js 16 in `apps/web` |
+| React | React 19.x | React 19.2.0 |
+| Language | Strict TypeScript supported by the selected Next.js version | TypeScript ~5.9 |
+| Web routing | Next.js App Router | Implemented, `(auth)`/`(authenticated)` route groups |
+| Rendering | Server Components by default; SSR, SSG, ISR, or dynamic rendering per route | Route groups render; per-route SEO/ISR classification not yet applied — see `WEB_SEO_AND_RENDERING_STRATEGY.md` |
+| Mobile | Expo/React Native with React Navigation | Unchanged |
+| Styling | Tailwind CSS 4 | Implemented |
+| Web primitives | Project-owned shadcn/ui-based components | `components/ui`, `components/form/fields` implemented |
+| Forms | React Hook Form with Zod and `@hookform/resolvers` | Implemented; Formik fully removed |
+| Server/API state | TanStack Query v5 for interactive client server-state | Implemented; full adoption audit still pending |
+| Complex tables | TanStack Table | Not yet needed/introduced |
+| Client state | Zustand only when local, URL, form, derived, or server state is insufficient | Available (`stores/shell-ui-store.ts`); use sparingly per rules in `NEXTJS_MIGRATION_PLAN.md` |
+| Icons | Lucide; isolated project components for brand art and real illustrations | Implemented |
+| Unit/integration tests | Vitest and React Testing Library | Implemented, 126 tests passing |
+| Browser smoke/e2e | Playwright | Configured; guest smoke suite runs in CI, authenticated write flow awaits a dedicated account |
+| Package manager | pnpm workspaces with one root lockfile | Implemented |
 
 Do not introduce another library when the framework or approved stack already solves the need.
 
@@ -171,6 +174,17 @@ app/
   smallest useful segment. Provide a root fallback for failures outside nested boundaries.
 - Mobile continues to use typed React Navigation stacks/tabs. Next.js route groups, URLs, layouts,
   middleware, and redirects must never be imported into mobile or shared packages.
+
+**Current status:** `(auth)` and `(authenticated)` route groups exist with `AuthenticatedGuard`,
+`GuestGuard`, `ParentRoleGuard`, and `MinorPlayerGuard` (`apps/web/src/components/routing`). These guards currently run
+client-side only, matching the pre-migration behavior. This is a known gap against the rule above:
+add server-side/session-aware authorization at the route or data-access boundary before treating any
+authenticated route as fully migrated, so client redirects remain a UX affordance rather than the
+only access control.
+
+Guardian relationship routes additionally enforce request direction: the minor-player-only
+`/profile/guardian-requests` route consumes guardian invites created by a parent, while parent-only
+Supervision consumes guardian requests created by a child. Shared cards remain presentation-only.
 
 ## 6. Existing-code-first and component reuse
 

@@ -4,9 +4,10 @@ Last reviewed: 2026-08-26
 
 ## Purpose and status
 
-This document records the dependency policy for the future Next.js migration. It is not permission
-to install packages now. Until migration begins, the current npm/Vite/Formik dependencies and all
-existing quality commands remain authoritative.
+This document records the dependency policy for the Next.js migration, which is authorized and in
+progress. The baseline below reflects what `apps/web` now runs; npm/Vite/Formik have been removed.
+New dependencies still require the written built-in-first and security review below before adding
+them.
 
 The Admin Panel was reviewed as an architectural reference. Its proven patterns inform this policy,
 but the User Panel must not copy admin-specific Axios code, admin business components, or its

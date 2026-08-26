@@ -1,4 +1,6 @@
 import { Button } from '@/components/common/Button';
+import Image from 'next/image';
+import { FallbackImage } from '@/components/ui/fallback-image';
 import React from 'react';
 import { useProfileCardData } from '@/hooks/use-profile-card-data';
 import { MapPin } from 'lucide-react';
@@ -48,26 +50,23 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
       <div className="mhn-network-profile-card">
         {/* Cover Banner */}
         <div className="mhn-network-card-banner">
-          <img 
-            src={resolvedBanner} 
-            alt="Cover" 
+          <FallbackImage
+            src={resolvedBanner}
+            alt="Cover"
+            fill
+            fallbackSrc="/cover.png"
             className="mhn-network-banner-img"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/cover.png';
-            }} 
           />
         </div>
 
         {/* Avatar Circle */}
         <div className="mhn-network-avatar-wrapper">
           <div className="mhn-network-avatar-circle">
-            <img 
-              src={resolvedAvatar} 
-              alt={resolvedName} 
+            <FallbackImage
+              src={resolvedAvatar}
+              alt={resolvedName}
+              fill
               className="mhn-network-avatar-img"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-              }} 
             />
           </div>
         </div>
@@ -88,13 +87,13 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
           {/* Team Badge Pill (Only shown for Player or Coach if a team was added, never for Parent) */}
           {effectiveTeamName && (
             <div className="mhn-profile-team-badge">
-              <img 
-                src={teamLogo} 
-                alt={effectiveTeamName} 
+              <FallbackImage
+                src={teamLogo}
+                alt={effectiveTeamName}
+                width={21}
+                height={25}
+                fallbackSrc="/HC.png"
                 className="mhn-profile-team-logo"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/HC.png';
-                }}
               />
               <span className="mhn-profile-team-name">{effectiveTeamName}</span>
             </div>
@@ -126,7 +125,7 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
             className="mhn-manage-menu-item"
           >
             <div className="mhn-manage-icon-box">
-              <img src="/connections.png" alt="Connections" className='small-icon'/>
+              <Image src="/connections.png" alt="Connections" width={26} height={26} className='small-icon'/>
             </div>
             <span className="mhn-manage-menu-text">Connections</span>
           </Button>
@@ -137,7 +136,7 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
             className="mhn-manage-menu-item"
           >
               <div className="mhn-manage-icon-box">
-              <img src="/groups.png" alt="Connections" className='small-icon'/>
+              <Image src="/groups.png" alt="Groups" width={26} height={26} className='small-icon'/>
             </div>
             <span className="mhn-manage-menu-text">Groups</span>
             <span className="mhn-manage-menu-badge">1</span>
@@ -149,7 +148,7 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
             className="mhn-manage-menu-item"
           >
              <div className="mhn-manage-icon-box">
-              <img src="/events.png" alt="Connections" className='small-icon'/>
+              <Image src="/events.png" alt="Events" width={26} height={26} className='small-icon'/>
             </div>
             <span className="mhn-manage-menu-text">Events</span>
             <span className="mhn-manage-menu-badge">1</span>

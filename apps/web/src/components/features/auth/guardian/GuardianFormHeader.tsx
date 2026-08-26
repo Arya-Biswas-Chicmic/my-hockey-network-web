@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { GUARDIAN_APPROVAL_STRINGS } from '@my-hockey-network/shared';
 import { FamilyBadgeIcon } from '@/components/features/auth/guardian/GuardianIcons';
 
@@ -6,10 +7,12 @@ export const GuardianFormHeader: React.FC = () => {
   return (
     <>
       <div className="guardian-badge-wrapper">
-        
-         <img
+
+         <Image
         src="/girdian.png"
         alt="parent-icon"
+        width={96}
+        height={96}
         className="guardian-parent-icon"
       />
       </div>

@@ -1,5 +1,7 @@
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
+import Image from 'next/image';
+import { FallbackImage } from '@/components/ui/fallback-image';
 import React, { useState } from 'react';
 import { Plus, Search, Settings, Smile, Upload } from 'lucide-react';
 
@@ -82,13 +84,12 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
       <div className="mhn-chat-conv-header">
         <div className="mhn-conv-user-group">
           <div className="mhn-conv-avatar-box">
-            <img
+            <FallbackImage
               src={avatarUrl}
               alt={title}
+              fill
+              fallbackSrc="/CoachTeam.png"
               className="mhn-conv-avatar-img"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/CoachTeam.png';
-              }}
             />
           </div>
           <div className="mhn-conv-meta">
@@ -120,13 +121,11 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
         {DEFAULT_MESSAGES_FRIDAY.map((msg) => (
           <div key={msg.id} className="mhn-message-row">
             <div className="mhn-msg-avatar-box">
-              <img
+              <FallbackImage
                 src={msg.senderAvatar}
                 alt={msg.senderName}
+                fill
                 className="mhn-msg-avatar-img"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-                }}
               />
             </div>
 
@@ -161,13 +160,11 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
         {messagesToday.map((msg) => (
           <div key={msg.id} className="mhn-message-row">
             <div className="mhn-msg-avatar-box">
-              <img
+              <FallbackImage
                 src={msg.senderAvatar}
                 alt={msg.senderName}
+                fill
                 className="mhn-msg-avatar-img"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-                }}
               />
             </div>
 
@@ -231,7 +228,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
           className="mhn-btn-chat-send"
           aria-label="Send message"
         >
-          <img src="/send.png" alt="Send message" />
+          <Image src="/send.png" alt="Send message" width={18} height={18} />
         </Button>
       </div>
     </div>

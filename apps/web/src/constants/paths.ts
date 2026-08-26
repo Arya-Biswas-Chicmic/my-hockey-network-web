@@ -1,10 +1,11 @@
 export const paths = {
-  home: '/',
+  home: '/home',
   network: '/network',
   events: '/events',
   messaging: '/messaging',
   notifications: '/notifications',
   profile: '/profile',
+  profileGuardianRequests: '/profile/guardian-requests',
   settings: '/settings',
   supervision: '/supervision',
   eventDetail: '/event-detail',

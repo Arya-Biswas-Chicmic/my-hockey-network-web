@@ -5,11 +5,11 @@
   "types": "src/index.ts",
   "private": true,
   "dependencies": {
-    "@my-hockey-network/auth": "*",
-    "@my-hockey-network/constants": "*",
-    "@my-hockey-network/core": "*",
-    "@my-hockey-network/design-system": "*",
-    "@my-hockey-network/types": "*",
-    "@my-hockey-network/utils": "*"
+    "@my-hockey-network/auth": "workspace:*",
+    "@my-hockey-network/constants": "workspace:*",
+    "@my-hockey-network/core": "workspace:*",
+    "@my-hockey-network/design-system": "workspace:*",
+    "@my-hockey-network/types": "workspace:*",
+    "@my-hockey-network/utils": "workspace:*"
   }
 }

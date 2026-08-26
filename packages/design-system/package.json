@@ -5,6 +5,6 @@
   "types": "src/index.ts",
   "private": true,
   "dependencies": {
-    "@my-hockey-network/design-tokens": "*"
+    "@my-hockey-network/design-tokens": "workspace:*"
   }
 }

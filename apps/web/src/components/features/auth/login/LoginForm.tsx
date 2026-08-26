@@ -1,10 +1,12 @@
 import { Button } from '@/components/common/Button';
-import { Input } from '@/components/common/FormControls';
 import React from 'react';
 import { Spinner } from '@/components/common/Spinner';
-import { useFormik } from 'formik';
-import { validateLoginForm } from '@/validation/forms';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { loginFormSchema, type LoginFormValues } from '@my-hockey-network/validation';
 import { GoogleIcon } from '@/components/icons/BrandIcons';
+import { Form } from '@/components/ui/form';
+import { FormInput } from '@/components/form/fields/form-input';
 
 interface LoginFormProps {
   onSignIn?: (email: string) => void;
@@ -21,14 +23,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   loading = false,
   errorMessage = null,
 }) => {
-  const formik = useFormik({
-    initialValues: { email: '' },
-    validate: validateLoginForm,
-    onSubmit: ({ email }) => onSignIn?.(email.trim()),
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginFormSchema),
+    mode: 'onChange',
+    defaultValues: { email: '' },
   });
-
-  const activeError =
-    ((formik.touched.email || formik.submitCount > 0) ? formik.errors.email : null) || errorMessage;
+  const handleSubmit = form.handleSubmit(({ email }) => onSignIn?.(email.trim()));
 
   return (
     <div className="onboarding-form">
@@ -37,28 +37,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <p className="onboarding-subtitle">Enter your email to receive a 6-digit code to log in to your account.</p>
       </div>
 
-      <form onSubmit={formik.handleSubmit} className="auth-form-stack" noValidate>
-        <div className="auth-form-group">
-          <label className="auth-label" htmlFor="loginEmail">
-            Email Address
-          </label>
-          <div className="auth-input-wrapper">
-            <Input
-              id="loginEmail"
-              type="text"
-              className={`auth-input ${activeError ? 'mhn-input-invalid' : ''}`}
-              placeholder="enter email address"
-              {...formik.getFieldProps('email')}
-            />
-          </div>
-
-          {/* Standardized Edit Profile Reference Error UI */}
-          {activeError && (
-            <span className="mhn-edit-profile-field-error">
-              <span>{activeError}</span>
-            </span>
-          )}
-        </div>
+      <Form methods={form} onSubmit={handleSubmit} className="auth-form-stack" noValidate>
+        <FormInput<LoginFormValues, 'email'>
+          name="email"
+          label="Email Address"
+          id="loginEmail"
+          type="email"
+          placeholder="enter email address"
+          isEmailInput
+        />
+        {errorMessage && !form.formState.errors.email ? (
+          <span className="mhn-edit-profile-field-error"><span>{errorMessage}</span></span>
+        ) : null}
 
         <Button
           type="submit"
@@ -74,7 +64,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             'Sign In'
           )}
         </Button>
-      </form>
+      </Form>
 
       <Button
         type="button"
@@ -86,7 +76,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       </Button>
 
       <div className="auth-footer-text mhn-auth-footer-margin">
-        <span>Don't have an account? </span>
+        <span>Don&apos;t have an account? </span>
         <Button
           type="button"
           className="auth-primary-link"

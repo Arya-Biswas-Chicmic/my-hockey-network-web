@@ -29,7 +29,7 @@ export const CreatePlayerProtectStep: React.FC<CreatePlayerProtectStepProps> = (
 }) => {
   return (
     <div className="mhn-parent-step-container mhn-parent-step-container-max440">
-      <h2 className="mhn-parent-step-title">Protect {playerNameFirst}'s profile</h2>
+      <h2 className="mhn-parent-step-title">Protect {playerNameFirst}&apos;s profile</h2>
       <p className="mhn-parent-step-desc">You can change these settings anytime.</p>
 
       {/* Profile Visibility Cards */}
@@ -46,7 +46,7 @@ export const CreatePlayerProtectStep: React.FC<CreatePlayerProtectStepProps> = (
             <div>
               <div className="mhn-parent-card-title-lg">Private</div>
               <div className="mhn-parent-card-sub-sm">
-                Only approved hockey relationships can see {playerNameFirst}'s profile.
+                Only approved hockey relationships can see {playerNameFirst}&apos;s profile.
               </div>
             </div>
           </div>

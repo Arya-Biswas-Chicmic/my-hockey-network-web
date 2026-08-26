@@ -130,6 +130,110 @@ Last reviewed: 2026-08-26
   on Home and Profile after edit/delete actions.
 - Fixed `showErrorToast` to accept a feature-safe fallback message as the second argument instead of
   misusing the action-label slot.
+- Executed the Next.js migration on branch `changes/next-js-update`: `apps/web` now runs on Next.js
+  16 App Router, React 19, pnpm workspaces (one root `pnpm-lock.yaml`), Tailwind 4, and project-owned
+  shadcn-style primitives (`components/ui`, `components/form/fields`). Vite, React Router, Formik,
+  and npm are fully removed from `apps/web`. Route groups `(auth)`/`(authenticated)` exist with
+  client-side `AuthenticatedGuard`/`GuestGuard`/`ParentRoleGuard`. Web authentication now runs through
+  a same-origin BFF proxy (`apps/web/src/app/api/backend/[...path]/route.ts`) that forwards to
+  `API_BASE_URL` and rewrites `Set-Cookie` for the browser's own origin, replacing the prior
+  cross-origin cookie/CORS model. `apps/web/src/pages` was renamed to `apps/web/src/screens` because
+  Next.js reserves `pages/` for the legacy Pages Router and the name conflicted with App Router
+  route discovery during `next build`. This work had not previously been recorded here; the
+  `NEXTJS_MIGRATION_PLAN.md`/`FRONTEND_ARCHITECTURE.md`/`PROJECT_CONTEXT.md`/`AGENTS.md`/
+  `FRONTEND_DEVELOPMENT_GUIDELINES.md`/`NAVIGATION.md`/`codebase_architecture_guide.md`/
+  `COMPONENT_CATALOG.md`/`DATA_FETCHING_AND_AUTH.md`/`ENVIRONMENT_CONFIGURATION.md`/`README.md`
+  "paused"/Vite/npm/React Router/Formik framing has been corrected to match.
+- Fixed the migration's build-blocking gaps found on review: `apps/web/package.json` was missing
+  `@my-hockey-network/validation` and `@my-hockey-network/constants` as declared workspace
+  dependencies (pnpm only symlinks declared deps, unlike npm's hoisting), which was the root cause of
+  ~45 cascading `tsc` errors including apparently-unrelated ones (e.g. `EditProfileFormData` losing
+  all its fields). Also added the missing `js-cookie`/`@types/js-cookie` dependency used by
+  `utils/storage.ts`, and removed a dead `import Svg, { Path } from 'react-native-svg'` from a
+  web-only icon component (`RequestSentIcons.tsx`) — the file already used plain `<svg>`/`<path>`
+  markup; the import was unused and violated the web/mobile presentation boundary. `pnpm typecheck`
+  and `pnpm build:web` now pass cleanly.
+- Fixed 3 failing tests surfaced by the above: a stale `'EVERYONE'` literal in
+  `validation.test.ts` that should have been `CreatePostAudienceEnum.EVERYONE` (`'Everyone'`); a
+  required-email-schema check-ordering bug in `packages/validation/src/forms.ts` where
+  `emailSchema.min(1, msg)` reported the generic "Enter a valid email address." message instead of
+  the field's required message on empty input (rewritten as a `requiredEmailSchema()` helper using
+  `superRefine`, matching the existing pattern used elsewhere in the file); and a `PostCommentSection`
+  integration test missing a `QueryClientProvider` wrapper after the component adopted
+  `useQueryClient`.
+- Found and fixed a real duplicate-error-rendering bug (not just a test issue) in
+  `GuardianApprovalForm`: it hand-rolled its own error tooltip while also rendering the shared
+  `FormMessage` (via `FormInput`), so the same validation message appeared twice in the DOM —
+  an accessibility issue and a direct violation of the "one reusable error pattern" rule in
+  `FRONTEND_ARCHITECTURE.md` §8.2. Added an opt-in `hideMessage` prop to `FormInput` (default
+  `false`, so all other existing call sites are unaffected) and set it on `GuardianApprovalForm`'s
+  field so its custom tooltip is the sole error owner.
+- Added the previously-missing `apps/web/src/app/global-error.tsx` root error boundary (Next.js only
+  invokes route-level `error.tsx` for failures inside the root layout; a separate `global-error.tsx`
+  is required to catch failures in the root layout itself), built from the shared `Button` and
+  Tailwind classes rather than inline styles/a raw `<button>`, and importing global CSS directly
+  since this boundary replaces the root layout and does not inherit its providers.
+- Fixed `scripts/check-security-baseline.mjs` to exclude the `.next/` build output directory from the
+  obfuscation/fetch scan (it already excluded `dist`/`build`, an oversight from the prior Vite setup
+  which used `dist`); it was flagging compiled bundles and the BFF proxy's own necessary `fetch` call
+  as violations even though the proxy route was already correctly allowlisted in source. Also removed
+  a stale `apps/web/src/validation/forms.ts` entry from `vitest.config.mts`'s coverage `include` list
+  (the file was deleted during the migration; its coverage is already tracked via
+  `packages/validation/src/index.ts`, which remained in the list).
+- Verified (did not need to change) that minor-account supervision permissions fail closed: `useAuth`
+  returns `false` for `hasSupervisionControl` while permissions are loading or unavailable
+  (`auth-context.tsx`), rather than defaulting to allowed.
+- Added `.github/workflows/ci.yml` running the full `pnpm verify` chain (package-manager, docs,
+  security, component-reuse, typecheck, lint, coverage, build) on push/PR — there was previously no
+  CI pipeline.
+- Found and fixed that `apps/web/eslint.config.js` was never migrated off Vite: it still imported
+  `eslint-plugin-react-refresh` (a Vite-only plugin) and `eslint-plugin-react-hooks` directly (an
+  undeclared dependency, so lint crashed with `Cannot find package 'eslint-plugin-react-hooks'`), and
+  never extended `eslint-config-next` even though it was already a declared dependency. Rewrote it to
+  extend `eslint-config-next/core-web-vitals` (matching the reviewed Admin Panel pattern) while
+  preserving the project's existing rule overrides (`no-explicit-any: error`, the `react-hooks/
+  exhaustive-deps`/`immutability`/`set-state-in-effect` allowances). This also surfaced a real ESLint
+  10 vs. `eslint-config-next@16.2.11` incompatibility (`scopeManager.addGlobals is not a function`);
+  pinned `eslint` to `^9.30.1` in `apps/web/package.json` to match the Admin Panel's known-working
+  version, and removed the now-unused `@eslint/js`, `globals`, and `typescript-eslint` devDependencies
+  that only the old Vite config needed.
+- With lint actually running for the first time since migration began, fixed the real issues it
+  surfaced: 16 `react/no-unescaped-entities` errors (raw `'`/`"` characters in JSX text across 8
+  files — escaped to `&apos;`/`&quot;`), missing `alt` attributes on `<img>` elements, one anonymous
+  default export in `postcss.config.mjs`, and a false-positive `jsx-a11y/alt-text` on a Lucide
+  `Image` icon component being misidentified as an `<img>`/`next/image` element (renamed the import
+  to `ImageIcon` to remove the name collision).
+- Migrated every remaining raw `<img>` element (84, across 31 files under `apps/web/src/components`
+  and `apps/web/src/screens`) to `next/image`, following the reviewed Admin Panel's own pattern
+  (`next/image` everywhere; raw `<img>` reserved for local/object-URL upload previews). Added
+  `apps/web/src/components/ui/fallback-image.tsx` (`FallbackImage`) — a shared component that
+  replaces the old per-call-site `onError={(e) => (e.target as HTMLImageElement).src = '...'}`
+  DOM-mutation pattern with a declarative `fallbackSrc` (swap to a placeholder) or `hideOnError`
+  (render nothing) prop. Added `images.remotePatterns: [{ protocol: 'https', hostname: '**' }]` to
+  `next.config.ts` (uploaded media resolves to a variable, backend-controlled signed-storage host,
+  matching Admin's identical wide-open pattern for the same reason) and `position: relative` to 16
+  avatar/media wrapper CSS classes in `index.css` that needed it for `next/image`'s `fill` mode.
+  Preserved the two genuinely local-preview cases (`CreatePostModal.tsx`'s `data:` URI post-image
+  preview, `EditProfileModal.tsx`'s `URL.createObjectURL` avatar preview) as raw `<img>` with an
+  `eslint-disable-next-line @next/next/no-img-element` comment explaining why, matching Admin's own
+  documented exception in `form-image-upload.tsx`. Fixed two latent bugs found while migrating: two
+  `alt="Connections"` copy-paste duplicates on the Groups/Events sidebar icons in
+  `ManageNetworkCard.tsx`, and an `alt="location"` duplicate on the calendar icon in
+  `event-detail-page.tsx`. `pnpm lint:check` now runs at `--max-warnings=0` (tightened back down from
+  the temporary 84 used mid-migration) — matching Admin Panel's own strict threshold — with zero
+  warnings. Verified with a real network capture against a local production build
+  (`next start`) that `next/image` correctly serves both a `fill`-mode hero illustration and a
+  fixed-size icon (`/_next/image?url=...` → `200 OK`) and renders pixel-correct with no console
+  errors. See `docs/COMPONENT_CATALOG.md` for the resulting media-component conventions.
+- Found and fixed the same undeclared-workspace-dependency class of bug on mobile:
+  `apps/mobile/src/hooks/use-feed-permissions.ts` imports `@my-hockey-network/domain`, which was
+  never declared in `apps/mobile/package.json`, so `pnpm typecheck` failed for the mobile app the
+  same way `apps/web` did before its earlier fix in this same session.
+- Confirmed the full quality chain is green end-to-end for the first time since migration work
+  started: `pnpm verify` (package-manager, docs, security, component-reuse, typecheck for both
+  `apps/web` and `apps/mobile`, lint, coverage, and production build) passes with exit code 0.
+  `pnpm test:coverage`: 93/93 tests passing, 92.4%/85.77%/97.22%/93.18%
+  statements/branches/functions/lines.
 
 
 
@@ -138,8 +242,195 @@ Last reviewed: 2026-08-26
 
 
 
+- Verified, on explicit request: (1) the only raw inline SVG in `apps/web` lives in the two
+  allowlisted brand/illustration icon files (`GuardianIcons.tsx`, `RequestSentIcons.tsx`), not
+  scattered in feature/page code — compliant, not a defect. (2) Zero relative (`../`/`./`) imports
+  exist anywhere in `apps/web/src`; every import already uses the `@/` alias. (3) Zero inline
+  `style={{...}}` objects exist in `apps/web/src` outside the new crop dialog's ref-based DOM
+  mutation (documented above, not a JSX style prop). (4) No route currently uses ISR — only
+  `force-dynamic` on the `(authenticated)` layout; no `revalidate` export exists anywhere. The app
+  currently has no genuinely public content route (team/event/venue listing, etc.) that would
+  benefit from it — only the auth-transition screens (`onboarding`, `guardian`, `sent`), which are
+  already correctly statically optimized without needing an explicit `revalidate`. Applying ISR
+  meaningfully needs a decision on which future public route(s) it targets; see
+  `WEB_SEO_AND_RENDERING_STRATEGY.md`.
+- Added a shared image crop-on-upload feature: `apps/web/src/components/ui/image-crop-modal.tsx`
+  (`ImageCropModal`, Canvas/pointer-based, no external dependency) and
+  `apps/web/src/hooks/use-image-crop.tsx` (`useImageCrop`, a promise-based wrapper for inserting
+  cropping into an existing file-select handler with one `await`). Wired into the avatar upload in
+  both `EditProfileModal.tsx` and `screens/profile-page.tsx` (circular) and the cover upload in
+  `screens/profile-page.tsx` (3:1 rect). Added `apps/web/src/components/ui/slider.tsx` (`Slider`) as
+  the project's range-input primitive backing the crop dialog's zoom control, and allowlisted both
+  new primitive files in `scripts/check-component-reuse.mjs`. Deliberately not wired into
+  `CreatePostModal.tsx`'s post-image attachment — see `docs/COMPONENT_CATALOG.md` "Image
+  crop-on-upload" for why forcing it there is a product decision, not a mechanical one.
 
+- Implemented real ISR/metadata/public-route SEO on explicit request: added `app/(public)/page.tsx`
+  (marketing landing, `revalidate: 3600`, `robots: index/follow` overriding the root layout's
+  default noindex) and `app/(public)/players/[id]/page.tsx` (public profile, `revalidate: 300`,
+  per-profile `generateMetadata`/OG tags, anonymous credential-free server fetch via new
+  `infrastructure/server/public-profile.ts`). Moved the authenticated home feed from `/` to `/home`
+  (`constants/paths.ts` is the single source of truth all navigation already derived from, so this
+  was a one-line change plus the file move). Updated `robots.ts`/`sitemap.ts` accordingly. Added a
+  core shadcn-style `@theme` token set to `index.css` (Tailwind 4 CSS-first, no JS config) — this
+  also fixes a real pre-existing bug where `error.tsx`/`global-error.tsx`/`not-found.tsx` referenced
+  `bg-background`/`text-foreground`/etc. classes that resolved to nothing because no token set was
+  ever defined. Split all 13 route `page.tsx` files (client components calling hooks) into a thin
+  Server Component `page.tsx` (exports `metadata`, e.g. distinct browser-tab titles) plus a sibling
+  `route-client.tsx` carrying the unchanged client logic — the standard Next.js pattern for giving a
+  client-rendered route real metadata. Fixed the pre-existing global "server down" overlay (any
+  `/auth/me` 5xx blocked the entire app) to skip the new public routes, since a search crawler or
+  first-time visitor must see the marketing page regardless of an unrelated auth-check failure.
+  **Not** enabled: ISR/public indexing on any authenticated route — those correctly remain
+  dynamic/no-store per the existing security rule (never cache personalized content); "add metadata
+  everywhere" was satisfied via titles, not by making private routes cacheable.
+- Verified the Events feature (`screens/events-page.tsx`) is 100% hardcoded sample data with no
+  backend endpoint (`API_ENDPOINTS` has no `EVENTS` entry) — a public/ISR events page was requested
+  but deliberately not built, since it would put fabricated data behind real SEO. Needs the events
+  feature connected to a real backend before a public version is meaningful.
+- Added backend-issued OTP auto-prefill for login/signup/resend (`OnboardingModal.tsx` +
+  `VerifyEmailForm.tsx`), reading `OtpRequestResponse.devCode`/`code` — a field the contract already
+  declared for use while no email service is wired up — into the OTP field so testers only need to
+  press Confirm. Has no effect once the backend stops returning that field for real email delivery.
 
+- Completed Phase 2 (shared modal primitive), Phase 3 (already-complete architecture foundation
+  audit — no gaps found requiring rework), and a scoped slice of Phase 4 (feed/post query and
+  mutation hooks layer) from the 9-phase implementation plan. Added
+  `apps/web/src/components/ui/modal.tsx` (`Modal`) — the single overlay/Escape/click-outside/focus
+  dialog primitive — and migrated `DeleteCareerModal.tsx` and `ImageCropModal.tsx` onto it as proof;
+  other existing `.mhn-modal-overlay` call sites migrate opportunistically as they're touched, not in
+  one sweeping pass. Added `apps/web/src/hooks/use-post-mutations.ts`
+  (`useCreatePostMutation`/`useLikePostMutation`/`useUnlikePostMutation`/`useUpdatePostMutation`/
+  `useDeletePostMutation`) and `apps/web/src/hooks/use-feed-query.ts` (`useFeedQuery`,
+  `feedQueryKey`) as the `Endpoints → API services → query/mutation hooks → components` tier for
+  feed/post actions. Wired `useCreatePostMutation` into `screens/home-page.tsx`'s `handleCreatePost`
+  and `useLikePostMutation`/`useUnlikePostMutation`/`useUpdatePostMutation`/`useDeletePostMutation`
+  into `FeedPostCard.tsx`'s like, edit, delete, and undo-repost actions, in every case preserving the
+  existing optimistic local-state update/rollback and error handling — only the HTTP call itself
+  moved into the mutation hook, whose `onSuccess` now also invalidates `QueryKeys.FEED_POSTS`.
+  Corrected `home-page.tsx`'s imperative feed fetch to build its cache key via the same exported
+  `feedQueryKey(...)` helper `useFeedQuery` uses, instead of an ad hoc string key — this also fixed a
+  real pre-existing bug where post-create's `removeQueries`/`invalidateQueryPrefix` calls (targeting
+  `QueryKeys.FEED_POSTS`) never actually matched the feed's old string-based cache key, so a
+  same-window re-fetch could silently return stale cached results. Declarative `useFeedQuery` itself
+  remains unadopted by `home-page.tsx`'s render path (the raw-item → `FeedPostProps` mapping, search
+  debounce, and silent-refresh behavior stay on the imperative `fetchFeedPosts`) — the two now share
+  one cache identity, so this is a naming/wiring difference, not a functional gap. Confirmed no
+  `axios` anywhere in the workspace and only 3 allowlisted raw `fetch()` call sites (BFF proxy route,
+  public-profile server read, direct-to-signed-URL media upload) — all other server reads/writes in
+  components go through TanStack Query (`useQuery`/`useMutation`) backed by the shared API client.
+- Audited Phase 5 (auth/cookies/routing) against its checklist: same-origin BFF proxy, httpOnly
+  cookies (JS never reads them), in-memory CSRF, and mobile on React Navigation were already correct.
+  `AuthenticatedGuard`/`GuestGuard`/`ParentRoleGuard` already fail closed (render a skeleton, not
+  protected content) while `!hasBootstrapped`. Added missing coverage:
+  `apps/web/src/components/routing/__tests__/guards.test.tsx` (9 tests) exercises fail-closed
+  rendering, the onboarding/home redirects (including a session-expiry-shaped case — bootstrapped but
+  no longer authenticated), the `returnTo` query param, and both `ParentRoleGuard` role-detection
+  paths. **Confirmed still open, not attempted**: server-side/session-aware route authorization at
+  the route or data boundary (documented in `DATA_FETCHING_AND_AUTH.md`'s "Gap" note and the
+  Maintainability backlog below) — the backend's session-cookie name isn't part of this codebase's
+  contract, so a real server-side check means either a backend-provided introspection endpoint or a
+  documented cookie name; guessing one in Next.js Middleware without a live backend to verify against
+  risks breaking login for every user, so it was left as the same open item rather than guessed at.
+- Audited Phase 6 (post flow and API defects) against its checklist and found it already resolved by
+  earlier work plus this pass's Phase 4 wiring, not a fresh gap: `packages/core/src/api/postsApi.ts`
+  already coalesces `likePost`/`unlikePost`'s response with `?? { success: true }` (the "returning
+  undefined" defect), `normalizeFeedResponse`/`getComments`/`addComment` already tolerate multiple
+  backend response shapes, and `packages/api-client/src/index.ts`'s `notifyServerDown` already
+  early-returns for every non-GET method with an explicit comment explaining why — a failed
+  like/comment/post mutation surfaces as a local toast, never the app-replacing server-down screen.
+  Guardian approval for posts/comments/reactions was already fully implemented (see the dedicated
+  entry above). This pass's contribution is the last unchecked item: every post mutation now
+  invalidates the `QueryKeys.FEED_POSTS` cache on success. The specific runtime defects the plan named
+  (500s while liking, 502s on post/profile requests) describe live backend behavior this environment
+  cannot reproduce or confirm against — the client-side handling for each is in place and tested, but
+  treat backend-side resolution as unverified until checked against a real backend.
+- Audited Phase 7 (styling/theme/layout) against its checklist: Tailwind 4 `@theme` tokens, Lucide
+  replacing raw SVG (enforced by `pnpm components:check`), separate web/mobile presentation (also
+  enforced), and the home page's fixed left/right columns with center-only scroll
+  (`lg:overflow-hidden` asides, `lg:overflow-y-auto` center section in `screens/home-page.tsx`) were
+  already done. **Not attempted, left as backlog**: reducing `index.css`'s 226 `!important`
+  declarations across ~13,970 lines. This is a real, large, purely-visual refactor with no automated
+  visual-regression tooling in this repository to verify against — attempting it in this pass would
+  trade a big, hard-to-verify diff for a checklist tick, not an actual improvement. A full
+  responsiveness/keyboard-nav/accessibility audit is likewise unattempted beyond the form-level a11y
+  check already done in Phase 3 and `Modal`'s focus/Escape handling; treat it as Phase 8 (testing)
+  scope, not folded into this pass.
+- Found and fixed a real, previously-hidden bug while validating Phase 8 against a live dev server:
+  `apps/web/.env.local` still had the pre-migration `VITE_API_BASE_URL` variable name — the Next.js
+  server (`infrastructure/server/environment.ts`) only reads `API_BASE_URL`, so every backend-proxied
+  request has been throwing `Missing API_BASE_URL` in local dev since the Vite migration. Fixed the
+  variable name (same backend URL) and added the missing `NEXT_PUBLIC_SITE_URL`.
+  `docs/AGENTS.md` — the mandatory pre-implementation reading list — had the same stale variable name
+  and is the likely source of the bug; corrected there too, along with two other stale claims in the
+  same document (the route-group list was missing `(public)`, and the "only one allowlisted native
+  fetch" claim was outdated now that three are allowlisted). Confirmed against the now-reachable
+  backend: the guest sign-in form at `/onboarding` renders correctly end to end.
+- Completed Phase 8 (testing/quality gates): confirmed `@typescript-eslint/no-explicit-any` and the
+  component-reuse checker both already enforce no explicit `any`; security-baseline and
+  component-reuse already enforce no hard-coded API origins, no duplicate raw controls, and no
+  direct feature-level `fetch()`. Added the two categories of test coverage this checklist still
+  needed: `apps/web/src/hooks/__tests__/use-post-mutations.test.tsx` and `use-feed-query.test.tsx`
+  (13 tests covering the mutation/query hook layer built in Phase 4 — media-upload orchestration,
+  feed-cache invalidation, error surfacing, and `feedQueryKey`'s cache-sharing behavior), and
+  Playwright infrastructure: `apps/web/playwright.config.ts`,
+  `apps/web/e2e/public.spec.ts` (6 guest-only smoke tests — marketing page, `robots.txt`,
+  `sitemap.xml`, 404, onboarding form, guard redirect — verified passing live against both the real
+  backend and a fake/unreachable one, and wired into `.github/workflows/ci.yml` after the build step),
+  and `apps/web/e2e/authenticated-flow.spec.ts` (the full login → feed → post → like → comment →
+  logout journey the plan named, authored and ready but gated behind `E2E_TEST_EMAIL`/
+  `E2E_ALLOW_LIVE_WRITES=1` — see `apps/web/e2e/README.md` — since running it writes real data to
+  whatever backend it targets and this environment has no dedicated CI test account). Excluded
+  `apps/web/e2e/**` from Vitest's own test discovery (`vitest.config.mts`), which had started trying
+  to collect Playwright's spec files as unit tests and failing.
+- While live-verifying Phase 8, found and fixed two small pre-existing bugs surfaced by the new
+  `public.spec.ts` suite and a manual pass: `app/robots.ts` never emitted a `Sitemap:` directive
+  (added, pointing at `NEXT_PUBLIC_SITE_URL`/sitemap.xml — a real crawler-discovery gap, not just a
+  test nicety), and the public landing page's own `title` metadata repeated "My Hockey Network"
+  on top of the root layout's `%s | My Hockey Network` template, rendering a duplicated brand name in
+  the browser tab/SERP snippet — every other route's metadata already followed the short-title
+  convention the template expects; this was the one outlier. Also fixed a `next/image` aspect-ratio
+  console warning on that page's logo (Tailwind's preflight `img { height: auto }` was overriding one
+  of the two explicit dimension props; added matching `h-[37px] w-[140px]` utility classes).
+- Completed Phase 9 (documentation/release) for the items verifiable from this pass: corrected the
+  stale claims in `docs/AGENTS.md` described above, documented the Playwright suite
+  (`apps/web/e2e/README.md`), and updated this file and `docs/COMPONENT_CATALOG.md` alongside every
+  change rather than after. Confirmed Husky's pre-commit hook already runs its checks through `pnpm`
+  and commit-msg already runs commitlint (`.commitlintrc.json` exists; `@commitlint/cli` doesn't need
+  `pnpm` to invoke a local script directly with `node`, which is what it does). `pnpm verify` passes
+  end-to-end after all of the above (see the updated count directly below).
+- Closed the server-side route-authorization open item as far as it can go from this codebase:
+  added `apps/web/src/proxy.ts`, Next.js 16's Middleware replacement (`middleware.ts` is deprecated;
+  confirmed via the dev-server deprecation warning and the bundled Next.js docs). Deliberately built
+  as an *optimistic* cookie-presence check rather than a real backend call, per Next.js's own
+  guidance (Proxy runs on every navigation including prefetches). Verified with `curl`: an
+  unauthenticated request to `/home` gets an immediate server-side `307` to `/onboarding`, before any
+  client code runs; a request carrying any cookie passes through un-redirected, leaving the real
+  validity check to `AuthenticatedGuard` as designed. Attempting to fully verify the authenticated
+  pass-through path with a live login (`saksham.garg@chicmicstudios.in`, OTP auto-prefill) surfaced a
+  backend contract gap, not a frontend defect: `POST /auth/otp/verify` returns bearer tokens with no
+  `Set-Cookie`/`csrfToken` even with the correct `X-Client-Type: web` header — see
+  `docs/DATA_FETCHING_AND_AUTH.md` for the full reproduction. No web user can complete a real
+  cookie-based session against this backend deployment right now; this needs a backend-side fix.
+- Investigated Phase 7's CSS `!important`/`index.css` backlog item on request; left as documented
+  backlog per explicit direction — no visual-regression tooling exists in this repository to verify a
+  226-declaration change safely.
+- Implemented the directional guardian relationship flow after re-auditing existing services and
+  components: `/profile/guardian-requests` is protected by the new `MinorPlayerGuard` and consumes
+  parent-to-child guardian invites; parent-only Supervision consumes child-to-parent guardian
+  requests. Both surfaces reuse `GuardianRelationshipRequestCard`, `ApprovalCodeModal`, existing
+  feedback primitives, and direction-specific TanStack Query hooks/cache keys. Supervision is now
+  hidden from non-parent Header menus. Profile editing is restricted to the authenticated user's own
+  profile because the existing `updateAuthProfile` endpoint cannot safely edit a viewed/managed
+  child. Stabilized the one-shot `/auth/me` bootstrap using refs and forced the post-OTP `/auth/me`
+  request so a completed guest bootstrap cannot suppress login hydration. Added role/guard, query,
+  reusable-card, and auth-bootstrap regression tests. Removed the unused `apps/web/src/services`
+  facade, which duplicated the already-tested relationship/supervision operations in `packages/core`.
+- Removed the unapproved public marketing landing page. `/` now performs a server redirect directly
+  to `/onboarding`; `GuestGuard` continues authenticated users to `/home`. Removed the now-unused
+  marketing redirect component, removed `/` from crawl/sitemap ownership, and changed Playwright
+  smoke coverage to assert the root-to-sign-in flow. Public profiles remain separately available at
+  `/players/[id]`.
 
 ## Current quality gates
 
@@ -147,20 +438,43 @@ Last reviewed: 2026-08-26
 - TypeScript and lint must pass for both applications.
 - Shared executable code must exceed 80% statements, branches, functions, and lines.
 - Production web build must pass.
-- Web/native UI ownership and npm-only dependency management checks must pass.
+- Web/native UI ownership and pnpm-only dependency management checks must pass.
 
-Latest measured enforced-code coverage: 93.07% statements, 85.76% branches, 97.56% functions, and
-93.84% lines. The suite currently contains 87 tests across 17 test files. Web form validation,
-secure storage behavior, query behavior, and route/form integration are now represented in addition
-to shared logic. The latest web, Android, and iOS production bundle commands pass.
+Latest measured enforced-code coverage: 92.59% statements, 85.99% branches, 97.5% functions, and
+93.33% lines. The Vitest suite contains 126 tests across 24 test files, plus 6 Playwright smoke tests
+(`apps/web/e2e/public.spec.ts`, run separately via `pnpm test:e2e`, not counted in the Vitest total).
+Web form validation, secure storage behavior, query/mutation hook behavior, route-guard
+fail-closed/redirect behavior, and route/form integration are represented in addition to shared
+logic. The latest web, Android, and iOS production bundle commands pass. `pnpm verify` passes
+end-to-end.
 
 ## Maintainability backlog
 
-- Split the largest presentation files (`profile-page`, `supervision-page`, `EditProfileModal`) without
-  creating duplicate primitives.
+- Split the largest presentation files (`profile-page.tsx` and `supervision-page.tsx`, each ~1,800
+  lines with 30-47 `useState` calls) without creating duplicate primitives.
+- Get the backend to actually issue an httpOnly session cookie (+ `csrfToken` in the verify response
+  body) for `X-Client-Type: web` requests. Live-verified this pass: `POST /auth/otp/verify` returns
+  `200` with `tokenDelivery: "mobile"` and bearer tokens in the body, no `Set-Cookie`, no
+  `csrfToken`, even with the exact header the shared API client sends. Until this is fixed
+  backend-side, no web user can complete a real session — see `docs/DATA_FETCHING_AND_AUTH.md`.
+  `apps/web/src/proxy.ts` (added this pass) and `AuthenticatedGuard` are both correctly built against
+  the documented contract; they cannot be more thoroughly live-verified until the backend matches it.
+- Expand Playwright beyond the guest-only `public.spec.ts` now running in CI: give
+  `authenticated-flow.spec.ts` a CI-owned test account/secret so the full login → feed → post →
+  like → comment → logout journey actually runs there instead of only locally on demand.
+- Re-pin `eslint` to the latest compatible major once `eslint-config-next` supports it without the
+  `scopeManager.addGlobals is not a function` crash seen on ESLint 10.9.1 during this migration pass;
+  currently pinned to `^9.30.1` to match the working Admin Panel baseline.
+- Apply the per-route SEO/rendering classification (SSR/SSG/ISR/dynamic) from
+  `WEB_SEO_AND_RENDERING_STRATEGY.md`; the root layout currently sets `noindex` globally as a safe
+  default rather than a considered per-route decision.
+- Consolidate the compatibility packages (`core`, `shared`, `types`, `constants`, `utils`,
+  `design-system`) into their target owners per `NEXTJS_MIGRATION_PLAN.md`, incrementally and only
+  after each package's import inventory and tests are verified.
+- Remove remaining fabricated/mock production data still present in some feature screens.
+- Reduce `apps/web/src/index.css` (currently ~13,850 lines, 226 `!important` declarations) in favor
+  of Tailwind utilities and component variants as touched screens are refactored.
 - Expand UI integration/e2e coverage as stable Figma screens are implemented.
-- Migrate Expo SDK 54 to a patched SDK in a dedicated native change, then re-run Android/iOS regression tests.
-- Execute the approved Next.js web migration only after the owner explicitly starts it and resolves
-  the kickoff decisions in `NEXTJS_MIGRATION_PLAN.md`.
-- At migration kickoff, create the route inventory, rendering/indexing matrix, dependency decision
-  records, and measured performance/accessibility baselines before converting feature routes.
+- Migrate Expo SDK 54 to a patched SDK in a dedicated native change, then re-run Android/iOS
+  regression tests; remove the unused mobile RTK `fetchBaseQuery` path
+  (`apps/mobile/src/redux/store/api.ts`) in that same change.

@@ -4,6 +4,7 @@ import type {
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from 'react';
+import Image from 'next/image';
 
 import { sanitizeEmailInput, sanitizeNameInput, normalizeNameBlur } from '@my-hockey-network/validation';
 import { FormField } from '@/components/common/FormField';
@@ -174,7 +175,7 @@ export function Dropdown({
             <option key={option.value} value={option.value}>{option.label}</option>
           ))}
         </Select>
-        <img src="/arrowBottom.png" alt="" aria-hidden="true" className="mhn-dropdown-arrow-icon" />
+        <Image src="/arrowBottom.png" alt="" aria-hidden="true" width={16} height={16} className="mhn-dropdown-arrow-icon" />
       </div>
     </FormField>
   );

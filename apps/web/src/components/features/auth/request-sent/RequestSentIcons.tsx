@@ -1,5 +1,4 @@
 import React from 'react';
-import Svg, { Path } from "react-native-svg";
 
 export const RequestSentBadgeIcon: React.FC<{ size?: number }> = ({ size = 36 }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={384} height={386}  >

@@ -37,7 +37,7 @@ Last reviewed: 2026-08-26
   report is 17 Expo/Metro toolchain advisories (9 high, 8 moderate) whose npm-proposed remediation is
   the breaking Expo SDK 54 to 57 upgrade. Do not run `--force`; perform that migration with Expo's SDK
   upgrade tooling and full Android/iOS regression testing in a dedicated change.
-- Raw `console.log` calls are prohibited in production source by `npm run security:check`. Future
+- Raw `console.log` calls are prohibited in production source by `pnpm security:check`. Future
   telemetry must use redacted structured events rather than request/profile payloads.
 - The obfuscation scanner detects suspicious source patterns; it is not a substitute for dependency,
   SAST, secret, or backend security review.

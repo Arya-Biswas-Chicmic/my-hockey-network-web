@@ -24,27 +24,35 @@ Share logic and values, not platform presentation:
 - `apps/mobile`: React Native UI, React Navigation, SecureStore adapter, Expo environment.
 
 Platform UI ownership is strict: web components are web-only and mobile components are mobile-only.
-Maximum reuse occurs through platform-neutral packages, not shared JSX. The repository uses npm only
-with one root lockfile. API origins are supplied exclusively through ignored runtime environment
-files or deployment environment variables; no application fallback URL is checked in.
+Maximum reuse occurs through platform-neutral packages, not shared JSX. The repository uses pnpm
+workspaces with one root `pnpm-lock.yaml` (converted from npm as part of the Next.js migration). API
+origins are supplied exclusively through ignored runtime environment files or deployment environment
+variables; no application fallback URL is checked in.
 
 Web and mobile navigation intentionally remain different. Web authentication relies on backend
-httpOnly cookies and keeps CSRF in memory. Mobile credentials are stored only in Expo SecureStore.
-Web server state is managed by TanStack Query; React Router remains responsible for URLs and route
-guards. Shared HTTP behavior uses the injected native-fetch client. Direct feature-level `fetch`
+httpOnly cookies and keeps CSRF in memory, reached through a same-origin Next.js API proxy
+(`apps/web/src/app/api/backend/[...path]/route.ts`) rather than a direct cross-origin browser
+request. Mobile continues to call the backend directly; mobile credentials are stored only in Expo
+SecureStore. Web server state is managed by TanStack Query; Next.js App Router owns URLs and route
+groups. Shared HTTP behavior uses the injected native-fetch client. Direct feature-level `fetch`
 and Axios are prohibited.
 
-Web forms use Formik for interaction state and centralized validators rather than page-local regular
-expressions. Authenticated page modules are lazy loaded. The desktop Home shell keeps side content
-in place while the center feed owns vertical scrolling; mobile retains document scrolling.
-Application imports use `@/`, explicit `any` is forbidden, and ordinary web UI icons use Lucide.
-Custom SVG is restricted to approved reusable brand/illustration components.
+Web forms use React Hook Form with Zod for interaction state and centralized validators rather than
+page-local regular expressions; Formik has been fully removed. Authenticated routes render under the
+`(authenticated)` route group. The desktop Home shell keeps side content in place while the center
+feed owns vertical scrolling; mobile retains document scrolling. Application imports use `@/`,
+explicit `any` is forbidden, and ordinary web UI icons use Lucide. Custom SVG is restricted to
+approved reusable brand/illustration components.
+
+The web portal has no marketing landing page. The root path `/` redirects to the sign-in/onboarding
+route; authenticated visitors are then redirected by `GuestGuard` to `/home`. Public profile routes
+remain independent SEO surfaces.
 
 New work follows the existing-code-first, single-responsibility, and file-size review rules in
-`docs/FRONTEND_DEVELOPMENT_GUIDELINES.md`. Migration of the web portal to Next.js App Router is an
-approved direction but is paused until the owner explicitly starts implementation. Current code and
-commands remain Vite, React Router, Formik, and npm until the coordinated migration begins. Mobile
-remains Expo with React Navigation.
+`docs/FRONTEND_DEVELOPMENT_GUIDELINES.md`. Migration of the web portal to Next.js App Router is
+authorized and in progress; see `docs/IMPLEMENTATION_STATUS.md` for what is delivered and what
+remains. Do not reintroduce Vite, React Router, Formik, or npm to `apps/web`. Mobile remains Expo
+with React Navigation and is unaffected by the web migration.
 
 The Admin Panel has been reviewed as a Next.js reference. User Panel will align with its successful
 React 19, App Router, Tailwind 4, shadcn-style primitive, React Hook Form/Zod, TanStack Query, Zustand-
@@ -55,9 +63,18 @@ policies in `docs/WEB_SEO_AND_RENDERING_STRATEGY.md` and
 
 ## Web routing
 
-`apps/web/src/components/app-router.tsx` owns the route tree. `AuthGuard`, `GuestGuard`, and
-`RoleGuard` wait for the single `/auth/me` bootstrap and support refresh, direct URLs, browser
-history, unknown routes, onboarding state, and parent-only supervision.
+`apps/web/src/app` owns the route tree via App Router route groups (`(auth)`, `(authenticated)`).
+`AuthenticatedGuard`, `GuestGuard`, `ParentRoleGuard`, and `MinorPlayerGuard`
+(`apps/web/src/components/routing`) wait
+for the single `/auth/me` bootstrap and support refresh, direct URLs, browser history, unknown
+routes, onboarding state, and parent-only supervision. These guards currently run client-side only;
+server-side/session-aware authorization at the route or data boundary is not yet implemented — see
+`docs/FRONTEND_ARCHITECTURE.md` §5.2.
+
+Guardian relationship approval is directional: a parent-created child invite is visible only to the
+minor player at `/profile/guardian-requests`; a child-created guardian request is visible only to a
+parent under `/supervision`. Both surfaces reuse the same typed card and approval-code modal while
+their TanStack hooks retain separate endpoints and cache keys.
 
 ## Mobile navigation
 
@@ -69,13 +86,13 @@ See `docs/NAVIGATION.md` for the required implementation rules.
 
 ## Required commands
 
-- `npm run check:obscure`: scan source and manifests for obfuscation/malicious patterns.
-- `npm run docs:check`: validate required context documents and freshness.
-- `npm run test:coverage`: run unit/integration tests and enforce 80% minimum coverage.
-- `npm run verify`: documentation, security, types, lint, coverage, and production web build.
-- `npm run components:check`: prevent raw duplicate controls outside platform primitives.
-- `npm run package-manager:check`: enforce npm and the single root lockfile.
-- `npm run build:mobile`: produce Android/iOS Expo exports without regenerating native projects.
+- `pnpm check:obscure`: scan source and manifests for obfuscation/malicious patterns.
+- `pnpm docs:check`: validate required context documents and freshness.
+- `pnpm test:coverage`: run unit/integration tests and enforce 80% minimum coverage.
+- `pnpm verify`: documentation, security, types, lint, coverage, and production web build.
+- `pnpm components:check`: prevent raw duplicate controls outside platform primitives.
+- `pnpm package-manager:check`: enforce pnpm and the single root lockfile.
+- `pnpm build:mobile`: produce Android/iOS Expo exports without regenerating native projects.
 
 Environment setup is documented in `docs/ENVIRONMENT_CONFIGURATION.md`. Component discovery and the
 no-duplicate-component policy are documented in `docs/COMPONENT_CATALOG.md`.

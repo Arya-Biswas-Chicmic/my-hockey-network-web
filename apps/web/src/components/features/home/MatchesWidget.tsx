@@ -1,4 +1,5 @@
 import { Button } from '@/components/common/Button';
+import { FallbackImage } from '@/components/ui/fallback-image';
 import React from 'react';
 
 export interface MatchItem {
@@ -58,13 +59,13 @@ export const MatchesWidget: React.FC<MatchesWidgetProps> = ({
             <div className="mhn-match-teams-row">
               {/* Home Team */}
               <div className="mhn-match-team">
-                <img 
-                  src={match.homeLogo} 
-                  alt={match.homeTeam} 
+                <FallbackImage
+                  src={match.homeLogo}
+                  alt={match.homeTeam}
+                  width={24}
+                  height={24}
+                  hideOnError
                   className="mhn-match-team-logo"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
-                  }}
                 />
                 <span className="mhn-match-team-name">{match.homeTeam}</span>
               </div>
@@ -74,13 +75,13 @@ export const MatchesWidget: React.FC<MatchesWidgetProps> = ({
               {/* Away Team */}
               <div className="mhn-match-team">
                 <span className="mhn-match-team-name">{match.awayTeam}</span>
-                <img 
-                  src={match.awayLogo} 
-                  alt={match.awayTeam} 
+                <FallbackImage
+                  src={match.awayLogo}
+                  alt={match.awayTeam}
+                  width={24}
+                  height={24}
+                  hideOnError
                   className="mhn-match-team-logo"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
-                  }}
                 />
               </div>
             </div>

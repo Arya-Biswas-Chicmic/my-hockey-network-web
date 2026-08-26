@@ -40,12 +40,19 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [supervisionPermissions, setSupervisionPermissions] = useState<Record<string, boolean> | null>(null);
   const [isSupervisionPermissionsLoading, setIsSupervisionPermissionsLoading] = useState<boolean>(false);
   const isLoggingOut = useRef(false);
+  const userRef = useRef<AuthMeResponse | null>(null);
+  const hasBootstrappedRef = useRef(false);
+
+  const updateUser = useCallback((nextUser: AuthMeResponse | null) => {
+    userRef.current = nextUser;
+    setUser(nextUser);
+  }, []);
 
   const loadAuthMe = useCallback(async (silent = false, force = false): Promise<AuthMeResponse | null> => {
     if (isLoggingOut.current) return null;
 
     // Do not re-fetch /auth/me if already bootstrapped as logged out, unless explicitly forced
-    if (hasBootstrapped && user === null && !force) {
+    if (hasBootstrappedRef.current && userRef.current === null && !force) {
       if (!silent) setIsLoading(false);
       return null;
     }
@@ -63,7 +70,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       });
 
       if (profile) {
-        setUser(profile);
+        updateUser(profile);
         const myProfileId = profile.profile?.id || profile.id;
         if (myProfileId) {
           void globalQueryClient.fetchQuery({
@@ -75,15 +82,18 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       }
       return profile;
     } catch {
-      setUser(null);
+      updateUser(null);
       return null;
     } finally {
       if (!silent) setIsLoading(false);
     }
-  }, [hasBootstrapped, user]);
+  }, [updateUser]);
 
   useEffect(() => {
-    void loadAuthMe().finally(() => setHasBootstrapped(true));
+    void loadAuthMe().finally(() => {
+      hasBootstrappedRef.current = true;
+      setHasBootstrapped(true);
+    });
   }, [loadAuthMe]);
 
   // Fetch GET /v1/supervision/me/permissions ONLY for minor players (NOT for PARENT or COACH)
@@ -130,8 +140,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       // Parent and Coach always have full permission
       if (isParent || isCoach) return true;
 
-      // If user is a minor player and permissions are loaded
-      if (!supervisionPermissions) return true;
+      // Minor permissions fail closed while unavailable or loading.
+      if (!supervisionPermissions || isSupervisionPermissionsLoading) return false;
 
       const snakeKey = controlKey.replace(/([A-Z])/g, '_$1').toLowerCase();
       const camelKey = controlKey.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
@@ -141,9 +151,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         supervisionPermissions[snakeKey] ??
         supervisionPermissions[camelKey];
 
-      return val !== false;
+      return val === true;
     },
-    [user, supervisionPermissions]
+    [user, supervisionPermissions, isSupervisionPermissionsLoading]
   );
 
   const assertSupervisionPermission = useCallback(
@@ -159,18 +169,18 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
   useEffect(() => {
     const handleUnauthorized = () => {
-      setUser(null);
+      updateUser(null);
       setSession(null);
       showCentralToast({ message: 'Your session expired. Please sign in again.', type: 'error' });
     };
     window.addEventListener('mhn:unauthorized', handleUnauthorized);
     return () => window.removeEventListener('mhn:unauthorized', handleUnauthorized);
-  }, []);
+  }, [updateUser]);
 
   const setAuthSession = (nextSession: OtpVerifyResponse) => {
     setSession(nextSession);
     void webAuthStorage.saveSession(nextSession);
-    void loadAuthMe();
+    void loadAuthMe(false, true);
   };
 
   const handleLogout = async () => {
@@ -187,7 +197,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       // Clear auth storage session
       await webAuthStorage.clearSession();
 
-      setUser(null);
+      updateUser(null);
       setSession(null);
       setSupervisionPermissions(null);
       isLoggingOut.current = false;
@@ -207,7 +217,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         isSupervisionPermissionsLoading,
         checkSupervisionPermission,
         assertSupervisionPermission,
-        setUserProfile: setUser,
+        setUserProfile: updateUser,
         setAuthSession,
         loadAuthMe,
         handleLogout,

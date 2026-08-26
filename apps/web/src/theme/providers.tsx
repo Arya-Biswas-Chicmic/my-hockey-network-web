@@ -1,4 +1,7 @@
+'use client';
+
 import React, { ReactNode, useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { AuthProvider } from '@/contexts/auth-context';
 import { ThemeProvider } from '@/components/core/theme-provider';
 import { ServerDownScreen } from '@/components/common/server-down-screen';
@@ -9,13 +12,23 @@ import { QueryProvider, globalQueryClient } from '@/query';
 import type { ThemePreference } from '@/theme/theme-cookie';
 import { webApiClient } from '@/platform/api-client';
 import { ApiError } from '@my-hockey-network/api-client';
+import { configureWebPlatform } from '@/platform/api-client';
+
+configureWebPlatform();
 
 interface ProvidersProps {
   children: ReactNode;
   defaultTheme?: ThemePreference;
 }
 
+// Public profile routes must render even if an unrelated auth bootstrap
+// read fails. `/` redirects to onboarding and is not a public content page.
+function isPublicRoute(pathname: string | null): boolean {
+  return Boolean(pathname?.startsWith('/players/'));
+}
+
 export function Providers({ children, defaultTheme }: ProvidersProps) {
+  const pathname = usePathname();
   const [serverDownState, setServerDownState] = useState<{
     isDown: boolean;
     statusCode: number;
@@ -98,7 +111,7 @@ export function Providers({ children, defaultTheme }: ProvidersProps) {
             />
           )}
 
-          {serverDownState.isDown && (
+          {serverDownState.isDown && !isPublicRoute(pathname) && (
             <ServerDownScreen
               statusCode={serverDownState.statusCode}
               message={serverDownState.message}

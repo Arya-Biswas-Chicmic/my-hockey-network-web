@@ -1,10 +1,12 @@
 import { Button } from '@/components/common/Button';
 import React, { useState, useEffect } from 'react';
 import { Spinner } from '@/components/common/Spinner';
-import { maskEmail, sixDigitOtpSchema } from '@my-hockey-network/validation';
-import { useFormik } from 'formik';
+import { maskEmail, verificationCodeFormSchema, type VerificationCodeFormValues } from '@my-hockey-network/validation';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import { OtpCodeInput } from '@/components/common/OtpCodeInput';
 import { ArrowLeft } from 'lucide-react';
+import { Form, FormField } from '@/components/ui/form';
 
 interface VerifyEmailFormProps {
   email?: string;
@@ -14,6 +16,13 @@ interface VerifyEmailFormProps {
   loading?: boolean;
   errorMessage?: string | null;
   resendNotice?: string | null;
+  /**
+   * OTP value returned directly by the backend while no email service is
+   * wired up (see `OtpRequestResponse.devCode`/`code`). When present, the
+   * code field is prefilled so the tester only needs to press Confirm —
+   * this never bypasses the Confirm press itself.
+   */
+  prefillCode?: string | null;
 }
 
 export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
@@ -24,16 +33,19 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
   loading = false,
   errorMessage = null,
   resendNotice = null,
+  prefillCode = null,
 }) => {
   const [resendCooldown, setResendCooldown] = useState<number>(59);
-  const formik = useFormik({
-    initialValues: { code: '' },
-    validate: ({ code }) => {
-      const result = sixDigitOtpSchema.safeParse(code);
-      return result.success ? {} : { code: result.error.issues[0]?.message };
-    },
-    onSubmit: ({ code }) => onConfirm?.(code),
+  const form = useForm<VerificationCodeFormValues>({
+    resolver: zodResolver(verificationCodeFormSchema),
+    mode: 'onChange',
+    defaultValues: { code: prefillCode ?? '' },
   });
+  const handleSubmit = form.handleSubmit(({ code }) => onConfirm?.(code));
+
+  useEffect(() => {
+    if (prefillCode) form.reset({ code: prefillCode });
+  }, [prefillCode, form]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | undefined;
@@ -54,7 +66,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
   };
 
   const activeError =
-    ((formik.touched.code || formik.submitCount > 0) ? formik.errors.code : null) || errorMessage;
+    form.formState.errors.code?.message || errorMessage;
 
   const formattedTimer = `00:${resendCooldown.toString().padStart(2, '0')}`;
   const isLastTenSeconds = resendCooldown <= 10 && resendCooldown > 0;
@@ -89,13 +101,18 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
         </div>
       )}
 
-      <form onSubmit={formik.handleSubmit} className="verify-email-form" noValidate>
-        <OtpCodeInput
-          value={formik.values.code}
-          onChange={(code) => void formik.setFieldValue('code', code, true)}
-          error={activeError}
-          disabled={loading}
-          className="mhn-relative-container"
+      <Form methods={form} onSubmit={handleSubmit} className="verify-email-form" noValidate>
+        <FormField
+          name="code"
+          render={({ field }) => (
+            <OtpCodeInput
+              value={field.value}
+              onChange={field.onChange}
+              error={activeError}
+              disabled={loading}
+              className="mhn-relative-container"
+            />
+          )}
         />
 
         {/* Standardized Edit Profile Reference Validation Error Format */}
@@ -119,7 +136,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
             'Confirm'
           )}
         </Button>
-      </form>
+      </Form>
 
       {/* Change Email */}
       <Button

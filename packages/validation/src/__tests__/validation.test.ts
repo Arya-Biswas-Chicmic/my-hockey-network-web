@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { CreatePostAudienceEnum } from '@my-hockey-network/contracts';
 import {
   dateOfBirthSchema,
   emailSchema,
@@ -9,6 +10,12 @@ import {
   sanitizeNameInput,
   normalizeNameBlur,
   maskEmail,
+  commentFormSchema,
+  createAccountFormSchema,
+  createPostFormSchema,
+  loginFormSchema,
+  supportTicketFormSchema,
+  verificationCodeFormSchema,
 } from '../index';
 
 describe('shared validation schemas', () => {
@@ -60,5 +67,23 @@ describe('shared validation schemas', () => {
     expect(
       otpRequestSchema.safeParse({ channel: 'PUSH', destination: '', intent: 'LOGIN' }).success,
     ).toBe(false);
+  });
+
+  it('validates all shared web form contracts', () => {
+    expect(loginFormSchema.safeParse({ email: 'player@example.com' }).success).toBe(true);
+    expect(verificationCodeFormSchema.safeParse({ code: '123456' }).success).toBe(true);
+    expect(commentFormSchema.safeParse({ comment: '  ' }).success).toBe(false);
+    expect(createPostFormSchema.safeParse({
+      content: 'Goal!', audience: CreatePostAudienceEnum.EVERYONE, shareWithEmails: '', dontShareWithEmails: '', locationTag: '',
+    }).success).toBe(true);
+    expect(supportTicketFormSchema.safeParse({
+      category: 'technical', subject: 'Login issue', description: 'The verification code cannot be submitted.',
+    }).success).toBe(true);
+    expect(createAccountFormSchema('parent').safeParse({
+      fullName: 'Adult Parent', email: 'parent@example.com', dob: '01/01/2000',
+    }).success).toBe(true);
+    expect(createAccountFormSchema('parent').safeParse({
+      fullName: 'Young Parent', email: 'young@example.com', dob: '01/01/2015',
+    }).success).toBe(false);
   });
 });

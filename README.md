@@ -1,11 +1,12 @@
 # My Hockey Network user applications
 
-React/Vite web and Expo/React Native mobile applications in one npm-workspaces monorepo. Shared
-contracts, domain rules, validation, authentication use cases, API behavior, and design values live
-under `packages/`; UI, navigation, environment access, and credential storage remain platform-owned.
+Next.js App Router web and Expo/React Native mobile applications in one pnpm-workspaces monorepo.
+Shared contracts, domain rules, validation, authentication use cases, API behavior, and design values
+live under `packages/`; UI, navigation, environment access, and credential storage remain
+platform-owned.
 
-This repository uses **npm only**. Node.js is the JavaScript runtime; npm is the package manager.
-Do not add `yarn.lock`, `pnpm-lock.yaml`, or Bun lockfiles.
+This repository uses **pnpm only**. Node.js is the JavaScript runtime; pnpm is the package manager.
+Do not add `yarn.lock`, `package-lock.json`, or Bun lockfiles.
 
 Last reviewed: 2026-08-26
 
@@ -23,22 +24,23 @@ Last reviewed: 2026-08-26
 - [Web routing and mobile navigation](docs/NAVIGATION.md)
 - [Data fetching and cookie authentication](docs/DATA_FETCHING_AND_AUTH.md)
 - [Frontend development guidelines](docs/FRONTEND_DEVELOPMENT_GUIDELINES.md)
-- [Approved Next.js migration plan — paused](docs/NEXTJS_MIGRATION_PLAN.md)
-- [Web SEO, rendering, and ISR strategy — paused](docs/WEB_SEO_AND_RENDERING_STRATEGY.md)
+- [Next.js migration plan — in progress](docs/NEXTJS_MIGRATION_PLAN.md)
+- [Web SEO, rendering, and ISR strategy](docs/WEB_SEO_AND_RENDERING_STRATEGY.md)
 - [Third-party and dependency policy](docs/THIRD_PARTY_AND_DEPENDENCY_POLICY.md)
 - [Admin Panel alignment reference](docs/ADMIN_PANEL_ALIGNMENT.md)
 - [Mobile application setup](docs/MOBILE_SETUP.md)
 
 ## Prerequisites
 
-- Node.js 20.19.4 or newer.
-- npm 10 or newer (the repository currently pins npm 11.16.0).
+- Node.js 24.18.0 or newer.
+- pnpm 11.19.0 or newer (enable via `corepack enable && corepack prepare pnpm@11.19.0 --activate`
+  if `pnpm` is not already on your PATH).
 - For native mobile: Xcode and CocoaPods for iOS, or Android Studio/SDK for Android.
 
 ## First-time setup
 
 ```bash
-npm install
+pnpm install
 cp apps/web/.env.example apps/web/.env.local
 cp apps/mobile/.env.example apps/mobile/.env
 ```
@@ -49,59 +51,65 @@ Never commit `.env`, `.env.local`, credentials, or tokens.
 ## Run and build web
 
 ```bash
-# Development server (Vite prints the selected local URL)
-npm run dev:web
+# Development server (Next.js prints the local URL, default http://localhost:3000)
+pnpm dev:web
 
-# Type-check and create apps/web/dist
-npm run build:web
+# Type-check and create the apps/web/.next production build
+pnpm build:web
 
-# Build, then preview production output on Vite's selected preview port
-npm run preview:web
+# Build, then start the production server
+pnpm preview:web
 ```
 
-For hosted web environments, set `VITE_API_BASE_URL` in the provider configuration before the
-build. The API must allow requests from the deployed web origin and support credentialed CORS.
+Web talks to the backend through a same-origin BFF proxy (`apps/web/src/app/api/backend/[...path]
+/route.ts`), so the browser never calls the backend origin directly. Set `API_BASE_URL` (server-only,
+never `NEXT_PUBLIC_`-prefixed) in the deployment environment before the build; see
+[Environment configuration](docs/ENVIRONMENT_CONFIGURATION.md) and
+[Data fetching and cookie authentication](docs/DATA_FETCHING_AND_AUTH.md) for the full flow.
 
 ## Run and build mobile
 
 ```bash
 # Start Expo and choose a target interactively
-npm run start:mobile
+pnpm start:mobile
 
 # Start directly for a local emulator/simulator
-npm run android:mobile
-npm run ios:mobile
+pnpm android:mobile
+pnpm ios:mobile
 
 # Create Android and iOS Expo production exports in apps/mobile/dist
-npm run build:mobile
+pnpm build:mobile
 
 # Generate native ios/android projects only when native project files are needed
-npm run native:generate:mobile
+pnpm native:generate:mobile
 ```
 
 `build:mobile` verifies that the Expo application can produce Android and iOS production bundles.
-The separate Vite app owns web, so the Expo build intentionally does not target web. Store binaries
+The Next.js app owns web, so the Expo build intentionally does not target web. Store binaries
 still require project-specific EAS or native signing configuration, which is not committed here.
 
 ## Quality commands
 
 ```bash
-npm run check:obscure
-npm run security:check
-npm run components:check
-npm run test:coverage
-npm run verify
+pnpm check:obscure
+pnpm security:check
+pnpm components:check
+pnpm test:coverage
+pnpm verify
 ```
 
-`npm run verify` is the completion gate: documentation freshness, security baseline, type checks,
+`pnpm verify` is the completion gate: documentation freshness, security baseline, type checks,
 lint, tests with minimum 80% shared-code coverage, and the production web build. It also rejects
-non-npm lockfiles and cross-platform UI imports.
+non-pnpm lockfiles and cross-platform UI imports. `.github/workflows/ci.yml` runs the same chain on
+every push/PR.
 
 ## Authentication and navigation
 
-- Web uses httpOnly backend cookies, in-memory CSRF, BrowserRouter, and hydrated auth/role guards.
+- Web uses httpOnly backend cookies via a same-origin Next.js API proxy, in-memory CSRF, App Router,
+  and client-side auth/role guards (`apps/web/src/components/routing`). Server-side/session-aware
+  route authorization is not yet implemented — see `docs/FRONTEND_ARCHITECTURE.md` §5.2.
 - Web uses TanStack Query for server state and the shared native-fetch client for HTTP. TanStack
-  Query does not replace React Router.
+  Query does not replace App Router.
 - Mobile uses SecureStore credentials and React Navigation stacks/tabs; it does not use browser URL
   routing. Mobile route-name constants are navigator screen identifiers, not web paths.
 - Both applications use the same OTP, onboarding, current-user, and logout contracts/use cases.

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Clock, MapPin } from 'lucide-react';
+import { FallbackImage } from '@/components/ui/fallback-image';
 
 export interface EventCardProps {
   id: string;
@@ -25,13 +26,12 @@ export const EventCard: React.FC<EventCardProps> = ({
     >
       {/* Event Image Banner */}
       <div className="mhn-event-card-banner-box">
-        <img 
-          src={image} 
-          alt={title} 
+        <FallbackImage
+          src={image}
+          alt={title}
+          fill
+          fallbackSrc="/empowering.png"
           className="mhn-event-card-img"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = '/empowering.png';
-          }}
         />
       </div>
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/common/Button';
 
 interface AddPlayerChoiceStepProps {
@@ -19,7 +20,7 @@ export const AddPlayerChoiceStep: React.FC<AddPlayerChoiceStepProps> = ({
       <div className="mhn-parent-stack-gap-16">
         <div className="mhn-parent-choice-card mhn-active" onClick={onCreateNew}>
           <div className="mhn-parent-flex-row-center-16">
-            <img src="/addPlayer.png" alt="Add Player" className="add-player-img" />
+            <Image src="/addPlayer.png" alt="Add Player" width={40} height={40} className="add-player-img" />
             <div>
               <div className="mhn-parent-card-title">
                 Create a new player profile
@@ -34,7 +35,7 @@ export const AddPlayerChoiceStep: React.FC<AddPlayerChoiceStepProps> = ({
 
         <div className="mhn-parent-choice-card" onClick={onLinkExisting}>
           <div className="mhn-parent-flex-row-center-16">
-            <img src="/linking.png" alt="Link Existing" className="add-player-img" />
+            <Image src="/linking.png" alt="Link Existing" width={40} height={40} className="add-player-img" />
             <div>
               <div className="mhn-parent-card-title">
                 Link an existing player

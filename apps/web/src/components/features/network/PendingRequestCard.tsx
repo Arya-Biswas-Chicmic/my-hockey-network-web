@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { ERROR_MESSAGES } from '@my-hockey-network/constants';
 import { extractErrorMessage } from '@/utils/toast';
 import { MapPin } from 'lucide-react';
+import { FallbackImage } from '@/components/ui/fallback-image';
 
 export interface PendingRequestProps {
   id: string;
@@ -88,13 +89,11 @@ export const PendingRequestCard: React.FC<PendingRequestProps> = ({
     <div className="mhn-pending-request-card">
       {/* Avatar Circle */}
       <div className="mhn-request-avatar-box">
-        <img 
-          src={avatarUrl} 
-          alt={name} 
+        <FallbackImage
+          src={avatarUrl}
+          alt={name}
+          fill
           className="mhn-request-avatar-img"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-          }}
         />
       </div>
 
@@ -106,13 +105,13 @@ export const PendingRequestCard: React.FC<PendingRequestProps> = ({
         {/* Team Badge Pill */}
         {hasValidTeam && (
           <div className="mhn-request-team-line">
-            <img 
-              src={teamLogo} 
-              alt={teamName} 
+            <FallbackImage
+              src={teamLogo}
+              alt={teamName || 'Team logo'}
+              width={16}
+              height={17}
+              fallbackSrc="/kcBlue.png"
               className="mhn-request-team-logo"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/kcBlue.png';
-              }}
             />
             <span className="mhn-request-team-name">{teamName}</span>
           </div>

@@ -1,5 +1,6 @@
 import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/common/Spinner';
+import { Modal } from '@/components/ui/modal';
 import React from 'react';
 
 interface DeleteCareerModalProps {
@@ -17,11 +18,15 @@ export const DeleteCareerModal: React.FC<DeleteCareerModalProps> = ({
   onConfirm,
   isLoading = false,
 }) => {
-  if (!isOpen) return null;
-
   return (
-    <div className="mhn-modal-overlay">
-      <div className="mhn-modal-card mhn-delete-modal-card">
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      title="Delete Team Entry"
+      className="mhn-delete-modal-card"
+      closeOnOverlayClick={!isLoading}
+      closeOnEscape={!isLoading}
+    >
         {/* Modal Header */}
         <div className="mhn-delete-modal-header">
           <h3 className="mhn-delete-modal-title">
@@ -40,7 +45,7 @@ export const DeleteCareerModal: React.FC<DeleteCareerModalProps> = ({
 
         {/* Modal Body */}
         <p className="mhn-delete-modal-body">
-          Are you sure you want to delete {teamName ? <strong>"{teamName}"</strong> : 'this team'} from your career history? This action cannot be undone.
+          Are you sure you want to delete {teamName ? <strong>&quot;{teamName}&quot;</strong> : 'this team'} from your career history? This action cannot be undone.
         </p>
 
         {/* Action Buttons */}
@@ -69,7 +74,6 @@ export const DeleteCareerModal: React.FC<DeleteCareerModalProps> = ({
             )}
           </Button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };

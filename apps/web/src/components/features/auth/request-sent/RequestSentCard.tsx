@@ -1,5 +1,6 @@
 import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/common/Spinner';
+import Image from 'next/image';
 import React, { useState } from 'react';
 import { REQUEST_SENT_STRINGS } from '@my-hockey-network/shared';
 import { RequestSentBadgeIcon, HockeyTournamentIcon, CommunityBoardIcon } from '@/components/features/auth/request-sent/RequestSentIcons';
@@ -41,7 +42,7 @@ export const RequestSentCard: React.FC<RequestSentCardProps> = ({
       <div className="request-sent-content">
         {/* Top Status Visualization Icon */}
         <div className="request-sent-badge-wrapper">
-          <img
+          <Image
             src="/StatusVisualization.png"
             alt="Status Visualization"
             width={128}
@@ -82,7 +83,7 @@ export const RequestSentCard: React.FC<RequestSentCardProps> = ({
         {/* Public Content Feature Cards Grid */}
         <div className="request-sent-features-grid">
           <PublicFeatureCard
-            icon={ <img
+            icon={ <Image
             src="/publicTournaments.png"
             alt="Status Visualization"
             width={40}
@@ -94,7 +95,7 @@ export const RequestSentCard: React.FC<RequestSentCardProps> = ({
           />
 
           <PublicFeatureCard
-            icon={ <img
+            icon={ <Image
             src="/communityBoard.png"
             alt="Status Visualization"
             width={40}

@@ -13,12 +13,13 @@ fi
 # Re-enable exit-on-error
 set -e
 
-if command -v npm >/dev/null 2>&1; then
-  npm run check:obscure
-  npm run docs:check
-  npm run security:check
-  npm run components:check
-  npm run lint:check
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm check:obscure
+  pnpm docs:check
+  pnpm security:check
+  pnpm components:check
+  pnpm lint:check
 else
-  echo "Husky pre-commit: 'npm' not found. Skipping lint checks."
+  echo "Husky pre-commit: 'pnpm' not found."
+  exit 127
 fi

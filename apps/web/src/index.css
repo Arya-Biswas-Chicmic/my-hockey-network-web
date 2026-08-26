@@ -1,5 +1,38 @@
 @import "tailwindcss";
 
+/*
+ * Core shadcn-style semantic color tokens (Tailwind 4 CSS-first `@theme`,
+ * no JS config needed). Mapped to this app's existing brand palette — the
+ * primary blue (#1860c3) and slate/navy neutrals are the values already
+ * used across `.mhn-*` component classes below, not a new palette.
+ * Every `--color-*` token here auto-generates the matching Tailwind
+ * utilities (`bg-background`, `text-primary`, `border-border`, ...).
+ * New web UI should prefer these + plain Tailwind utilities over adding
+ * another one-off `.mhn-*` class. See docs/COMPONENT_CATALOG.md.
+ */
+@theme {
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
+  --color-primary: #1860c3;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f1f5f9;
+  --color-secondary-foreground: #0f172a;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+  --color-accent: #eff6ff;
+  --color-accent-foreground: #1860c3;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
+  --color-ring: #1860c3;
+  --radius: 0.75rem;
+}
+
 @keyframes mhn-spin {
   0% {
     transform: rotate(0deg);
@@ -1270,6 +1303,7 @@
 }
 
 .mhn-user-avatar-circle {
+  position: relative;
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -2400,6 +2434,7 @@
 }
 
 .mhn-author-avatar-box {
+  position: relative;
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -3022,6 +3057,7 @@
 }
 
 .mhn-network-avatar-circle {
+  position: relative;
   width: 84px;
   height: 84px;
   border-radius: 50%;
@@ -3465,6 +3501,7 @@
 }
 
 .mhn-group-member-avatar-circle {
+  position: relative;
   width: 76px;
   height: 76px;
   border-radius: 50%;
@@ -4047,6 +4084,7 @@
 
 .mhn-suggested-avatar-box,
 .mhn-request-avatar-box {
+  position: relative;
   width: 72px;
   height: 72px;
   border-radius: 50%;
@@ -4944,6 +4982,7 @@
 }
 
 .mhn-chat-item-avatar-box {
+  position: relative;
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -5016,6 +5055,7 @@
 }
 
 .mhn-conv-avatar-box {
+  position: relative;
   width: 48px;
   height: 46px;
   border-radius: 50%;
@@ -5139,6 +5179,7 @@
 }
 
 .mhn-msg-avatar-box {
+  position: relative;
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -5463,6 +5504,7 @@
 }
 
 .mhn-notification-avatar-box {
+  position: relative;
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -5650,6 +5692,7 @@
 }
 
 .mhn-profile-avatar-inner {
+  position: relative;
   width: 156px;
   height: 156px;
   border-radius: 50%;
@@ -8850,6 +8893,7 @@
 }
 
 .mhn-supervision-req-avatar-wrapper {
+  position: relative;
   width: 64px;
   height: 64px;
   border-radius: 50%;
@@ -13843,6 +13887,84 @@ img.secure {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
+}
+
+/* ==========================================================================
+   Reusable Image Crop Modal (components/ui/image-crop-modal.tsx)
+   ========================================================================== */
+/* Modifier only — base overlay styling now comes from the shared
+   `.mhn-modal-overlay` class via components/ui/modal.tsx. This just lifts
+   the crop dialog above another modal it can open nested inside. */
+.mhn-crop-modal-overlay {
+  z-index: 10000;
+}
+
+.mhn-crop-modal-card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 92vw;
+}
+
+.mhn-crop-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.mhn-crop-viewport {
+  position: relative;
+  overflow: hidden;
+  background-color: #0f172a;
+  touch-action: none;
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+.mhn-crop-viewport--circle {
+  border-radius: 50%;
+}
+
+.mhn-crop-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+.mhn-crop-zoom-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  color: #64748b;
+  font-size: 16px;
+}
+
+.mhn-slider {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  accent-color: #1860c3;
+  cursor: pointer;
+}
+
+.mhn-crop-zoom-slider {
+  flex: 1;
+}
+
+.mhn-crop-modal-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: flex-end;
 }
 
 .mhn-spin-auto {

@@ -5,7 +5,7 @@
   "types": "src/index.ts",
   "private": true,
   "dependencies": {
-    "@my-hockey-network/api-client": "*",
-    "@my-hockey-network/contracts": "*"
+    "@my-hockey-network/api-client": "workspace:*",
+    "@my-hockey-network/contracts": "workspace:*"
   }
 }

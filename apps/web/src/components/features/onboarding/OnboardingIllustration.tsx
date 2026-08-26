@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 interface OnboardingIllustrationProps {
   imageSrc?: string;
@@ -11,11 +12,12 @@ export const OnboardingIllustration: React.FC<OnboardingIllustrationProps> = ({
 }) => {
   return (
     <div className="illustration-panel" aria-label="Graphic illustration panel">
-      <img
+      <Image
         src={imageSrc}
         alt={altText}
+        fill
         className="illustration-img"
-        loading="eager"
+        priority
       />
     </div>
   );

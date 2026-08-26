@@ -1,9 +1,10 @@
 import React from 'react';
+import Image from 'next/image';
 
 export const ParentHeroCard: React.FC = () => {
   return (
     <div className="mhn-parent-hero-panel">
-      <img src="/empowering.png" alt="Empowering athletes" className="mhn-parent-hero-img" />
+      <Image src="/empowering.png" alt="Empowering athletes" fill className="mhn-parent-hero-img" />
     </div>
   );
 };

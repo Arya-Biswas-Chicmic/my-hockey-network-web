@@ -1,11 +1,13 @@
 import { Button } from '@/components/common/Button';
+import Image from 'next/image';
+import { FallbackImage } from '@/components/ui/fallback-image';
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { LogoutModal } from '@/components/common/LogoutModal';
 import { resolveMediaUrl } from '@/utils/mediaUtils';
 import { getSupervisionData } from '@my-hockey-network/core';
 import { QueryKeys } from '@my-hockey-network/contracts';
-import { ERROR_MESSAGES } from '@my-hockey-network/constants';
+import { isParentUser } from '@my-hockey-network/domain';
 import { useQuery } from '@/query';
 import {
   Bell,
@@ -20,6 +22,7 @@ import {
   Settings,
   Users,
 } from 'lucide-react';
+import { useShellUiStore } from '@/stores/shell-ui-store';
 
 
 interface HeaderProps {
@@ -37,11 +40,17 @@ export const Header: React.FC<HeaderProps> = ({
   userName,
   userAvatar,
 }) => {
-  const { user, showToast, handleLogout: contextLogout } = useAuth();
+  const { user, handleLogout: contextLogout } = useAuth();
   const [currentTab, setCurrentTab] = useState(activeTab);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isFamilyExpanded, setIsFamilyExpanded] = useState(true);
-  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const {
+    isProfileMenuOpen: isProfileOpen,
+    isFamilyExpanded,
+    isLogoutModalOpen,
+    setProfileMenuOpen: setIsProfileOpen,
+    toggleProfileMenu,
+    toggleFamilyExpanded,
+    setLogoutModalOpen: setIsLogoutModalOpen,
+  } = useShellUiStore();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const resolvedName = user?.profile?.displayName || userName || 'Player';
@@ -49,7 +58,7 @@ export const Header: React.FC<HeaderProps> = ({
   const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
   const [activeUser, setActiveUser] = useState({ name: resolvedName, avatar: resolvedAvatar });
   const [familyMembers, setFamilyMembers] = useState<Array<{ id: string; name: string; avatar: string }>>([]);
-  const isParent = Boolean(user?.primaryRole === 'PARENT' || user?.roleAssignments?.some((assignment) => assignment.role === 'PARENT'));
+  const isParent = isParentUser(user);
 
   const { data: supervisionData, isLoading: isFamilyLoading } = useQuery(
     isParent ? QueryKeys.SUPERVISION_DATA : null,
@@ -125,7 +134,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="mhn-header-logo-area">
           <div className="mhn-logo-badge mhn-header-logo-badge" onClick={() => handleTabClick('home')}>
             <div className="mhn-logo-stick-icon">
-              <img src="/logo.png" className='logo' />
+              <Image src="/logo.png" alt="My Hockey Network" width={161} height={43} className='logo' />
             </div>
           </div>
         </div>
@@ -197,16 +206,14 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="mhn-header-user">
           <div
             className="mhn-user-profile-btn"
-            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            onClick={toggleProfileMenu}
           >
             <div className="mhn-user-avatar-circle">
-              <img
+              <FallbackImage
                 src={activeUser.avatar}
                 alt={activeUser.name}
+                fill
                 className="mhn-avatar-img"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-                }}
               />
             </div>
             <span className="mhn-user-name">{activeUser.name}</span>
@@ -226,13 +233,12 @@ export const Header: React.FC<HeaderProps> = ({
                 {/* View Profile */}
                 <Button className="mhn-dropdown-item" onClick={handleViewProfile}>
                   <div className="mhn-dropdown-item-left">
-                    <img 
-                      src={activeUser.avatar} 
-                      alt={activeUser.name} 
-                      className="mhn-dropdown-avatar-img" 
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-                      }}
+                    <FallbackImage
+                      src={activeUser.avatar}
+                      alt={activeUser.name}
+                      width={32}
+                      height={32}
+                      className="mhn-dropdown-avatar-img"
                     />
                     <span className="mhn-dropdown-item-text">View Profile</span>
                   </div>
@@ -244,7 +250,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <div className="mhn-dropdown-family-box">
                     <div
                       className="mhn-family-header"
-                      onClick={() => setIsFamilyExpanded(!isFamilyExpanded)}
+                      onClick={toggleFamilyExpanded}
                     >
                       <div className="mhn-dropdown-item-left">
                         <div className="mhn-family-icon-box">
@@ -278,7 +284,7 @@ export const Header: React.FC<HeaderProps> = ({
                                 }}
                               >
                                 <div className="mhn-dropdown-item-left mhn-family-member-left">
-                                  <img src={member.avatar} alt={member.name} className="mhn-family-member-img" />
+                                  <FallbackImage src={member.avatar} alt={member.name} width={28} height={28} className="mhn-family-member-img" />
                                   <span className="mhn-family-member-name" title={member.name}>
                                     {member.name.length > 18 ? `${member.name.trim().split(/\s+/).slice(0, 2).join(' ')}...` : member.name}
                                   </span>
@@ -320,27 +326,24 @@ export const Header: React.FC<HeaderProps> = ({
                   <ChevronRight size={16} color="#64748B" />
                 </Button>
 
-                {/* Supervision */}
-                <Button
-                  className="mhn-dropdown-item"
-                  onClick={() => {
-                    setIsProfileOpen(false);
-                    const isParent = user?.primaryRole === 'PARENT' || user?.roleAssignments?.some((assignment) => assignment.role === 'PARENT');
-                    if (!isParent) {
-                      showToast(ERROR_MESSAGES.PARENT_ONLY_SUPERVISION, 'info');
-                      return;
-                    }
-                    handleTabClick('supervision');
-                  }}
-                >
-                  <div className="mhn-dropdown-item-left">
-                    <div className="mhn-dropdown-icon-box">
-                      <Eye size={18} color="#1860C3" />
+                {/* Parent-only management route. Child approvals stay under Profile. */}
+                {isParent && (
+                  <Button
+                    className="mhn-dropdown-item"
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      handleTabClick('supervision');
+                    }}
+                  >
+                    <div className="mhn-dropdown-item-left">
+                      <div className="mhn-dropdown-icon-box">
+                        <Eye size={18} color="#1860C3" />
+                      </div>
+                      <span className="mhn-dropdown-item-text">Supervision</span>
                     </div>
-                    <span className="mhn-dropdown-item-text">Supervision</span>
-                  </div>
-                  <ChevronRight size={16} color="#64748B" />
-                </Button>
+                    <ChevronRight size={16} color="#64748B" />
+                  </Button>
+                )}
 
                 {/* Help & Support */}
                 <Button className="mhn-dropdown-item" onClick={() => { setIsProfileOpen(false); handleTabClick('help'); }}>

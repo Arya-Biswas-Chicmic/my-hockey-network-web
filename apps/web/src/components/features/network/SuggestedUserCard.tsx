@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { ERROR_MESSAGES } from '@my-hockey-network/constants';
 import { extractErrorMessage } from '@/utils/toast';
 import { MapPin } from 'lucide-react';
+import { FallbackImage } from '@/components/ui/fallback-image';
 
 export interface SuggestedUserProps {
   id: string;
@@ -63,13 +64,11 @@ export const SuggestedUserCard: React.FC<SuggestedUserProps> = ({
     <div className="mhn-suggested-card">
       {/* Avatar Circle */}
       <div className="mhn-suggested-avatar-box">
-        <img 
-          src={avatarUrl} 
-          alt={name} 
+        <FallbackImage
+          src={avatarUrl}
+          alt={name}
+          fill
           className="mhn-suggested-avatar-img"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-          }}
         />
       </div>
 
@@ -81,13 +80,13 @@ export const SuggestedUserCard: React.FC<SuggestedUserProps> = ({
         {/* Team Line */}
         {hasValidTeam && (
           <div className="mhn-suggested-team-line">
-            <img 
-              src={teamLogo} 
-              alt={teamName} 
+            <FallbackImage
+              src={teamLogo}
+              alt={teamName || 'Team logo'}
+              width={16}
+              height={17}
+              fallbackSrc="/kcBlue.png"
               className="mhn-suggested-team-logo"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/kcBlue.png';
-              }}
             />
             <span className="mhn-suggested-team-name">{teamName}</span>
           </div>

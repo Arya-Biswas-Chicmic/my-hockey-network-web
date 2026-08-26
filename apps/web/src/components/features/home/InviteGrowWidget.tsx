@@ -1,4 +1,5 @@
 import { Button } from '@/components/common/Button';
+import Image from 'next/image';
 import React from 'react';
 
 interface InviteGrowWidgetProps {
@@ -23,9 +24,10 @@ export const InviteGrowWidget: React.FC<InviteGrowWidgetProps> = ({
       </div>
 
       <div className="mhn-invite-grow-illustration">
-        <img 
-          src='/InviteGrow.png' 
-          alt="Invite and Grow Illustration" 
+        <Image
+          src='/InviteGrow.png'
+          alt="Invite and Grow Illustration"
+          fill
           className="mhn-invite-illustration-img"
         />
       </div>

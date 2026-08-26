@@ -5,6 +5,6 @@
   "types": "src/index.ts",
   "private": true,
   "dependencies": {
-    "@my-hockey-network/contracts": "*"
+    "@my-hockey-network/contracts": "workspace:*"
   }
 }

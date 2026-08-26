@@ -15,23 +15,40 @@ Last reviewed: 2026-08-26
   authenticated/role route redirects. Platform/UI tests continue to grow screen-by-screen.
 - Query tests exercise TanStack Query caching, request deduplication, retries, and prefix invalidation.
 - API-client tests verify credentialed cookie requests, refresh serialization, and storage boundaries.
-- Production smoke tests cover application startup, one indexable public route, login/session
-  bootstrap, protected-route redirect, one critical authenticated shell route, and not-found behavior.
+- Production smoke tests cover application startup, root-to-sign-in redirect, public SEO output,
+  login/session bootstrap, protected-route redirect, one critical authenticated shell route, and
+  not-found behavior.
 
-## Future Next.js test matrix
-
-This matrix becomes active only when the owner starts the migration:
+## Next.js test matrix
 
 - Unit: domain rules, validation, metadata/canonical builders, cache-tag mapping, serializers, query
-  keys, error normalization, and permission decisions.
+  keys, error normalization, and permission decisions. **In place** for domain/validation/API-client
+  layers (126 Vitest tests total, ≥80% coverage on the enforced boundary).
 - Component integration: React Hook Form + Zod behavior, loading/empty/error states, accessible
-  primitives, Client Component interactions, and TanStack Query mutation/invalidation behavior.
+  primitives, Client Component interactions, and TanStack Query mutation/invalidation behavior. **In
+  place** for auth and content forms.
 - Route integration: Server/Client boundaries, layouts, auth and role protection, cookie forwarding,
-  no-store privacy, metadata, status codes, and rendering-mode assumptions.
-- Playwright smoke/e2e: production build startup, public SEO output, authentication, protected routes,
-  navigation, refresh/direct entry, 404s, and one happy-path journey per critical feature.
+  no-store privacy, metadata, status codes, and rendering-mode assumptions. Route guard fail-closed
+  and redirect behavior (`AuthenticatedGuard`/`GuestGuard`/`ParentRoleGuard`) is now covered directly
+  by `apps/web/src/components/routing/__tests__/guards.test.tsx`, mocking `next/navigation` and
+  `useAuth` rather than a real router — dedicated route-level tests for cookie forwarding/no-store
+  privacy/metadata are still not added.
+- Directional guardian coverage includes domain role predicates, `MinorPlayerGuard`, child-invite
+  query/mutation invalidation, the shared request card callback contract, and one-shot/post-OTP auth
+  bootstrap behavior.
+- Playwright smoke/e2e: `apps/web/playwright.config.ts` and `apps/web/e2e/` (see
+  `apps/web/e2e/README.md`) now exist. `public.spec.ts` covers public entry/SEO output (root sign-in redirect,
+  `robots.txt`, `sitemap.xml`), 404s, the onboarding form, and a protected-route guest redirect — it
+  needs no real backend and runs in CI on every push/PR. `authenticated-flow.spec.ts` covers the full
+  login → feed → post creation → like → comment → logout journey but is gated behind
+  `E2E_TEST_EMAIL`/`E2E_ALLOW_LIVE_WRITES=1` since it writes real data to whatever backend it targets;
+  it is not yet wired into CI because CI has no dedicated test account. **Remaining gap:** the broader
+  navigation/refresh/direct-entry/production-build-startup coverage this section originally called
+  for is still not authored beyond what the two specs above exercise.
 - Non-functional: automated accessibility checks, representative Lighthouse CI budgets, dependency
-  audit, obfuscation scan, type/lint/format checks, and secret/environment validation.
+  audit, obfuscation scan, type/lint/format checks, and secret/environment validation. Obfuscation
+  scan, type/lint checks, and CI (`.github/workflows/ci.yml`) are in place; accessibility and
+  Lighthouse budgets are not yet established.
 
 Tests must be deterministic, isolated, and free from production writes. Use a controlled test API or
 contract-faithful interception. Avoid fixed sleeps; use observable UI/network readiness. A smoke test
@@ -49,9 +66,9 @@ written to `coverage/` and is not committed.
 
 ## Commands
 
-- `npm run test:run`: fast test suite without coverage.
-- `npm run test:coverage`: test suite plus enforced coverage.
-- `npm run verify`: full local/CI quality gate.
+- `pnpm test:run`: fast test suite without coverage.
+- `pnpm test:coverage`: test suite plus enforced coverage.
+- `pnpm verify`: full local/CI quality gate.
 
 No feature is considered complete when it lowers enforced coverage below the threshold.
 

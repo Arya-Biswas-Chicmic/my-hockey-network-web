@@ -26,7 +26,8 @@ const maintainedDocuments = new Set(requiredDocuments);
 const implementationPrefixes = ['apps/', 'packages/', 'scripts/'];
 const rootImplementationFiles = new Set([
   'package.json',
-  'package-lock.json',
+  'pnpm-lock.yaml',
+  'pnpm-workspace.yaml',
   'vitest.config.mts',
   'tsconfig.json',
   '.gitignore',

@@ -1,8 +1,9 @@
-import React, { useRef, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/common/Button';
 import { Input, Dropdown, FormField } from '@/components/common/FormControls';
 import { calculateAge } from '@my-hockey-network/core';
 import { GUARDIAN_RELATION_OPTIONS } from '@/utils/guardianUtils';
+import { DatePickerButton } from '@/components/ui/date-picker-button';
 
 export interface PlayerDetailsFormData {
   fullName: string;
@@ -24,7 +25,6 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
   onContinue,
   onBack,
 }) => {
-  const dateInputRef = useRef<HTMLInputElement>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
 
@@ -50,25 +50,11 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
     setTouched((prev) => ({ ...prev, dateOfBirth: true }));
   };
 
-  const handleCalendarClick = () => {
-    if (dateInputRef.current) {
-      if (typeof dateInputRef.current.showPicker === 'function') {
-        dateInputRef.current.showPicker();
-      } else {
-        dateInputRef.current.click();
-      }
-    }
-  };
-
-  const handleDatePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const dateVal = e.target.value; // Format: YYYY-MM-DD
-    if (dateVal) {
-      const parts = dateVal.split('-');
-      if (parts.length === 3) {
-        const [yyyy, mm, dd] = parts;
-        onChange({ dateOfBirth: `${dd}/${mm}/${yyyy}` });
-        setTouched((prev) => ({ ...prev, dateOfBirth: true }));
-      }
+  const handleDateSelected = (dateVal: string) => {
+    const [yyyy, mm, dd] = dateVal.split('-');
+    if (yyyy && mm && dd) {
+      onChange({ dateOfBirth: `${dd}/${mm}/${yyyy}` });
+      setTouched((previous) => ({ ...previous, dateOfBirth: true }));
     }
   };
 
@@ -156,17 +142,9 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
               placeholder="DD/MM/YYYY"
               maxLength={10}
             />
-            <img
-              src="/calendar.png"
-              alt="Calendar"
+            <DatePickerButton
               className="auth-input-icon auth-input-icon-clickable mhn-cursor-pointer"
-              onClick={handleCalendarClick}
-            />
-            <Input
-              type="date"
-              ref={dateInputRef}
-              onChange={handleDatePickerChange}
-              className="mhn-hidden-date-picker"
+              onDateSelected={handleDateSelected}
             />
           </div>
         </FormField>

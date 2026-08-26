@@ -2,60 +2,48 @@
 
 Last reviewed: 2026-08-26
 
-This document is mandatory for new frontend work. The owner has approved a future Next.js migration,
-but implementation is paused until the owner explicitly instructs the team to begin. Until that
-instruction, agents must maintain the current runtime and must not install, scaffold, rename, move,
-or convert application code for the target architecture.
+This document is mandatory for new frontend work. The owner has authorized the Next.js migration and
+implementation is underway in `apps/web`. Vite, React Router, Formik, and npm have been removed from
+`apps/web`; do not reintroduce them. Mobile is unaffected and remains Expo/React Native.
 
-## 1. Current technology stack
+## 1. Current technology stack (implemented)
 
-| Concern | Current required implementation |
+| Concern | Current implementation |
 | --- | --- |
-| Web framework/build | React 19 with Vite 8 |
+| Web framework/build | Next.js 16 App Router, React 19 |
 | Mobile framework | Expo SDK 54 with React Native |
-| Language | Strict TypeScript (currently TypeScript 6; do not downgrade solely to match a guideline) |
-| Web routing | React Router `BrowserRouter` |
+| Language | Strict TypeScript (~5.9) |
+| Web routing | Next.js App Router route groups (`(auth)`, `(authenticated)`) |
 | Mobile navigation | React Navigation native stack and bottom tabs |
-| Web rendering | Client-rendered SPA with route-level lazy loading |
+| Web rendering | Server Components by default; Client Components at interactive boundaries |
 | Styling | Tailwind CSS 4 plus the existing reusable project classes/design tokens |
-| Web UI primitives | Existing `apps/web/src/components/common` components |
+| Web UI primitives | `apps/web/src/components/ui`, `components/form/fields`, and existing `components/common` |
 | Mobile UI primitives | Existing `apps/mobile/src/components` components |
 | Server/API state | TanStack Query v5 on web through the existing query layer |
-| Forms | Formik with centralized Zod/shared validation |
+| Forms | React Hook Form with Zod (`@hookform/resolvers`); Formik fully removed |
 | Tables | Existing components; evaluate TanStack Table when a real data-table requirement appears |
-| Client state | Local React state/context first; existing mobile Redux only where already required |
-| HTTP | Injected native-fetch client; no Axios and no direct feature-level fetch |
+| Client state | Local React state/context first; Zustand only when genuinely needed; existing mobile Redux unchanged |
+| HTTP | Injected native-fetch client on the shared boundary; web browser requests go through the same-origin BFF proxy (`apps/web/src/app/api/backend/[...path]/route.ts`); no Axios and no direct feature-level fetch |
 | Testing | Vitest and React Testing Library |
-| Package manager | npm workspaces with one root `package-lock.json` |
+| Package manager | pnpm workspaces with one root `pnpm-lock.yaml` |
 
 Do not add a library when the existing stack already provides the required functionality.
 
-## 2. Approved target stack — implementation paused
+## 2. Remaining migration work
 
-| Concern | Approved target |
-| --- | --- |
-| Web framework | Latest stable Next.js compatible with the project |
-| React | React 19.x |
-| Language | TypeScript 5.x or the Next.js-compatible supported version selected at migration time |
-| Web routing | Next.js App Router |
-| Rendering | Server Components by default; SSR, SSG, and ISR according to page requirements |
-| Styling | Tailwind CSS 4.x |
-| Web UI components | shadcn/ui, extended through project-owned reusable components |
-| Server/API state | TanStack Query v5 for interactive client-side server state |
-| Forms | React Hook Form with Zod; replace Formik coherently during migration |
-| Validation | Zod |
-| Tables | TanStack Table |
-| Client state | Zustand only where local/URL/server state is insufficient |
-| Testing | Vitest and React Testing Library |
-| Target package manager | pnpm workspaces with one lockfile |
+The stack above is implemented and builds/tests/typechecks cleanly (see
+`docs/IMPLEMENTATION_STATUS.md`). What is not yet complete:
 
-The target applies to the web portal. Mobile remains an Expo/React Native application using React
-Navigation and platform-owned UI. Shared platform-neutral packages remain the reuse boundary.
+- Server-side/session-aware route authorization (current guards are client-side only).
+- Per-route SEO/rendering classification (SSR/SSG/ISR) per `WEB_SEO_AND_RENDERING_STRATEGY.md`.
+- A CI-owned account for the authenticated Playwright write journey; guest smoke coverage is configured and runs in CI.
+- Package consolidation of `core`/`shared`/`types`/`constants`/`utils`/`design-system` per
+  `NEXTJS_MIGRATION_PLAN.md`.
+- Decomposition of oversized screens (`profile-page.tsx`, `supervision-page.tsx`) and removal of
+  remaining fabricated/mock data.
 
-The approved target must be introduced as a coordinated migration, not through isolated dependency
-additions. Until kickoff, npm, Vite, React Router, Formik, and the existing files remain operationally
-authoritative. Do not add `next`, `pnpm-lock.yaml`, shadcn, Zustand, a second form library, or App
-Router files before the owner authorizes migration work.
+Introduce further target-stack pieces (TanStack Table, additional Zustand stores, etc.) only when a
+genuine requirement appears, not speculatively.
 
 ## 3. Architecture principles
 
@@ -71,10 +59,8 @@ New and refactored code must follow:
 - Testable components, hooks, transformations, services, and domain rules.
 - Platform-neutral logic in `packages/`; web DOM UI in `apps/web`; React Native UI in `apps/mobile`.
 
-During migration, use Next.js Server Components by default. Add `"use client"` only to the smallest
-component boundary requiring state, event handlers, browser APIs, subscriptions, or interactive
-forms. Until migration begins, the Vite SPA has no Server Components, SSR, SSG, or ISR and must not
-receive `"use client"` directives.
+Use Next.js Server Components by default. Add `"use client"` only to the smallest component
+boundary requiring state, event handlers, browser APIs, subscriptions, or interactive forms.
 
 ## 4. Existing-code-first rule
 
@@ -92,8 +78,9 @@ For example, before adding `UserProfileCard.tsx`, search for `ProfileSummaryCard
 `MemberCard`, `PlayerCard`, and related feature cards. Generalize an existing component when doing
 so preserves clear semantics and platform ownership.
 
-`npm run components:check` enforces key parts of this agreement, including primitive reuse,
-platform boundaries, aliases, Formik forms, explicit typing, and the Lucide/custom-icon boundary.
+`pnpm components:check` enforces key parts of this agreement, including primitive reuse,
+platform boundaries, aliases, React Hook Form usage, explicit typing, and the Lucide/custom-icon
+boundary.
 
 ## 5. File size and responsibility
 
@@ -145,11 +132,11 @@ data, and SEO verification requirements are defined in `WEB_SEO_AND_RENDERING_ST
 packages and services must pass `THIRD_PARTY_AND_DEPENDENCY_POLICY.md`; framework capabilities are
 preferred to SEO wrappers and overlapping libraries.
 
-Before migration begins, these strategies are plans only. Current development must continue through
-React Router, TanStack Query, the shared API client, and route-level lazy loading.
+Per-route SEO/rendering classification has not yet been applied; treat routes as dynamic/no-store
+until each is explicitly classified per `WEB_SEO_AND_RENDERING_STRATEGY.md`.
 
 ## 8. Completion requirements
 
 Every implementation change must update relevant documentation, add proportionate tests, preserve
-greater-than-80% enforced coverage, and pass `npm run verify`. Mobile runtime changes must also pass
-`npm run build:mobile`.
+greater-than-80% enforced coverage, and pass `pnpm verify`. Mobile runtime changes must also pass
+`pnpm build:mobile`.

@@ -4,9 +4,12 @@ Last reviewed: 2026-08-26
 
 ## Status
 
-Approved direction; implementation paused. Do not change dependencies, lockfiles, source layout,
-build commands, routing, deployment configuration, or application code until the owner explicitly
-instructs the team to begin the migration.
+Approved and in progress. The owner authorized implementation and the migration is underway on
+branch `changes/next-js-update`. `apps/web` now runs on Next.js App Router (see
+`docs/IMPLEMENTATION_STATUS.md` for the current delivered-vs-remaining breakdown); Vite, React
+Router, and Formik have been removed from `apps/web`. Continue the migration through the remaining
+phases below rather than reverting to the prior Vite stack. Do not run two permanent routing, form,
+package-manager, or caching architectures in parallel.
 
 ## Scope
 
@@ -19,10 +22,18 @@ The admin panel remains a separate web-only project and is not included unless e
 ```text
 apps/
 ├── web/                       Next.js App Router web portal
-│   ├── app/                   Route segments, layouts, loading/error/not-found boundaries
-│   ├── components/            Web-only shadcn/project UI and feature presentation
-│   ├── features/              Feature containers, hooks, transformations and client interactions
-│   └── infrastructure/        Next environment, server/client API adapters and auth integration
+│   └── src/
+│       ├── app/                    Route groups, layouts, loading/error/not-found/robots/sitemap
+│       │   └── api/backend/[...path]/route.ts   Same-origin BFF proxy to the backend API
+│       ├── screens/                Migrated page-level presentation (was apps/web/src/pages)
+│       ├── components/
+│       │   ├── ui/                 Project-owned shadcn-style primitives (Button, Form, ...)
+│       │   ├── form/fields/        Shared React Hook Form field adapters
+│       │   └── routing/            Client-side auth/guest/role guards used inside layouts
+│       ├── infrastructure/
+│       │   └── server/             Request-scoped server environment and cookie adapters
+│       ├── hooks/, contexts/, query/, config/, utils/   Existing feature-neutral web utilities
+│       └── theme/                  Providers (TanStack Query, auth context, server-down wrapper)
 └── mobile/                    Existing Expo/React Native app; React Navigation remains
 
 packages/
@@ -30,9 +41,33 @@ packages/
 ├── domain/                    Pure business rules
 ├── api-client/                Platform-neutral HTTP behavior
 ├── auth/                      Shared auth use cases/state transitions
-├── validation/                Shared Zod schemas
-└── design-tokens/             Portable design values
+├── validation/                Shared Zod schemas (React Hook Form + Zod is now the only web form system)
+├── design-tokens/             Portable design values
+└── core, shared, types, constants, utils, design-system   Compatibility packages retained during
+                                                             migration; see the consolidation note below
 ```
+
+`apps/web/src/screens` intentionally is not named `pages` — Next.js reserves that name for the
+legacy Pages Router, and a folder literally named `apps/web/src/pages` conflicts with App Router
+route discovery during `next build`.
+
+### Package consolidation (in progress, not yet complete)
+
+`core`, `shared`, `types`, `constants`, `utils`, and `design-system` remain as compatibility
+packages while the migration is underway. Do not delete them yet. Consolidate incrementally as their
+exports migrate to a clear owner, and only after each package's import inventory and tests are
+verified:
+
+- `types` → `contracts`
+- validation-related utilities → `validation`
+- business utilities → `domain`
+- visual/design values → `design-tokens`
+- API operations → `api-client` or feature-specific data-access modules
+- `shared` barrel exports → remove once nothing imports them
+- `design-system` facade → remove once every consumer uses `design-tokens` directly
+- `core` → remove only after every export has a clear owner in one of the packages above
+
+No permanent "compatibility catch-all" package should remain after migration completes.
 
 ## Migration constraints
 
@@ -50,6 +85,10 @@ packages/
 - Use TanStack Table for real data-table behavior, not simple layout grids.
 - Add Zustand only for genuinely shared client state that is not URL, form, server, or local state.
 - Move from npm to pnpm as one controlled workspace/lockfile migration. Never retain both lockfiles.
+- Authenticate through a same-origin Next.js API boundary: browser → `apps/web/src/app/api/backend/
+  [...path]/route.ts` → backend API. Mobile continues to call the backend directly. Server API
+  clients must be request-scoped; never reuse a globally configured client as a server singleton,
+  since request cookies must never leak between users.
 - Preserve greater-than-80% enforced coverage and add routing/rendering/auth regression tests.
 - Follow `WEB_SEO_AND_RENDERING_STRATEGY.md`: classify every route before implementation, use ISR
   only for suitable public content, and keep authenticated/personalized output dynamic and no-store.
@@ -59,29 +98,37 @@ packages/
   imports, no explicit `any`, no feature-level inline styles/raw controls, and meaningful review of
   files exceeding 300 lines.
 
-## Proposed phases
+## Phases and current status
 
-1. Migration audit and decisions: Next.js version, Node/TypeScript compatibility, hosting target,
-   cookie origin strategy, route/rendering/SEO inventory, and package-manager cutover.
-2. Workspace/tooling conversion: pnpm workspace, one lockfile, Next.js application shell, Tailwind,
-   tests, lint, environment validation, and build commands.
-3. Infrastructure: server/client API boundaries, HttpOnly-cookie auth, CSRF, TanStack Query provider,
-   error/loading/not-found boundaries, and observability hooks.
-4. Route migration: public/authenticated/role-protected layouts and route parity tests.
-5. Feature migration: move one complete vertical feature at a time, reusing existing contracts,
-   domain logic, schemas, tokens, and UI patterns.
-6. Rendering and SEO: implement route metadata, sitemap/robots/canonicals/structured data, then
-   assign SSR, SSG, ISR, or client revalidation based on privacy, freshness, SEO, and personalization.
-7. Cutover: full regression, accessibility, performance, security, web production build/deploy,
-   removal of Vite/React Router/Formik/npm artifacts, and documentation finalization.
-
-## Decisions required at kickoff
-
-- Hosting/deployment platform and supported Next.js features.
-- Same-origin versus cross-origin backend strategy for secure cookies.
-- Public route caching/revalidation periods.
-- Whether TypeScript remains on the current supported version or changes for Next compatibility.
-- Exact pnpm and Node versions.
+1. **Migration audit and decisions** — done. Next.js 16, React 19, Node 24.18.0, pnpm 11.19.0.
+   Same-origin BFF chosen for cookie handling (see Authentication above).
+2. **Workspace/tooling conversion** — done. pnpm workspace with one root `pnpm-lock.yaml`, Next.js
+   application shell in `apps/web`, Tailwind 4, Vitest, ESLint, environment validation, and
+   `next dev`/`next build`/`next start` commands are all in place.
+3. **Infrastructure** — done. Same-origin BFF proxy route, request-scoped server environment
+   adapter (`apps/web/src/infrastructure/server`), TanStack Query provider, root/route
+   `error.tsx`/`global-error.tsx`/`loading.tsx`/`not-found.tsx` boundaries.
+4. **Route migration** — done for the existing route set. `(auth)` and `(authenticated)` route
+   groups exist with client-side `AuthenticatedGuard`/`GuestGuard`/`ParentRoleGuard`/
+   `MinorPlayerGuard`. Directional guardian relationship routes are implemented. **Gap:** these
+   guards are still client-side only; server-side/session-aware authorization at the route or data
+   boundary (the actual security control per `FRONTEND_ARCHITECTURE.md` §5.2) is not yet implemented.
+5. **Feature migration** — in progress. All existing screens render under the App Router and all
+   semantic web forms use React Hook Form + Zod (Formik is fully removed). **Remaining:** full
+   TanStack Query adoption audit, decomposition of oversized screens (`profile-page.tsx`,
+   `supervision-page.tsx`, both ~1,800 lines), removal of fabricated/mock data still present in some
+   feature screens, and the package consolidation above.
+6. **Rendering and SEO** — partially done. `robots.ts`, `sitemap.ts`, and a root metadata baseline
+   exist; the root layout currently sets `robots: { index: false, follow: false }` globally as a
+   safe default. **Remaining:** per-route metadata/canonical/Open Graph data and the full
+   SSR/SSG/ISR classification matrix from `WEB_SEO_AND_RENDERING_STRATEGY.md` have not been applied
+   route-by-route.
+7. **Cutover** — not started. Vite, React Router, Formik, and npm artifacts are already removed from
+   `apps/web`. Playwright coverage is partly implemented (guest smoke runs in CI; authenticated
+   writes require a dedicated account), while full regression, accessibility, performance, and
+   security review remain
+   outstanding before this can be called complete. See `docs/IMPLEMENTATION_STATUS.md` for the
+   authoritative, itemized gap list.
 
 ## Planned migration quality gates
 

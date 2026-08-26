@@ -2,7 +2,7 @@
 
 const userAgent = process.env.npm_config_user_agent;
 
-if (userAgent && !userAgent.startsWith('npm/')) {
-  console.error('This repository uses npm only. Run npm install and commit only package-lock.json.');
+if (userAgent && !userAgent.startsWith('pnpm/')) {
+  console.error('This repository uses pnpm only. Run pnpm install and commit only pnpm-lock.yaml.');
   process.exitCode = 1;
 }

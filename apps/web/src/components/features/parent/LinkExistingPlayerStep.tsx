@@ -24,11 +24,11 @@ export const LinkExistingPlayerStep: React.FC<LinkExistingPlayerStepProps> = ({
     <div className="mhn-parent-step-container">
       <h2 className="mhn-parent-step-title">Link an Existing Player</h2>
       <p className="mhn-parent-step-desc">
-        Enter your player's email address to send a supervision request.
+        Enter your player&apos;s email address to send a supervision request.
       </p>
 
       <div className="auth-form-group mhn-mb-20">
-        <label className="auth-label">Player's Email</label>
+        <label className="auth-label">Player&apos;s Email</label>
         <div className="auth-input-wrapper">
           <Input
             type="email"
@@ -41,7 +41,7 @@ export const LinkExistingPlayerStep: React.FC<LinkExistingPlayerStepProps> = ({
       </div>
 
       <div className="mhn-parent-info-banner">
-        ℹ️ An invitation code will be sent to your child's email address. Once they enter the 6-digit code in their account, the guardian link will be active.
+        ℹ️ An invitation code will be sent to your child&apos;s email address. Once they enter the 6-digit code in their account, the guardian link will be active.
       </div>
 
       <div className="mhn-parent-actions-stack">

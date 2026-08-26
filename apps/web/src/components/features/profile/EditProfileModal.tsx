@@ -1,6 +1,6 @@
 import { Button } from '@/components/common/Button';
-import { Input, Select, Textarea, Dropdown } from '@/components/common/FormControls';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Input } from '@/components/common/FormControls';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Spinner } from '@/components/common/Spinner';
 import { uploadMediaFile } from '@my-hockey-network/core';
@@ -8,25 +8,18 @@ import { resolveMediaUrl } from '@/utils/mediaUtils';
 import type { AuthMeResponse } from '@my-hockey-network/contracts';
 import { X } from 'lucide-react';
 import { QueryKeys } from '@my-hockey-network/contracts';
-import { validateProfileField } from '@my-hockey-network/validation';
+import { createFileSchema, editProfileFormSchema, IMAGE_ACCEPT, IMAGE_MIME_TYPES, type EditProfileFormValues } from '@my-hockey-network/validation';
 import { globalQueryClient } from '@/query';
 import { useReferenceData } from '@/hooks/use-reference-data';
-import { useFormik, type FormikErrors } from 'formik';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, useWatch } from 'react-hook-form';
+import { Form } from '@/components/ui/form';
+import { FilePickerButton } from '@/components/ui/file-picker-button';
+import { useImageCrop } from '@/hooks/use-image-crop';
+import { FormInput, FormSelect, FormTextarea } from '@/components/form/fields';
+import { GENDER_OPTIONS, POSITION_OPTIONS, SHOOTS_OPTIONS } from '@/config/profile-options';
 
-export interface EditProfileFormData {
-  firstName: string;
-  lastName: string;
-  displayName: string;
-  bio: string;
-  city: string;
-  dateOfBirth: string;
-  position: string;
-  shootsCatches: string;
-  jerseyNumber: string;
-  genderCategory: string;
-  preferredLanguage: string;
-  defaultVisibility: string;
-  avatarUrl: string;
+export interface EditProfileFormData extends EditProfileFormValues {
   avatarKey?: string;
 }
 
@@ -37,41 +30,6 @@ interface EditProfileModalProps {
   profileData?: Partial<EditProfileFormData> | Record<string, unknown> | null;
 }
 
-const POSITION_OPTIONS = [
-  { value: 'Center', label: 'Center (C)' },
-  { value: 'Left Wing', label: 'Left Wing (LW)' },
-  { value: 'Right Wing', label: 'Right Wing (RW)' },
-  { value: 'Defense', label: 'Defense (D)' },
-  { value: 'Goaltender', label: 'Goaltender (G)' },
-];
-
-const SHOOTS_OPTIONS = [
-  { value: 'Left', label: 'Left' },
-  { value: 'Right', label: 'Right' },
-];
-
-const GENDER_OPTIONS = [
-  { value: 'Male', label: 'Male' },
-  { value: 'Female', label: 'Female' },
-  { value: 'Non-binary', label: 'Non-binary' },
-  { value: 'Prefer not to say', label: 'Prefer not to say' },
-];
-
-const LANGUAGE_OPTIONS = [
-  { value: 'en', label: 'English (US)' },
-  { value: 'en-GB', label: 'English (UK)' },
-  { value: 'fr', label: 'French (Français)' },
-  { value: 'de', label: 'German (Deutsch)' },
-  { value: 'nl', label: 'Dutch (Nederlands)' },
-  { value: 'sv', label: 'Swedish (Svenska)' },
-];
-
-const VISIBILITY_OPTIONS = [
-  { value: 'EVERYONE', label: 'Everyone (Public)' },
-  { value: 'CONNECTIONS', label: 'Connections Only' },
-  { value: 'PRIVATE', label: 'Private (Only Me)' },
-];
-
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   isOpen,
   onClose,
@@ -81,9 +39,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const { user } = useAuth();
   const { positions: refPositions } = useReferenceData();
   const positionOptions = refPositions.length ? refPositions : POSITION_OPTIONS;
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const avatarPreviewUrlRef = useRef<string | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
   const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
+  const { cropImage, cropModal } = useImageCrop();
 
   const extractProfileValues = useCallback(
     (customObj?: Record<string, unknown> | AuthMeResponse | null): EditProfileFormData => {
@@ -127,23 +85,19 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   const revokeAvatarPreview = useCallback(() => {
-    if (avatarPreviewUrlRef.current) {
-      URL.revokeObjectURL(avatarPreviewUrlRef.current);
-      avatarPreviewUrlRef.current = null;
+    if (avatarPreviewUrl) {
+      URL.revokeObjectURL(avatarPreviewUrl);
+      setAvatarPreviewUrl(null);
     }
-  }, []);
+  }, [avatarPreviewUrl]);
 
-  const formik = useFormik<EditProfileFormData>({
-    initialValues: extractProfileValues(profileData || user),
-    validate: (values) => {
-      const validationErrors: FormikErrors<EditProfileFormData> = {};
-      (Object.keys(values) as Array<keyof EditProfileFormData>).forEach((key) => {
-        const error = validateProfileField(key, values[key] ?? '');
-        if (error) validationErrors[key] = error;
-      });
-      return validationErrors;
-    },
-    onSubmit: async (values, helpers) => {
+  const form = useForm<EditProfileFormValues>({
+    resolver: zodResolver(editProfileFormSchema),
+    mode: 'onChange',
+    defaultValues: extractProfileValues(profileData || user),
+  });
+  const formData = useWatch({ control: form.control });
+  const submitProfile = form.handleSubmit(async (values) => {
       setSubmissionError(null);
       let uploadedAvatarKey: string | undefined;
 
@@ -171,7 +125,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         }
 
         void globalQueryClient.invalidateQueries({ queryKey: [QueryKeys.USER_PROFILE] });
-        helpers.resetForm({ values: freshData });
+        form.reset(freshData);
         setSaveSuccessMsg('Profile updated successfully!');
         revokeAvatarPreview();
         setSelectedAvatarFile(null);
@@ -183,16 +137,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         const message = error instanceof Error ? error.message : 'Failed to update profile. Please try again.';
         setSubmissionError(message);
       }
-    },
   });
-
-  const { resetForm } = formik;
-
-  useEffect(() => {
-    if (isOpen) {
-      resetForm({ values: extractProfileValues(profileData || user) });
-    }
-  }, [isOpen, profileData, user, extractProfileValues, resetForm]);
 
   useEffect(() => revokeAvatarPreview, [revokeAvatarPreview]);
 
@@ -200,14 +145,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       const init = extractProfileValues();
-      formik.resetForm({ values: init });
+      form.reset(init);
       setSubmissionError(null);
       setSaveSuccessMsg(null);
       setShowDiscardConfirm(false);
       setSelectedAvatarFile(null);
       revokeAvatarPreview();
     }
-  }, [isOpen, user, extractProfileValues, revokeAvatarPreview]); // Formik is intentionally reset only when the modal input changes.
+  }, [form, isOpen, user, extractProfileValues, revokeAvatarPreview]);
 
   if (!isOpen) return null;
 
@@ -216,35 +161,31 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const isPlayer = userPrimaryRole.toUpperCase() === 'PLAYER';
 
   // Compute dirty state
-  const { values: formData, errors, isSubmitting } = formik;
-  const isFormDirty = formik.dirty || !!selectedAvatarFile;
+  const { errors, isSubmitting, isDirty } = form.formState;
+  const isFormDirty = isDirty || !!selectedAvatarFile;
 
-  const handleChange = (field: keyof EditProfileFormData, value: string) => {
-    void formik.setFieldValue(field, value, true);
+  const handleChange = (field: keyof EditProfileFormValues, value: string) => {
+    form.setValue(field, value, { shouldDirty: true, shouldValidate: true });
     setSubmissionError(null);
   };
 
-  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate MIME type as per media-uploads.md: jpeg, png, webp (max 10MB)
-      const validMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-      if (!validMimeTypes.includes(file.type.toLowerCase())) {
-        setSubmissionError('Unsupported image format. Please select a JPG, PNG, or WebP photo (HEIC/SVG/GIF not supported).');
-        return;
-      }
-
-      if (file.size > 10 * 1024 * 1024) {
-        setSubmissionError('File size exceeds 10 MB limit. Please select a smaller photo.');
-        return;
-      }
-
-      setSelectedAvatarFile(file);
-      revokeAvatarPreview();
-      const previewUrl = URL.createObjectURL(file);
-      avatarPreviewUrlRef.current = previewUrl;
-      handleChange('avatarUrl', previewUrl);
+  const handleAvatarFileChange = async (files: File[]) => {
+    const file = files[0];
+    if (!file) return;
+    const result = createFileSchema({ acceptedTypes: IMAGE_MIME_TYPES, maxBytes: 10 * 1024 * 1024 }).safeParse(file);
+    if (!result.success) {
+      setSubmissionError(result.error.issues[0]?.message ?? 'Select a JPG, PNG, or WebP photo up to 10 MB.');
+      return;
     }
+
+    const cropped = await cropImage(file, { shape: 'circle', title: 'Adjust profile photo' });
+    if (!cropped) return;
+
+    setSelectedAvatarFile(cropped);
+    revokeAvatarPreview();
+    const previewUrl = URL.createObjectURL(cropped);
+    setAvatarPreviewUrl(previewUrl);
+    handleChange('avatarUrl', previewUrl);
   };
 
   const handleAttemptClose = () => {
@@ -291,7 +232,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         </div>
 
         {/* Modal Scrollable Form Body */}
-        <form onSubmit={formik.handleSubmit} className="mhn-edit-profile-form-body" noValidate>
+        <Form methods={form} onSubmit={submitProfile} id="edit-profile-form" className="mhn-edit-profile-form-body" noValidate>
           {saveSuccessMsg && (
             <div
               className="mhn-resend-notice-card mhn-mb-20"
@@ -356,6 +297,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             {/* Avatar Row */}
             <div className="mhn-avatar-edit-row">
               <div className="mhn-relative-container">
+                {/* `avatarUrl` may hold a local object: URL preview (selected but not yet
+                    uploaded) as well as a remote hosted URL — not a Next-optimizable
+                    remote asset in the preview case, so this stays a plain <img>. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={formData.avatarUrl}
                   alt="Profile Avatar"
@@ -364,31 +309,23 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     (e.target as HTMLImageElement).src = '/userPlaceholder.png';
                   }}
                 />
-                <Button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="mhn-avatar-pencil-badge"
-                  title="Upload profile photo"
+                <FilePickerButton
+                  accept={IMAGE_ACCEPT}
+                  onFilesSelected={handleAvatarFileChange}
+                  buttonProps={{ className: 'mhn-avatar-pencil-badge', title: 'Upload profile photo', 'aria-label': 'Upload profile photo' }}
                 >
                   ✎
-                </Button>
-                <Input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleAvatarFileChange}
-                  accept="image/*"
-                  className="mhn-display-none"
-                />
+                </FilePickerButton>
               </div>
 
               <div>
-                <Button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="mhn-btn-upload-photo"
+                <FilePickerButton
+                  accept={IMAGE_ACCEPT}
+                  onFilesSelected={handleAvatarFileChange}
+                  buttonProps={{ className: 'mhn-btn-upload-photo' }}
                 >
                   Upload Photo
-                </Button>
+                </FilePickerButton>
                 {formData.avatarUrl !== '/userPlaceholder.png' && (
                   <Button
                     type="button"
@@ -410,89 +347,21 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
             {/* Display Name, First Name, Last Name Grid */}
             <div className="mhn-edit-profile-system-banner">
-              <div>
-                <label className="mhn-form-label-block">
-                  Display Name <span className="mhn-red-star">*</span>
-                </label>
-                <Input
-                  type="text"
-                  value={formData.displayName}
-                  onChange={(e) => handleChange('displayName', e.target.value)}
-                  maxLength={50}
-                  placeholder="e.g. Saksham Garg"
-                  className={`mhn-edit-profile-input ${errors.displayName ? 'mhn-input-invalid' : ''}`}
-                />
-                {errors.displayName && (
-                  <span className="mhn-edit-profile-field-error">
-                    <span>{errors.displayName}</span>
-                  </span>
-                )}
-              </div>
-
-              <div>
-                <label className="mhn-form-label-block">
-                  First Name
-                </label>
-                <Input
-                  type="text"
-                  value={formData.firstName}
-                  onChange={(e) => handleChange('firstName', e.target.value)}
-                  maxLength={50}
-                  placeholder="e.g. Saksham"
-                  className={`mhn-edit-profile-input ${errors.firstName ? 'mhn-input-invalid' : ''}`}
-                />
-                {errors.firstName && (
-                  <span className="mhn-edit-profile-field-error">
-                    <span>{errors.firstName}</span>
-                  </span>
-                )}
-              </div>
-
-              <div>
-                <label className="mhn-form-label-block">
-                  Last Name
-                </label>
-                <Input
-                  type="text"
-                  value={formData.lastName}
-                  onChange={(e) => handleChange('lastName', e.target.value)}
-                  maxLength={50}
-                  placeholder="e.g. Garg"
-                  className={`mhn-edit-profile-input ${errors.lastName ? 'mhn-input-invalid' : ''}`}
-                />
-                {errors.lastName && (
-                  <span className="mhn-edit-profile-field-error">
-                    <span>{errors.lastName}</span>
-                  </span>
-                )}
-              </div>
+              <FormInput<EditProfileFormValues, 'displayName'> name="displayName" label="Display Name" required maxLength={50} placeholder="e.g. Saksham Garg" inputClassName="mhn-edit-profile-input" containerClassName="" errorClassName="mhn-edit-profile-field-error" isNameInput />
+              <FormInput<EditProfileFormValues, 'firstName'> name="firstName" label="First Name" maxLength={50} placeholder="e.g. Saksham" inputClassName="mhn-edit-profile-input" containerClassName="" errorClassName="mhn-edit-profile-field-error" isNameInput />
+              <FormInput<EditProfileFormValues, 'lastName'> name="lastName" label="Last Name" maxLength={50} placeholder="e.g. Garg" inputClassName="mhn-edit-profile-input" containerClassName="" errorClassName="mhn-edit-profile-field-error" isNameInput />
             </div>
 
             {/* Date of Birth & Gender Grid */}
             <div className="mhn-edit-profile-system-banner mhn-mt-16">
-              <div>
-                <label className="mhn-form-label-block">
-                  Date of Birth
-                </label>
-                <Input
-                  type="date"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => handleChange('dateOfBirth', e.target.value)}
-                  className={`mhn-edit-profile-input ${errors.dateOfBirth ? 'mhn-input-invalid' : ''}`}
-                />
-                {errors.dateOfBirth && (
-                  <span className="mhn-edit-profile-field-error">
-                    <span>{errors.dateOfBirth}</span>
-                  </span>
-                )}
-              </div>
+              <FormInput<EditProfileFormValues, 'dateOfBirth'> name="dateOfBirth" label="Date of Birth" type="date" inputClassName="mhn-edit-profile-input" containerClassName="" errorClassName="mhn-edit-profile-field-error" />
 
-              <Dropdown
+              <FormSelect<EditProfileFormValues, 'genderCategory'>
+                name="genderCategory"
                 label="Gender Category"
-                value={formData.genderCategory}
                 options={GENDER_OPTIONS}
-                onChange={(val) => handleChange('genderCategory', val)}
-                placeholder="Select gender"
+                selectClassName="mhn-edit-profile-input"
+                containerClassName=""
               />
             </div>
           </div>
@@ -505,92 +374,49 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               </h3>
 
               <div className="mhn-edit-profile-system-banner">
-                <Dropdown
+                <FormSelect<EditProfileFormValues, 'position'>
+                  name="position"
                   label="Position"
-                  value={formData.position}
-                  options={positionOptions}
-                  onChange={(val) => handleChange('position', val)}
-                  placeholder="Select position"
+                  options={[...positionOptions]}
+                  selectClassName="mhn-edit-profile-input"
+                  containerClassName=""
                 />
 
-                <Dropdown
+                <FormSelect<EditProfileFormValues, 'shootsCatches'>
+                  name="shootsCatches"
                   label="Shoots / Catches"
-                  value={formData.shootsCatches}
                   options={SHOOTS_OPTIONS}
-                  onChange={(val) => handleChange('shootsCatches', val)}
-                  placeholder="Select option"
+                  selectClassName="mhn-edit-profile-input"
+                  containerClassName=""
                 />
 
-                <div>
-                  <label className="mhn-form-label-block">
-                    Jersey Number (#)
-                  </label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="99"
-                    value={formData.jerseyNumber}
-                    onChange={(e) => handleChange('jerseyNumber', e.target.value)}
-                    placeholder="e.g. 97"
-                    className={`mhn-edit-profile-input ${errors.jerseyNumber ? 'mhn-input-invalid' : ''}`}
-                  />
-                  {errors.jerseyNumber && (
-                    <span className="mhn-edit-profile-field-error">
-                      <span>{errors.jerseyNumber}</span>
-                    </span>
-                  )}
-                </div>
+                <FormInput<EditProfileFormValues, 'jerseyNumber'> name="jerseyNumber" label="Jersey Number (#)" type="number" min="0" max="99" placeholder="e.g. 97" inputClassName="mhn-edit-profile-input" containerClassName="" errorClassName="mhn-edit-profile-field-error" disableAutoSanitize />
               </div>
             </div>
           )}
 
           {/* Location & Bio Section */}
           <div className="mhn-mb-24">
-            <div className="mhn-mt-16">
-              <label className="mhn-form-label-block">
-                City / Location
-              </label>
-              <Input
-                type="text"
-                value={formData.city}
-                onChange={(e) => handleChange('city', e.target.value)}
-                maxLength={50}
-                placeholder="e.g. Toronto, ON or Austria, Europe"
-                className={`mhn-edit-profile-input ${errors.city ? 'mhn-input-invalid' : ''}`}
-              />
-              {errors.city && (
-                <span className="mhn-edit-profile-field-error">
-                  <span>{errors.city}</span>
-                </span>
-              )}
-            </div>
+            <FormInput<EditProfileFormValues, 'city'> name="city" label="City / Location" maxLength={50} placeholder="e.g. Toronto, ON or Austria, Europe" inputClassName="mhn-edit-profile-input" containerClassName="mhn-mt-16" errorClassName="mhn-edit-profile-field-error" disableAutoSanitize />
 
             <div className="mhn-mt-16">
-              <label className="mhn-form-label-block">
-                Player Bio
-              </label>
-              <Textarea
-                value={formData.bio}
-                onChange={(e) => handleChange('bio', e.target.value)}
+              <FormTextarea<EditProfileFormValues, 'bio'>
+                name="bio"
+                label="Player Bio"
                 placeholder="Write a brief intro about your hockey background and goals..."
                 rows={3}
-                className={`mhn-edit-profile-input mhn-bio-textarea ${errors.bio ? 'mhn-input-invalid' : ''}`}
+                textareaClassName="mhn-edit-profile-input mhn-bio-textarea"
+                errorClassName="mhn-edit-profile-field-error"
               />
               <div className="mhn-toggle-row-between">
-                <div>
-                  {errors.bio && (
-                    <span className="mhn-edit-profile-field-error">
-                      <span>{errors.bio}</span>
-                    </span>
-                  )}
-                </div>
+                <div />
                 <span className="mhn-edit-profile-char-count">
-                  {formData.bio.length} / 300
+                  {(formData.bio ?? '').length} / 300
                 </span>
               </div>
             </div>
           </div>
-        </form>
+        </Form>
 
         {/* Modal Footer Actions */}
         <div
@@ -610,8 +436,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             </Button>
 
             <Button
-              type="button"
-              onClick={() => void formik.submitForm()}
+              type="submit"
+              form="edit-profile-form"
               disabled={isSaveDisabled}
               className={`mhn-btn-profile-save ${isSaveDisabled ? 'disabled' : 'active'}`}
             >
@@ -662,6 +488,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
           </div>
         </div>
       )}
+
+      {cropModal}
     </div>
   );
 };

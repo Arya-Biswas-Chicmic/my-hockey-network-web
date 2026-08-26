@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'changes/**']
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify (docs, security, types, lint, tests, build)
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      API_BASE_URL: https://development-api.example.com/v1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Prepare pnpm
+        run: corepack prepare pnpm@11.19.0 --activate
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Package manager check
+        run: pnpm package-manager:check
+
+      - name: Documentation freshness check
+        run: pnpm docs:check
+
+      - name: Security baseline check
+        run: pnpm security:check
+
+      - name: Component reuse check
+        run: pnpm components:check
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint:check
+
+      - name: Test with coverage
+        run: pnpm test:coverage
+
+      - name: Build web
+        run: pnpm build:web
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter @my-hockey-network/web exec playwright install --with-deps chromium
+
+      - name: E2E smoke tests (guest-only — see apps/web/e2e/README.md)
+        run: pnpm --filter @my-hockey-network/web test:e2e public.spec.ts
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14

@@ -3,6 +3,7 @@ import React from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useProfileCardData } from '@/hooks/use-profile-card-data';
 import { LockKeyhole, MapPin } from 'lucide-react';
+import { FallbackImage } from '@/components/ui/fallback-image';
 
 interface ProfileSummaryCardProps {
   name?: string;
@@ -42,26 +43,23 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
       <div className="mhn-network-profile-card">
         {/* Cover Banner */}
         <div className="mhn-network-card-banner">
-          <img 
-            src={resolvedCover} 
-            alt="Cover" 
+          <FallbackImage
+            src={resolvedCover}
+            alt="Cover"
+            fill
+            fallbackSrc="/cover.png"
             className="mhn-network-banner-img"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/cover.png';
-            }} 
           />
         </div>
 
         {/* Avatar Circle */}
         <div className="mhn-network-avatar-wrapper">
           <div className="mhn-network-avatar-circle">
-            <img 
-              src={resolvedAvatar} 
-              alt={resolvedName} 
+            <FallbackImage
+              src={resolvedAvatar}
+              alt={resolvedName}
+              fill
               className="mhn-network-avatar-img"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/userPlaceholder.png';
-              }} 
             />
           </div>
         </div>
@@ -82,13 +80,13 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
           {/* Team Badge Pill (Only shown for Player or Coach if a team was added, never for Parent) */}
           {effectiveTeamName && (
             <div className="mhn-profile-team-badge">
-              <img 
-                src={teamLogo} 
-                alt={effectiveTeamName} 
+              <FallbackImage
+                src={teamLogo}
+                alt={effectiveTeamName}
+                width={21}
+                height={25}
+                fallbackSrc="/HC.png"
                 className="mhn-profile-team-logo"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/HC.png';
-                }}
               />
               <span className="mhn-profile-team-name">{effectiveTeamName}</span>
             </div>

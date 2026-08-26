@@ -4,9 +4,10 @@ Last reviewed: 2026-08-26
 
 ## Status
 
-This is the approved target policy for the future Next.js web migration. Implementation is paused
-until the owner explicitly starts it. Nothing in this document authorizes adding Next.js files,
-dependencies, cache configuration, metadata, or deployment changes to the current Vite application.
+The Next.js migration is active. There is intentionally no public marketing/landing page: `/`
+redirects directly to `/onboarding`, which remains `noindex`. Public profile pages under
+`/players/[id]` remain the only currently implemented public entity route. Do not put `/` in the
+sitemap unless the owner later approves a real public landing page.
 
 SEO applies to the public user-facing web portal. The authenticated portal, account screens, and
 Admin Panel are not search acquisition surfaces and must not expose private data to crawlers or a
@@ -81,4 +82,3 @@ access-control mechanism.
 - [Next.js sitemap convention](https://nextjs.org/docs/app/api-reference/file-conventions/metadata/sitemap)
 - [Next.js App Router project structure](https://nextjs.org/docs/app/getting-started/project-structure)
 - [TanStack Query advanced server rendering](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr)
-
