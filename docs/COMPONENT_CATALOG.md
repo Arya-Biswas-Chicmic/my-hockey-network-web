@@ -10,6 +10,11 @@ when it represents a distinct reusable behavior or feature composition. Web Reac
 Native presentation remain separate; share contracts, state machines, validation, tokens, and props
 concepts across platforms rather than forcing DOM/native markup into one component.
 
+Prefer 100–200 focused lines and review components over 300 lines for meaningful decomposition by
+responsibility. Do not create trivial wrappers solely to satisfy a line-count target. Follow the
+page → feature/container → feature component → existing platform primitive hierarchy described in
+`FRONTEND_DEVELOPMENT_GUIDELINES.md`.
+
 ## Existing web primitives and shared compositions
 
 - `common/Button`: generic button foundation; currently underused and its variants need completion.
@@ -54,3 +59,14 @@ reuse Zod/domain rules. New substantial web forms must follow this pattern.
 1. Add feature-specific variants to existing primitives instead of introducing parallel controls.
 2. Add a Storybook or component showcase as approved Figma implementation begins.
 3. Add component-level interaction and accessibility tests screen-by-screen.
+
+## Next.js migration reuse gate
+
+The future web primitive layer will adapt project-owned shadcn/ui components rather than allowing
+feature folders to generate private copies. Before each migrated screen, map every existing control,
+card, dialog, feedback state, and layout composition to reuse, extend, refactor, or retire. Record new
+reusable primitives here and cover their meaningful variants and interactions.
+
+React Hook Form providers/field adapters must be shared by web forms while Zod schemas remain in the
+platform-neutral validation boundary where possible. Mobile may reuse those schemas and domain
+rules, but never the web form controls or shadcn presentation.

@@ -11,7 +11,8 @@ Last reviewed: 2026-08-26
 
 ## Start here
 
-- [Project context](PROJECT_CONTEXT.md)
+- [Primary frontend architecture standard](docs/FRONTEND_ARCHITECTURE.md)
+- [Project context](docs/PROJECT_CONTEXT.md)
 - [Architecture](docs/codebase_architecture_guide.md)
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)
 - [Security register](docs/SECURITY_REGISTER.md)
@@ -21,6 +22,12 @@ Last reviewed: 2026-08-26
 - [Component catalog and reuse policy](docs/COMPONENT_CATALOG.md)
 - [Web routing and mobile navigation](docs/NAVIGATION.md)
 - [Data fetching and cookie authentication](docs/DATA_FETCHING_AND_AUTH.md)
+- [Frontend development guidelines](docs/FRONTEND_DEVELOPMENT_GUIDELINES.md)
+- [Approved Next.js migration plan — paused](docs/NEXTJS_MIGRATION_PLAN.md)
+- [Web SEO, rendering, and ISR strategy — paused](docs/WEB_SEO_AND_RENDERING_STRATEGY.md)
+- [Third-party and dependency policy](docs/THIRD_PARTY_AND_DEPENDENCY_POLICY.md)
+- [Admin Panel alignment reference](docs/ADMIN_PANEL_ALIGNMENT.md)
+- [Mobile application setup](docs/MOBILE_SETUP.md)
 
 ## Prerequisites
 

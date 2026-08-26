@@ -69,6 +69,19 @@ native-fetch client; feature code must not call fetch directly or introduce Axio
 imports use `@/`. Explicit `any` is rejected. Ordinary UI icons use Lucide, while custom branded or
 data-visual SVG markup stays isolated in approved reusable icon components.
 
+Feature composition should flow from page to feature/container to focused feature components and
+existing platform primitives. Prefer 100–200-line files and review files above 300 lines for
+meaningful responsibility-based decomposition. This is a maintainability target, not permission to
+create trivial components. See `FRONTEND_DEVELOPMENT_GUIDELINES.md`.
+
+The web application is currently a Vite SPA. A coordinated migration to Next.js App Router,
+Server Components, SSR/SSG/ISR, shadcn/ui, a single replacement form system, optional Zustand,
+TanStack Table, and pnpm is approved but paused. Do not introduce target-stack pieces incrementally
+until the owner starts the migration. The target keeps the existing `apps/web`, `apps/mobile`, and
+`packages/*` ownership model; it does not flatten User Panel into the separate Admin repository.
+See `NEXTJS_MIGRATION_PLAN.md`, `WEB_SEO_AND_RENDERING_STRATEGY.md`,
+`THIRD_PARTY_AND_DEPENDENCY_POLICY.md`, and `ADMIN_PANEL_ALIGNMENT.md`.
+
 ## Routing rules
 
 - Web uses `BrowserRouter`, nested `AuthGuard`, `GuestGuard`, and `RoleGuard` routes.

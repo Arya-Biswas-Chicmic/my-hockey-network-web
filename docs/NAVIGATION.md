@@ -19,6 +19,14 @@ Mobile does not implement browser URL routes. Terms such as `ROUTES`, `TAB_ROUTE
 inside mobile refer only to React Navigation screen identifiers; they are not paths that can be
 opened or refreshed in a browser.
 
+## Approved web migration
+
+The web portal will move from React Router to Next.js App Router in a future coordinated migration.
+Implementation is paused until owner authorization. Until cutover, React Router remains the working
+router and must be maintained. Mobile will continue using React Navigation; App Router must never be
+introduced into the mobile application or shared packages. Route parity and guard/auth behavior must
+be tested during migration before React Router is removed.
+
 ## Web rules
 
 - Define URL metadata in the existing web route configuration and render it through `AppRouter`.

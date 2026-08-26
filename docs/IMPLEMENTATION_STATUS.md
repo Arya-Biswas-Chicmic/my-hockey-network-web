@@ -102,6 +102,18 @@ Last reviewed: 2026-08-26
   direct feature fetch calls, and retained only the credential-free signed media upload exception.
 - Verified web cookie authentication uses `credentials: 'include'` and `/auth/me`; documented why
   HttpOnly cookies are invisible to JavaScript and the required backend credentialed-CORS flags.
+- Added mandatory frontend development guidelines covering existing-code-first reuse, feature-based
+  boundaries, single responsibility, focused file-size targets, component composition, and explicit
+  separation between the active Vite/npm/Formik architecture and the approved, paused Next.js stack.
+- Recorded Next.js App Router as the approved target for the web portal and added a phased migration
+  plan. Implementation remains paused until explicit owner instruction; no application dependencies,
+  source, lockfiles, routing, or build configuration have been changed for the migration.
+- Reviewed the separate Admin Panel as a Next.js architectural reference and documented which
+  patterns should align (RHF/Zod, shadcn primitives, TanStack Query, focused Zustand, Vitest/RTL,
+  Playwright, aliases and coverage) and which must not be copied (Axios, admin business UI and its
+  single-app structure).
+- Added the paused web SEO/rendering/ISR policy and the built-in-first third-party dependency policy.
+  No migration dependency, application file, cache behavior, or deployment configuration changed.
 
 
 
@@ -132,3 +144,7 @@ to shared logic. The latest web, Android, and iOS production bundle commands pas
   creating duplicate primitives.
 - Expand UI integration/e2e coverage as stable Figma screens are implemented.
 - Migrate Expo SDK 54 to a patched SDK in a dedicated native change, then re-run Android/iOS regression tests.
+- Execute the approved Next.js web migration only after the owner explicitly starts it and resolves
+  the kickoff decisions in `NEXTJS_MIGRATION_PLAN.md`.
+- At migration kickoff, create the route inventory, rendering/indexing matrix, dependency decision
+  records, and measured performance/accessibility baselines before converting feature routes.
