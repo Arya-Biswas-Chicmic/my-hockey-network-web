@@ -10,7 +10,7 @@ export interface ProfileValidationData {
   jerseyNumber?: string | number;
 }
 
-export function validateProfileField(name: keyof ProfileValidationData | string, value: any): string | null {
+export function validateProfileField(name: keyof ProfileValidationData | string, value: unknown): string | null {
   const strVal = value !== null && value !== undefined ? String(value) : '';
   const trimmed = strVal.trim();
 
@@ -78,7 +78,7 @@ export interface CareerValidationData {
   isCurrentPlaying?: boolean;
 }
 
-export function validateCareerField(name: keyof CareerValidationData | string, value: any, allData?: CareerValidationData): string | null {
+export function validateCareerField(name: keyof CareerValidationData | string, value: unknown, allData?: CareerValidationData): string | null {
   const strVal = value !== null && value !== undefined ? String(value) : '';
   const trimmed = strVal.trim();
 
@@ -187,4 +187,3 @@ export function maskEmail(email: string): string {
   const visible = localPart.slice(0, 4);
   return `${visible}****${domainPart}`;
 }
-

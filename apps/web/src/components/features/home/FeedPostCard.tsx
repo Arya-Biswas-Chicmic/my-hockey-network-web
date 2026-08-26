@@ -1,14 +1,15 @@
-import { Button } from '../../common/Button';
-import { Textarea } from '../../common/FormControls';
+import { Button } from '@/components/common/Button';
+import { Textarea } from '@/components/common/FormControls';
 import React, { useState, useEffect } from 'react';
 import { likePost, unlikePost, repostPost, updatePost, deletePost, followUser, unfollowUser } from '@my-hockey-network/core';
-import { Spinner } from '../../common/Spinner';
+import { Spinner } from '@/components/common/Spinner';
 
-import { useAuth } from '../../../hooks/use-auth';
-import { PostCommentSection } from './PostCommentSection';
-import { useFeedPermissions } from '../../../hooks/use-feed-permissions';
-import { showSuccessToast, showErrorToast, showInfoToast } from '../../../utils/toast';
+import { useAuth } from '@/hooks/use-auth';
+import { PostCommentSection } from '@/components/features/home/PostCommentSection';
+import { useFeedPermissions } from '@/hooks/use-feed-permissions';
+import { extractErrorMessage, getApiErrorStatus, showSuccessToast, showErrorToast, showInfoToast } from '@/utils/toast';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
+import { LockKeyhole, MoreHorizontal, Pencil, ThumbsUp, Trash2 } from 'lucide-react';
 
 
 export interface FeedPostProps {
@@ -137,7 +138,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
       setTimeout(() => {
         setIsDeleted(true);
       }, 300);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Delete Post error:', err);
       showErrorToast(err, ERROR_MESSAGES.FAILED_DELETE_POST);
     } finally {
@@ -157,7 +158,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
       if (onUpdateSuccess) {
         onUpdateSuccess(id, editContentInput.trim());
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Update Post error:', err);
       showErrorToast(err, ERROR_MESSAGES.FAILED_UPDATE_POST);
     } finally {
@@ -187,17 +188,18 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         await unlikePost(id);
       } else {
         const res = await likePost(id, 'LIKE');
-        if ((res as any)?.pendingGuardianApproval || (res as any)?.message === 'REACTION_PENDING_APPROVAL') {
+        if (res.pendingGuardianApproval || res.message === 'REACTION_PENDING_APPROVAL') {
           showInfoToast('Your reaction has been submitted and is waiting for parent/guardian approval.');
           setIsLiked(prevLiked);
           setLikes(prevLikes);
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(`❌ [FeedPostCard] Reaction API Error:`, err);
       setIsLiked(prevLiked);
       setLikes(prevLikes);
-      if (err?.statusCode === 403 && (err?.message?.includes('GUARDIAN_DISABLED') || err?.message?.includes('guardian'))) {
+      const message = extractErrorMessage(err, '');
+      if (getApiErrorStatus(err) === 403 && (message.includes('GUARDIAN_DISABLED') || message.includes('guardian'))) {
         showErrorToast(err, ERROR_MESSAGES.GUARDIAN_DISABLED_THIS_ACTION);
       }
     } finally {
@@ -230,7 +232,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         }
       } else {
         const res = await repostPost(id);
-        const createdRepostId = res?.post?.id || (res as any)?.data?.post?.id || (res as any)?.data?.id;
+        const createdRepostId = res.post?.id || res.data?.post?.id || res.data?.id;
 
         setReposts((prev) => prev + 1);
         setHasReposted(true);
@@ -249,7 +251,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
           onRepostComplete();
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(`❌ [FeedPostCard] Repost/Undo Repost API Error:`, err);
       showErrorToast(err, ERROR_MESSAGES.FAILED_REPOST);
     } finally {
@@ -290,7 +292,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
 
         showSuccessToast(res?.pendingGuardianApproval ? `Follow requested for ${authorName}` : `You are now following ${authorName}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(`❌ [FeedPostCard] Follow/Unfollow API Error:`, err);
       showErrorToast(err, ERROR_MESSAGES.FAILED_FOLLOW);
     } finally {
@@ -330,10 +332,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
             >
               {!canFollow ? (
                 <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
+                  <LockKeyhole size={14} aria-hidden="true" />
                   Follow
                 </>
               ) : isFollowingLoading ? (
@@ -353,11 +352,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                 className="mhn-btn-more-options"
                 aria-label="More options"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="5" cy="12" r="2" />
-                  <circle cx="12" cy="12" r="2" />
-                  <circle cx="19" cy="12" r="2" />
-                </svg>
+                <MoreHorizontal size={20} aria-hidden="true" />
               </Button>
 
               {isMenuOpen && (
@@ -370,7 +365,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                     }}
                     className="mhn-post-menu-item"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
+                    <Pencil size={14} aria-hidden="true" />
                     <span>Edit Post</span>
                   </Button>
                   <Button
@@ -380,7 +375,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
                     }}
                     className="mhn-post-menu-item-danger"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                    <Trash2 size={14} aria-hidden="true" />
                     <span>Delete Post</span>
                   </Button>
                 </div>
@@ -426,14 +421,9 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
             title={!canReact ? 'Parent did not give permission' : undefined}
           >
             {!canReact ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" className="like-count-icon">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
+              <LockKeyhole size={18} className="like-count-icon" aria-hidden="true" />
             ) : isLiked ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="#1860C3" stroke="#1860C3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="like-count-icon">
-                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
-              </svg>
+              <ThumbsUp size={20} fill="#1860C3" className="like-count-icon" aria-hidden="true" />
             ) : (
               <img src="/like.png" alt="" className="like-count-icon" />
             )}
@@ -451,10 +441,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
             title={!canComment ? 'Parent did not give permission' : undefined}
           >
             {!canComment ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" className="comment-count-icon">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
+              <LockKeyhole size={18} className="comment-count-icon" aria-hidden="true" />
             ) : (
               <img src="/comment.png" alt="" className="comment-count-icon" />
             )}
@@ -472,10 +459,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
               title={!canShare ? 'Parent did not give permission' : hasReposted ? 'Undo Repost' : 'Repost update'}
             >
               {!canShare ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" className="share-count-icon">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
+                <LockKeyhole size={18} className="share-count-icon" aria-hidden="true" />
               ) : isSharing ? (
                 <Spinner size="sm" color="#1860C3" />
               ) : (
@@ -563,7 +547,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
             <div className="mhn-delete-modal-header">
               <div className="mhn-dropdown-item-left">
                 <div className="mhn-delete-icon-circle">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                  <Trash2 size={18} aria-hidden="true" />
                 </div>
                 <h3 className="mhn-delete-modal-title">
                   Delete Post

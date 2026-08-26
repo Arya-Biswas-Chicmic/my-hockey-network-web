@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { GuardianApprovalModal, RequestSentCard } from '../components/features/auth';
+import { GuardianApprovalModal, RequestSentCard } from '@/components/features/auth';
 
 interface GuardianApprovalPageProps {
   onSendSuccess?: () => void;
   onSignOut?: () => void;
+  onContactSupport?: () => void;
 }
 
-export const GuardianApprovalPage: React.FC<GuardianApprovalPageProps> = ({ onSendSuccess, onSignOut }) => {
+export const GuardianApprovalPage: React.FC<GuardianApprovalPageProps> = ({ onSendSuccess, onSignOut, onContactSupport }) => {
   const [isSent, setIsSent] = useState(false);
 
   const handleSendRequest = (_email: string) => {
@@ -14,18 +15,6 @@ export const GuardianApprovalPage: React.FC<GuardianApprovalPageProps> = ({ onSe
     if (onSendSuccess) {
       onSendSuccess();
     }
-  };
-
-  const handleSignOut = () => {
-    if (onSignOut) {
-      onSignOut();
-    } else {
-      alert('User signed out successfully.');
-    }
-  };
-
-  const handleContactSupport = () => {
-    alert('Navigating to My Hockey Network Support Helpdesk...');
   };
 
   return (
@@ -39,8 +28,8 @@ export const GuardianApprovalPage: React.FC<GuardianApprovalPageProps> = ({ onSe
       ) : (
         <GuardianApprovalModal
           onSendRequest={handleSendRequest}
-          onSignOut={handleSignOut}
-          onContactSupport={handleContactSupport}
+          onSignOut={onSignOut}
+          onContactSupport={onContactSupport}
         />
       )}
     </main>

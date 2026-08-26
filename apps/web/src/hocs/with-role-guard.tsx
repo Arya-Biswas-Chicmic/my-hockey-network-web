@@ -1,6 +1,6 @@
 import React from 'react';
-import { RoleGuard, RoleGuardProps } from '../guards/role-guard';
-import { UserRole } from '../enums/role';
+import { RoleGuard, RoleGuardProps } from '@/guards/role-guard';
+import { UserRole } from '@/enums/role';
 
 export function withRoleGuard<P extends object>(
   Component: React.ComponentType<P>,

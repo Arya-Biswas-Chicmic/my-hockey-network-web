@@ -9,9 +9,9 @@ import { ICONS } from '@utils/icons';
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-import styles from './styles';
+import styles from '@/navigation/styles';
 
-import { TAB_ROUTES } from './tabRoutes';
+import { TAB_ROUTES } from '@/navigation/tabRoutes';
 
 export type MainTabParamList = {
   [TAB_ROUTES.HOME]: undefined;
@@ -21,7 +21,7 @@ export type MainTabParamList = {
 type TabConfig = {
   name: keyof MainTabParamList;
   label: string;
-  component: React.ComponentType<any>;
+  component: React.ComponentType<object>;
 };
 
 const Tab = createBottomTabNavigator<MainTabParamList>();

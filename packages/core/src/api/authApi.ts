@@ -62,6 +62,8 @@ export interface UpdateProfileDTO {
   coverImageKey?: string;
 }
 
+export type GenericAuthResponse = Record<string, unknown>;
+
 /**
  * Update user profile details (PATCH /v1/auth/profile)
  */
@@ -105,8 +107,8 @@ export async function refreshAuthSession(refreshToken?: string, clientType: 'web
 /**
  * Verify Organization Invite Token (Header: X-Invite-Token)
  */
-export async function verifyOrganizationInvite(inviteToken: string, clientType: 'web' | 'mobile' = 'web'): Promise<any> {
-  return apiFetch<any>('/auth/organization/verify-invite', {
+export async function verifyOrganizationInvite(inviteToken: string, clientType: 'web' | 'mobile' = 'web'): Promise<GenericAuthResponse> {
+  return apiFetch<GenericAuthResponse>('/auth/organization/verify-invite', {
     method: 'POST',
     headers: { 'X-Invite-Token': inviteToken },
     body: JSON.stringify({}),
@@ -116,8 +118,8 @@ export async function verifyOrganizationInvite(inviteToken: string, clientType: 
 /**
  * Accept Organization Invite (Header: X-Invite-Token)
  */
-export async function acceptOrganizationInvite(inviteToken: string, payload: Record<string, any>, clientType: 'web' | 'mobile' = 'web'): Promise<any> {
-  return apiFetch<any>('/auth/organization/accept-invite', {
+export async function acceptOrganizationInvite(inviteToken: string, payload: Record<string, unknown>, clientType: 'web' | 'mobile' = 'web'): Promise<GenericAuthResponse> {
+  return apiFetch<GenericAuthResponse>('/auth/organization/accept-invite', {
     method: 'POST',
     headers: { 'X-Invite-Token': inviteToken },
     body: JSON.stringify(payload),
@@ -127,8 +129,8 @@ export async function acceptOrganizationInvite(inviteToken: string, payload: Rec
 /**
  * Verify Association Invite Token (Header: X-Invite-Token)
  */
-export async function verifyAssociationInvite(inviteToken: string, clientType: 'web' | 'mobile' = 'web'): Promise<any> {
-  return apiFetch<any>('/auth/association/verify-invite', {
+export async function verifyAssociationInvite(inviteToken: string, clientType: 'web' | 'mobile' = 'web'): Promise<GenericAuthResponse> {
+  return apiFetch<GenericAuthResponse>('/auth/association/verify-invite', {
     method: 'POST',
     headers: { 'X-Invite-Token': inviteToken },
     body: JSON.stringify({}),
@@ -138,8 +140,8 @@ export async function verifyAssociationInvite(inviteToken: string, clientType: '
 /**
  * Accept Association Invite (Header: X-Invite-Token)
  */
-export async function acceptAssociationInvite(inviteToken: string, payload: Record<string, any>, clientType: 'web' | 'mobile' = 'web'): Promise<any> {
-  return apiFetch<any>('/auth/association/accept-invite', {
+export async function acceptAssociationInvite(inviteToken: string, payload: Record<string, unknown>, clientType: 'web' | 'mobile' = 'web'): Promise<GenericAuthResponse> {
+  return apiFetch<GenericAuthResponse>('/auth/association/accept-invite', {
     method: 'POST',
     headers: { 'X-Invite-Token': inviteToken },
     body: JSON.stringify(payload),
@@ -149,8 +151,8 @@ export async function acceptAssociationInvite(inviteToken: string, payload: Reco
 /**
  * Verify Password Reset Token (Header: X-Reset-Token)
  */
-export async function verifyPasswordResetToken(resetToken: string, orgOrAssoc: 'organization' | 'association' = 'organization', clientType: 'web' | 'mobile' = 'web'): Promise<any> {
-  return apiFetch<any>(`/auth/${orgOrAssoc}/verify-password-reset`, {
+export async function verifyPasswordResetToken(resetToken: string, orgOrAssoc: 'organization' | 'association' = 'organization', clientType: 'web' | 'mobile' = 'web'): Promise<GenericAuthResponse> {
+  return apiFetch<GenericAuthResponse>(`/auth/${orgOrAssoc}/verify-password-reset`, {
     method: 'POST',
     headers: { 'X-Reset-Token': resetToken },
     body: JSON.stringify({}),
@@ -160,8 +162,8 @@ export async function verifyPasswordResetToken(resetToken: string, orgOrAssoc: '
 /**
  * Reset Password (Header: X-Reset-Token)
  */
-export async function resetPasswordWithToken(resetToken: string, newPassword: string, orgOrAssoc: 'organization' | 'association' = 'organization', clientType: 'web' | 'mobile' = 'web'): Promise<any> {
-  return apiFetch<any>(`/auth/${orgOrAssoc}/reset-password`, {
+export async function resetPasswordWithToken(resetToken: string, newPassword: string, orgOrAssoc: 'organization' | 'association' = 'organization', clientType: 'web' | 'mobile' = 'web'): Promise<GenericAuthResponse> {
+  return apiFetch<GenericAuthResponse>(`/auth/${orgOrAssoc}/reset-password`, {
     method: 'POST',
     headers: { 'X-Reset-Token': resetToken },
     body: JSON.stringify({ newPassword }),

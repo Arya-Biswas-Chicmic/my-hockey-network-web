@@ -1,19 +1,22 @@
-import { Button } from '../components/common/Button';
-import { Input, Select, Dropdown } from '../components/common/FormControls';
+import { Button } from '@/components/common/Button';
+import { Input, Select, Dropdown } from '@/components/common/FormControls';
 import React, { useState, useEffect } from 'react';
-import { Header } from '../components/common/Header';
-import { NoDataFound } from '../components/common/no-data-found';
-import { useDebounce } from '../hooks/use-debounce';
-import { NetworkSkeletonCard } from '../components/features/network/NetworkSkeletonLoader';
+import { Header } from '@/components/common/Header';
+import { NoDataFound } from '@/components/common/no-data-found';
+import { useDebounce } from '@/hooks/use-debounce';
+import { NetworkSkeletonCard } from '@/components/features/network/NetworkSkeletonLoader';
 import {
   getNotificationSettings,
   updateNotificationSettings,
   getBlockedUsersSettings,
   removeRelationship,
+  type BlockedUserDTO,
+  type NotificationSettingItem,
 } from '@my-hockey-network/core';
-import { showSuccessToast, showErrorToast } from '../utils/toast';
+import { extractErrorMessage, showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
 import { NavTabEnum, SettingsSubTabEnum } from '@my-hockey-network/contracts';
+import { Ban, MapPin, Search } from 'lucide-react';
 
 
 
@@ -28,7 +31,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 800);
 
-  const [blockedUsers, setBlockedUsers] = useState<any[]>([]);
+  const [blockedUsers, setBlockedUsers] = useState<Array<{
+    id: string;
+    name: string;
+    roleTag: string;
+    avatarUrl: string;
+    teamName: string;
+    teamLogo: string;
+    location: string;
+  }>>([]);
   const [isLoadingBlocked, setIsLoadingBlocked] = useState(true);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
   const [updatingNotifKey, setUpdatingNotifKey] = useState<string | null>(null);
@@ -40,7 +51,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
     try {
       const res = await getBlockedUsersSettings();
       if (res && res.items && Array.isArray(res.items)) {
-        const mapped = res.items.map((b: any) => {
+        const mapped = res.items.map((b: BlockedUserDTO) => {
           const cp = b.counterparty || b;
           return {
             id: b.id || b.targetId || `b_${Math.random()}`,
@@ -56,8 +67,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
       } else {
         setBlockedUsers([]);
       }
-    } catch (err: any) {
-      console.warn('❌ [SettingsPage] getBlockedUsersSettings notice:', err?.message || err);
+    } catch (err: unknown) {
+      console.warn('❌ [SettingsPage] getBlockedUsersSettings notice:', extractErrorMessage(err));
     } finally {
       if (showSkeleton) setIsLoadingBlocked(false);
     }
@@ -74,7 +85,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
       const res = await getNotificationSettings();
       if (res && Array.isArray(res.items)) {
         const itemMap: Record<string, boolean> = {};
-        res.items.forEach((it: any) => {
+        res.items.forEach((it: NotificationSettingItem) => {
           if (it.key === 'MESSAGE') itemMap.message = !!it.enabled;
           if (it.key === 'CONNECTION_REQUEST') itemMap.connectionRequest = !!it.enabled;
           if (it.key === 'ACTIVITY') itemMap.activity = !!it.enabled;
@@ -89,8 +100,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
           group: itemMap.group ?? prev.group,
         }));
       }
-    } catch (err: any) {
-      console.warn('❌ [SettingsPage] getNotificationSettings notice:', err?.message || err);
+    } catch (err: unknown) {
+      console.warn('❌ [SettingsPage] getNotificationSettings notice:', extractErrorMessage(err));
     } finally {
       if (showShimmer) setIsLoadingNotifications(false);
     }
@@ -112,7 +123,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
 
       // Re-fetch GET API with shimmer loader enabled
       await fetchBlockedUsers(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ [SettingsPage] Unblock Error:', err);
       showErrorToast(err, ERROR_MESSAGES.FAILED_UNBLOCK);
     } finally {
@@ -156,8 +167,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
 
       // Re-fetch GET API with shimmer loader enabled after updating settings
       await fetchNotificationSettings(true);
-    } catch (err: any) {
-      console.warn('❌ [SettingsPage] updateNotificationSettings notice:', err?.message || err);
+    } catch (err: unknown) {
+      console.warn('❌ [SettingsPage] updateNotificationSettings notice:', extractErrorMessage(err));
       showErrorToast(err, ERROR_MESSAGES.FAILED_NOTIFICATION_SETTING);
     } finally {
 
@@ -227,20 +238,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
         <div className="mhn-settings-top-bar">
           <h1 className="mhn-settings-title">Settings</h1>
           <div className="mhn-settings-search-wrapper">
-            <svg
-              className="mhn-settings-search-icon"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#94A3B8"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+            <Search className="mhn-settings-search-icon" size={16} aria-hidden="true" />
             <Input
               type="text"
               value={searchQuery}
@@ -384,10 +382,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                         : "You haven't blocked any users yet."
                     }
                     icon={(
-                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                      </svg>
+                      <Ban size={32} color="#64748B" aria-hidden="true" />
                     )}
                   />
                 ) : (
@@ -411,10 +406,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                         </div>
 
                         <div className="mhn-blocked-user-loc-row">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                            <circle cx="12" cy="10" r="3" />
-                          </svg>
+                          <MapPin size={12} aria-hidden="true" />
                           <span>{user.location}</span>
                         </div>
 

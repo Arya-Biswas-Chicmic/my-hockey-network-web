@@ -1,4 +1,5 @@
 import type { AuthIntentEnum, ChannelTypeEnum, UserRoleEnum, UserStatusEnum } from '../enums';
+import type { CareerEntry } from './profile.types';
 
 export type ChannelType = ChannelTypeEnum | 'EMAIL' | 'SMS';
 export type AuthIntent = AuthIntentEnum | 'SIGNUP' | 'SIGNIN';
@@ -66,6 +67,7 @@ export interface AuthMeResponse {
     approved: boolean;
   };
   isProfileComplete?: boolean;
+  isProfileCompleted?: boolean;
   roleAssignments: Array<{
     role: string;
     scopeType: string | null;
@@ -77,22 +79,39 @@ export interface AuthMeResponse {
   profile?: {
     id: string;
     type: string;
+    profileType?: string | null;
+    primaryRole?: string | null;
+    roleTag?: string | null;
     displayName: string;
+    name?: string;
     avatarUrl: string | null;
+    coverImageUrl?: string | null;
+    coverUrl?: string | null;
+    coverImageKey?: string | null;
     isMinor: boolean;
     accessLevel: 'LIMITED' | 'SUPERVISED' | 'FULL';
     verificationStatus: string;
+    isProfileComplete?: boolean;
+    isProfileCompleted?: boolean;
     firstName?: string;
     lastName?: string;
     bio?: string;
     city?: string;
+    location?: string | null;
     dateOfBirth?: string;
+    dob?: string | null;
     position?: string;
     shootsCatches?: string;
     jerseyNumber?: number | string | null;
     genderCategory?: string;
     preferredLanguage?: string;
     defaultVisibility?: string;
+    teamName?: string | null;
+    team?: string | null;
+    academyName?: string | null;
+    currentTeam?: string | null;
+    careerEntries?: CareerEntry[] | null;
+    career?: CareerEntry[] | null;
   };
   counts?: {
     followers?: number;

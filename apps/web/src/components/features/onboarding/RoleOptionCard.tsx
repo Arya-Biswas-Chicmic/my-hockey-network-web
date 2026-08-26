@@ -1,5 +1,5 @@
 import React from 'react';
-import type { RoleOptionCardProps } from '../../../types/onboarding';
+import type { RoleOptionCardProps } from '@/types/onboarding';
 
 export const RoleOptionCard: React.FC<RoleOptionCardProps> = ({
   role,

@@ -1,15 +1,17 @@
-import { Button } from '../../common/Button';
-import { Input, Select, Textarea, Dropdown } from '../../common/FormControls';
+import { Button } from '@/components/common/Button';
+import { Input, Select, Textarea, Dropdown } from '@/components/common/FormControls';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useAuth } from '../../../hooks/use-auth';
-import { Spinner } from '../../common/Spinner';
+import { useAuth } from '@/hooks/use-auth';
+import { Spinner } from '@/components/common/Spinner';
 import { uploadMediaFile } from '@my-hockey-network/core';
-import { resolveMediaUrl } from '../../../utils/mediaUtils';
+import { resolveMediaUrl } from '@/utils/mediaUtils';
 import type { AuthMeResponse } from '@my-hockey-network/contracts';
+import { X } from 'lucide-react';
 import { QueryKeys } from '@my-hockey-network/contracts';
 import { validateProfileField } from '@my-hockey-network/validation';
-import { globalQueryClient } from '../../../query';
-import { useReferenceData } from '../../../hooks/use-reference-data';
+import { globalQueryClient } from '@/query';
+import { useReferenceData } from '@/hooks/use-reference-data';
+import { useFormik, type FormikErrors } from 'formik';
 
 export interface EditProfileFormData {
   firstName: string;
@@ -78,6 +80,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const { positions: refPositions } = useReferenceData();
   const positionOptions = refPositions.length ? refPositions : POSITION_OPTIONS;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const avatarPreviewUrlRef = useRef<string | null>(null);
   const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
 
   const extractProfileValues = useCallback(
@@ -96,7 +99,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       return {
         firstName: prof?.firstName ?? '',
         lastName: prof?.lastName ?? '',
-        displayName: prof?.displayName ?? (userObj as any)?.displayName ?? (user as any)?.displayName ?? '',
+        displayName: prof?.displayName ?? '',
         bio: prof?.bio ?? '',
         city: prof?.city ?? '',
         dateOfBirth: dobFormatted,
@@ -112,53 +115,98 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     [user]
   );
 
-  const [initialForm, setInitialForm] = useState<EditProfileFormData>(() => extractProfileValues());
-  const [formData, setFormData] = useState<EditProfileFormData>(() => extractProfileValues());
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState<boolean>(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+
+  const revokeAvatarPreview = useCallback(() => {
+    if (avatarPreviewUrlRef.current) {
+      URL.revokeObjectURL(avatarPreviewUrlRef.current);
+      avatarPreviewUrlRef.current = null;
+    }
+  }, []);
+
+  const formik = useFormik<EditProfileFormData>({
+    initialValues: extractProfileValues(),
+    validate: (values) => {
+      const validationErrors: FormikErrors<EditProfileFormData> = {};
+      (Object.keys(values) as Array<keyof EditProfileFormData>).forEach((key) => {
+        const error = validateProfileField(key, values[key] ?? '');
+        if (error) validationErrors[key] = error;
+      });
+      return validationErrors;
+    },
+    onSubmit: async (values, helpers) => {
+      setSubmissionError(null);
+      let uploadedAvatarKey: string | undefined;
+
+      if (selectedAvatarFile) {
+        try {
+          const uploadResponse = await uploadMediaFile(selectedAvatarFile, 'AVATAR');
+          uploadedAvatarKey = uploadResponse.storageKey;
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : 'Failed to upload photo to storage. Please try again.';
+          setSubmissionError(message);
+          return;
+        }
+      }
+
+      try {
+        const apiResponse = await onSave?.({ ...values, avatarKey: uploadedAvatarKey });
+        let freshData: EditProfileFormData;
+
+        if (apiResponse?.profile) {
+          globalQueryClient.setQueryData([QueryKeys.AUTH_ME], apiResponse);
+          freshData = extractProfileValues(apiResponse);
+        } else {
+          void globalQueryClient.invalidateQueries({ queryKey: [QueryKeys.AUTH_ME] });
+          freshData = extractProfileValues(user);
+        }
+
+        void globalQueryClient.invalidateQueries({ queryKey: [QueryKeys.USER_PROFILE] });
+        helpers.resetForm({ values: freshData });
+        setSaveSuccessMsg('Profile updated successfully!');
+        revokeAvatarPreview();
+        setSelectedAvatarFile(null);
+        window.setTimeout(() => {
+          setSaveSuccessMsg(null);
+          onClose();
+        }, 1200);
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Failed to update profile. Please try again.';
+        setSubmissionError(message);
+      }
+    },
+  });
+
+  useEffect(() => revokeAvatarPreview, [revokeAvatarPreview]);
 
   // Sync form data whenever modal opens or user object updates
   useEffect(() => {
     if (isOpen) {
       const init = extractProfileValues();
-      setInitialForm(init);
-      setFormData(init);
-      setErrors({});
+      formik.resetForm({ values: init });
+      setSubmissionError(null);
       setSaveSuccessMsg(null);
       setShowDiscardConfirm(false);
       setSelectedAvatarFile(null);
+      revokeAvatarPreview();
     }
-  }, [isOpen, user, extractProfileValues]);
+  }, [isOpen, user, extractProfileValues, revokeAvatarPreview]); // Formik is intentionally reset only when the modal input changes.
 
   if (!isOpen) return null;
 
-  const userEmail =
-    (user as any)?.email ||
-    (user as any)?.user?.email ||
-    (user?.profile as any)?.email ||
-    (user as any)?.contactEmail ||
-    (user as any)?.about?.email ||
-    '';
+  const userEmail = user?.email || '';
   const userPrimaryRole = user?.primaryRole || user?.profile?.type || 'PLAYER';
   const isPlayer = userPrimaryRole.toUpperCase() === 'PLAYER';
 
   // Compute dirty state
-  const isFormDirty = JSON.stringify(initialForm) !== JSON.stringify(formData) || !!selectedAvatarFile;
+  const { values: formData, errors, isSubmitting } = formik;
+  const isFormDirty = formik.dirty || !!selectedAvatarFile;
 
   const handleChange = (field: keyof EditProfileFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    const err = validateProfileField(field, value);
-    setErrors((prev) => {
-      const updated = { ...prev };
-      if (err) {
-        updated[field] = err;
-      } else {
-        delete updated[field];
-      }
-      return updated;
-    });
+    void formik.setFieldValue(field, value, true);
+    setSubmissionError(null);
   };
 
   const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -167,23 +215,19 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       // Validate MIME type as per media-uploads.md: jpeg, png, webp (max 10MB)
       const validMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       if (!validMimeTypes.includes(file.type.toLowerCase())) {
-        setErrors((prev) => ({
-          ...prev,
-          form: 'Unsupported image format. Please select a JPG, PNG, or WebP photo (HEIC/SVG/GIF not supported).',
-        }));
+        setSubmissionError('Unsupported image format. Please select a JPG, PNG, or WebP photo (HEIC/SVG/GIF not supported).');
         return;
       }
 
       if (file.size > 10 * 1024 * 1024) {
-        setErrors((prev) => ({
-          ...prev,
-          form: 'File size exceeds 10 MB limit. Please select a smaller photo.',
-        }));
+        setSubmissionError('File size exceeds 10 MB limit. Please select a smaller photo.');
         return;
       }
 
       setSelectedAvatarFile(file);
+      revokeAvatarPreview();
       const previewUrl = URL.createObjectURL(file);
+      avatarPreviewUrlRef.current = previewUrl;
       handleChange('avatarUrl', previewUrl);
     }
   };
@@ -193,74 +237,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       setShowDiscardConfirm(true);
     } else {
       onClose();
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validate all fields before submitting
-    const newErrors: Record<string, string> = {};
-    (Object.keys(formData) as Array<keyof EditProfileFormData>).forEach((key) => {
-      const err = validateProfileField(key, formData[key] || '');
-      if (err) newErrors[key] = err;
-    });
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    setIsSubmitting(true);
-    setErrors({});
-
-    let uploadedAvatarKey: string | undefined = undefined;
-
-    // Step 1 & 2: If user selected a new photo file, request upload slot and upload raw bytes to storage
-    if (selectedAvatarFile) {
-      try {
-        const uploadRes = await uploadMediaFile(selectedAvatarFile, 'AVATAR');
-        uploadedAvatarKey = uploadRes.storageKey;
-      } catch (uploadErr: any) {
-        console.error('❌ [EditProfileModal] Avatar Storage Upload Failed:', uploadErr);
-        setErrors({ form: uploadErr.message || 'Failed to upload photo to storage. Please try again.' });
-        setIsSubmitting(false);
-        return;
-      }
-    }
-
-    // Step 3: Save profile changes (PATCH /v1/auth/profile) sending avatarKey
-    try {
-      if (onSave) {
-        const apiResponse = await onSave({
-          ...formData,
-          avatarKey: uploadedAvatarKey,
-        });
-
-        if (apiResponse && (apiResponse as AuthMeResponse).profile) {
-          globalQueryClient.setQueryData(QueryKeys.AUTH_ME, apiResponse);
-          globalQueryClient.invalidateQueries(QueryKeys.USER_PROFILE);
-          const freshData = extractProfileValues(apiResponse as AuthMeResponse);
-          setInitialForm(freshData);
-          setFormData(freshData);
-        } else {
-          globalQueryClient.invalidateQueries(QueryKeys.AUTH_ME);
-          globalQueryClient.invalidateQueries(QueryKeys.USER_PROFILE);
-          const freshData = extractProfileValues(user);
-          setInitialForm(freshData);
-          setFormData(freshData);
-        }
-      }
-      setSaveSuccessMsg('Profile updated successfully!');
-      setSelectedAvatarFile(null);
-      setTimeout(() => {
-        setSaveSuccessMsg(null);
-        onClose();
-      }, 1200);
-    } catch (err: any) {
-      setErrors({ form: err.message || 'Failed to update profile. Please try again.' });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -295,15 +271,12 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             className="mhn-edit-profile-close-btn"
             aria-label="Close modal"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <X size={20} aria-hidden="true" />
           </Button>
         </div>
 
         {/* Modal Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="mhn-edit-profile-form-body">
+        <form onSubmit={formik.handleSubmit} className="mhn-edit-profile-form-body" noValidate>
           {saveSuccessMsg && (
             <div
               className="mhn-resend-notice-card mhn-mb-20"
@@ -313,11 +286,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             </div>
           )}
 
-          {errors.form && (
+          {submissionError && (
             <div
               className="mhn-edit-profile-field-error mhn-mb-20"
             >
-              {errors.form}
+              {submissionError}
             </div>
           )}
 
@@ -406,14 +379,18 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 {formData.avatarUrl !== '/userPlaceholder.png' && (
                   <Button
                     type="button"
-                    onClick={() => handleChange('avatarUrl', '/userPlaceholder.png')}
+                    onClick={() => {
+                      revokeAvatarPreview();
+                      setSelectedAvatarFile(null);
+                      handleChange('avatarUrl', '/userPlaceholder.png');
+                    }}
                     className="mhn-btn-remove-photo"
                   >
                     Remove
                   </Button>
                 )}
                 <p className="mhn-parent-card-sub-sm mhn-mt-6">
-                  Allowed JPG, PNG or WebP. Max 5MB.
+                  Allowed JPG, PNG or WebP. Max 10MB.
                 </p>
               </div>
             </div>
@@ -628,7 +605,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
             <Button
               type="button"
-              onClick={handleSubmit}
+              onClick={() => void formik.submitForm()}
               disabled={isSaveDisabled}
               className={`mhn-btn-profile-save ${isSaveDisabled ? 'disabled' : 'active'}`}
             >

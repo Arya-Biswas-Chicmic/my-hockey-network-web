@@ -11,7 +11,6 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     host: '0.0.0.0',
-    port: 5174,
     allowedHosts: true,
     hmr: process.env.VITE_HMR_CLIENT_PORT
       ? { clientPort: Number(process.env.VITE_HMR_CLIENT_PORT) }
@@ -19,24 +18,14 @@ export default defineConfig({
     headers: {
       'Access-Control-Allow-Origin': '*',
     },
-    proxy: {
-      '/v1': {
-        target: process.env.VITE_PROXY_TARGET || 'https://reposeful-kareen-controllingly.ngrok-free.dev',
-        changeOrigin: true,
-        secure: false,
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-        },
-      },
-    },
   },
   preview: {
     host: '0.0.0.0',
-    port: 5174,
     allowedHosts: true,
   },
   resolve: {
     alias: {
+      '@': path.resolve(__dirname, 'src'),
       '@my-hockey-network/types': path.resolve(__dirname, '../../packages/types/src/index.ts'),
       '@my-hockey-network/constants': path.resolve(__dirname, '../../packages/constants/src/index.ts'),
       '@my-hockey-network/design-system': path.resolve(__dirname, '../../packages/design-system/src/index.ts'),

@@ -1,5 +1,5 @@
-import { apiFetch } from '../client';
-import { API_ENDPOINTS } from '../endpoints';
+import { apiFetch } from '@/services/client';
+import { API_ENDPOINTS } from '@/services/endpoints';
 
 export async function acceptGuardianRequest(code: string) {
   return apiFetch(API_ENDPOINTS.RELATIONSHIPS.GUARDIAN_REQUESTS_ACCEPT, {

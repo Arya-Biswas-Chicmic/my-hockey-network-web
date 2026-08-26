@@ -1,10 +1,11 @@
-import { Button } from '../components/common/Button';
+import { Button } from '@/components/common/Button';
 import React, { useState } from 'react';
-import { Header } from '../components/common/Header';
-import { PendingBanner } from '../components/common/PendingBanner';
-import { useFeedPermissions } from '../hooks/use-feed-permissions';
-import { NoDataFound } from '../components/common/no-data-found';
-import { NotificationCard, NotificationItemProps } from '../components/features/notifications/NotificationCard';
+import { Header } from '@/components/common/Header';
+import { PendingBanner } from '@/components/common/PendingBanner';
+import { useFeedPermissions } from '@/hooks/use-feed-permissions';
+import { NoDataFound } from '@/components/common/no-data-found';
+import { NotificationCard, NotificationItemProps } from '@/components/features/notifications/NotificationCard';
+import { MoreHorizontal } from 'lucide-react';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -79,11 +80,7 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
           <div className="mhn-notifications-card-header">
             <h2 className="mhn-notifications-title">Notifications</h2>
             <Button className="mhn-notifications-more-btn" aria-label="Notification options">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="5" cy="12" r="2" />
-                <circle cx="12" cy="12" r="2" />
-                <circle cx="19" cy="12" r="2" />
-              </svg>
+              <MoreHorizontal size={20} aria-hidden="true" />
             </Button>
           </div>
 

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Input, Textarea, Dropdown, FormField } from '../../common/FormControls';
-import { useReferenceData } from '../../../hooks/use-reference-data';
+import { Input, Textarea, Dropdown, FormField } from '@/components/common/FormControls';
+import { useReferenceData } from '@/hooks/use-reference-data';
 
 export interface CareerFormData {
   teamName: string;

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Button } from '../../common/Button';
-import { Input } from '../../common/FormControls';
-import { Spinner } from '../../common/Spinner';
+import { Button } from '@/components/common/Button';
+import { Input } from '@/components/common/FormControls';
+import { Spinner } from '@/components/common/Spinner';
 
 interface LinkExistingPlayerStepProps {
   childEmail: string;

@@ -1,8 +1,10 @@
-import { Button } from '../../common/Button';
+import { Button } from '@/components/common/Button';
 import React, { useState } from 'react';
-import { Spinner } from '../../common/Spinner';
-import { useAuth } from '../../../hooks/use-auth';
+import { Spinner } from '@/components/common/Spinner';
+import { useAuth } from '@/hooks/use-auth';
 import { ERROR_MESSAGES } from '@my-hockey-network/constants';
+import { extractErrorMessage } from '@/utils/toast';
+import { MapPin } from 'lucide-react';
 
 export interface PendingRequestProps {
   id: string;
@@ -42,9 +44,9 @@ export const PendingRequestCard: React.FC<PendingRequestProps> = ({
       if (onAccept) await onAccept(id);
       setStatus('accepted');
       await loadAuthMe(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Accept error:', err);
-      showToast(err?.message || ERROR_MESSAGES.FAILED_ACCEPT_REQUEST, 'error');
+      showToast(extractErrorMessage(err, ERROR_MESSAGES.FAILED_ACCEPT_REQUEST), 'error');
     } finally {
       setIsAcceptLoading(false);
     }
@@ -57,9 +59,9 @@ export const PendingRequestCard: React.FC<PendingRequestProps> = ({
       if (onIgnore) await onIgnore(id);
       setStatus('ignored');
       await loadAuthMe(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Ignore error:', err);
-      showToast(err?.message || ERROR_MESSAGES.FAILED_DECLINE_REQUEST, 'error');
+      showToast(extractErrorMessage(err, ERROR_MESSAGES.FAILED_DECLINE_REQUEST), 'error');
     } finally {
       setIsIgnoreLoading(false);
     }
@@ -119,10 +121,7 @@ export const PendingRequestCard: React.FC<PendingRequestProps> = ({
         {/* Location Line */}
         {hasValidLocation && (
           <div className="mhn-request-location-line">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mhn-flex-shrink-0">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-              <circle cx="12" cy="10" r="3"/>
-            </svg>
+            <MapPin size={12} className="mhn-flex-shrink-0" aria-hidden="true" />
             <span className="mhn-request-location-text">{location}</span>
           </div>
         )}

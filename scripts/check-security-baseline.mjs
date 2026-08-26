@@ -5,14 +5,23 @@ import { execFileSync } from 'node:child_process';
 
 const root = process.cwd();
 const findings = [];
-const sourceExtensions = new Set(['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs']);
+const sourceExtensions = new Set(['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs', '.json', '.toml']);
 const ignoredDirectories = new Set(['node_modules', 'dist', 'coverage', 'build', '.git', '__tests__']);
+const allowedNativeFetchFiles = new Set([
+  'packages/core/src/api/mediaApi.ts', // Required for direct upload to a backend-issued signed storage URL.
+]);
 const bannedPatterns = [
   [/logCurlCommand/, 'credential-bearing cURL logger'],
+  [/formatCurlCommand/, 'credential-bearing cURL formatter'],
   [/user_auth_token/, 'hard-coded authentication token'],
   [/mhn_access_token/, 'browser-readable access-token persistence'],
+  [/mhn_at_(?:local|session)/, 'browser-readable access-token persistence'],
+  [/localStorage\.setItem\s*\(\s*['"][^'"]*(?:access|refresh|auth)[^'"]*['"]/, 'browser-readable credential persistence'],
+  [/sessionStorage\.setItem\s*\(\s*['"][^'"]*(?:access|refresh|auth)[^'"]*['"]/, 'browser-readable credential persistence'],
   [/localStorage\.clear\s*\(/, 'unscoped browser storage clearing'],
   [/console\.log\s*\(/, 'production debug logging'],
+  [/console\.info\s*\(/, 'production debug logging'],
+  [/https?:\/\/[^\s'"/]*ngrok[^\s'"]*/i, 'hard-coded temporary API origin'],
 ];
 
 function walk(directory) {
@@ -26,6 +35,9 @@ function walk(directory) {
     if (!sourceExtensions.has(path.extname(entry.name))) continue;
     const relativePath = path.relative(root, absolutePath);
     const text = fs.readFileSync(absolutePath, 'utf8');
+    if (/\bfetch\s*\(/.test(text) && !allowedNativeFetchFiles.has(relativePath)) {
+      findings.push(`${relativePath}: native fetch must go through the shared API client`);
+    }
     for (const [pattern, label] of bannedPatterns) {
       if (pattern.test(text)) findings.push(`${relativePath}: ${label}`);
     }
@@ -34,6 +46,30 @@ function walk(directory) {
 
 walk(path.join(root, 'apps'));
 walk(path.join(root, 'packages'));
+
+for (const manifestPath of ['package.json', 'apps/web/package.json', 'apps/mobile/package.json']) {
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, manifestPath), 'utf8'));
+  if (manifest.dependencies?.axios || manifest.devDependencies?.axios) {
+    findings.push(`${manifestPath}: Axios is not part of the approved HTTP architecture`);
+  }
+}
+
+const deploymentFiles = [
+  'vercel.json',
+  'apps/web/vercel.json',
+  'apps/web/netlify.toml',
+  'apps/web/render.yaml',
+  'apps/web/public/_redirects',
+  'apps/web/vite.config.ts',
+];
+for (const relativePath of deploymentFiles) {
+  const absolutePath = path.join(root, relativePath);
+  if (!fs.existsSync(absolutePath)) continue;
+  const text = fs.readFileSync(absolutePath, 'utf8');
+  if (/https?:\/\/[^\s'"/]*ngrok[^\s'"]*/i.test(text)) {
+    findings.push(`${relativePath}: hard-coded temporary API origin`);
+  }
+}
 
 for (const packageName of ['core', 'api-client', 'auth', 'domain', 'validation']) {
   const packageRoot = path.join(root, 'packages', packageName, 'src');

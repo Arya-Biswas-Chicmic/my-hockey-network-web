@@ -1,5 +1,6 @@
 import React from 'react';
-import { Button } from '../../common/Button';
+import { Button } from '@/components/common/Button';
+import { Link } from 'lucide-react';
 
 interface AddPlayerChoiceStepProps {
   onCreateNew: () => void;
@@ -35,10 +36,7 @@ export const AddPlayerChoiceStep: React.FC<AddPlayerChoiceStepProps> = ({
         <div className="mhn-parent-choice-card" onClick={onLinkExisting}>
           <div className="mhn-parent-flex-row-center-16">
             <div className="mhn-parent-choice-icon-box mhn-gray">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-              </svg>
+              <Link size={20} aria-hidden="true" />
             </div>
             <div>
               <div className="mhn-parent-card-title">

@@ -9,7 +9,7 @@ export interface AlertItem {
   body: string;
   isRead: boolean;
   createdAt: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }
 
 export interface UnreadAlertCountResponse {

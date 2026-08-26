@@ -11,7 +11,4 @@ export enum HttpHeader {
   MHN_CSRF = 'mhn_csrf',
   X_REFRESH_TOKEN = 'X-Refresh-Token',
   X_ACCESS_TOKEN = 'x-access-token',
-  NGROK_SKIP_BROWSER_WARNING = 'ngrok-skip-browser-warning',
-  BYPASS_TUNNEL_REMINDER = 'Bypass-Tunnel-Reminder',
-  LOCALTUNNEL_SKIP_WARNING = 'localtunnel-skip-warning',
 }

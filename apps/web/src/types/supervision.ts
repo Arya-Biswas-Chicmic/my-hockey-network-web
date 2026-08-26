@@ -1,1 +1,1 @@
-export * from '../interfaces/supervision';
+export * from '@/interfaces/supervision';

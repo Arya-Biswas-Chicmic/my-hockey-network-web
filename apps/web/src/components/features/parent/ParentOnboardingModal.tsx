@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { ParentHeroCard } from './ParentHeroCard';
-import { WhoDoYouManageStep } from './WhoDoYouManageStep';
-import { AddPlayerChoiceStep } from './AddPlayerChoiceStep';
-import { CreatePlayerDetailsStep, PlayerDetailsFormData } from './CreatePlayerDetailsStep';
-import { CreatePlayerProtectStep, PlayerProtectFormData } from './CreatePlayerProtectStep';
-import { LinkExistingPlayerStep } from './LinkExistingPlayerStep';
-import { PlayerAddedSuccessStep } from './PlayerAddedSuccessStep';
+import { ParentHeroCard } from '@/components/features/parent/ParentHeroCard';
+import { WhoDoYouManageStep } from '@/components/features/parent/WhoDoYouManageStep';
+import { AddPlayerChoiceStep } from '@/components/features/parent/AddPlayerChoiceStep';
+import { CreatePlayerDetailsStep, PlayerDetailsFormData } from '@/components/features/parent/CreatePlayerDetailsStep';
+import { CreatePlayerProtectStep, PlayerProtectFormData } from '@/components/features/parent/CreatePlayerProtectStep';
+import { LinkExistingPlayerStep } from '@/components/features/parent/LinkExistingPlayerStep';
+import { PlayerAddedSuccessStep } from '@/components/features/parent/PlayerAddedSuccessStep';
 import { createManagedChild, sendGuardianInvite } from '@my-hockey-network/core';
 import type { CreateManagedChildDTO } from '@my-hockey-network/core';
-import { formatDobToIso } from '../../../utils/guardianUtils';
+import { formatDobToIso } from '@/utils/guardianUtils';
+import { extractErrorMessage } from '@/utils/toast';
 
 export enum ParentOnboardingStep {
   WHO_MANAGE = 'WHO_MANAGE',
@@ -22,7 +23,7 @@ export enum ParentOnboardingStep {
 export interface ParentOnboardingModalProps {
   isOpen?: boolean;
   onClose?: () => void;
-  onComplete?: (data?: any) => void;
+  onComplete?: (data?: { type: 'create' | 'link'; playerName: string; childEmail?: string }) => void;
   isStandaloneModal?: boolean;
 }
 
@@ -85,9 +86,9 @@ export const ParentOnboardingModal: React.FC<ParentOnboardingModalProps> = ({
         playerName: res?.child?.displayName || detailsForm.fullName.trim(),
       });
       setStep(ParentOnboardingStep.SUCCESS);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Create Player Error:', err);
-      setErrorMessage(err.message || 'Failed to create player profile. Please check details.');
+      setErrorMessage(extractErrorMessage(err, 'Failed to create player profile. Please check details.'));
     } finally {
       setLoading(false);
     }
@@ -105,16 +106,16 @@ export const ParentOnboardingModal: React.FC<ParentOnboardingModalProps> = ({
         childEmail: childEmailInput.trim(),
       });
       setStep(ParentOnboardingStep.SUCCESS);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Link Player Error:', err);
-      setErrorMessage(err.message || 'Failed to send invitation. Please check email address.');
+      setErrorMessage(extractErrorMessage(err, 'Failed to send invitation. Please check email address.'));
     } finally {
       setLoading(false);
     }
   };
 
   const handleFinish = () => {
-    if (onComplete) onComplete(successData);
+    if (onComplete) onComplete(successData ?? undefined);
     else if (onClose) onClose();
   };
 

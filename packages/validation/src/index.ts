@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const emailSchema = z.string().trim().email('Enter a valid email address.');
 export const otpSchema = z.string().trim().regex(/^\d{4,8}$/, 'Enter a valid verification code.');
+export const sixDigitOtpSchema = z.string().trim().regex(/^\d{6}$/, 'Please fill out all 6 digits of the verification code.');
 export const dateOfBirthSchema = z.iso.date('Use YYYY-MM-DD format.');
 
 export function isEmailValid(email: string): boolean {

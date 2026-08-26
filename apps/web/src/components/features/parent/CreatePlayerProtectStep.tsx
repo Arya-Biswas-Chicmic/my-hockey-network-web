@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button } from '../../common/Button';
-import { Spinner } from '../../common/Spinner';
+import { Button } from '@/components/common/Button';
+import { Spinner } from '@/components/common/Spinner';
 
 export interface PlayerProtectFormData {
   profileVisibility: 'CONNECTIONS' | 'PUBLIC';
@@ -72,13 +72,13 @@ export const CreatePlayerProtectStep: React.FC<CreatePlayerProtectStepProps> = (
           CONTACT & CONNECTIONS
         </div>
         <div className="mhn-col-flex-gap-12">
-          {[
+          {([
             { key: 'requireApprovalAdultContact', label: 'Adult contact requests', sub: 'Require my approval' },
             { key: 'requireApprovalConnections', label: 'Connections', sub: 'Require my approval' },
             { key: 'requireApprovalTeamInvites', label: 'Team invitations', sub: 'Require my approval' },
             { key: 'requireApprovalMedia', label: 'Media visibility', sub: 'Require my approval' },
-          ].map((item) => {
-            const isChecked = Boolean((formData as any)[item.key]);
+          ] as const).map((item) => {
+            const isChecked = formData[item.key];
             return (
               <div key={item.key} className="mhn-toggle-row-between">
                 <div>

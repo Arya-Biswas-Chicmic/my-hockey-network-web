@@ -33,6 +33,10 @@ operation, contract, validation schema, state transition, token, and helper befo
   build-environment globals. Inject platform behavior through adapters.
 - Reuse an existing platform component and add typed variants before creating another component.
   A new component is allowed only for genuinely distinct semantics or reusable feature composition.
+- Use `@/` for imports within each application. Relative application imports are rejected.
+- Do not use explicit `any`. Extend contracts or accept `unknown` and narrow it safely.
+- Use Lucide for ordinary web UI icons. Custom brand/illustration SVG is allowed only in the
+  approved reusable icon components enforced by `npm run components:check`.
 
 ## Routing and navigation
 
@@ -46,6 +50,8 @@ operation, contract, validation schema, state transition, token, and helper befo
   containers, screens, transitions, tab bars, and navigation parameters cannot.
 - Preserve authentication bootstrap behavior: web guards wait for `/auth/me`; mobile chooses the
   authenticated or guest navigator only after SecureStore/session bootstrap completes.
+- TanStack Query owns web server-state fetching, cache, retry, and invalidation. It does not replace
+  React Router. Do not introduce another custom query cache.
 
 ## Environment and security
 
@@ -55,6 +61,9 @@ operation, contract, validation schema, state transition, token, and helper befo
   cookies, authorization headers, or private keys.
 - Web authentication uses backend httpOnly cookies with CSRF held in memory. Mobile credentials use
   Expo SecureStore. Never persist bearer credentials in localStorage, AsyncStorage, or Redux.
+- Shared API operations use the injected native-fetch client. Do not call `fetch()` directly or add
+  Axios. The only allowlisted direct fetch is the signed object-storage upload in `mediaApi.ts`,
+  which must not receive API cookies or authorization headers.
 - Do not add credential-bearing logs, debug cURL output, obfuscated source, or unreviewed generated
   code. All normal npm workflows must retain the obfuscation/security prechecks.
 

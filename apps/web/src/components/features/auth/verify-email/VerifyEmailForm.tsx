@@ -1,8 +1,10 @@
-import { Button } from '../../../common/Button';
-import { Input } from '../../../common/FormControls';
-import React, { useState, useRef, useEffect } from 'react';
-import { Spinner } from '../../../common/Spinner';
-import { maskEmail } from '@my-hockey-network/validation';
+import { Button } from '@/components/common/Button';
+import React, { useState, useEffect } from 'react';
+import { Spinner } from '@/components/common/Spinner';
+import { maskEmail, sixDigitOtpSchema } from '@my-hockey-network/validation';
+import { useFormik } from 'formik';
+import { OtpCodeInput } from '@/components/common/OtpCodeInput';
+import { ArrowLeft } from 'lucide-react';
 
 interface VerifyEmailFormProps {
   email?: string;
@@ -23,14 +25,18 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
   errorMessage = null,
   resendNotice = null,
 }) => {
-  const [code, setCode] = useState<string[]>(['', '', '', '', '', '']);
-  const [otpError, setOtpError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState<number>(59);
-
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const formik = useFormik({
+    initialValues: { code: '' },
+    validate: ({ code }) => {
+      const result = sixDigitOtpSchema.safeParse(code);
+      return result.success ? {} : { code: result.error.issues[0]?.message };
+    },
+    onSubmit: ({ code }) => onConfirm?.(code),
+  });
 
   useEffect(() => {
-    let timer: any;
+    let timer: ReturnType<typeof setInterval> | undefined;
     if (resendCooldown > 0) {
       timer = setInterval(() => {
         setResendCooldown((prev) => prev - 1);
@@ -38,82 +44,6 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
     }
     return () => clearInterval(timer);
   }, [resendCooldown]);
-
-  const handleChange = (index: number, value: string) => {
-    if (otpError) setOtpError(null);
-
-    const cleanVal = value.replace(/\D/g, '');
-
-    if (value.length > 1) {
-      // Handle paste of 6 numeric digits
-      const digits = cleanVal.slice(0, 6).split('');
-      if (digits.length === 0) return;
-      const newCode = [...code];
-      digits.forEach((d, i) => {
-        newCode[i] = d;
-      });
-      setCode(newCode);
-      const nextIndex = Math.min(digits.length, 5);
-      inputRefs.current[nextIndex]?.focus();
-      return;
-    }
-
-    const singleDigit = cleanVal.slice(0, 1);
-    const newCode = [...code];
-    newCode[index] = singleDigit;
-    setCode(newCode);
-
-    if (singleDigit && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace') {
-      if (!code[index] && index > 0) {
-        inputRefs.current[index - 1]?.focus();
-      }
-      return;
-    }
-
-    if (
-      e.key === 'Tab' ||
-      e.key === 'ArrowLeft' ||
-      e.key === 'ArrowRight' ||
-      e.key === 'Delete' ||
-      e.key === 'Enter' ||
-      e.ctrlKey ||
-      e.metaKey
-    ) {
-      return;
-    }
-
-    // Reject non-digit keystrokes
-    if (!/^\d$/.test(e.key)) {
-      e.preventDefault();
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const fullCode = code.join('');
-
-    // Pre-API Client Validation: All 6 digits must be entered!
-    if (fullCode.length < 6 || code.some((d) => !d.trim())) {
-      setOtpError('Please fill out all 6 digits of the verification code.');
-      // Focus first empty box
-      const firstEmptyIdx = code.findIndex((d) => !d.trim());
-      if (firstEmptyIdx !== -1) {
-        inputRefs.current[firstEmptyIdx]?.focus();
-      }
-      return;
-    }
-
-    setOtpError(null);
-    if (onConfirm) {
-      onConfirm(fullCode);
-    }
-  };
 
   const handleResendClick = () => {
     if (resendCooldown > 0 || loading) return;
@@ -123,7 +53,8 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
     setResendCooldown(59);
   };
 
-  const activeError = otpError || errorMessage;
+  const activeError =
+    ((formik.touched.code || formik.submitCount > 0) ? formik.errors.code : null) || errorMessage;
 
   const formattedTimer = `00:${resendCooldown.toString().padStart(2, '0')}`;
   const isLastTenSeconds = resendCooldown <= 10 && resendCooldown > 0;
@@ -137,9 +68,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
           disabled={loading}
           className="mhn-btn-back-link"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
+          <ArrowLeft size={18} strokeWidth={2.5} />
           <span>Back</span>
         </Button>
       )}
@@ -160,27 +89,14 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="verify-email-form">
-        <div className="otp-inputs-row mhn-relative-container">
-          {code.map((digit, index) => (
-            <Input
-              key={index}
-              ref={(el) => {
-                inputRefs.current[index] = el;
-              }}
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={1}
-              value={digit}
-              onChange={(e) => handleChange(index, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(index, e)}
-              className={`otp-digit-input ${activeError ? 'mhn-input-invalid' : ''}`}
-              disabled={loading}
-              autoFocus={index === 0}
-            />
-          ))}
-        </div>
+      <form onSubmit={formik.handleSubmit} className="verify-email-form" noValidate>
+        <OtpCodeInput
+          value={formik.values.code}
+          onChange={(code) => void formik.setFieldValue('code', code, true)}
+          error={activeError}
+          disabled={loading}
+          className="mhn-relative-container"
+        />
 
         {/* Standardized Edit Profile Reference Validation Error Format */}
         {activeError && (

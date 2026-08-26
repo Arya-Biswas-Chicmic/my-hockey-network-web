@@ -6,8 +6,5 @@ services:
     staticPublishPath: ./dist
     routes:
       - type: rewrite
-        source: /v1/*
-        destination: https://reposeful-kareen-controllingly.ngrok-free.dev/v1/*
-      - type: rewrite
         source: /*
         destination: /index.html

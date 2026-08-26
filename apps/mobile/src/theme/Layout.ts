@@ -1,6 +1,6 @@
 import { ColorValue, ImageStyle, TextStyle, ViewStyle } from 'react-native';
 
-import { ThemeColors } from './constants';
+import { ThemeColors } from '@/theme/constants';
 
 export type Style = ViewStyle | TextStyle | ImageStyle;
 type StyleFunctionWithNumber = (value: number) => Style;

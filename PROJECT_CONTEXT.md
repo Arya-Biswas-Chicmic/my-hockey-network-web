@@ -1,6 +1,6 @@
 # My Hockey Network frontend context
 
-Last reviewed: 2026-08-21
+Last reviewed: 2026-08-26
 
 ## Product scope
 
@@ -28,6 +28,15 @@ files or deployment environment variables; no application fallback URL is checke
 
 Web and mobile navigation intentionally remain different. Web authentication relies on backend
 httpOnly cookies and keeps CSRF in memory. Mobile credentials are stored only in Expo SecureStore.
+Web server state is managed by TanStack Query; React Router remains responsible for URLs and route
+guards. Shared HTTP behavior uses the injected native-fetch client. Direct feature-level `fetch`
+and Axios are prohibited.
+
+Web forms use Formik for interaction state and centralized validators rather than page-local regular
+expressions. Authenticated page modules are lazy loaded. The desktop Home shell keeps side content
+in place while the center feed owns vertical scrolling; mobile retains document scrolling.
+Application imports use `@/`, explicit `any` is forbidden, and ordinary web UI icons use Lucide.
+Custom SVG is restricted to approved reusable brand/illustration components.
 
 ## Web routing
 

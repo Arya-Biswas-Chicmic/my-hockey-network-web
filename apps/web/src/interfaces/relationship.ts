@@ -1,4 +1,4 @@
-import type { RelationshipStatus } from '../enums/status';
+import type { RelationshipStatus } from '@/enums/status';
 
 export interface NetworkUserItem {
   id: string;

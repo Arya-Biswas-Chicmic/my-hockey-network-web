@@ -1,5 +1,5 @@
-import { DarkColorType } from './darkTheme';
-import { DefaultColorType } from './lightTheme';
+import { DarkColorType } from '@/theme/darkTheme';
+import { DefaultColorType } from '@/theme/lightTheme';
 
 export enum THEME {
   DEVICE = 'Device',

@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useAuth } from '../hooks/use-auth';
-import { FullAppSkeletonLoader } from '../components/common/FullAppSkeletonLoader';
-import { paths } from '../constants/paths';
+import { useAuth } from '@/hooks/use-auth';
+import { FullAppSkeletonLoader } from '@/components/common/FullAppSkeletonLoader';
+import { paths } from '@/constants/paths';
 
 export function AuthGuard({ children }: Readonly<{ children?: ReactNode }>) {
   const { isAuthenticated, isLoading, hasBootstrapped, user } = useAuth();
@@ -14,9 +14,7 @@ export function AuthGuard({ children }: Readonly<{ children?: ReactNode }>) {
   if (!isAuthenticated || !user) {
     return <Navigate replace to={paths.auth.onboarding} state={{ next: location.pathname }} />;
   }
-  const hasCompletedOnboarding = Boolean(
-    user.onboardingCompletedAt || user.primaryRole || user.profile?.displayName || user.profile?.id,
-  );
+  const hasCompletedOnboarding = Boolean(user.onboardingCompletedAt);
 
   if (!hasCompletedOnboarding && !location.pathname.startsWith('/guardian') && !location.pathname.startsWith('/sent')) {
     return <Navigate replace to={paths.auth.onboarding} />;

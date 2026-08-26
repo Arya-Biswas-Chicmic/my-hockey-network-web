@@ -1,14 +1,16 @@
 import React, { useState, useRef } from 'react';
-import { Button } from '../components/common/Button';
-import { Input, Textarea, Select } from '../components/common/FormControls';
-import { Header } from '../components/common/Header';
-import { useDebounce } from '../hooks/use-debounce';
-import { showSuccessToast, showErrorToast } from '../utils/toast';
-import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '@my-hockey-network/constants';
+import { Button } from '@/components/common/Button';
+import { Input, Textarea, Select } from '@/components/common/FormControls';
+import { Header } from '@/components/common/Header';
+import { useDebounce } from '@/hooks/use-debounce';
+import { showErrorToast, showInfoToast } from '@/utils/toast';
 import { NavTabEnum } from '@my-hockey-network/contracts';
+import { useFormik } from 'formik';
+import { validateSupportTicketForm } from '@/validation/forms';
+import { ChevronDown, CircleHelp, Search } from 'lucide-react';
 
 interface HelpPageProps {
-  onNavigate?: (screen: string, extraData?: any) => void;
+  onNavigate?: (screen: string, extraData?: Record<string, unknown>) => void;
   onLogout?: () => void;
 }
 
@@ -141,14 +143,25 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
   const [expandedFaqId, setExpandedFaqId] = useState<string | null>('faq-1');
 
   // Report a problem ticket state
-  const [ticketCategory, setTicketCategory] = useState('technical');
-  const [ticketSubject, setTicketSubject] = useState('');
-  const [ticketDescription, setTicketDescription] = useState('');
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
-  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const ticketForm = useFormik({
+    initialValues: { category: 'technical', subject: '', description: '' },
+    validate: validateSupportTicketForm,
+    onSubmit: (values, helpers) => {
+      const subject = encodeURIComponent(`[${values.category}] ${values.subject.trim()}`);
+      const attachmentNote = attachedFile
+        ? `\n\nSelected attachment: ${attachedFile.name}\nPlease attach this file manually in your email client.`
+        : '';
+      const body = encodeURIComponent(`${values.description.trim()}${attachmentNote}`);
+      window.location.assign(`mailto:support@myhockeynetwork.com?subject=${subject}&body=${body}`);
+      showInfoToast('Your email application has been opened. Send the email to create the support request.');
+      helpers.resetForm();
+      setAttachedFile(null);
+    },
+  });
 
-  const handleTabChange = (tab: string, extraData?: any) => {
+  const handleTabChange = (tab: string, extraData?: Record<string, unknown>) => {
     setActiveTab(tab);
     if (onNavigate) {
       onNavigate(tab, extraData);
@@ -161,31 +174,13 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setAttachedFile(file);
-    }
-  };
-
-  const handleSubmitTicket = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!ticketSubject.trim() || !ticketDescription.trim()) {
-      showErrorToast(null, 'Please fill out subject and description before submitting.');
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showErrorToast('Attachments must be 5 MB or smaller.');
+      e.target.value = '';
       return;
     }
-
-    setIsSubmittingTicket(true);
-    try {
-      // Simulate API ticket submission
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      showSuccessToast(SUCCESS_MESSAGES.ACTION_COMPLETED || 'Support ticket submitted successfully! Our team will respond shortly.');
-      setTicketSubject('');
-      setTicketDescription('');
-      setAttachedFile(null);
-    } catch (err: any) {
-      showErrorToast(err, ERROR_MESSAGES.DEFAULT_UNEXPECTED);
-    } finally {
-      setIsSubmittingTicket(false);
-    }
+    setAttachedFile(file);
   };
 
   // Filter FAQs based on category pill & debounced search query
@@ -209,11 +204,7 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
         {/* ==================== HERO SEARCH SECTION ==================== */}
         <section className="mhn-help-hero-banner">
           <div className="mhn-help-hero-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
+            <CircleHelp size={28} aria-hidden="true" />
           </div>
 
           <h1 className="mhn-help-hero-title">
@@ -225,20 +216,7 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
 
           {/* Search Box */}
           <div className="mhn-help-search-wrapper">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#94A3B8"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="mhn-help-search-icon"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+            <Search size={20} className="mhn-help-search-icon" aria-hidden="true" />
             <Input
               type="text"
               placeholder="Search help topics, FAQs, technical issues..."
@@ -311,19 +289,7 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
                           {faq.question}
                         </span>
                       </div>
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#64748B"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className={`mhn-arrow-rotate ${isExpanded ? 'rotated' : ''}`}
-                      >
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
+                      <ChevronDown size={18} className={`mhn-arrow-rotate ${isExpanded ? 'rotated' : ''}`} aria-hidden="true" />
                     </Button>
 
                     {isExpanded && (
@@ -349,15 +315,15 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
             </p>
           </div>
 
-          <form onSubmit={handleSubmitTicket} className="mhn-col-flex-gap-20">
+          <form onSubmit={ticketForm.handleSubmit} className="mhn-col-flex-gap-20" noValidate>
             {/* Category Selection */}
             <div>
-              <label className="mhn-form-label-block">
+              <label className="mhn-form-label-block" htmlFor="ticketCategory">
                 Issue Category
               </label>
               <Select
-                value={ticketCategory}
-                onChange={(e) => setTicketCategory(e.target.value)}
+                id="ticketCategory"
+                {...ticketForm.getFieldProps('category')}
                 className="mhn-ticket-select-input"
               >
                 <option value="technical">🛠️ Technical / App Loading Issue</option>
@@ -370,45 +336,53 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
 
             {/* Subject Line */}
             <div>
-              <label className="mhn-form-label-block">
+              <label className="mhn-form-label-block" htmlFor="ticketSubject">
                 Subject
               </label>
               <Input
                 type="text"
+                id="ticketSubject"
                 placeholder="Brief summary of the issue (e.g. OTP code not arriving)"
-                value={ticketSubject}
-                onChange={(e) => setTicketSubject(e.target.value)}
+                {...ticketForm.getFieldProps('subject')}
                 className="mhn-ticket-select-input"
               />
+              {(ticketForm.touched.subject || ticketForm.submitCount > 0) && ticketForm.errors.subject && (
+                <span className="mhn-edit-profile-field-error">{ticketForm.errors.subject}</span>
+              )}
             </div>
 
             {/* Description */}
             <div>
-              <label className="mhn-form-label-block">
+              <label className="mhn-form-label-block" htmlFor="ticketDescription">
                 Detailed Description
               </label>
               <Textarea
                 placeholder="Please describe what happened, expected behavior, and steps to reproduce..."
-                value={ticketDescription}
-                onChange={(e) => setTicketDescription(e.target.value)}
+                id="ticketDescription"
+                {...ticketForm.getFieldProps('description')}
                 rows={4}
                 className="mhn-about-input-box"
               />
+              {(ticketForm.touched.description || ticketForm.submitCount > 0) && ticketForm.errors.description && (
+                <span className="mhn-edit-profile-field-error">{ticketForm.errors.description}</span>
+              )}
             </div>
 
             {/* File Upload Mockup */}
             <div>
-              <label className="mhn-form-label-block">
+              <label className="mhn-form-label-block" htmlFor="ticketAttachment">
                 Attach Screenshot / Log (Optional)
               </label>
               <Input
                 ref={fileInputRef}
+                id="ticketAttachment"
                 type="file"
                 accept="image/*,.log,.pdf"
                 onChange={handleFileSelect}
                 className="mhn-display-none"
               />
-              <div
+              <Button
+                type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="mhn-ticket-file-dropzone"
               >
@@ -422,17 +396,16 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
                     <span>📎 Click to upload a screenshot or error log</span>
                   </div>
                 )}
-              </div>
+              </Button>
             </div>
 
             {/* Submit Button */}
             <div>
               <Button
                 type="submit"
-                disabled={isSubmittingTicket}
                 className="mhn-btn-ticket-submit"
               >
-                {isSubmittingTicket ? 'Submitting Ticket...' : 'Submit Support Ticket'}
+                Open Support Email
               </Button>
             </div>
           </form>

@@ -1,31 +1,33 @@
-import { Button } from '../components/common/Button';
-import { Input } from '../components/common/FormControls';
+import { Button } from '@/components/common/Button';
+import { Input } from '@/components/common/FormControls';
 import React, { useState, useEffect } from 'react';
-import { Header, NoDataFound, ServerDown } from '../components/common';
-import { ManageNetworkCard } from '../components/features/network/ManageNetworkCard';
-import { ProfileSummaryCard } from '../components/features/home/ProfileSummaryCard';
-import { GroupsView } from '../components/features/network/GroupsView';
-import { GroupDetailView } from '../components/features/network/GroupDetailView';
-import { ConnectionsView } from '../components/features/network/ConnectionsView';
-import { PendingRequestCard, PendingRequestProps } from '../components/features/network/PendingRequestCard';
-import { SuggestedUserCard, SuggestedUserProps } from '../components/features/network/SuggestedUserCard';
-import { NetworkSkeletonGrid } from '../components/features/network/NetworkSkeletonLoader';
-import { EmptyState } from '../components/features/network/EmptyState';
-import { useDebounce } from '../hooks/use-debounce';
-import { useAuth } from '../hooks/use-auth';
-import { resolveCoverUrl } from '../utils/mediaUtils';
+import { Header, NoDataFound, ServerDown } from '@/components/common';
+import { ManageNetworkCard } from '@/components/features/network/ManageNetworkCard';
+import { ProfileSummaryCard } from '@/components/features/home/ProfileSummaryCard';
+import { GroupsView } from '@/components/features/network/GroupsView';
+import { GroupDetailView } from '@/components/features/network/GroupDetailView';
+import { ConnectionsView } from '@/components/features/network/ConnectionsView';
+import { PendingRequestCard, PendingRequestProps } from '@/components/features/network/PendingRequestCard';
+import { SuggestedUserCard, SuggestedUserProps } from '@/components/features/network/SuggestedUserCard';
+import { NetworkSkeletonGrid } from '@/components/features/network/NetworkSkeletonLoader';
+import { EmptyState } from '@/components/features/network/EmptyState';
+import { useDebounce } from '@/hooks/use-debounce';
+import { useAuth } from '@/hooks/use-auth';
+import { resolveCoverUrl } from '@/utils/mediaUtils';
 import {
   getRelationships,
   getPeopleYouMayKnow,
-  getSuggestedPeople,
   acceptRelationship,
   declineRelationship,
   followUser,
   RelationshipItem,
+  RecommendedPerson,
 } from '@my-hockey-network/core';
 
 import { QueryKeys, NavTabEnum, NetworkViewModeEnum } from '@my-hockey-network/contracts';
-import { useQuery } from '../query';
+import { useQuery } from '@/query';
+import { Search } from 'lucide-react';
+import { extractErrorMessage, getApiErrorStatus } from '@/utils/toast';
 
 
 interface PageProps {
@@ -64,11 +66,11 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
 
   useEffect(() => {
     if (relError) {
-      const err = relError as any;
-      if (err.statusCode === 502 || String(err.message).includes('502')) {
+      const message = extractErrorMessage(relError, 'Failed to load network requests.');
+      if (getApiErrorStatus(relError) === 502 || message.includes('502')) {
         setApiErrorMsg('Backend service unavailable (HTTP 502 Bad Gateway). Please try again later.');
       } else {
-        setApiErrorMsg(err.message || 'Failed to load network requests.');
+        setApiErrorMsg(message);
       }
     } else {
       setApiErrorMsg(null);
@@ -95,8 +97,8 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
         }
         return {
           id: item.id,
-          name: cp?.displayName || (item.source as any)?.displayName || '-',
-          avatarUrl: cp?.avatarUrl || (item.source as any)?.avatarUrl || '/userPlaceholder.png',
+          name: cp?.displayName || item.source?.displayName || '-',
+          avatarUrl: cp?.avatarUrl || item.source?.avatarUrl || '/userPlaceholder.png',
           roleTag: formattedRole,
           teamName: cp?.teamName || '-',
           teamLogo: cp?.teamLogo || '/kcBlue.png',
@@ -111,7 +113,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
 
   useEffect(() => {
     if (peopleData?.items && Array.isArray(peopleData.items)) {
-      const mapped: SuggestedUserProps[] = peopleData.items.map((item: any) => {
+      const mapped: SuggestedUserProps[] = peopleData.items.map((item: RecommendedPerson) => {
         const prof = item.profile || item;
         let formattedRole = prof.roleTag || '';
         if (!formattedRole) {
@@ -141,7 +143,9 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
   }, [peopleData]);
 
   const handleTabChange = (tab: string) => {
-    setActiveNavTab(tab as any);
+    if (Object.values(NavTabEnum).includes(tab as NavTabEnum)) {
+      setActiveNavTab(tab as NavTabEnum);
+    }
     if (tab === NavTabEnum.MY_NETWORK || tab === 'network') {
       setCurrentView(NetworkViewModeEnum.NETWORK);
     }
@@ -220,7 +224,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
             <aside className="mhn-network-col-left">
               {currentView === NetworkViewModeEnum.GROUPS ? (
                 <ProfileSummaryCard 
-                  coverUrl={resolveCoverUrl((user?.profile as any)?.coverImageUrl || (user?.profile as any)?.coverUrl, "/cover.png")}
+                  coverUrl={resolveCoverUrl(user?.profile?.coverImageUrl || user?.profile?.coverUrl, "/cover.png")}
                   location={user?.profile?.city || "-"}
                   teamLogo="/HC.png"
                   onPostClick={() => {
@@ -229,7 +233,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                 />
               ) : (
                 <ManageNetworkCard 
-                  bannerUrl={resolveCoverUrl((user?.profile as any)?.coverImageUrl || (user?.profile as any)?.coverUrl, "/cover.png")}
+                  bannerUrl={resolveCoverUrl(user?.profile?.coverImageUrl || user?.profile?.coverUrl, "/cover.png")}
                   location={user?.profile?.city || "-"}
                   teamLogo="/HC.png"
                   followersCount="-"
@@ -277,10 +281,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                   {/* Search Bar Input */}
                   <div className="mhn-network-search-box">
                     <div className="mhn-network-search-input-wrapper">
-                      <svg className="mhn-network-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                      </svg>
+                      <Search className="mhn-network-search-icon" size={18} aria-hidden="true" />
                       <Input
                         type="text"
                         value={searchQuery}

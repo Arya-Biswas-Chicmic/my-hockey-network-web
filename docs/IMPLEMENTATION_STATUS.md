@@ -1,6 +1,6 @@
 # Implementation status
 
-Last reviewed: 2026-08-25
+Last reviewed: 2026-08-26
 
 ## Completed
 
@@ -64,6 +64,44 @@ Last reviewed: 2026-08-25
 - Integrated full Post, Comment & Reaction Guardian Approval flow (`/v1/posts`, `/v1/approvals`). Minor/player actions held for guardian approval (`pendingGuardianApproval: true`, `isDraft: true`) display centralized pending notification (`HELPER_MESSAGES.GUARDIAN_APPROVAL_SUBMITTED: "Your post has been submitted and is waiting for parent/guardian approval."`) without adding drafts to active feed. Parent supervision queue (`supervision-page.tsx`) renders action badges (`Post Approval`, `Comment Approval`, `Reaction Approval`), post subject body previews, and executes `approveRequest` (`mode: 'SINGLE_USE'`) to publish posts (`POST_PUBLISHED`) or `declineRequest` to leave posts in draft state.
 - Created separate standalone GitHub repository `https://github.com/Arya-Biswas-Chicmic/my-hockey-network-web` under permitted account, pushed complete codebase (`main` and `feature/fixes-stable`), configured root `vercel.json` SPA build rules (`buildCommand: "npm run build:web"`, `outputDirectory: "apps/web/dist"`), connected to Vercel (`chicmic/my-hockey-network`), and deployed production application to `https://my-hockey-network.vercel.app`.
 - Refactored web component presentation code, replaced all static inline JS style objects across web pages (`home-page.tsx`, `settings-page.tsx`, `profile-page.tsx`, `supervision-page.tsx`) with modular, reusable CSS utility and component classes in `index.css`, and passed repository verification checks (`npm run verify`).
+- Removed credential-bearing cURL output and all web bearer-token persistence, restored unconditional
+  cookie-based `/auth/me` bootstrap, and expanded the security baseline to detect renamed loggers,
+  browser token keys, and temporary origins in deployment configuration.
+- Removed checked-in ngrok/Vite proxy origins, tunnel headers, and fixed development/preview ports.
+  Web and mobile now fail fast on their platform-specific ignored environment variable.
+- Corrected public guardian/request-sent routes, moved role-guard notifications out of render, made
+  onboarding completion depend on the backend completion timestamp, and added route-level lazy loading.
+- Added Formik and centralized web form validators for authentication and support reporting; added
+  jsdom form and route-guard integration tests.
+- Consolidated Dropdown into the existing FormControls primitive, removed inline-style escape hatches,
+  added label associations, removed the last web inline style, and used Tailwind utilities for the
+  desktop Home center-only scrolling shell.
+- Removed fake ticket submission success and browser alert placeholders, repaired stale feed updates,
+  removed dead Home session state, and made fallback feed keys deterministic.
+- Replaced production connection/group/group-detail sample records with real relationship, group,
+  member, group-post, join/leave, and group-post creation API flows; removed unused mock-data modules.
+- Applied non-breaking npm advisory remediations. Expo/Metro's remaining advisories require a separately
+  tested Expo SDK 57 migration and are recorded in the security register instead of being force-installed.
+- Migrated every semantic web `<form>` to Formik, including profile editing, post creation, comments,
+  authentication, guardian approval, OTP verification, and support. Added shared OTP and form-control
+  primitives plus integration coverage for auth and feed-content submission behavior.
+- Added real relationship/group/group-post data flows and removed production mock records. Connections,
+  groups, group membership, and group posts now use the shared configured API client.
+- Completed shared response interception for network failures, HTML/plain-text failures, JSON 5xx
+  envelopes, unauthorized refresh/retry, and successful empty 204 responses. Web JSON 5xx failures now
+  consistently activate the global server-down recovery screen.
+- Confirmed and tested BrowserRouter web routing with hydrated guest/auth/parent role guards, and
+  React Navigation native-stack/bottom-tab ownership on mobile.
+- Replaced the custom web query cache with TanStack Query while retaining React Router for URLs.
+  Query tests cover caching, request deduplication, retry behavior, and prefix invalidation.
+- Standardized all app-local imports on `@/` aliases in Vite, TypeScript, Babel, and Vitest.
+- Removed production and test explicit `any`; ESLint and repository checks now reject regressions.
+- Replaced ordinary inline web SVG markup with Lucide icons. Brand, onboarding illustration, and
+  hockey analytics SVGs are isolated in approved reusable components.
+- Confirmed the shared HTTP transport remains native fetch (not Axios), added enforcement against
+  direct feature fetch calls, and retained only the credential-free signed media upload exception.
+- Verified web cookie authentication uses `credentials: 'include'` and `/auth/me`; documented why
+  HttpOnly cookies are invisible to JavaScript and the required backend credentialed-CORS flags.
 
 
 
@@ -83,14 +121,14 @@ Last reviewed: 2026-08-25
 - Production web build must pass.
 - Web/native UI ownership and npm-only dependency management checks must pass.
 
-Latest measured shared-code coverage: 93.44% statements, 86.45% branches, 100% functions, and
-93.83% lines. The suite currently contains 74 tests across 12 test files. The latest web, Android,
-and iOS production bundle commands pass.
+Latest measured enforced-code coverage: 93.07% statements, 85.76% branches, 97.56% functions, and
+93.84% lines. The suite currently contains 87 tests across 17 test files. Web form validation,
+secure storage behavior, query behavior, and route/form integration are now represented in addition
+to shared logic. The latest web, Android, and iOS production bundle commands pass.
 
 ## Maintainability backlog
 
-- Split the largest presentation files (`profile-page`, `supervision-page`, `EditProfileModal`).
-- Replace remaining legacy `any` response normalization with contracts.
-- Add route-level lazy loading to reduce the web entry bundle.
+- Split the largest presentation files (`profile-page`, `supervision-page`, `EditProfileModal`) without
+  creating duplicate primitives.
 - Expand UI integration/e2e coverage as stable Figma screens are implemented.
-- Review and remediate dependency audit findings without forced breaking upgrades.
+- Migrate Expo SDK 54 to a patched SDK in a dedicated native change, then re-run Android/iOS regression tests.

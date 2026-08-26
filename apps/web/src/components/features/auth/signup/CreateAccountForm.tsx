@@ -1,9 +1,13 @@
-import { Button } from '../../../common/Button';
-import { Input } from '../../../common/FormControls';
-import React, { useState, useRef, useMemo } from 'react';
+import { Button } from '@/components/common/Button';
+import { Input } from '@/components/common/FormControls';
+import React, { useRef, useMemo } from 'react';
 import { CREATE_ACCOUNT_STRINGS } from '@my-hockey-network/shared';
-import { calculateAge, validateSignUpAgeAndApproval } from '@my-hockey-network/core';
-import { Spinner } from '../../../common/Spinner';
+import { calculateAge } from '@my-hockey-network/core';
+import { useFormik } from 'formik';
+import { validateCreateAccountForm } from '@/validation/forms';
+import { Spinner } from '@/components/common/Spinner';
+import { GoogleIcon } from '@/components/icons/BrandIcons';
+import { ArrowLeft } from 'lucide-react';
 
 interface CreateAccountFormProps {
   selectedRole?: string;
@@ -22,71 +26,21 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
   onSignInClick,
   loading = false,
 }) => {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [dob, setDob] = useState('');
-  const [localError, setLocalError] = useState<string | null>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
 
-  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{ fullName?: string; email?: string; dob?: string }>({});
-
-  // Compute real-time age
+  const formik = useFormik({
+    initialValues: { fullName: '', email: '', dob: '' },
+    validate: (values) => validateCreateAccountForm(values, selectedRole),
+    onSubmit: (values) => onSignUp?.({
+      fullName: values.fullName.trim(),
+      email: values.email.trim(),
+      dob: values.dob.trim(),
+    }),
+  });
+  const { fullName, email, dob } = formik.values;
+  const fieldErrors = formik.errors;
+  const hasAttemptedSubmit = formik.submitCount > 0;
   const currentAge = useMemo(() => calculateAge(dob), [dob]);
-
-  const validateFields = (
-    nameVal: string,
-    emailVal: string,
-    dobVal: string
-  ): { fullName?: string; email?: string; dob?: string } => {
-    const errs: { fullName?: string; email?: string; dob?: string } = {};
-
-    // 1. Full Name
-    const trimmedName = nameVal.trim();
-    if (!trimmedName) {
-      errs.fullName = 'Full Name is required.';
-    } else if (trimmedName.length < 2) {
-      errs.fullName = 'Full Name must be at least 2 characters.';
-    } else if (nameVal.length > 50) {
-      errs.fullName = 'Full Name cannot be more than 50 characters.';
-    }
-
-    // 2. Email Address
-    const trimmedEmail = emailVal.trim();
-    if (!trimmedEmail) {
-      errs.email = 'Email Address is required.';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      errs.email = 'Please enter a valid email address.';
-    }
-
-    // 3. Date of Birth
-    const trimmedDob = dobVal.trim();
-    if (!trimmedDob) {
-      errs.dob = 'Date of Birth is required.';
-    } else {
-      const computedAge = calculateAge(trimmedDob);
-      if (computedAge === null) {
-        errs.dob = 'Please enter a valid date of birth (DD/MM/YYYY).';
-      } else {
-        const roleUpper = selectedRole.toUpperCase();
-        if (roleUpper === 'PARENT') {
-          if (computedAge < 18) {
-            errs.dob = 'Parent account holders must be at least 18 years old.';
-          } else if (computedAge > 100) {
-            errs.dob = 'Maximum age limit is 100 years.';
-          }
-        } else {
-          if (computedAge < 5) {
-            errs.dob = `Minimum age for ${selectedRole.toLowerCase()}s is 5 years.`;
-          } else if (computedAge > 100) {
-            errs.dob = 'Maximum age limit is 100 years.';
-          }
-        }
-      }
-    }
-
-    return errs;
-  };
 
   // Smart DOB auto-formatter: e.g. 10042020 -> 10/04/2020
   const formatDobInput = (val: string) => {
@@ -103,11 +57,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
   const handleDobChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value;
     const formatted = formatDobInput(rawVal);
-    setDob(formatted);
-    setLocalError(null);
-    if (hasAttemptedSubmit) {
-      setFieldErrors(validateFields(fullName, email, formatted));
-    }
+    void formik.setFieldValue('dob', formatted, true);
   };
 
   const handleCalendarClick = () => {
@@ -127,33 +77,8 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
       if (parts.length === 3) {
         const [yyyy, mm, dd] = parts;
         const formatted = `${dd}/${mm}/${yyyy}`;
-        setDob(formatted);
-        setLocalError(null);
-        if (hasAttemptedSubmit) {
-          setFieldErrors(validateFields(fullName, email, formatted));
-        }
+        void formik.setFieldValue('dob', formatted, true);
       }
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setHasAttemptedSubmit(true);
-    setLocalError(null);
-
-    const errs = validateFields(fullName, email, dob);
-    setFieldErrors(errs);
-
-    if (Object.keys(errs).length > 0) {
-      return;
-    }
-
-    if (onSignUp) {
-      onSignUp({
-        fullName: fullName.trim(),
-        email: email.trim(),
-        dob: dob.trim(),
-      });
     }
   };
 
@@ -175,9 +100,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
           onClick={onBack}
           className="mhn-btn-back-link"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
+          <ArrowLeft size={18} aria-hidden="true" />
           <span>Back</span>
         </Button>
       )}
@@ -186,13 +109,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
         <p className="onboarding-subtitle">{CREATE_ACCOUNT_STRINGS.subtitle}</p>
       </div>
 
-      {localError && (
-        <div className="mhn-local-error-card">
-          {localError}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="auth-form-stack" noValidate>
+      <form onSubmit={formik.handleSubmit} className="auth-form-stack" noValidate>
         {/* Full Name Field */}
         <div className="auth-form-group">
           <label className="auth-label" htmlFor="fullName">
@@ -206,13 +123,9 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
               className={`auth-input ${hasAttemptedSubmit && fieldErrors.fullName ? 'mhn-input-invalid' : ''}`}
               placeholder={CREATE_ACCOUNT_STRINGS.fullNamePlaceholder}
               value={fullName}
-              onChange={(e) => {
-                const val = e.target.value.slice(0, 50);
-                setFullName(val);
-                if (hasAttemptedSubmit) {
-                  setFieldErrors(validateFields(val, email, dob));
-                }
-              }}
+              onChange={(e) => void formik.setFieldValue('fullName', e.target.value.slice(0, 50), true)}
+              onBlur={formik.handleBlur}
+              name="fullName"
             />
           </div>
           {hasAttemptedSubmit && renderFieldError(fieldErrors.fullName)}
@@ -231,13 +144,9 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
               className={`auth-input ${hasAttemptedSubmit && fieldErrors.email ? 'mhn-input-invalid' : ''}`}
               placeholder={CREATE_ACCOUNT_STRINGS.emailPlaceholder}
               value={email}
-              onChange={(e) => {
-                const val = e.target.value;
-                setEmail(val);
-                if (hasAttemptedSubmit) {
-                  setFieldErrors(validateFields(fullName, val, dob));
-                }
-              }}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              name="email"
             />
           </div>
           {hasAttemptedSubmit && renderFieldError(fieldErrors.email)}
@@ -267,6 +176,8 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
               placeholder={CREATE_ACCOUNT_STRINGS.dobPlaceholder}
               value={dob}
               onChange={handleDobChange}
+              onBlur={formik.handleBlur}
+              name="dob"
               maxLength={10}
             />
             <img
@@ -302,24 +213,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
         className="btn-google"
         onClick={onGoogleSignIn}
       >
-        <svg className="google-icon-svg" width="20" height="20" viewBox="0 0 24 24">
-          <path
-            fill="#4285F4"
-            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-          />
-          <path
-            fill="#34A853"
-            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-          />
-          <path
-            fill="#FBBC05"
-            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-          />
-          <path
-            fill="#EA4335"
-            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-          />
-        </svg>
+        <GoogleIcon className="google-icon-svg" width={20} height={20} />
         <span>{CREATE_ACCOUNT_STRINGS.googleButton}</span>
       </Button>
 

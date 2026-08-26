@@ -29,6 +29,7 @@ export interface SupervisionChildItem {
 
 export interface SupervisionControlItem {
   control: string;
+  name?: string;
   value: boolean | string;
   description?: string;
   configurable?: boolean;
@@ -45,7 +46,7 @@ export interface SupervisionLogItem {
 /**
  * Strips empty strings (""), null, or undefined fields from an object before sending payload
  */
-export function cleanEmptyFields<T extends Record<string, any>>(obj: T): Partial<T> {
+export function cleanEmptyFields<T extends object>(obj: T): Partial<T> {
   const result: Partial<T> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (value !== undefined && value !== null && value !== '') {
@@ -169,7 +170,18 @@ export async function getSupervisionLogs(
 
 export interface SupervisionPermissionsResponse {
   controlsMap: Record<string, boolean | string>;
-  raw: any;
+  raw: unknown;
+}
+
+interface SupervisionPermissionItem {
+  control?: string;
+  name?: string;
+  value: boolean | string;
+}
+
+interface SupervisionPermissionsPayload {
+  controls?: SupervisionPermissionItem[];
+  data?: { controls?: SupervisionPermissionItem[] };
 }
 
 /**
@@ -179,17 +191,17 @@ export interface SupervisionPermissionsResponse {
 export async function getMySupervisionPermissions(
   clientType: 'web' | 'mobile' = 'web'
 ): Promise<SupervisionPermissionsResponse> {
-  const res = await apiFetch<any>(
+  const res = await apiFetch<SupervisionPermissionsPayload>(
     API_ENDPOINTS.SUPERVISION.MY_PERMISSIONS,
     { method: 'GET' },
     clientType
   );
 
-  const controlsList = res?.controls || (res as any)?.data?.controls || [];
+  const controlsList = res.controls || res.data?.controls || [];
   const controlsMap: Record<string, boolean | string> = {};
 
   if (Array.isArray(controlsList)) {
-    controlsList.forEach((item: any) => {
+    controlsList.forEach((item) => {
       const key = item.control || item.name;
       if (key) {
         controlsMap[key] = item.value;

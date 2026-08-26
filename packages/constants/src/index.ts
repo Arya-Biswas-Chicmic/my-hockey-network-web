@@ -104,18 +104,9 @@ export const STORAGE_KEYS = {
   ONBOARDING_STATE: 'onboarding_state_v1',
 } as const;
 
-export const API_URLS = {
-  BASE_URL: 'https://api.myhockeynetwork.com',
-  LOGIN: '/auth/login',
-  SIGNUP: '/auth/signup',
-  REFRESH_TOKEN: '/auth/refresh',
-  PROFILE: '/user/profile',
-} as const;
-
 export const REGEX_PATTERNS = {
   EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   DATE_DDMMYYYY: /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012])\/(19|20)\d\d$/,
 } as const;
 
 export * from './messages';
-

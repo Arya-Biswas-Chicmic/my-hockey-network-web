@@ -1,6 +1,6 @@
 import React from 'react';
-import { HeaderSkeleton } from './HeaderSkeleton';
-import { HomeSkeletonLoader } from '../features/home/HomeSkeletonLoader';
+import { HeaderSkeleton } from '@/components/common/HeaderSkeleton';
+import { HomeSkeletonLoader } from '@/components/features/home/HomeSkeletonLoader';
 
 export const FullAppSkeletonLoader: React.FC = () => {
   return (

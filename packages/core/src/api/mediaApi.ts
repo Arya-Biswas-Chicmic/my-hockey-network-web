@@ -40,7 +40,7 @@ export async function uploadMediaFile(
   const sizeBytes = file.size;
 
   // Step 1: Request an upload slot
-  const res = await apiFetch<any>(
+  const res = await apiFetch<UploadSlotResponse | { data: UploadSlotResponse }>(
     API_ENDPOINTS.MEDIA.UPLOAD_URL,
     {
       method: 'POST',
@@ -53,7 +53,7 @@ export async function uploadMediaFile(
     clientType
   );
 
-  const slot: UploadSlotResponse = res?.data || res;
+  const slot = 'data' in res ? res.data : res;
   if (!slot?.uploadUrl || !slot?.storageKey) {
     throw new Error('Failed to obtain media upload URL slot from backend server');
   }
@@ -88,7 +88,7 @@ export async function completeMediaUpload(
   mediaId: string,
   clientType: 'web' | 'mobile' = 'web'
 ): Promise<{ mediaId: string; status: string }> {
-  const res = await apiFetch<any>(
+  const res = await apiFetch<{ mediaId: string; status: string } | { data: { mediaId: string; status: string } }>(
     API_ENDPOINTS.MEDIA.COMPLETE(mediaId),
     {
       method: 'POST',
@@ -96,5 +96,5 @@ export async function completeMediaUpload(
     },
     clientType
   );
-  return res?.data || res;
+  return 'data' in res ? res.data : res;
 }

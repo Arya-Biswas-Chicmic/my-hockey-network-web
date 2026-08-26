@@ -1,7 +1,7 @@
 import { createApiClient } from '@my-hockey-network/api-client';
 import { configureApiClient } from '@my-hockey-network/core';
-import { webAuthStorage } from './auth-storage';
-import { webEnvironment } from './environment';
+import { webAuthStorage } from '@/platform/auth-storage';
+import { webEnvironment } from '@/platform/environment';
 
 export const webApiClient = createApiClient({
   baseUrl: webEnvironment.apiBaseUrl,

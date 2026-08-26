@@ -1,23 +1,23 @@
-import { Button } from '../components/common/Button';
-import { Input, Select, Textarea } from '../components/common/FormControls';
+import { Button } from '@/components/common/Button';
+import { Input, Select, Textarea } from '@/components/common/FormControls';
 import React, { useState } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { Header } from '../components/common/Header';
-import { PendingBanner } from '../components/common/PendingBanner';
-import { NoDataFound } from '../components/common/no-data-found';
-import { FeedPostCard } from '../components/features/home/FeedPostCard';
-import { CreatePostModal } from '../components/features/home/CreatePostModal';
-import { EditProfileModal, EditProfileFormData, ProfileSkeletonLoader } from '../components/features/profile';
-import { FeedPostSkeleton } from '../components/features/home/HomeSkeletonLoader';
-import { Spinner } from '../components/common/Spinner';
-import { DeleteCareerModal } from '../components/common/DeleteCareerModal';
-import { useAuth } from '../hooks/use-auth';
-import { resolveMediaUrl, resolveCoverUrl } from '../utils/mediaUtils';
+import { Header } from '@/components/common/Header';
+import { PendingBanner } from '@/components/common/PendingBanner';
+import { NoDataFound } from '@/components/common/no-data-found';
+import { FeedPostCard } from '@/components/features/home/FeedPostCard';
+import { CreatePostModal } from '@/components/features/home/CreatePostModal';
+import { EditProfileModal, EditProfileFormData, ProfileSkeletonLoader } from '@/components/features/profile';
+import { FeedPostSkeleton } from '@/components/features/home/HomeSkeletonLoader';
+import { Spinner } from '@/components/common/Spinner';
+import { DeleteCareerModal } from '@/components/common/DeleteCareerModal';
+import { useAuth } from '@/hooks/use-auth';
+import { resolveMediaUrl, resolveCoverUrl } from '@/utils/mediaUtils';
 import { isEmailValid } from '@my-hockey-network/validation';
-import { showSuccessToast, showErrorToast } from '../utils/toast';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
 import { NavTabEnum, ProfileTabEnum, ProfileAboutSectionEnum, PostAudienceEnum } from '@my-hockey-network/contracts';
-import { ApprovalCodeModal } from '../components/supervision/ApprovalCodeModal';
+import { ApprovalCodeModal } from '@/components/supervision/ApprovalCodeModal';
 
 
 import {
@@ -33,14 +33,18 @@ import {
   updateCareerEntry,
   deleteCareerEntry,
   CareerEntry,
+  type GuardianRelationshipRequest,
+  type PostItem,
 } from '@my-hockey-network/core';
 import { QueryKeys } from '@my-hockey-network/contracts';
-import { globalQueryClient, useQuery } from '../query';
-import { useFeedPermissions } from '../hooks/use-feed-permissions';
+import { globalQueryClient, useQuery } from '@/query';
+import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { validateProfileField, validateCareerField } from '@my-hockey-network/validation';
-import { Dropdown } from '../components/common/FormControls';
-import { CareerFormFields } from '../components/features/profile/CareerFormFields';
-import { PersonalDetailsFields } from '../components/features/profile/PersonalDetailsFields';
+import { Dropdown } from '@/components/common/FormControls';
+import { CareerFormFields } from '@/components/features/profile/CareerFormFields';
+import { PersonalDetailsFields } from '@/components/features/profile/PersonalDetailsFields';
+import { RinkZoneOverlayIcon, ShotZoneMapIcon } from '@/components/icons/HockeyAnalyticsVisuals';
+import { BadgeCheck, Camera, Plus, Trash2 } from 'lucide-react';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -82,7 +86,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         setCoverUploadMsg('Cover image updated successfully!');
         setTimeout(() => setCoverUploadMsg(null), 3000);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       showErrorToast(err, ERROR_MESSAGES.FAILED_UPLOAD_COVER);
     } finally {
       setIsUploadingCover(false);
@@ -114,7 +118,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         }
         await loadAuthMe(true, true);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       showErrorToast(err, ERROR_MESSAGES.FAILED_UPLOAD_AVATAR);
     } finally {
       setIsUploadingAvatar(false);
@@ -127,7 +131,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [activeProfileTab, setActiveProfileTab] = useState<ProfileTabEnum>(ProfileTabEnum.ABOUT);
   const [activeAboutSection, setActiveAboutSection] = useState<ProfileAboutSectionEnum>(ProfileAboutSectionEnum.INTRO);
 
-  const [pendingGuardianReqs, setPendingGuardianReqs] = useState<any[]>([]);
+  const [pendingGuardianReqs, setPendingGuardianReqs] = useState<GuardianRelationshipRequest[]>([]);
   const [isGuardianReqsLoading, setIsGuardianReqsLoading] = useState<boolean>(false);
   const [guardianReqActionLoading, setGuardianReqActionLoading] = useState<boolean>(false);
   const [guardianApprovalModalConfig, setGuardianApprovalModalConfig] = useState<{
@@ -140,9 +144,9 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     try {
       setIsGuardianReqsLoading(true);
       const res = await getPendingGuardianRequests();
-      const items = res?.items || (res as any)?.data?.items || [];
+      const items = res.items;
       setPendingGuardianReqs(Array.isArray(items) ? items : []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn('Pending guardian requests load notice:', err);
     } finally {
       setIsGuardianReqsLoading(false);
@@ -162,7 +166,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       const res = await acceptGuardianRequest(code);
       showSuccessToast(res.message || SUCCESS_MESSAGES.GUARDIAN_REQUEST_APPROVED);
       fetchPendingGuardianRequestsList();
-    } catch (err: any) {
+    } catch (err: unknown) {
       showErrorToast(err, ERROR_MESSAGES.FAILED_APPROVE_REQUEST);
       throw err;
     } finally {
@@ -177,7 +181,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       const res = await declineGuardianRequest(code);
       showSuccessToast(res.message || SUCCESS_MESSAGES.GUARDIAN_REQUEST_DECLINED);
       fetchPendingGuardianRequestsList();
-    } catch (err: any) {
+    } catch (err: unknown) {
       showErrorToast(err, ERROR_MESSAGES.FAILED_DECLINE_REQUEST);
     } finally {
       setGuardianReqActionLoading(false);
@@ -187,15 +191,16 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
   const [searchParams] = useSearchParams();
   const location = useLocation();
+  const navigationState = location.state as { userId?: string; selectedWardId?: string; childId?: string } | null;
   const targetUserId =
     searchParams.get('userId') ||
     searchParams.get('selectedWardId') ||
     searchParams.get('childId') ||
-    (location.state as any)?.userId ||
-    (location.state as any)?.selectedWardId ||
-    (location.state as any)?.childId;
+    navigationState?.userId ||
+    navigationState?.selectedWardId ||
+    navigationState?.childId;
 
-  const ownProfileId = user?.profile?.id || (user as any)?.profileId || (user as any)?.id;
+  const ownProfileId = user?.profile?.id || user?.id;
   const effectiveProfileId = targetUserId || ownProfileId || null;
   const isOwnProfile = !targetUserId || targetUserId === ownProfileId || targetUserId === user?.id;
 
@@ -205,25 +210,24 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     { staleTime: 0 }
   );
 
-  const activeProfile = targetProfileRes?.profile || (targetProfileRes as any)?.data?.profile || (isOwnProfile ? user?.profile : null);
+  const activeProfile = targetProfileRes?.profile || (isOwnProfile ? user?.profile : null);
 
-  const liveName = activeProfile?.displayName || (activeProfile as any)?.name || (isOwnProfile ? (user as any)?.displayName : '') || 'Player';
-  const rawAvatar = activeProfile?.avatarUrl || (isOwnProfile ? (user as any)?.avatarUrl : null);
+  const liveName = activeProfile?.displayName || activeProfile?.name || 'Player';
+  const rawAvatar = activeProfile?.avatarUrl;
   const liveAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
   const rawCover =
-    (activeProfile as any)?.coverImageUrl ||
-    (activeProfile as any)?.coverUrl ||
-    (activeProfile as any)?.coverImageKey ||
-    (isOwnProfile ? (user as any)?.coverImageUrl : null);
+    activeProfile?.coverImageUrl ||
+    activeProfile?.coverUrl ||
+    activeProfile?.coverImageKey;
   const liveCoverImage = resolveCoverUrl(rawCover, '/cover.png');
   const rawRole =
-    (activeProfile as any)?.primaryRole ||
-    (activeProfile as any)?.profileType ||
-    (activeProfile as any)?.type ||
+    activeProfile?.primaryRole ||
+    activeProfile?.profileType ||
+    activeProfile?.type ||
     (isOwnProfile ? user?.primaryRole : null) ||
-    (activeProfile as any)?.roleTag ||
+    activeProfile?.roleTag ||
     'PLAYER';
-  const liveRole = (activeProfile as any)?.roleTag || String(rawRole);
+  const liveRole = activeProfile?.roleTag || String(rawRole);
   const liveRoleUpper = String(rawRole).toUpperCase();
   const isPlayer = liveRoleUpper === 'PLAYER' || liveRoleUpper.includes('PLAYER') || liveRoleUpper.includes('CENTER') || liveRoleUpper.includes('WING') || liveRoleUpper.includes('DEFENSE') || liveRoleUpper.includes('GOALTENDER');
   const isCoach = liveRoleUpper === 'COACH' || liveRoleUpper.includes('COACH');
@@ -237,8 +241,8 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const liveCity = activeProfile?.location || activeProfile?.city || '-';
   const rawDob =
     activeProfile?.dateOfBirth ||
-    (activeProfile as any)?.dob ||
-    (isOwnProfile ? user?.profile?.dateOfBirth || (user as any)?.dateOfBirth || (user as any)?.dob : null);
+    activeProfile?.dob ||
+    (isOwnProfile ? user?.profile?.dateOfBirth : null);
   const liveDob = rawDob ? (String(rawDob).includes('T') ? String(rawDob).split('T')[0] : String(rawDob)) : '';
   const liveGender = activeProfile?.genderCategory || 'Male';
 
@@ -299,7 +303,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       await loadAuthMe(true, true);
       setIntroSaveMsg('Intro saved successfully!');
       setTimeout(() => setIntroSaveMsg(null), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Save Intro error:', err);
       showErrorToast(err, ERROR_MESSAGES.FAILED_SAVE_INTRO);
     } finally {
@@ -335,7 +339,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       await loadAuthMe(true, true);
       setDetailsSaveMsg('Personal details saved successfully!');
       setTimeout(() => setDetailsSaveMsg(null), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Save Details error:', err);
       showErrorToast(err, ERROR_MESSAGES.FAILED_SAVE_PERSONAL_DETAILS);
     } finally {
@@ -351,7 +355,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [liveUserPosts, setLiveUserPosts] = useState<any[]>([]);
+  const [liveUserPosts, setLiveUserPosts] = useState<PostItem[]>([]);
 
   const { data: postsRes, isLoading: isPostsLoading } = useQuery(
     effectiveProfileId ? `${QueryKeys.USER_POSTS}:${effectiveProfileId}` : null,
@@ -406,7 +410,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       const res = await updateAuthProfile(dto);
       if (res) {
         setUserProfile(res);
-        globalQueryClient.invalidateQueries(QueryKeys.AUTH_ME);
+        void globalQueryClient.invalidateQueries({ queryKey: [QueryKeys.AUTH_ME] });
         await loadAuthMe(true, true);
 
         // Update local preview state
@@ -419,7 +423,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
         return res;
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ [ProfilePage] Update Profile Error:', err);
       throw err;
     }
@@ -464,7 +468,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     try {
       await createPost(dto);
       setIsCreatePostOpen(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ [ProfilePage] Create Post Error:', err);
       setIsCreatePostOpen(false);
     } finally {
@@ -544,13 +548,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
   // Load real profile data and career entries from targetProfileRes
   React.useEffect(() => {
-    const entries =
-      (targetProfileRes as any)?.data?.profile?.career ||
-      (targetProfileRes as any)?.data?.profile?.careerEntries ||
-      (targetProfileRes as any)?.profile?.career ||
-      (targetProfileRes as any)?.profile?.careerEntries ||
-      (targetProfileRes as any)?.career ||
-      (targetProfileRes as any)?.careerEntries;
+    const entries = targetProfileRes?.profile?.career || targetProfileRes?.profile?.careerEntries;
     if (entries !== undefined && entries !== null && Array.isArray(entries)) {
       setCareerEntries(entries);
     }
@@ -652,7 +650,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           location: teamCityInput.trim() || undefined,
           note: teamDescInput.trim() || undefined,
           startDate,
-          endDate: isCurrentPlayingInput ? (null as any) : endDate,
+          endDate: isCurrentPlayingInput ? null : endDate,
         });
 
         setCareerEntries((prev) => (prev || []).map((t) => (t.id === editingTeamId ? updated : t)));
@@ -673,7 +671,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       }
 
       resetTeamForm();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Save Career Team Error:', err);
       showErrorToast(err, ERROR_MESSAGES.FAILED_SAVE_CAREER_TEAM);
     } finally {
@@ -691,7 +689,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       if (editingTeamId === id) {
         resetTeamForm();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Delete Career Team Error:', err);
       showErrorToast(err, ERROR_MESSAGES.FAILED_REMOVE_CAREER_TEAM);
     } finally {
@@ -761,14 +759,13 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           {/* Profile Hero Card */}
           <div className="mhn-profile-hero-card">
             {/* Cover Banner Area */}
-            <div
-              className="mhn-profile-cover-banner mhn-relative-container"
-              style={{
-                backgroundImage: `url(${liveCoverImage})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              }}
-            >
+            <div className="mhn-profile-cover-banner mhn-relative-container">
+              <img
+                src={liveCoverImage}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
               <Input
                 type="file"
                 ref={coverFileInputRef}
@@ -852,10 +849,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                     {isUploadingAvatar ? (
                       <Spinner size="sm" color="#FFFFFF" />
                     ) : (
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                        <circle cx="12" cy="13" r="4" />
-                      </svg>
+                      <Camera size={15} aria-hidden="true" />
                     )}
                   </Button>
                 )}
@@ -892,15 +886,12 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   {(() => {
                     const primaryTeam = (careerEntries && careerEntries.length > 0 && careerEntries[0]?.teamName)
                       ? careerEntries[0].teamName
-                      : ((targetProfileRes as any)?.data?.profile?.career?.[0]?.teamName ||
-                        (targetProfileRes as any)?.data?.profile?.careerEntries?.[0]?.teamName ||
-                        (targetProfileRes as any)?.profile?.career?.[0]?.teamName ||
-                        (targetProfileRes as any)?.profile?.careerEntries?.[0]?.teamName ||
-                        (targetProfileRes as any)?.data?.profile?.teamName ||
-                        (targetProfileRes as any)?.profile?.teamName ||
-                        (user?.profile as any)?.career?.[0]?.teamName ||
-                        (user?.profile as any)?.careerEntries?.[0]?.teamName ||
-                        (user?.profile as any)?.teamName || null);
+                      : (targetProfileRes?.profile?.career?.[0]?.teamName ||
+                        targetProfileRes?.profile?.careerEntries?.[0]?.teamName ||
+                        targetProfileRes?.profile?.teamName ||
+                        user?.profile?.career?.[0]?.teamName ||
+                        user?.profile?.careerEntries?.[0]?.teamName ||
+                        user?.profile?.teamName || null);
                     const isParent = String(liveRole).toUpperCase() === 'PARENT';
                     if (isParent) return liveRole;
                     const teamString = primaryTeam ? ` • @${primaryTeam}` : '';
@@ -949,7 +940,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 <span>About</span>
                 {activeProfileTab === ProfileTabEnum.ABOUT && <div className="mhn-profile-tab-indicator" />}
               </Button>
-              {(liveRole.toUpperCase() === 'PARENT' || (user as any)?.roles?.includes('PARENT') || user?.primaryRole === 'PARENT') && (
+              {(liveRole.toUpperCase() === 'PARENT' || user?.roleAssignments.some(({ role }) => role === 'PARENT') || user?.primaryRole === 'PARENT') && (
                 <Button
                   onClick={() => setActiveProfileTab(ProfileTabEnum.GUARDIAN_REQUESTS)}
                   className={`mhn-profile-tab-btn ${activeProfileTab === ProfileTabEnum.GUARDIAN_REQUESTS ? 'mhn-profile-tab-active' : ''}`}
@@ -981,8 +972,8 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 ) : (
                   <>
                     <div className="mhn-posts-grid-wrapper">
-                      {liveUserPosts.map((post: any) => {
-                        const author = post.authorProfile || post.author || {};
+                      {liveUserPosts.map((post: PostItem) => {
+                        const author: NonNullable<PostItem['author']> = post.authorProfile || post.author || { id: '', displayName: '' };
                         const postName = author.displayName || liveName;
                         const postAvatar = author.avatarUrl || liveAvatar;
                         const postRole = author.position && author.jerseyNumber ? `${author.position} • #${author.jerseyNumber}` : `${liveRole} • #${jerseyText}`;
@@ -1135,29 +1126,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                     <div className="mhn-zone-map-content-row">
                       {/* Left: SVG Zone Map Visual */}
                       <div className="mhn-zone-map-visual">
-                        <svg width="220" height="200" viewBox="0 0 220 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          {/* Outer Rink Boundary */}
-                          <path d="M 20,180 L 20,80 A 90,90 0 0,1 200,80 L 200,180 Z" stroke="#0F172A" strokeWidth="2.5" fill="#FFFFFF" />
-
-                          {/* Zone Slices & Blue Highlights */}
-                          <path d="M 20,80 A 90,90 0 0,1 200,80 L 160,110 L 60,110 Z" fill="#38BDF8" stroke="#0F172A" strokeWidth="1.5" />
-                          <path d="M 60,110 L 160,110 L 140,150 L 80,150 Z" fill="#0091FF" stroke="#0F172A" strokeWidth="1.5" />
-                          <path d="M 20,180 L 200,180 L 140,150 L 80,150 Z" fill="#0284C7" stroke="#0F172A" strokeWidth="1.5" />
-
-                          {/* Shot Numbers in Zones */}
-                          <text x="110" y="170" fill="#FFFFFF" fontSize="14" fontWeight="800" textAnchor="middle">6</text>
-
-                          {/* Additional Sub-Zones Outlines */}
-                          <rect x="35" y="45" width="16" height="12" stroke="#0091FF" strokeWidth="1.5" fill="none" />
-                          <rect x="168" y="45" width="16" height="12" stroke="#0091FF" strokeWidth="1.5" fill="none" />
-                          <rect x="48" y="70" width="16" height="12" stroke="#0091FF" strokeWidth="1.5" fill="none" />
-                          <rect x="155" y="70" width="16" height="12" stroke="#0091FF" strokeWidth="1.5" fill="none" />
-                          <rect x="35" y="98" width="16" height="12" stroke="#0091FF" strokeWidth="1.5" fill="none" />
-                          <rect x="168" y="98" width="16" height="12" stroke="#0091FF" strokeWidth="1.5" fill="none" />
-                          <rect x="75" y="102" width="16" height="12" stroke="#0091FF" strokeWidth="1.5" fill="none" />
-                          <rect x="130" y="102" width="16" height="12" stroke="#0091FF" strokeWidth="1.5" fill="none" />
-                          <rect x="102" y="125" width="16" height="12" stroke="#0091FF" strokeWidth="1.5" fill="none" />
-                        </svg>
+                        <ShotZoneMapIcon />
 
                         {/* Percentile Gradient Bar Legend */}
                         <div className="mhn-percentile-legend-bar">
@@ -1248,14 +1217,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
                     <div className="mhn-zone-time-visual-wrapper">
                       {/* SVG Rink Overlay Lines */}
-                      <svg className="mhn-rink-svg-overlay" viewBox="0 0 600 200" fill="none">
-                        <rect x="10" y="10" width="580" height="180" rx="30" stroke="#FCA5A5" strokeWidth="1.5" />
-                        <line x1="200" y1="10" x2="200" y2="190" stroke="#0091FF" strokeWidth="2" />
-                        <line x1="400" y1="10" x2="400" y2="190" stroke="#0091FF" strokeWidth="2" />
-                        <line x1="300" y1="10" x2="300" y2="190" stroke="#EF4444" strokeWidth="2" strokeDasharray="6 4" />
-                        <circle cx="150" cy="100" r="30" stroke="#FCA5A5" strokeWidth="1" />
-                        <circle cx="450" cy="100" r="30" stroke="#FCA5A5" strokeWidth="1" />
-                      </svg>
+                      <RinkZoneOverlayIcon />
 
                       {/* 3 Zone Cards Container */}
                       <div className="mhn-zone-time-cards-container">
@@ -1465,10 +1427,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                             className="mhn-btn-icon-clear"
                             title="Add Team"
                           >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <line x1="12" y1="5" x2="12" y2="19" />
-                              <line x1="5" y1="12" x2="19" y2="12" />
-                            </svg>
+                            <Plus size={20} aria-hidden="true" />
                           </Button>
                         </div>
 
@@ -1587,10 +1546,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                                         </h5>
                                         {team.verified && (
                                           <span title="Verified Team on Platform" className="mhn-btn-loading-flex">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="#0B66C2" stroke="#FFFFFF" strokeWidth="2">
-                                              <circle cx="12" cy="12" r="10" />
-                                              <path d="m9 12 2 2 4-4" />
-                                            </svg>
+                                            <BadgeCheck size={16} fill="#0B66C2" aria-hidden="true" />
                                           </span>
                                         )}
                                       </div>
@@ -1620,10 +1576,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                                       className="mhn-btn-icon-clear"
                                       title="Delete career entry"
                                     >
-                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="3 6 5 6 21 6" />
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                      </svg>
+                                      <Trash2 size={16} color="#EF4444" aria-hidden="true" />
                                     </Button>
                                   </div>
                                 </div>
@@ -1707,7 +1660,7 @@ export const ProfilePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   />
                 ) : (
                   <div className="mhn-supervision-requests-grid">
-                    {pendingGuardianReqs.map((req: any, idx: number) => {
+                    {pendingGuardianReqs.map((req: GuardianRelationshipRequest, idx: number) => {
                       const reqId = req.id || `greq_${idx}`;
                       const child = req.child || req.minor || {};
                       const displayName = child.displayName || req.displayName || req.name || 'Minor Athlete';

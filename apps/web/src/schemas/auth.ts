@@ -1,4 +1,4 @@
-import type { OtpRequestDTO, OtpVerifyDTO } from '../interfaces/api';
+import type { OtpRequestDTO, OtpVerifyDTO } from '@/interfaces/api';
 
 export function validateOtpRequest(dto: Partial<OtpRequestDTO>): { isValid: boolean; error?: string } {
   if (!dto.destination || !dto.destination.trim()) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { RequestSentCard } from '../components/features/auth';
+import { RequestSentCard } from '@/components/features/auth';
 
 interface RequestSentPageProps {
   onComplete?: () => void;

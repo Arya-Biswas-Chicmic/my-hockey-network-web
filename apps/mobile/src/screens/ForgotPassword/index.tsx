@@ -13,14 +13,14 @@ import Button from '@components/Button';
 import Input from '@components/Input';
 import ScreenWrapper from '@components/ScreenWrapper';
 import useStyles from '@hooks/useStyles';
-import { ROUTES } from '../../navigation/constants';
-import { RootStackParamList } from '../../navigation/types';
+import { ROUTES } from '@/navigation/constants';
+import { RootStackParamList } from '@/navigation/types';
 import { useForgotPasswordMutation } from '@redux/ApiReducer';
 import { isValidEmail, sanitizeEmail } from '@utils/validation';
 
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import styles from './styles';
+import styles from '@/screens/ForgotPassword/styles';
 
 type Props = NativeStackScreenProps<RootStackParamList, ROUTES.FORGOT_PASSWORD>;
 

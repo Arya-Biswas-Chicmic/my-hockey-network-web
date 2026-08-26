@@ -1,6 +1,6 @@
 import React from 'react';
-import { OnboardingIllustration } from '../../onboarding/OnboardingIllustration';
-import { CreateAccountForm } from './CreateAccountForm';
+import { OnboardingIllustration } from '@/components/features/onboarding/OnboardingIllustration';
+import { CreateAccountForm } from '@/components/features/auth/signup/CreateAccountForm';
 
 interface CreateAccountModalProps {
   onSignUp?: (data: { fullName: string; email: string; dob: string; password?: string }) => void;

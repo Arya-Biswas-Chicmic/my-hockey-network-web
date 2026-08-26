@@ -1,5 +1,5 @@
 import React from 'react';
-import { Input, Dropdown, FormField } from '../../common/FormControls';
+import { Input, Dropdown, FormField } from '@/components/common/FormControls';
 
 export interface PersonalDetailsData {
   city: string;

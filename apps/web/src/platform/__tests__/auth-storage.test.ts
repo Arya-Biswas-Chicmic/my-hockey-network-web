@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { webAuthStorage } from '../auth-storage';
+import { webAuthStorage } from '@/platform/auth-storage';
 
 describe('webAuthStorage', () => {
-  it('manages csrfToken and in-memory tokens safely', () => {
+  it('keeps only CSRF state in memory and ignores bearer credentials', () => {
     webAuthStorage.clearSession();
     expect(webAuthStorage.getAccessToken()).toBeNull();
     expect(webAuthStorage.getRefreshToken()).toBeNull();
@@ -19,8 +19,8 @@ describe('webAuthStorage', () => {
     });
 
     expect(webAuthStorage.getCsrfToken()).toBe('csrf-123');
-    expect(webAuthStorage.getAccessToken()).toBe('access-123');
-    expect(webAuthStorage.getRefreshToken()).toBe('refresh-123');
+    expect(webAuthStorage.getAccessToken()).toBeNull();
+    expect(webAuthStorage.getRefreshToken()).toBeNull();
 
     webAuthStorage.clearSession();
     expect(webAuthStorage.getAccessToken()).toBeNull();

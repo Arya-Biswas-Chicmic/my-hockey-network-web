@@ -1,4 +1,5 @@
 import React from 'react';
+import { Clock, MapPin } from 'lucide-react';
 
 export interface EventCardProps {
   id: string;
@@ -41,19 +42,13 @@ export const EventCard: React.FC<EventCardProps> = ({
         <div className="mhn-event-card-info-stack">
           {/* Date Info */}
           <div className="mhn-event-card-info-line">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12 6 12 12 16 14"/>
-            </svg>
+            <Clock size={14} aria-hidden="true" />
             <span className='date-1'>{date}</span>
           </div>
 
           {/* Location Info */}
           <div className="mhn-event-card-info-line">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-              <circle cx="12" cy="10" r="3"/>
-            </svg>
+            <MapPin size={14} aria-hidden="true" />
             <span className="mhn-event-location-text">{location}</span>
           </div>
         </div>

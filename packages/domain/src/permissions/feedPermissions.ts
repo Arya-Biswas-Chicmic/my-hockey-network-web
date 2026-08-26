@@ -27,35 +27,21 @@ export interface FeedPermissionResult {
  */
 export function isProfileComplete(user: AuthMeResponse | null): boolean {
   if (!user) return false;
-  const rawUser = user as any;
-
-  if (typeof rawUser.isProfileCompleted === 'boolean') {
-    return rawUser.isProfileCompleted;
+  if (typeof user.isProfileCompleted === 'boolean') {
+    return user.isProfileCompleted;
   }
-  if (typeof rawUser.isProfileComplete === 'boolean') {
-    return rawUser.isProfileComplete;
+  if (typeof user.isProfileComplete === 'boolean') {
+    return user.isProfileComplete;
   }
-  if (typeof rawUser.data?.isProfileCompleted === 'boolean') {
-    return rawUser.data.isProfileCompleted;
+  if (typeof user.profile?.isProfileCompleted === 'boolean') {
+    return user.profile.isProfileCompleted;
   }
-  if (typeof rawUser.data?.isProfileComplete === 'boolean') {
-    return rawUser.data.isProfileComplete;
-  }
-  if (typeof rawUser.profile?.isProfileCompleted === 'boolean') {
-    return rawUser.profile.isProfileCompleted;
-  }
-  if (typeof rawUser.profile?.isProfileComplete === 'boolean') {
-    return rawUser.profile.isProfileComplete;
-  }
-  if (typeof rawUser.data?.profile?.isProfileCompleted === 'boolean') {
-    return rawUser.data.profile.isProfileCompleted;
-  }
-  if (typeof rawUser.data?.profile?.isProfileComplete === 'boolean') {
-    return rawUser.data.profile.isProfileComplete;
+  if (typeof user.profile?.isProfileComplete === 'boolean') {
+    return user.profile.isProfileComplete;
   }
 
   // Fallback profile inspection
-  const profile = user.profile || rawUser.data?.profile;
+  const profile = user.profile;
   if (!profile) return false;
   return Boolean(profile.displayName && profile.id);
 }

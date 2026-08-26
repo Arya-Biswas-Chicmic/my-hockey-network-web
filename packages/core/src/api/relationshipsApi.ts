@@ -5,6 +5,8 @@ import { API_ENDPOINTS } from './urls';
 export interface TargetEntity {
   type: EntityTypeEnum | 'USER' | 'PROFILE' | 'GROUP' | 'ORGANIZATION';
   id: string;
+  displayName?: string;
+  avatarUrl?: string | null;
 }
 
 export interface Counterparty {
@@ -22,6 +24,7 @@ export interface Counterparty {
   teamName?: string | null;
   teamLogo?: string | null;
   location?: string | null;
+  city?: string | null;
   isMinor?: boolean;
   verificationStatus?: string;
 }
@@ -40,12 +43,36 @@ export interface RelationshipItem {
   approvedAt?: string | null;
   statusReason?: string | null;
   requiredParentApproval?: boolean;
-  metadata?: any;
+  metadata?: unknown;
   createdAt: string;
   updatedAt?: string;
   counterparty?: Counterparty | null;
   source?: TargetEntity;
   target?: TargetEntity;
+}
+
+export interface GuardianRelationshipRequest {
+  id: string;
+  code?: string;
+  status?: string;
+  createdAt?: string;
+  requester?: Counterparty;
+  counterparty?: Counterparty;
+  child?: Partial<Counterparty>;
+  minor?: Partial<Counterparty>;
+  displayName?: string;
+  name?: string;
+  avatarUrl?: string | null;
+  roleTag?: string;
+  devCode?: string;
+  inviteCode?: string;
+}
+
+export interface RecommendedPerson extends Partial<Counterparty> {
+  id: string;
+  profileId?: string;
+  name?: string;
+  profile?: Partial<Counterparty> & { id?: string; name?: string };
 }
 
 /**
@@ -67,11 +94,11 @@ export async function findRelationshipEdgeId(
 ): Promise<string | null> {
   try {
     const res = await getRelationships({ type: RelationshipTypeEnum.FOLLOW, direction: RelationshipDirectionEnum.OUTGOING }, clientType);
-    const items = res?.items || (res as any)?.data?.items || [];
+    const items = res.items;
 
-    const found = items.find((item: any) => {
+    const found = items.find((item) => {
       const targetId = item.targetId || item.target?.id;
-      const counterpartyId = item.counterparty?.id || item.counterpartyId;
+      const counterpartyId = item.counterparty?.id;
       const sourceId = item.sourceId || item.source?.id;
       return (
         targetId === targetProfileId ||
@@ -82,8 +109,7 @@ export async function findRelationshipEdgeId(
     });
 
     return found?.id || null;
-  } catch (err) {
-    console.warn('⚠️ [relationshipsApi] Edge ID lookup warning:', err);
+  } catch {
     return null;
   }
 }
@@ -115,8 +141,7 @@ export async function unfollowUser(
     const finalEdgeId = recoveredEdgeId || targetId;
 
     return await removeRelationship(finalEdgeId, clientType);
-  } catch (err: any) {
-    console.warn('⚠️ [relationshipsApi] DELETE edge failed, falling back to follow toggle:', err);
+  } catch {
     const targetObj = typeof targetOrRelationshipId === 'string'
       ? { type: EntityTypeEnum.PROFILE, id: targetId }
       : targetOrRelationshipId;
@@ -191,8 +216,8 @@ export async function sendGuardianInvite(childEmail: string, clientType: 'web' |
 /**
  * Get Pending Guardian Invites (for Child)
  */
-export async function getPendingGuardianInvites(clientType: 'web' | 'mobile' = 'web'): Promise<{ items: any[] }> {
-  return apiFetch<{ items: any[] }>(API_ENDPOINTS.RELATIONSHIPS.GUARDIAN_INVITES_PENDING, { method: 'GET' }, clientType);
+export async function getPendingGuardianInvites(clientType: 'web' | 'mobile' = 'web'): Promise<{ items: GuardianRelationshipRequest[] }> {
+  return apiFetch<{ items: GuardianRelationshipRequest[] }>(API_ENDPOINTS.RELATIONSHIPS.GUARDIAN_INVITES_PENDING, { method: 'GET' }, clientType);
 }
 
 /**
@@ -218,8 +243,8 @@ export async function declineGuardianInvite(code: string, clientType: 'web' | 'm
 /**
  * Get Pending Guardian Requests (for Adult)
  */
-export async function getPendingGuardianRequests(clientType: 'web' | 'mobile' = 'web'): Promise<{ items: any[] }> {
-  return apiFetch<{ items: any[] }>(API_ENDPOINTS.RELATIONSHIPS.GUARDIAN_REQUESTS_PENDING, { method: 'GET' }, clientType);
+export async function getPendingGuardianRequests(clientType: 'web' | 'mobile' = 'web'): Promise<{ items: GuardianRelationshipRequest[] }> {
+  return apiFetch<{ items: GuardianRelationshipRequest[] }>(API_ENDPOINTS.RELATIONSHIPS.GUARDIAN_REQUESTS_PENDING, { method: 'GET' }, clientType);
 }
 
 /**
@@ -287,7 +312,7 @@ export async function unblockUser(blockId: string, clientType: 'web' | 'mobile' 
 export async function getPeopleYouMayKnow(
   params?: number | { limit?: number; query?: string; q?: string },
   clientType: 'web' | 'mobile' = 'web'
-): Promise<{ items: any[] }> {
+): Promise<{ items: RecommendedPerson[] }> {
   const queryParams = new URLSearchParams();
   let limitVal = 10;
   if (typeof params === 'number') {
@@ -301,16 +326,16 @@ export async function getPeopleYouMayKnow(
     }
   }
   queryParams.set('limit', String(limitVal));
-  return apiFetch<{ items: any[] }>(`${API_ENDPOINTS.RECOMMENDATIONS.PEOPLE}?${queryParams.toString()}`, { method: 'GET' }, clientType);
+  return apiFetch<{ items: RecommendedPerson[] }>(`${API_ENDPOINTS.RECOMMENDATIONS.PEOPLE}?${queryParams.toString()}`, { method: 'GET' }, clientType);
 }
 
 /**
  * Fetch Suggested People recommendations
  */
-export async function getSuggestedPeople(params?: { profileType?: string; limit?: number }, clientType: 'web' | 'mobile' = 'web'): Promise<{ items: any[] }> {
+export async function getSuggestedPeople(params?: { profileType?: string; limit?: number }, clientType: 'web' | 'mobile' = 'web'): Promise<{ items: RecommendedPerson[] }> {
   const query = new URLSearchParams();
   if (params?.profileType) query.set('profileType', params.profileType);
   if (params?.limit) query.set('limit', params.limit.toString());
   const queryString = query.toString() ? `?${query.toString()}` : '';
-  return apiFetch<{ items: any[] }>(`${API_ENDPOINTS.RECOMMENDATIONS.SUGGESTED}${queryString}`, { method: 'GET' }, clientType);
+  return apiFetch<{ items: RecommendedPerson[] }>(`${API_ENDPOINTS.RECOMMENDATIONS.SUGGESTED}${queryString}`, { method: 'GET' }, clientType);
 }

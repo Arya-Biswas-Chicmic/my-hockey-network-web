@@ -20,7 +20,7 @@ describe('Approvals, Supervision Logs & Guardian Requests API Contract', () => {
           createdAt: '2026-08-24T12:00:00.000Z',
         },
       ],
-    } as any);
+    } as never);
 
     const result = await getApprovals({ minorId: 'child-123', status: 'PENDING', limit: 20 });
 
@@ -36,7 +36,7 @@ describe('Approvals, Supervision Logs & Guardian Requests API Contract', () => {
   it('calls apiFetch with POST for approveRequest', async () => {
     const apiFetchSpy = vi.spyOn(clientModule, 'apiFetch').mockResolvedValue({
       advanced: 'ACTIVE',
-    } as any);
+    } as never);
 
     const result = await approveRequest('approval-1', { mode: 'INDEFINITE', note: 'Approved by parent' });
 
@@ -54,7 +54,7 @@ describe('Approvals, Supervision Logs & Guardian Requests API Contract', () => {
   it('calls apiFetch with POST for declineRequest', async () => {
     const apiFetchSpy = vi.spyOn(clientModule, 'apiFetch').mockResolvedValue({
       message: 'Declined successfully',
-    } as any);
+    } as never);
 
     const result = await declineRequest('approval-1', 'Not known to minor');
 
@@ -80,7 +80,7 @@ describe('Approvals, Supervision Logs & Guardian Requests API Contract', () => {
           createdAt: '2026-08-24T12:00:00.000Z',
         },
       ],
-    } as any);
+    } as never);
 
     const result = await getSupervisionLogs('child-123', { limit: 20 });
 
@@ -102,7 +102,7 @@ describe('Approvals, Supervision Logs & Guardian Requests API Contract', () => {
           displayName: 'Noah Child',
         },
       ],
-    } as any);
+    } as never);
 
     const result = await getPendingGuardianRequests();
 
@@ -117,7 +117,7 @@ describe('Approvals, Supervision Logs & Guardian Requests API Contract', () => {
   it('calls apiFetch for acceptGuardianRequest and declineGuardianRequest with code', async () => {
     const apiFetchSpy = vi.spyOn(clientModule, 'apiFetch').mockResolvedValue({
       message: 'Guardian request accepted',
-    } as any);
+    } as never);
 
     const acceptRes = await acceptGuardianRequest('123456');
     expect(apiFetchSpy).toHaveBeenCalledWith(

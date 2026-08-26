@@ -1,24 +1,26 @@
-import { Button } from '../components/common/Button';
-import { Input, Select, Dropdown, FormField } from '../components/common/FormControls';
+import { Button } from '@/components/common/Button';
+import { Input, Select, Dropdown, FormField } from '@/components/common/FormControls';
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Header } from '../components/common/Header';
-import { NoDataFound } from '../components/common/no-data-found';
-import { withRoleGuard } from '../hocs/with-role-guard';
-import { UserRole } from '../enums/role';
-import { GuardianRequestSkeleton } from '../components/supervision/guardian-request-skeleton';
-import { PermissionSkeletonLoader } from '../components/supervision/permission-skeleton-loader';
-import { SidebarWardSkeleton } from '../components/supervision/sidebar-ward-skeleton';
-import { ApprovalCodeModal } from '../components/supervision/ApprovalCodeModal';
-import { ParentOnboardingModal } from '../components/features/parent';
-import { Spinner } from '../components/common/Spinner';
-import { useAuth } from '../hooks/use-auth';
-import { useDebounce } from '../hooks/use-debounce';
-import { resolveMediaUrl } from '../utils/mediaUtils';
-import { GUARDIAN_RELATION_OPTIONS, formatDobToIso, formatDobInput } from '../utils/guardianUtils';
+import { Header } from '@/components/common/Header';
+import { NoDataFound } from '@/components/common/no-data-found';
+import { withRoleGuard } from '@/hocs/with-role-guard';
+import { UserRole } from '@/enums/role';
+import { GuardianRequestSkeleton } from '@/components/supervision/guardian-request-skeleton';
+import { PermissionSkeletonLoader } from '@/components/supervision/permission-skeleton-loader';
+import { SidebarWardSkeleton } from '@/components/supervision/sidebar-ward-skeleton';
+import { ApprovalCodeModal } from '@/components/supervision/ApprovalCodeModal';
+import { ParentOnboardingModal } from '@/components/features/parent';
+import { Spinner } from '@/components/common/Spinner';
+import { useAuth } from '@/hooks/use-auth';
+import { useDebounce } from '@/hooks/use-debounce';
+import { resolveMediaUrl } from '@/utils/mediaUtils';
+import { GUARDIAN_RELATION_OPTIONS, formatDobToIso, formatDobInput } from '@/utils/guardianUtils';
 import { QueryKeys, ToastTypeEnum, NavTabEnum, SupervisionMainTabEnum, SupervisionViewModeEnum, SupervisionControlKeyEnum } from '@my-hockey-network/contracts';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
-import { useQuery, useQueryClient, globalQueryClient } from '../query';
+import { useQuery, useQueryClient, globalQueryClient, invalidateQueryPrefix } from '@/query';
+import { extractErrorMessage, getApiErrorKey } from '@/utils/toast';
+import { ArrowDown, CalendarDays, ChevronDown, Filter, Link, LoaderCircle, MapPin, Search, UserPlus } from 'lucide-react';
 
 
 import {
@@ -34,11 +36,45 @@ import {
   getApprovals,
   approveRequest,
   declineRequest,
+  type ApprovalItem,
+  type GuardianRelationshipRequest,
+  type SupervisionChildItem,
+  type SupervisionControlItem,
+  type SupervisionLogItem,
+  type Counterparty,
 } from '@my-hockey-network/core';
 
 interface SupervisionPageProps {
-  onNavigate?: (screen: string, extraData?: any) => void;
+  onNavigate?: (screen: string, extraData?: Record<string, unknown>) => void;
   onLogout?: () => void;
+}
+
+type PermissionState = Record<string, boolean | string>;
+type PendingSupervisionRequest = (ApprovalItem | GuardianRelationshipRequest) & {
+  isApprovalItem?: boolean;
+  isGuardianInviteItem?: boolean;
+  requester?: Counterparty;
+  minorCard?: Partial<Counterparty>;
+  minor?: Partial<Counterparty>;
+  child?: Partial<Counterparty>;
+  displayName?: string;
+  name?: string;
+  avatarUrl?: string | null;
+  teamName?: string;
+  location?: string;
+  code?: string;
+  devCode?: string;
+  inviteCode?: string;
+  action?: string;
+  subject?: { kind?: string; audience?: string; body?: string };
+};
+
+interface ActivityLogView {
+  id: string;
+  dateTime: string;
+  activity: string;
+  initiatedBy: string;
+  actionText: string;
 }
 
 const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLogout }) => {
@@ -74,7 +110,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
   });
 
   // Live Pending Guardian Requests & Approval Code State
-  const [livePendingRequests, setLivePendingRequests] = useState<any[]>([]);
+  const [livePendingRequests, setLivePendingRequests] = useState<PendingSupervisionRequest[]>([]);
   const [isRequestsLoading, setIsRequestsLoading] = useState<boolean>(false);
   const [approvalCodeInput, setApprovalCodeInput] = useState('');
   const [requestActionLoading, setRequestActionLoading] = useState(false);
@@ -84,23 +120,23 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
   const loadPendingRequests = async () => {
     try {
       setIsRequestsLoading(true);
-      let list: any[] = [];
+      let list: PendingSupervisionRequest[] = [];
 
       const isRealUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(selectedWardId);
       const approvalsRes = await getApprovals({ status: 'PENDING', minorId: isRealUuid ? selectedWardId : undefined, limit: 20 });
-      const approvalItems = approvalsRes?.items || (approvalsRes as any)?.data?.items || [];
+      const approvalItems = approvalsRes.items;
       if (Array.isArray(approvalItems)) {
-        list = [...list, ...approvalItems.map((i: any) => ({ ...i, isApprovalItem: true }))];
+        list = [...list, ...approvalItems.map((item) => ({ ...item, isApprovalItem: true }))];
       }
 
       const reqRes = await getPendingGuardianRequests();
-      const guardianItems = reqRes?.items || (reqRes as any)?.data?.items || [];
+      const guardianItems = reqRes.items;
       if (Array.isArray(guardianItems)) {
-        list = [...list, ...guardianItems.map((i: any) => ({ ...i, isGuardianInviteItem: true }))];
+        list = [...list, ...guardianItems.map((item) => ({ ...item, isGuardianInviteItem: true }))];
       }
 
       setLivePendingRequests(list);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn('Pending requests fetch notice:', err);
     } finally {
       setIsRequestsLoading(false);
@@ -125,8 +161,8 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
       setRequestNotice({ type: 'success', message: successMsg });
       showToast(successMsg, 'success');
       loadPendingRequests();
-    } catch (err: any) {
-      const errMsg = err.message || 'Failed to approve request.';
+    } catch (err: unknown) {
+      const errMsg = extractErrorMessage(err, 'Failed to approve request.');
       setRequestNotice({ type: 'error', message: errMsg });
       showToast(errMsg, 'error');
     } finally {
@@ -143,8 +179,8 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
       setRequestNotice({ type: 'success', message: successMsg });
       showToast(successMsg, 'info');
       loadPendingRequests();
-    } catch (err: any) {
-      const errMsg = err.message || 'Failed to decline request.';
+    } catch (err: unknown) {
+      const errMsg = extractErrorMessage(err, 'Failed to decline request.');
       setRequestNotice({ type: 'error', message: errMsg });
       showToast(errMsg, 'error');
     } finally {
@@ -173,24 +209,25 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
       // Refresh supervision list & pending requests
       const supData = await getSupervisionData();
-      const children = supData?.children || (supData as any)?.data?.children || [];
+      const children = supData.children;
       if (Array.isArray(children) && children.length > 0) {
-        const mapped = children.map((c: any) => ({
-          id: c.userId || c.profileId || c.id,
-          name: c.displayName || c.firstName || 'Minor Player',
-          age: c.age || 12,
-          avatar: resolveMediaUrl(c.avatarUrl, '/userPlaceholder.png'),
+        const mapped = children.map((child: SupervisionChildItem) => ({
+          id: child.id,
+          name: child.displayName || child.firstName || 'Minor Player',
+          age: child.age || 12,
+          avatar: resolveMediaUrl(child.avatarUrl, '/userPlaceholder.png'),
         }));
         setWards(mapped);
         setSelectedWardId(mapped[0].id);
       }
 
       loadPendingRequests();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Accept Request Error:', err);
-      const errMsg = err.key === 'GUARDIAN_REQUEST_CHILD_SETUP_INCOMPLETE' || err.message?.includes('setup')
+      const errorMessage = extractErrorMessage(err, 'Failed to approve request. Please verify the code and try again.');
+      const errMsg = getApiErrorKey(err) === 'GUARDIAN_REQUEST_CHILD_SETUP_INCOMPLETE' || errorMessage.includes('setup')
         ? "This player hasn't finished setting up their profile yet — try again shortly."
-        : err.message || 'Failed to approve request. Please verify the code and try again.';
+        : errorMessage;
 
       setRequestNotice({ type: 'error', message: errMsg });
       showToast(errMsg, 'error');
@@ -209,8 +246,8 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
       await declineGuardianRequest(codeToDecline);
       setRequestNotice({ type: 'success', message: 'Guardian request declined.' });
       loadPendingRequests();
-    } catch (err: any) {
-      setRequestNotice({ type: 'error', message: err.message || 'Failed to decline request.' });
+    } catch (err: unknown) {
+      setRequestNotice({ type: 'error', message: extractErrorMessage(err, 'Failed to decline request.') });
     } finally {
       setRequestActionLoading(false);
     }
@@ -377,9 +414,9 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     if (!wardId) return;
     try {
       const res = await getSupervisionControls(wardId);
-      const controls = res?.controls || (res as any)?.data?.controls || [];
+      const controls = res.controls;
       if (Array.isArray(controls) && controls.length > 0) {
-        controls.forEach((c: any) => {
+        controls.forEach((c: SupervisionControlItem) => {
           const rawKey = String(c.control || c.name || '').toUpperCase();
           const val = c.value;
 
@@ -443,7 +480,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
           }
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn('Supervision controls fetch notice:', err);
     }
   };
@@ -459,13 +496,13 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
   useEffect(() => {
     async function processSupervisionData() {
       if (rawSupervisionData) {
-        const children = (rawSupervisionData as any)?.children || (rawSupervisionData as any)?.data?.children || [];
+        const children = rawSupervisionData.children;
         if (Array.isArray(children) && children.length > 0) {
-          const mapped = children.map((c: any) => ({
-            id: c.userId || c.profileId || c.id,
-            name: c.displayName || c.firstName || 'Minor Player',
-            age: c.age || 12,
-            avatar: resolveMediaUrl(c.avatarUrl, '/userPlaceholder.png'),
+          const mapped = children.map((child: SupervisionChildItem) => ({
+            id: child.id,
+            name: child.displayName || child.firstName || 'Minor Player',
+            age: child.age || 12,
+            avatar: resolveMediaUrl(child.avatarUrl, '/userPlaceholder.png'),
           }));
           setWards(mapped);
 
@@ -501,11 +538,11 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
   const [updatingControlKey, setUpdatingControlKey] = useState<string | null>(null);
 
-  const handleToggleControl = async (
+  const handleToggleControl = async <T extends PermissionState,>(
     controlKey: string,
     label: string,
     currentVal: boolean | string,
-    setter: React.Dispatch<React.SetStateAction<any>>
+    setter: React.Dispatch<React.SetStateAction<T>>
   ) => {
     if (!selectedWardId || updatingControlKey) return;
     const newVal = typeof currentVal === 'boolean' ? !currentVal : currentVal;
@@ -533,33 +570,33 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     const targetPropKey = stateKeyMap[controlKey] || controlKey;
 
     setUpdatingControlKey(controlKey);
-    setter((prev: any) => ({
+    setter((prev) => ({
       ...prev,
       [controlKey]: newVal,
       [targetPropKey]: newVal,
-    }));
+    }) as T);
 
     try {
       await updateSupervisionControls(selectedWardId, [{ control: backendControl, value: newVal }]);
       showToast(SUCCESS_MESSAGES.PERMISSION_UPDATED, ToastTypeEnum.SUCCESS);
       await fetchControlsForWard(selectedWardId);
-    } catch (err: any) {
-      setter((prev: any) => ({
+    } catch (err: unknown) {
+      setter((prev) => ({
         ...prev,
         [controlKey]: currentVal,
         [targetPropKey]: currentVal,
-      }));
-      showToast(err.message || ERROR_MESSAGES.FAILED_UPDATE_PERMISSION, ToastTypeEnum.ERROR);
+      }) as T);
+      showToast(extractErrorMessage(err, ERROR_MESSAGES.FAILED_UPDATE_PERMISSION), ToastTypeEnum.ERROR);
     } finally {
       setUpdatingControlKey(null);
     }
   };
 
-  const renderToggleSwitch = (
+  const renderToggleSwitch = <T extends PermissionState,>(
     controlKey: string,
     label: string,
     isOn: boolean,
-    setter: React.Dispatch<React.SetStateAction<any>>
+    setter: React.Dispatch<React.SetStateAction<T>>
   ) => {
     const isUpdating = updatingControlKey === controlKey;
     return (
@@ -570,17 +607,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
         className={`mhn-toggle-switch ${isOn ? 'mhn-toggle-on' : 'mhn-toggle-off'} ${isUpdating ? 'mhn-updating-state' : ''}`}
       >
         {isUpdating ? (
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="3"
-            className="mhn-spin-auto"
-          >
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4" strokeDashoffset="10" fill="none" />
-          </svg>
+          <LoaderCircle size={14} className="mhn-spin-auto" aria-hidden="true" />
         ) : (
           <div className="mhn-toggle-handle" />
         )}
@@ -590,59 +617,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
  
 
-  const sampleLogs = [
-    {
-      id: 'log1',
-      dateTime: 'Aug 10, 2026 20:30',
-      activity: 'Team invitation received',
-      initiatedBy: 'Connor McDavid',
-      actionText: 'View',
-    },
-    {
-      id: 'log2',
-      dateTime: 'Aug 10, 2026 20:30',
-      activity: 'Profile information updated',
-      initiatedBy: 'Noah Carter',
-      actionText: 'View',
-    },
-    {
-      id: 'log3',
-      dateTime: 'Aug 10, 2026 20:30',
-      activity: 'New coach message',
-      initiatedBy: 'David Chen (Coach)',
-      actionText: 'View',
-    },
-    {
-      id: 'log4',
-      dateTime: 'Aug 10, 2026 20:30',
-      activity: 'Profile visibility changed',
-      initiatedBy: 'Sarah Carter (Parent)',
-      actionText: 'Manage',
-    },
-    {
-      id: 'log5',
-      dateTime: 'Aug 10, 2026 20:30',
-      activity: 'User blocked',
-      initiatedBy: 'Sarah Carter (Parent)',
-      actionText: 'Manage',
-    },
-    {
-      id: 'log6',
-      dateTime: 'Aug 10, 2026 20:30',
-      activity: 'Team invitation received',
-      initiatedBy: 'Connor McDavid',
-      actionText: 'View',
-    },
-    {
-      id: 'log7',
-      dateTime: 'Aug 10, 2026 20:30',
-      activity: 'Team invitation received',
-      initiatedBy: 'Connor McDavid',
-      actionText: 'View',
-    },
-  ];
-
-  const [liveLogs, setLiveLogs] = useState<any[]>([]);
+  const [liveLogs, setLiveLogs] = useState<ActivityLogView[]>([]);
   const [logsSearchQuery, setLogsSearchQuery] = useState('');
   const debouncedLogsSearchQuery = useDebounce(logsSearchQuery, 800);
 
@@ -657,9 +632,9 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     async function loadWardControlsAndLogs() {
       try {
         const controlsRes = await getSupervisionControls(selectedWardId);
-        const controls = controlsRes?.controls || (controlsRes as any)?.data?.controls;
+        const controls = controlsRes.controls;
         if (Array.isArray(controls)) {
-          controls.forEach((c: any) => {
+          controls.forEach((c: SupervisionControlItem) => {
             if (c.control === 'VIEW_FEED') setHomePermissions((prev) => ({ ...prev, viewFeed: !!c.value }));
             if (c.control === 'CREATE_POST') setHomePermissions((prev) => ({ ...prev, createPosts: !!c.value }));
             if (c.control === 'COMMENT_ON_POSTS') setHomePermissions((prev) => ({ ...prev, commentOnPosts: !!c.value }));
@@ -677,25 +652,25 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
         }
 
         const logsRes = await getSupervisionLogs(selectedWardId);
-        const logItems = logsRes?.items || (logsRes as any)?.data?.items;
+        const logItems = logsRes.items;
         if (Array.isArray(logItems) && logItems.length > 0) {
-          const mappedLogs = logItems.map((l: any) => ({
-            id: l.id,
-            dateTime: new Date(l.createdAt).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-            activity: l.summary || l.type || 'Supervision activity log',
-            initiatedBy: l.actorRoleLabel || 'Parent',
+          const mappedLogs = logItems.map((log: SupervisionLogItem) => ({
+            id: log.id,
+            dateTime: new Date(log.createdAt).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            activity: log.summary || log.eventType || 'Supervision activity log',
+            initiatedBy: 'Parent',
             actionText: 'View',
           }));
           setLiveLogs(mappedLogs);
         }
-      } catch (err: any) {
-        console.warn('❌ [SupervisionPage] Controls/Logs load notice:', err?.message || err);
+      } catch (err: unknown) {
+        console.warn('❌ [SupervisionPage] Controls/Logs load notice:', extractErrorMessage(err));
       }
     }
     loadWardControlsAndLogs();
   }, [selectedWardId]);
 
-  const handleTabChange = (tab: string, extraData?: any) => {
+  const handleTabChange = (tab: string, extraData?: Record<string, unknown>) => {
     setActiveNavTab(tab);
     if (onNavigate) {
       onNavigate(tab, extraData);
@@ -715,7 +690,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     setIsCreatingPlayer(true);
     try {
       const formattedDob = formatDobToIso(newPlayer.dob) || '2015-05-15';
-      const validRelation = (newPlayer.relationship as any) || 'MOTHER';
+      const validRelation = newPlayer.relationship as 'MOTHER' | 'FATHER' | 'LEGAL_GUARDIAN' | 'GRANDPARENT' | 'OTHER';
 
       const res = await createManagedChild({
         displayName: nameToUse,
@@ -726,8 +701,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
         email: newPlayer.email.trim() || undefined,
       });
 
-      const childProfile = res?.child || (res as any)?.data?.profile || (res as any)?.data?.child || (res as any)?.profile;
-      const newChildId = childProfile?.id || (res as any)?.childId || (res as any)?.id;
+      const newChildId = res.child.id;
       if (newChildId) {
         setCreatedWardId(newChildId);
         setSelectedWardId(newChildId);
@@ -735,10 +709,10 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
       // Call supervision API immediately with no cache
       try {
-        await globalQueryClient.invalidateQueries(QueryKeys.SUPERVISION_DATA);
+        await invalidateQueryPrefix(globalQueryClient, QueryKeys.SUPERVISION_DATA);
         const freshSupData = await getSupervisionData();
         if (freshSupData?.children && Array.isArray(freshSupData.children)) {
-          const mapped = freshSupData.children.map((c: any) => ({
+          const mapped = freshSupData.children.map((c: SupervisionChildItem) => ({
             id: c.id,
             name: c.displayName || c.firstName || nameToUse,
             age: c.age || 12,
@@ -757,8 +731,8 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
       showToast(SUCCESS_MESSAGES.PLAYER_ADDED, ToastTypeEnum.SUCCESS);
       setViewMode(SupervisionViewModeEnum.CREATE_SUCCESS);
-    } catch (err: any) {
-      showToast(err?.message || ERROR_MESSAGES.FAILED_CREATE_PLAYER, ToastTypeEnum.ERROR);
+    } catch (err: unknown) {
+      showToast(extractErrorMessage(err, ERROR_MESSAGES.FAILED_CREATE_PLAYER), ToastTypeEnum.ERROR);
     } finally {
       setApiLoading(false);
       setIsControlsLoading(false);
@@ -777,8 +751,8 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
       await sendGuardianInvite(linkChildEmail.trim());
       showToast(SUCCESS_MESSAGES.INVITATION_SENT, ToastTypeEnum.SUCCESS);
       setViewMode(SupervisionViewModeEnum.LINK_SENT);
-    } catch (err: any) {
-      showToast(err?.message || ERROR_MESSAGES.FAILED_SEND_INVITATION, ToastTypeEnum.ERROR);
+    } catch (err: unknown) {
+      showToast(extractErrorMessage(err, ERROR_MESSAGES.FAILED_SEND_INVITATION), ToastTypeEnum.ERROR);
     } finally {
       setIsSendingLinkInvite(false);
     }
@@ -790,7 +764,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
     try {
       const supData = await getSupervisionData();
       if (supData?.children && supData.children.length > 0) {
-        const mapped = supData.children.map((c: any) => ({
+        const mapped = supData.children.map((c: SupervisionChildItem) => ({
           id: c.id,
           name: c.displayName || c.firstName || 'Minor Player',
           age: c.age || 12,
@@ -880,12 +854,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                     className="mhn-choice-card"
                   >
                     <div className="mhn-choice-icon-badge mhn-icon-create">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0B66C2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                        <circle cx="8.5" cy="7" r="4" />
-                        <line x1="20" y1="8" x2="20" y2="14" />
-                        <line x1="17" y1="11" x2="23" y2="11" />
-                      </svg>
+                      <UserPlus size={24} aria-hidden="true" />
                     </div>
                     <h4 className="mhn-choice-card-title">Create Player Account</h4>
                     <p className="mhn-choice-card-desc">Create a new account for a child under 13 or an athlete without an account.</p>
@@ -897,10 +866,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                     className="mhn-choice-card"
                   >
                     <div className="mhn-choice-icon-badge mhn-icon-link">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0B66C2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                      </svg>
+                      <Link size={24} aria-hidden="true" />
                     </div>
                     <h4 className="mhn-choice-card-title">Link Existing Account</h4>
                     <p className="mhn-choice-card-desc">Send a supervision request to an athlete who already has an email account.</p>
@@ -961,21 +927,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                           placeholder="DD/MM/YYYY"
                           className={`mhn-form-input ${dobErr ? 'mhn-input-error' : ''}`}
                         />
-                        <svg
-                          className="mhn-calendar-icon mhn-calendar-icon-pos"
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="#94A3B8"
-                          strokeWidth="2"
-                          onClick={handleSupervisionCalendarClick}
-                        >
-                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                          <line x1="16" y1="2" x2="16" y2="6" />
-                          <line x1="8" y1="2" x2="8" y2="6" />
-                          <line x1="3" y1="10" x2="21" y2="10" />
-                        </svg>
+                        <CalendarDays className="mhn-calendar-icon mhn-calendar-icon-pos" size={18} onClick={handleSupervisionCalendarClick} aria-hidden="true" />
                         <Input
                           type="date"
                           ref={supervisionDateInputRef}
@@ -1243,7 +1195,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
 
                 <div className="mhn-trouble-footer">
                   <span className='having'>Having trouble? </span>
-                  <a href="#support" onClick={(e) => { e.preventDefault(); alert('Redirecting to Support...'); }} className="mhn-trouble-link">
+                  <a href="/help" onClick={(e) => { e.preventDefault(); onNavigate?.('help'); }} className="mhn-trouble-link">
                     Contact Support
                   </a>
                 </div>
@@ -1318,17 +1270,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                               <img src='/home.png' className='home' />
                               <span className='superTitle'>Home</span>
                             </div>
-                            <svg
-                              className={`mhn-accordion-chevron ${expandedCategories.home ? 'mhn-chevron-up' : ''}`}
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="#64748B"
-                              strokeWidth="2"
-                            >
-                              <polyline points="6 9 12 15 18 9" />
-                            </svg>
+                            <ChevronDown className={`mhn-accordion-chevron ${expandedCategories.home ? 'mhn-chevron-up' : ''}`} size={16} aria-hidden="true" />
                           </div>
 
                           {expandedCategories.home && (
@@ -1391,17 +1333,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                               <img src='/myNetwork.png' className='home' />
                               <span className='superTitle'>My Network</span>
                             </div>
-                            <svg
-                              className={`mhn-accordion-chevron ${expandedCategories.network ? 'mhn-chevron-up' : ''}`}
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="#64748B"
-                              strokeWidth="2"
-                            >
-                              <polyline points="6 9 12 15 18 9" />
-                            </svg>
+                            <ChevronDown className={`mhn-accordion-chevron ${expandedCategories.network ? 'mhn-chevron-up' : ''}`} size={16} aria-hidden="true" />
                           </div>
 
                           {expandedCategories.network && (
@@ -1469,17 +1401,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                               <img src='/messaging2.png' className='home' />
                               <span className='superTitle'>Messaging</span>
                             </div>
-                            <svg
-                              className={`mhn-accordion-chevron ${expandedCategories.messaging ? 'mhn-chevron-up' : ''}`}
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="#64748B"
-                              strokeWidth="2"
-                            >
-                              <polyline points="6 9 12 15 18 9" />
-                            </svg>
+                            <ChevronDown className={`mhn-accordion-chevron ${expandedCategories.messaging ? 'mhn-chevron-up' : ''}`} size={16} aria-hidden="true" />
                           </div>
 
                           {expandedCategories.messaging && (
@@ -1540,17 +1462,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                               <img src='/notifications.png' className='home' />
                               <span className='superTitle'>Notifications</span>
                             </div>
-                            <svg
-                              className={`mhn-accordion-chevron ${expandedCategories.notifications ? 'mhn-chevron-up' : ''}`}
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="#64748B"
-                              strokeWidth="2"
-                            >
-                              <polyline points="6 9 12 15 18 9" />
-                            </svg>
+                            <ChevronDown className={`mhn-accordion-chevron ${expandedCategories.notifications ? 'mhn-chevron-up' : ''}`} size={16} aria-hidden="true" />
                           </div>
 
                           {expandedCategories.notifications && (
@@ -1619,7 +1531,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                           />
                         ) : (
                           <div className="mhn-supervision-requests-grid">
-                            {livePendingRequests.map((req: any, idx: number) => {
+                            {livePendingRequests.map((req: PendingSupervisionRequest, idx: number) => {
                               const reqId = req.id || `req_${idx}`;
                               const isApprovalItem = Boolean(req.isApprovalItem);
 
@@ -1644,8 +1556,9 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                 ? (req.requester?.teamName || req.minorCard?.teamName)
                                 : (child.teamName || req.teamName);
 
-                              const teamLogo = (isApprovalItem ? req.requester?.teamLogo : child.teamLogo)
-                                ? resolveMediaUrl(isApprovalItem ? req.requester.teamLogo : child.teamLogo, '/HC.png')
+                              const rawTeamLogo = isApprovalItem ? req.requester?.teamLogo : child.teamLogo;
+                              const teamLogo = rawTeamLogo
+                                ? resolveMediaUrl(rawTeamLogo, '/HC.png')
                                 : '/HC.png';
 
                               const location = isApprovalItem
@@ -1708,10 +1621,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                                     <div
                                       className="mhn-req-loc-row"
                                     >
-                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" className="mhn-flex-shrink-0">
-                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                                        <circle cx="12" cy="10" r="3" />
-                                      </svg>
+                                      <MapPin size={12} className="mhn-flex-shrink-0" aria-hidden="true" />
                                       <span className="mhn-ellipsis-text">{location}</span>
                                     </div>
                                   )}
@@ -1796,10 +1706,7 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                       {/* Search Bar & Filter Header */}
                       <div className="mhn-logs-top-controls">
                         <div className="mhn-logs-search-box">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2">
-                            <circle cx="11" cy="11" r="8" />
-                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                          </svg>
+                          <Search size={16} aria-hidden="true" />
                           <Input
                             type="text"
                             placeholder="Search Logs"
@@ -1810,13 +1717,9 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                         </div>
 
                         <Button className="mhn-logs-filter-btn">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2">
-                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                          </svg>
+                          <Filter size={14} aria-hidden="true" />
                           <span>Filters</span>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2">
-                            <polyline points="6 9 12 15 18 9" />
-                          </svg>
+                          <ChevronDown size={12} aria-hidden="true" />
                         </Button>
                       </div>
 
@@ -1828,33 +1731,25 @@ const SupervisionPageBase: React.FC<SupervisionPageProps> = ({ onNavigate, onLog
                               <th>
                                 <div className="mhn-th-flex">
                                   DATE & TIME
-                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M12 5v14M5 12l7 7 7-7" />
-                                  </svg>
+                                  <ArrowDown size={10} aria-hidden="true" />
                                 </div>
                               </th>
                               <th>
                                 <div className="mhn-th-flex">
                                   ACTIVITY
-                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M12 5v14M5 12l7 7 7-7" />
-                                  </svg>
+                                  <ArrowDown size={10} aria-hidden="true" />
                                 </div>
                               </th>
                               <th>
                                 <div className="mhn-th-flex">
                                   INITIATED BY
-                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M12 5v14M5 12l7 7 7-7" />
-                                  </svg>
+                                  <ArrowDown size={10} aria-hidden="true" />
                                 </div>
                               </th>
                               <th>
                                 <div className="mhn-th-flex">
                                   STATUS
-                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M12 5v14M5 12l7 7 7-7" />
-                                  </svg>
+                                  <ArrowDown size={10} aria-hidden="true" />
                                 </div>
                               </th>
                             </tr>

@@ -1,1 +1,1 @@
-export * from '../helpers/formatters';
+export * from '@/helpers/formatters';

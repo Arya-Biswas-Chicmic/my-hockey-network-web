@@ -1,5 +1,6 @@
-import { apiFetch } from '../client';
-import { API_ENDPOINTS } from '../endpoints';
+import { apiFetch } from '@/services/client';
+import { API_ENDPOINTS } from '@/services/endpoints';
+import type { CreateManagedChildDTO, SupervisionControlItem } from '@my-hockey-network/core';
 
 export async function getSupervisionData() {
   return apiFetch(API_ENDPOINTS.SUPERVISION.BASE, {
@@ -7,7 +8,7 @@ export async function getSupervisionData() {
   });
 }
 
-export async function createManagedChild(dto: any) {
+export async function createManagedChild(dto: CreateManagedChildDTO) {
   return apiFetch(API_ENDPOINTS.SUPERVISION.CHILDREN, {
     method: 'POST',
     body: JSON.stringify(dto),
@@ -20,7 +21,10 @@ export async function getSupervisionControls(minorId: string) {
   });
 }
 
-export async function updateSupervisionControls(minorId: string, controls: any) {
+export async function updateSupervisionControls(
+  minorId: string,
+  controls: Array<Pick<SupervisionControlItem, 'control' | 'value'>>,
+) {
   return apiFetch(API_ENDPOINTS.SUPERVISION.CONTROLS(minorId), {
     method: 'PUT',
     body: JSON.stringify(controls),

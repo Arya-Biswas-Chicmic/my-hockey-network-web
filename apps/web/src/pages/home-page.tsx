@@ -1,30 +1,38 @@
-import { Input, Select, Dropdown } from '../components/common/FormControls';
+import { Input, Select, Dropdown } from '@/components/common/FormControls';
 import React, { useState, useEffect, useRef } from 'react';
 import { maskEmail, isEmailValid } from '@my-hockey-network/validation';
-import { Header, PendingBanner, NoDataFound, ServerDown } from '../components/common';
-import { ProfileSummaryCard } from '../components/features/home/ProfileSummaryCard';
-import { FeedPostCard, FeedPostProps } from '../components/features/home/FeedPostCard';
-import { MatchesWidget } from '../components/features/home/MatchesWidget';
-import { UpcomingEventsWidget } from '../components/features/home/UpcomingEventsWidget';
-import { InviteGrowWidget } from '../components/features/home/InviteGrowWidget';
-import { CreatePostModal } from '../components/features/home/CreatePostModal';
-import { EmptyState } from '../components/features/network/EmptyState';
-import { HomeSkeletonLoader, FeedPostSkeleton } from '../components/features/home/HomeSkeletonLoader';
-import { AuthMeResponse, createPost, getFeed, uploadMediaFile, completeMediaUpload } from '@my-hockey-network/core';
+import { Header, PendingBanner, NoDataFound, ServerDown } from '@/components/common';
+import { ProfileSummaryCard } from '@/components/features/home/ProfileSummaryCard';
+import { FeedPostCard, FeedPostProps } from '@/components/features/home/FeedPostCard';
+import { MatchesWidget } from '@/components/features/home/MatchesWidget';
+import { UpcomingEventsWidget } from '@/components/features/home/UpcomingEventsWidget';
+import { InviteGrowWidget } from '@/components/features/home/InviteGrowWidget';
+import { CreatePostModal } from '@/components/features/home/CreatePostModal';
+import { EmptyState } from '@/components/features/network/EmptyState';
+import { HomeSkeletonLoader, FeedPostSkeleton } from '@/components/features/home/HomeSkeletonLoader';
+import { createPost, getFeed, uploadMediaFile, completeMediaUpload, type PostItem } from '@my-hockey-network/core';
+import { Search } from 'lucide-react';
 import { QueryKeys, NavTabEnum, PostAudienceEnum } from '@my-hockey-network/contracts';
-import { useAuth } from '../hooks/use-auth';
-import { globalQueryClient } from '../query';
+import { useAuth } from '@/hooks/use-auth';
+import { globalQueryClient, invalidateQueryPrefix } from '@/query';
 
-import { resolveCoverUrl } from '../utils/mediaUtils';
-import { useFeedPermissions } from '../hooks/use-feed-permissions';
-import { useDebounce } from '../hooks/use-debounce';
-import { showSuccessToast, showErrorToast, showInfoToast } from '../utils/toast';
+import { resolveCoverUrl } from '@/utils/mediaUtils';
+import { useFeedPermissions } from '@/hooks/use-feed-permissions';
+import { useDebounce } from '@/hooks/use-debounce';
+import { extractErrorMessage, getApiErrorStatus, showSuccessToast, showErrorToast, showInfoToast } from '@/utils/toast';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, HELPER_MESSAGES } from '@my-hockey-network/constants';
 
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
   onLogout?: () => void;
+}
+
+interface PostPrivacySettings {
+  audience: string;
+  shareWith?: string;
+  dontShareWith?: string;
+  locationTag?: string;
 }
 
 export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
@@ -35,15 +43,14 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const debouncedSearchQuery = useDebounce(searchQuery, 800);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [isCreatingPost, setIsCreatingPost] = useState<boolean>(false);
-  const [userSession] = useState<AuthMeResponse | null>(null);
   const [isPageLoading, setIsPageLoading] = useState<boolean>(true);
   const [feedPosts, setFeedPosts] = useState<FeedPostProps[]>([]);
   const [sortBy, setSortBy] = useState<'RECENT' | 'POPULAR' | 'TRENDING'>('RECENT');
   const [feedError, setFeedError] = useState<{ isServerError: boolean; message?: string; statusCode?: number } | null>(null);
   const [isFeedRefreshing, setIsFeedRefreshing] = useState<boolean>(false);
 
-  const currentUserName = user?.profile?.displayName || userSession?.profile?.displayName || (userSession as any)?.displayName || 'Player';
-  const currentUserAvatar = user?.profile?.avatarUrl || userSession?.profile?.avatarUrl || (userSession as any)?.avatarUrl || '/userPlaceholder.png';
+  const currentUserName = user?.profile?.displayName || 'Player';
+  const currentUserAvatar = user?.profile?.avatarUrl || '/userPlaceholder.png';
 
   const fetchFeedPosts = async (
     currentProfileId?: string,
@@ -59,34 +66,30 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       const s = sortTerm !== undefined ? sortTerm : sortBy;
       const cacheKey = `${QueryKeys.FEED_POSTS}:${s}:${q || ''}`;
 
-      const feedResValue = await globalQueryClient.fetchQuery(
-        cacheKey,
-        () =>
+      const feedResValue = await globalQueryClient.fetchQuery({
+        queryKey: [cacheKey],
+        queryFn: () =>
           getFeed({
             query: q && q.trim().length >= 2 ? q.trim() : undefined,
             sortBy: s,
             limit: 20,
           }),
-        { staleTime: 5 * 60 * 1000 }
-      );
+        staleTime: 5 * 60 * 1000,
+      });
 
-      const feedData = (feedResValue as any)?.data || feedResValue;
-      const itemsList = feedData?.items || (Array.isArray(feedData) ? feedData : []);
+      const itemsList = feedResValue.items;
 
       if (itemsList && itemsList.length > 0) {
-        const mappedPosts: FeedPostProps[] = itemsList.map((wrapper: any) => {
-          const postObj = wrapper.post || wrapper;
-          const reason = wrapper.reason || wrapper.postReason || '';
-          const authorProf = postObj.authorProfile || postObj.author || {};
+        const mappedPosts: FeedPostProps[] = itemsList.map((postObj: PostItem, index: number) => {
+          const authorProf: NonNullable<PostItem['author']> = postObj.authorProfile || postObj.author || { id: '', displayName: '' };
           const authorId = postObj.authorProfileId || authorProf.id;
 
           const authorProfId = authorProf.id || authorProf.profileId || postObj.authorProfileId;
           const authorUserId = authorProf.userId || authorProf.id;
-          const activeMyProfileId = currentProfileId || user?.profile?.id || user?.id || (userSession as any)?.profile?.id || (userSession as any)?.id;
-          const activeMyUserId = user?.id || (userSession as any)?.id;
+          const activeMyProfileId = currentProfileId || user?.profile?.id || user?.id;
+          const activeMyUserId = user?.id;
 
-          const isSelfPost = reason === 'SELF' ||
-            (!!activeMyProfileId && (authorProfId === activeMyProfileId || authorProf.profileId === activeMyProfileId || postObj.authorProfileId === activeMyProfileId)) ||
+          const isSelfPost = (!!activeMyProfileId && (authorProfId === activeMyProfileId || authorProf.profileId === activeMyProfileId || postObj.authorProfileId === activeMyProfileId)) ||
             (!!activeMyUserId && (authorUserId === activeMyUserId || authorProfId === activeMyUserId));
 
           const roleSubtitle = authorProf.roleTag ||
@@ -98,7 +101,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             'Official Team';
 
           return {
-            id: postObj.id || `post_${Math.random()}`,
+            id: postObj.id || `post-${authorId || 'unknown'}-${postObj.publishedAt || postObj.createdAt || index}`,
             authorId: authorId || authorProf.id || authorProf.displayName,
             authorName: authorProf.displayName || '-',
             authorRole: roleSubtitle,
@@ -120,13 +123,13 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         setFeedPosts([]);
       }
       setFeedError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (!silent) {
         setFeedPosts([]);
         setFeedError({
           isServerError: true,
-          statusCode: err?.statusCode || 502,
-          message: err?.message || 'Something went wrong while connecting to the server. Please try again.',
+          statusCode: getApiErrorStatus(err) || 502,
+          message: extractErrorMessage(err, 'Something went wrong while connecting to the server. Please try again.'),
         });
       }
     } finally {
@@ -162,8 +165,8 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         }
         const profileId = currentUser?.profile?.id || currentUser?.id;
         await fetchFeedPosts(profileId, searchQuery, sortBy);
-      } catch (err: any) {
-        console.warn('HomePage data fetch notice:', err.message || err);
+      } catch (err: unknown) {
+        console.warn('HomePage data fetch notice:', extractErrorMessage(err));
       } finally {
         setIsPageLoading(false);
       }
@@ -187,7 +190,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     }
   };
 
-  const handleCreatePost = async (content: string, postImage?: string, privacySettings?: any, imageFile?: File) => {
+  const handleCreatePost = async (content: string, postImage?: string, privacySettings?: PostPrivacySettings, imageFile?: File) => {
     if (!requirePermission()) return;
     let audienceEnum: PostAudienceEnum = PostAudienceEnum.PUBLIC;
     if (privacySettings?.audience === 'Connections') {
@@ -247,23 +250,24 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       } else {
         const newPost: FeedPostProps = {
           id: res?.data?.post?.id || res?.id || `post-${feedPosts.length + 1}`,
-          authorName: userSession?.profile?.displayName || currentUserName,
-          authorRole: userSession?.primaryRole || currentUserRole,
+          authorName: currentUserName,
+          authorRole: user?.primaryRole || currentUserRole,
           authorTime: 'Just now',
-          authorAvatar: userSession?.profile?.avatarUrl || '/userPlaceholder.png',
+          authorAvatar: currentUserAvatar,
           content,
           postImage,
           likesCount: 0,
           commentsCount: 0,
           isFollowing: false,
         };
-        setFeedPosts([newPost, ...feedPosts]);
-        globalQueryClient.invalidateQueries(QueryKeys.FEED_POSTS);
+        setFeedPosts((previousPosts) => [newPost, ...previousPosts]);
+        void invalidateQueryPrefix(globalQueryClient, QueryKeys.FEED_POSTS);
         showSuccessToast(SUCCESS_MESSAGES.POST_CREATED);
       }
       setIsCreatePostOpen(false);
-    } catch (err: any) {
-      if (err?.statusCode === 403 && (err?.message?.includes('GUARDIAN_DISABLED') || err?.message?.includes('guardian'))) {
+    } catch (err: unknown) {
+      const message = extractErrorMessage(err, '');
+      if (getApiErrorStatus(err) === 403 && (message.includes('GUARDIAN_DISABLED') || message.includes('guardian'))) {
         showErrorToast(err, ERROR_MESSAGES.GUARDIAN_DISABLED_THIS_ACTION);
       } else {
         showErrorToast(err, ERROR_MESSAGES.FAILED_CREATE_POST);
@@ -273,7 +277,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     }
   };
 
-  const currentUserRole = userSession?.profile?.type || userSession?.primaryRole || 'PLAYER';
+  const currentUserRole = user?.profile?.type || user?.primaryRole || 'PLAYER';
 
   if (isPageLoading) {
     return (
@@ -289,7 +293,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   }
 
   return (
-    <div className="mhn-home-page-root">
+    <div className="mhn-home-page-root min-h-dvh lg:flex lg:h-dvh lg:flex-col lg:overflow-hidden">
       <Header
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
@@ -312,10 +316,10 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         />
       )}
 
-      <main className="mhn-home-main-layout">
-        <aside className="mhn-layout-col-left">
+      <main className="mhn-home-main-layout lg:my-0 lg:min-h-0 lg:flex-1 lg:py-6">
+        <aside className="mhn-layout-col-left lg:h-full lg:overflow-hidden">
           <ProfileSummaryCard
-            coverUrl={resolveCoverUrl((user?.profile as any)?.coverImageUrl || (user?.profile as any)?.coverUrl, "/cover.png")}
+            coverUrl={resolveCoverUrl(user?.profile?.coverImageUrl || user?.profile?.coverUrl, "/cover.png")}
             location={user?.profile?.city || "-"}
             teamLogo="/HC.png"
             followers="-"
@@ -328,14 +332,11 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           />
         </aside>
 
-        <section className="mhn-layout-col-center">
+        <section className="mhn-layout-col-center lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
           {(filteredPosts.length > 0 || searchQuery.trim().length > 0) && (
             <div className="mhn-feed-header-bar">
               <div className="mhn-feed-search-wrapper">
-                <svg className="mhn-feed-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
+                <Search className="mhn-feed-search-icon" size={16} aria-hidden="true" />
                 <Input
                   type="text"
                   value={searchQuery}
@@ -354,7 +355,9 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                     { value: 'POPULAR', label: 'Most Popular' },
                     { value: 'TRENDING', label: 'Trending (48h)' },
                   ]}
-                  onChange={(val) => setSortBy(val as any)}
+                  onChange={(val) => {
+                    if (val === 'RECENT' || val === 'POPULAR' || val === 'TRENDING') setSortBy(val);
+                  }}
                   placeholder=""
                 />
               </div>
@@ -370,7 +373,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               title="We’re having trouble loading your feed"
               description={feedError.message || "Something went wrong while connecting to the server. Please try again."}
               statusCode={feedError.statusCode || 502}
-              onRetry={() => fetchFeedPosts(userSession?.profile?.id || userSession?.id)}
+              onRetry={() => fetchFeedPosts(user?.profile?.id || user?.id)}
             />
           ) : filteredPosts.length === 0 ? (
             <NoDataFound
@@ -390,12 +393,12 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   onDeleteSuccess={(deletedId, msg) => {
                     showSuccessToast(msg || SUCCESS_MESSAGES.POST_DELETED);
                     setFeedPosts((prev) => prev.filter((p) => p.id !== deletedId));
-                    const profileId = userSession?.profile?.id || userSession?.id;
+                    const profileId = user?.profile?.id || user?.id;
                     fetchFeedPosts(profileId, searchQuery, sortBy, true);
                   }}
 
                   onRepostComplete={() => {
-                    const profileId = userSession?.profile?.id || userSession?.id;
+                    const profileId = user?.profile?.id || user?.id;
                     fetchFeedPosts(profileId, searchQuery, sortBy, true);
                   }}
                 />
@@ -404,9 +407,9 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           )}
         </section>
 
-        <aside className="mhn-layout-col-right">
+        <aside className="mhn-layout-col-right lg:h-full lg:overflow-hidden">
           <MatchesWidget
-            onViewAll={() => alert('View all matches')}
+            onViewAll={() => showInfoToast('Match discovery is not available yet.')}
           />
 
           <UpcomingEventsWidget
@@ -415,7 +418,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           />
 
           <InviteGrowWidget
-            onInviteClick={() => alert('Invite members modal')}
+            onInviteClick={() => showInfoToast('Member invitations are not available yet.')}
             illustrationUrl="/player.png"
           />
         </aside>

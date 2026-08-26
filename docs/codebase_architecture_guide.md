@@ -1,6 +1,6 @@
 # My Hockey Network frontend architecture
 
-Last reviewed: 2026-08-21
+Last reviewed: 2026-08-26
 
 The repository is an npm-workspaces monorepo. Web and mobile share contracts, business rules,
 validation, authentication use cases, API behavior, and design values. Their UI, navigation,
@@ -63,11 +63,20 @@ rejects web/native cross-imports and JSX in shared packages.
 API origins are required platform environment variables. No shared package, checked-in deployment
 file, or application module supplies a default server URL.
 
+Web server state uses TanStack Query. The compatibility hook in `apps/web/src/query` delegates to
+TanStack Query and must not become a second cache implementation. HTTP operations use the injected
+native-fetch client; feature code must not call fetch directly or introduce Axios. Application-local
+imports use `@/`. Explicit `any` is rejected. Ordinary UI icons use Lucide, while custom branded or
+data-visual SVG markup stays isolated in approved reusable icon components.
+
 ## Routing rules
 
 - Web uses `BrowserRouter`, nested `AuthGuard`, `GuestGuard`, and `RoleGuard` routes.
 - Guards wait for the single `/auth/me` bootstrap before making redirect decisions.
 - Direct URL entry, refresh, browser history, and unknown paths all flow through the router.
+- Authenticated page modules are route-level lazy chunks behind a shared loading boundary.
+- Guardian approval and request-sent URLs are public transition routes; supervision remains behind
+  the parent role guard.
 - Mobile keeps React Navigation because native screen transitions and tab navigation differ.
 - Mobile has no browser URL router; its route-name constants identify navigator screens only.
 - Deep/universal linking is not configured and must be implemented explicitly if later required.

@@ -1,7 +1,7 @@
 import { createApiClient } from '@my-hockey-network/api-client';
 import { configureApiClient } from '@my-hockey-network/core';
-import { mobileAuthStorage } from './auth-storage';
-import { mobileEnvironment } from './environment';
+import { mobileAuthStorage } from '@/platform/auth-storage';
+import { mobileEnvironment } from '@/platform/environment';
 
 export const mobileApiClient = createApiClient({
   baseUrl: mobileEnvironment.apiBaseUrl,

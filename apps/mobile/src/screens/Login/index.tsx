@@ -13,16 +13,16 @@ import Button from '@components/Button';
 import Input from '@components/Input';
 import ScreenWrapper from '@components/ScreenWrapper';
 import useStyles from '@hooks/useStyles';
-import { ROUTES } from '../../navigation/constants';
-import { RootStackParamList } from '../../navigation/types';
+import { ROUTES } from '@/navigation/constants';
+import { RootStackParamList } from '@/navigation/types';
 import { loginUser } from '@redux/CommonReducer';
 import { useAppDispatch } from '@redux/store';
 import { isValidEmail, sanitizeEmail } from '@utils/validation';
-import { mobileAuth } from '../../platform/auth-service';
+import { mobileAuth } from '@/platform/auth-service';
 
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import styles from './styles';
+import styles from '@/screens/Login/styles';
 
 type Props = NativeStackScreenProps<RootStackParamList, ROUTES.LOGIN>;
 

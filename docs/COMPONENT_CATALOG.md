@@ -1,6 +1,6 @@
 # Component catalog and reuse policy
 
-Last reviewed: 2026-08-25
+Last reviewed: 2026-08-26
 
 ## Rule
 
@@ -13,6 +13,10 @@ concepts across platforms rather than forcing DOM/native markup into one compone
 ## Existing web primitives and shared compositions
 
 - `common/Button`: generic button foundation; currently underused and its variants need completion.
+- `common/FormControls`: the single web `Input`, `Select`, `Textarea`, accessible `Dropdown`, and
+  `FormField` implementation. Do not create a second control file or accept inline style objects.
+- `common/OtpCodeInput`: the accessible six-digit OTP input reused by email verification and
+  guardian approval.
 - `common/Header`: reused across the authenticated web pages.
 - `common/Spinner`, `Toast`, `PendingBanner`, `NoDataFound`, `ServerDown`: reusable feedback/state UI.
 - `ProfileSummaryCard`: reused by Home and Network; updated with word-break and overflow containment for display names and team handles.
@@ -34,8 +38,16 @@ those primitive implementations. Mobile Signup now uses the existing native Butt
 ScreenWrapper. `design-system` is retained as a compatibility facade over canonical `design-tokens`.
 `npm run components:check` prevents raw controls from returning to web features or mobile screens.
 It also rejects React Native/mobile presentation imports from web, React DOM/web presentation imports
-from mobile, and JSX presentation inside shared packages. Therefore web common components are used
-only by web, and mobile common components are used only by mobile.
+from mobile, inline web style objects, non-Formik semantic web forms, and JSX presentation inside
+shared packages. It rejects relative app imports, explicit `any`, and inline SVG outside the approved
+custom icon components. Ordinary web icons come from Lucide; branded and analytics visuals remain
+isolated under reusable icon/illustration components. Therefore web common components are used only by web, and mobile common components
+are used only by mobile.
+
+Formik owns state, touched, validation-error, and submission behavior for every semantic web form:
+login, signup, guardian approval, OTP verification, support tickets, profile editing, post creation,
+and comments. Validators live in `apps/web/src/validation/forms.ts` or shared validation packages and
+reuse Zod/domain rules. New substantial web forms must follow this pattern.
 
 ## Required consolidation before new screen work
 

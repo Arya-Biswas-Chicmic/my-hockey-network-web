@@ -1,6 +1,7 @@
-import { Button } from '../components/common/Button';
+import { Button } from '@/components/common/Button';
 import React, { useState } from 'react';
-import { Header } from '../components/common/Header';
+import { Header } from '@/components/common/Header';
+import { Armchair, Ban, ChevronRight, CircleParking, Droplets, Smile, Toilet, Users } from 'lucide-react';
 
 interface EventDetailPageProps {
   onNavigate?: (screen: string) => void;
@@ -127,37 +128,22 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
                 {/* Column 1 */}
                 <div className="mhn-things-col">
                   <div className="mhn-thing-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                      <circle cx="9" cy="7" r="4" />
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
+                    <Users size={18} aria-hidden="true" />
                     <span>Guardian should be there</span>
                   </div>
 
                   <div className="mhn-thing-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                      <line x1="9" y1="9" x2="9.01" y2="9" />
-                      <line x1="15" y1="9" x2="15.01" y2="9" />
-                    </svg>
+                    <Smile size={18} aria-hidden="true" />
                     <span className='labelSub'>Kid friendly</span>
                   </div>
 
                   <div className="mhn-thing-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-                    </svg>
+                    <Droplets size={18} aria-hidden="true" />
                     <span className='labelSub'>Free water stations</span>
                   </div>
 
                   <div className="mhn-thing-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="1" y="3" width="22" height="18" rx="2" ry="2" />
-                      <path d="M9 17V7h4a3 3 0 0 1 0 6H9" />
-                    </svg>
+                    <CircleParking size={18} aria-hidden="true" />
                     <span className='labelSub'>Free parking</span>
                   </div>
                 </div>
@@ -165,26 +151,17 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
                 {/* Column 2 */}
                 <div className="mhn-things-col">
                   <div className="mhn-thing-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M6 19v-9a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v9" />
-                      <path d="M4 19h16" />
-                    </svg>
+                    <Armchair size={18} aria-hidden="true" />
                     <span className='labelSub'>Seating Arrangement Seated & Standing</span>
                   </div>
 
                   <div className="mhn-thing-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                    </svg>
+                    <Ban size={18} aria-hidden="true" />
                     <span className='labelSub'>Pets not allowed</span>
                   </div>
 
                   <div className="mhn-thing-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M7 21h10" />
-                      <path d="M12 21V3" />
-                    </svg>
+                    <Toilet size={18} aria-hidden="true" />
                     <span className='labelSub'>Wash rooms available</span>
                   </div>
                 </div>
@@ -205,9 +182,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
                   <span className="mhn-location-sub">52.3 km away</span>
                 </div>
                 <Button className="mhn-location-arrow-btn" aria-label="Location details">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
+                  <ChevronRight size={16} aria-hidden="true" />
                 </Button>
               </div>
 
@@ -221,9 +196,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
                   <span className="mhn-location-sub">5:00 PM - 7:00 PM</span>
                 </div>
                 <Button className="mhn-location-arrow-btn" aria-label="Date details">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
+                  <ChevronRight size={16} aria-hidden="true" />
                 </Button>
               </div>
             </div>

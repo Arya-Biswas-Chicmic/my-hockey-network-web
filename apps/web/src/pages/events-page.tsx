@@ -1,12 +1,13 @@
-import { Button } from '../components/common/Button';
-import { Input } from '../components/common/FormControls';
+import { Button } from '@/components/common/Button';
+import { Input } from '@/components/common/FormControls';
 import React, { useState } from 'react';
-import { Header } from '../components/common/Header';
-import { PendingBanner } from '../components/common/PendingBanner';
-import { useFeedPermissions } from '../hooks/use-feed-permissions';
-import { useDebounce } from '../hooks/use-debounce';
-import { EventCard, EventCardProps } from '../components/features/events/EventCard';
-import { CalendarView } from '../components/features/events/CalendarView';
+import { Header } from '@/components/common/Header';
+import { PendingBanner } from '@/components/common/PendingBanner';
+import { useFeedPermissions } from '@/hooks/use-feed-permissions';
+import { useDebounce } from '@/hooks/use-debounce';
+import { EventCard, EventCardProps } from '@/components/features/events/EventCard';
+import { CalendarView } from '@/components/features/events/CalendarView';
+import { CalendarDays, ChevronDown, List, Search } from 'lucide-react';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -122,10 +123,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           <div className="mhn-events-header-actions">
             {/* Search Input Box */}
             <div className="mhn-events-search-wrapper">
-              <svg className="mhn-events-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
+              <Search className="mhn-events-search-icon" size={16} aria-hidden="true" />
               <Input
                 type="text"
                 value={searchQuery}
@@ -147,14 +145,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               title="List View"
               aria-label="List View"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={viewMode === 'list' ? '#1860C3' : '#64748B'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="8" y1="6" x2="21" y2="6" />
-                <line x1="8" y1="12" x2="21" y2="12" />
-                <line x1="8" y1="18" x2="21" y2="18" />
-                <line x1="3" y1="6" x2="3.01" y2="6" />
-                <line x1="3" y1="12" x2="3.01" y2="12" />
-                <line x1="3" y1="18" x2="3.01" y2="18" />
-              </svg>
+              <List size={18} color={viewMode === 'list' ? '#1860C3' : '#64748B'} aria-hidden="true" />
             </Button>
             <div className="mhn-view-pill-divider" />
             <Button
@@ -163,15 +154,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               title="Calendar View"
               aria-label="Calendar View"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={viewMode === 'calendar' ? '#1860C3' : '#64748B'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                <line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" />
-                <line x1="3" y1="10" x2="21" y2="10" />
-                <circle cx="8" cy="14" r="1" fill={viewMode === 'calendar' ? '#1860C3' : '#64748B'} />
-                <circle cx="12" cy="14" r="1" fill={viewMode === 'calendar' ? '#1860C3' : '#64748B'} />
-                <circle cx="16" cy="14" r="1" fill={viewMode === 'calendar' ? '#1860C3' : '#64748B'} />
-              </svg>
+              <CalendarDays size={18} color={viewMode === 'calendar' ? '#1860C3' : '#64748B'} aria-hidden="true" />
             </Button>
           </div>
 
@@ -181,9 +164,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             <Button className="mhn-filter-btn-main">
               <img src="/filters.png" alt="Filters" className="mhn-filter-icon-img" />
               <span>Filters</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
+              <ChevronDown size={12} aria-hidden="true" />
             </Button>
 
             {/* Quick Filter Pill Buttons */}

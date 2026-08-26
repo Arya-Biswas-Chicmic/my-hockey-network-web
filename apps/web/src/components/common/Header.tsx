@@ -1,17 +1,30 @@
-import { Button } from './Button';
+import { Button } from '@/components/common/Button';
 import React, { useState } from 'react';
-import { useAuth } from '../../hooks/use-auth';
-import { LogoutModal } from './LogoutModal';
-import { resolveMediaUrl } from '../../utils/mediaUtils';
+import { useAuth } from '@/hooks/use-auth';
+import { LogoutModal } from '@/components/common/LogoutModal';
+import { resolveMediaUrl } from '@/utils/mediaUtils';
 import { getSupervisionData } from '@my-hockey-network/core';
 import { QueryKeys } from '@my-hockey-network/contracts';
 import { ERROR_MESSAGES } from '@my-hockey-network/constants';
-import { useQuery } from '../../query';
+import { useQuery } from '@/query';
+import {
+  Bell,
+  CalendarDays,
+  ChevronDown,
+  ChevronRight,
+  Eye,
+  HelpCircle,
+  Home,
+  LogOut,
+  MessageSquare,
+  Settings,
+  Users,
+} from 'lucide-react';
 
 
 interface HeaderProps {
   activeTab?: string;
-  onTabChange?: (tab: string, extraData?: any) => void;
+  onTabChange?: (tab: string, extraData?: { selectedWardId?: string }) => void;
   onLogout?: () => void;
   userName?: string;
   userAvatar?: string;
@@ -31,12 +44,12 @@ export const Header: React.FC<HeaderProps> = ({
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const resolvedName = user?.profile?.displayName || (user as any)?.displayName || userName || 'Player';
-  const rawAvatar = user?.profile?.avatarUrl || (user as any)?.avatarUrl;
+  const resolvedName = user?.profile?.displayName || userName || 'Player';
+  const rawAvatar = user?.profile?.avatarUrl;
   const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
   const [activeUser, setActiveUser] = useState({ name: resolvedName, avatar: resolvedAvatar });
   const [familyMembers, setFamilyMembers] = useState<Array<{ id: string; name: string; avatar: string }>>([]);
-  const isParent = Boolean(user?.primaryRole === 'PARENT' || user?.roleAssignments?.some((r: any) => r.role === 'PARENT'));
+  const isParent = Boolean(user?.primaryRole === 'PARENT' || user?.roleAssignments?.some((assignment) => assignment.role === 'PARENT'));
 
   const { data: supervisionData, isLoading: isFamilyLoading } = useQuery(
     isParent ? QueryKeys.SUPERVISION_DATA : null,
@@ -45,20 +58,20 @@ export const Header: React.FC<HeaderProps> = ({
   );
 
   React.useEffect(() => {
-    const name = user?.profile?.displayName || (user as any)?.displayName || userName || 'Player';
-    const av = user?.profile?.avatarUrl || (user as any)?.avatarUrl;
+    const name = user?.profile?.displayName || userName || 'Player';
+    const av = user?.profile?.avatarUrl;
     const avatar = resolveMediaUrl(av, '/userPlaceholder.png');
     setActiveUser({ name, avatar });
   }, [user, userName]);
 
   React.useEffect(() => {
     if (isParent && supervisionData) {
-      const children = (supervisionData as any)?.children || (supervisionData as any)?.data?.children || [];
+      const children = supervisionData.children;
       if (Array.isArray(children) && children.length > 0) {
-        const mapped = children.map((c: any) => ({
-          id: c.userId || c.profileId || c.id || c.displayName,
-          name: c.displayName || c.firstName || c.name || 'Child',
-          avatar: resolveMediaUrl(c.avatarUrl, c.avatar || '/userPlaceholder.png'),
+        const mapped = children.map((child) => ({
+          id: child.id,
+          name: child.displayName || child.firstName || 'Child',
+          avatar: resolveMediaUrl(child.avatarUrl, '/userPlaceholder.png'),
         }));
         setFamilyMembers(mapped);
       } else {
@@ -125,10 +138,7 @@ export const Header: React.FC<HeaderProps> = ({
             className={`mhn-nav-item ${currentTab === 'home' ? 'mhn-nav-item-active' : ''}`}
           >
             <div className="mhn-nav-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <polyline points="9 22 9 12 15 12 15 22" />
-              </svg>
+              <Home size={20} />
             </div>
             <span className="mhn-nav-label">Home</span>
             {currentTab === 'home' && <div className="mhn-nav-active-bar" />}
@@ -140,12 +150,7 @@ export const Header: React.FC<HeaderProps> = ({
             className={`mhn-nav-item ${currentTab === 'network' ? 'mhn-nav-item-active' : ''}`}
           >
             <div className="mhn-nav-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
+              <Users size={20} />
             </div>
             <span className="mhn-nav-label">My Network</span>
             {currentTab === 'network' && <div className="mhn-nav-active-bar" />}
@@ -157,13 +162,7 @@ export const Header: React.FC<HeaderProps> = ({
             className={`mhn-nav-item ${currentTab === 'events' ? 'mhn-nav-item-active' : ''}`}
           >
             <div className="mhn-nav-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                <line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" />
-                <line x1="3" y1="10" x2="21" y2="10" />
-                <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" />
-              </svg>
+              <CalendarDays size={20} />
             </div>
             <span className="mhn-nav-label">Events</span>
             {currentTab === 'events' && <div className="mhn-nav-active-bar" />}
@@ -175,9 +174,7 @@ export const Header: React.FC<HeaderProps> = ({
             className={`mhn-nav-item ${currentTab === 'messaging' ? 'mhn-nav-item-active' : ''}`}
           >
             <div className="mhn-nav-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
+              <MessageSquare size={20} />
             </div>
             <span className="mhn-nav-label">Messaging</span>
             {currentTab === 'messaging' && <div className="mhn-nav-active-bar" />}
@@ -189,10 +186,7 @@ export const Header: React.FC<HeaderProps> = ({
             className={`mhn-nav-item ${currentTab === 'notifications' ? 'mhn-nav-item-active' : ''}`}
           >
             <div className="mhn-nav-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
+              <Bell size={20} />
             </div>
             <span className="mhn-nav-label">Notifications</span>
             {currentTab === 'notifications' && <div className="mhn-nav-active-bar" />}
@@ -216,19 +210,10 @@ export const Header: React.FC<HeaderProps> = ({
               />
             </div>
             <span className="mhn-user-name">{activeUser.name}</span>
-            <svg
+            <ChevronDown
               className={`mhn-user-chevron ${isProfileOpen ? 'mhn-chevron-rotated' : ''}`}
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
+              size={16}
+            />
           </div>
 
           {/* Profile Dropdown Popover */}
@@ -251,9 +236,7 @@ export const Header: React.FC<HeaderProps> = ({
                     />
                     <span className="mhn-dropdown-item-text">View Profile</span>
                   </div>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
+                  <ChevronRight size={16} color="#64748B" />
                 </Button>
 
                 {/* Dynamic Family Members Box */}
@@ -265,20 +248,13 @@ export const Header: React.FC<HeaderProps> = ({
                     >
                       <div className="mhn-dropdown-item-left">
                         <div className="mhn-family-icon-box">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1860C3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                            <circle cx="9" cy="7" r="4" />
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                          </svg>
+                          <Users size={18} color="#1860C3" />
                         </div>
                         <span className="mhn-dropdown-item-text">
                           Family {isFamilyLoading ? '...' : `(${familyMembers.length})`}
                         </span>
                       </div>
-                      <svg className={`mhn-family-chevron ${isFamilyExpanded ? 'mhn-chevron-rotated' : ''}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
+                      <ChevronDown className={`mhn-family-chevron ${isFamilyExpanded ? 'mhn-chevron-rotated' : ''}`} size={16} color="#64748B" />
                     </div>
 
                     {isFamilyExpanded && (
@@ -308,9 +284,7 @@ export const Header: React.FC<HeaderProps> = ({
                                   </span>
                                 </div>
                                 <div className="mhn-family-switch-btn" title={`View ${member.name} in Supervision`}>
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="9 18 15 12 9 6" />
-                                  </svg>
+                                  <ChevronRight size={16} color="#0F172A" />
                                 </div>
                               </div>
                             ))}
@@ -325,9 +299,7 @@ export const Header: React.FC<HeaderProps> = ({
                                 }}
                               >
                                 <span>Show More ({familyMembers.length - 3})</span>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0B66C2" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="9 18 15 12 9 6" />
-                                </svg>
+                                <ChevronRight size={14} color="#0B66C2" strokeWidth={2.5} />
                               </div>
                             )}
                           </>
@@ -341,16 +313,11 @@ export const Header: React.FC<HeaderProps> = ({
                 <Button className="mhn-dropdown-item" onClick={() => { setIsProfileOpen(false); handleTabClick('settings'); }}>
                   <div className="mhn-dropdown-item-left">
                     <div className="mhn-dropdown-icon-box">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1860C3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="3" />
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                      </svg>
+                      <Settings size={18} color="#1860C3" />
                     </div>
                     <span className="mhn-dropdown-item-text">Settings & Privacy</span>
                   </div>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
+                  <ChevronRight size={16} color="#64748B" />
                 </Button>
 
                 {/* Supervision */}
@@ -358,7 +325,7 @@ export const Header: React.FC<HeaderProps> = ({
                   className="mhn-dropdown-item"
                   onClick={() => {
                     setIsProfileOpen(false);
-                    const isParent = user?.primaryRole === 'PARENT' || user?.roleAssignments?.some((r: any) => r.role === 'PARENT');
+                    const isParent = user?.primaryRole === 'PARENT' || user?.roleAssignments?.some((assignment) => assignment.role === 'PARENT');
                     if (!isParent) {
                       showToast(ERROR_MESSAGES.PARENT_ONLY_SUPERVISION, 'info');
                       return;
@@ -368,33 +335,22 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <div className="mhn-dropdown-item-left">
                     <div className="mhn-dropdown-icon-box">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1860C3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
+                      <Eye size={18} color="#1860C3" />
                     </div>
                     <span className="mhn-dropdown-item-text">Supervision</span>
                   </div>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
+                  <ChevronRight size={16} color="#64748B" />
                 </Button>
 
                 {/* Help & Support */}
                 <Button className="mhn-dropdown-item" onClick={() => { setIsProfileOpen(false); handleTabClick('help'); }}>
                   <div className="mhn-dropdown-item-left">
                     <div className="mhn-dropdown-icon-box">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1860C3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                        <line x1="12" y1="17" x2="12.01" y2="17" />
-                      </svg>
+                      <HelpCircle size={18} color="#1860C3" />
                     </div>
                     <span className="mhn-dropdown-item-text">Help & Support</span>
                   </div>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
+                  <ChevronRight size={16} color="#64748B" />
                 </Button>
 
                 <div className="mhn-dropdown-divider" />
@@ -402,11 +358,7 @@ export const Header: React.FC<HeaderProps> = ({
                 {/* Logout Button */}
                 <Button className="mhn-dropdown-logout-btn" onClick={handleLogoutClick}>
                   <div className="mhn-logout-icon-box">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                      <polyline points="16 17 21 12 16 7" />
-                      <line x1="21" y1="12" x2="9" y2="12" />
-                    </svg>
+                    <LogOut size={16} color="#DC2626" />
                   </div>
                   <span className="mhn-logout-text">Logout</span>
                 </Button>
@@ -426,4 +378,3 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
-

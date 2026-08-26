@@ -1,6 +1,6 @@
 /* eslint-disable import/no-named-as-default-member */
-import en from './resources/en.json';
-import hi from './resources/hi.json';
+import en from '@/localization/resources/en.json';
+import hi from '@/localization/resources/hi.json';
 
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';

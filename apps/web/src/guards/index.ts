@@ -1,3 +1,3 @@
-export * from './auth-guard';
-export * from './guest-guard';
-export * from './role-guard';
+export * from '@/guards/auth-guard';
+export * from '@/guards/guest-guard';
+export * from '@/guards/role-guard';
