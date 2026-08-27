@@ -9,7 +9,11 @@ export interface HomeTabsProps {
 
 export const HomeTabs: React.FC<HomeTabsProps> = ({ activeTab, onChange }) => {
   return (
-    <div className="mhn-feed-scope-tabs flex items-center justify-around gap-8 mb-5 pt-1 px-4" role="tablist" aria-label="Home Feed Categories">
+    <div
+      className="mhn-feed-scope-tabs flex items-center justify-center gap-14 border-b border-[#182740] pb-2 mb-6"
+      role="tablist"
+      aria-label="Home Feed Categories"
+    >
       {HOME_FEED_TABS.map((scope) => {
         const isActive = activeTab === scope.key;
         return (
@@ -18,19 +22,17 @@ export const HomeTabs: React.FC<HomeTabsProps> = ({ activeTab, onChange }) => {
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(scope.key)}
-            className={`mhn-feed-scope-tab relative text-sm transition-colors outline-none py-1.5 px-2 ${
+            className={`mhn-feed-scope-tab relative text-sm font-semibold transition-colors outline-none pb-2 ${
               isActive
-                ? 'mhn-feed-scope-tab-active text-white font-bold'
-                : 'text-slate-400 hover:text-slate-200 font-medium'
+                ? 'text-white after:content-[""] after:absolute after:bottom-[-9px] after:left-0 after:right-0 after:h-[2px] after:bg-[#168BFF]'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <span>{scope.label}</span>
-            {isActive && (
-              <span className="absolute -bottom-1 left-1 right-1 h-[3px] rounded-full bg-blue-500" />
-            )}
           </button>
         );
       })}
     </div>
   );
 };
+
