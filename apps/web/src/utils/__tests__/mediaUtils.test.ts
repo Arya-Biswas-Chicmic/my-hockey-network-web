@@ -1,9 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { resolveMediaUrl, resolveCoverUrl } from '@/utils/mediaUtils';
+import { resolveMediaUrl, resolveCoverUrl, isRenderableImageUrl } from '@/utils/mediaUtils';
 
 describe('resolveMediaUrl', () => {
   it('returns the trimmed url when it is a real value', () => {
     expect(resolveMediaUrl(' https://example.com/avatar.png ')).toBe('https://example.com/avatar.png');
+  });
+
+  it('falls back for a non-https absolute URL — regression test for a real crash where a stale ' +
+    '"http://localhost:3000/..." avatar URL (left over from local dev media-storage testing) made ' +
+    'next/image throw synchronously at render (next.config.js only allows https remote hosts), ' +
+    'taking down the whole authenticated shell', () => {
+    expect(resolveMediaUrl('http://localhost:3000/v1/media/local/avatars/x.jpg')).toBe('/userPlaceholder.png');
+    expect(resolveMediaUrl('http://example.com/avatar.png')).toBe('/userPlaceholder.png');
+  });
+
+  it('allows a local relative path through unchanged (not subject to remotePatterns)', () => {
+    expect(resolveMediaUrl('/uploads/avatar.png')).toBe('/uploads/avatar.png');
   });
 
   it('falls back to the default placeholder for null/undefined/empty input', () => {
@@ -48,5 +60,23 @@ describe('resolveCoverUrl', () => {
 
   it('uses a caller-supplied fallback instead of the default when given one', () => {
     expect(resolveCoverUrl(null, '/kcBlue.png')).toBe('/kcBlue.png');
+  });
+
+  it('falls back for a non-https absolute URL, same as resolveMediaUrl', () => {
+    expect(resolveCoverUrl('http://localhost:3000/v1/media/local/covers/x.jpg')).toBe('/cover.png');
+  });
+});
+
+describe('isRenderableImageUrl', () => {
+  it('accepts https and local-relative URLs', () => {
+    expect(isRenderableImageUrl('https://example.com/x.png')).toBe(true);
+    expect(isRenderableImageUrl('HTTPS://example.com/x.png')).toBe(true);
+    expect(isRenderableImageUrl('/local/path.png')).toBe(true);
+  });
+
+  it('rejects http and other schemes that next.config.js\'s https-only remotePatterns would reject', () => {
+    expect(isRenderableImageUrl('http://localhost:3000/x.jpg')).toBe(false);
+    expect(isRenderableImageUrl('ftp://example.com/x.png')).toBe(false);
+    expect(isRenderableImageUrl('data:image/png;base64,abc')).toBe(false);
   });
 });

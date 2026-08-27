@@ -18,7 +18,7 @@ import { globalQueryClient, invalidateQueryPrefix } from '@/query';
 import { useCreatePostMutation } from '@/hooks/use-post-mutations';
 import { feedQueryKey } from '@/hooks/use-feed-query';
 
-import { resolveCoverUrl } from '@/utils/mediaUtils';
+import { resolveCoverUrl, resolveMediaUrl } from '@/utils/mediaUtils';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { useDebounce } from '@/hooks/use-debounce';
 import { extractErrorMessage, getApiErrorStatus, showSuccessToast, showErrorToast, showInfoToast } from '@/utils/toast';
@@ -53,7 +53,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [isFeedRefreshing, setIsFeedRefreshing] = useState<boolean>(false);
 
   const currentUserName = user?.profile?.displayName || 'Player';
-  const currentUserAvatar = user?.profile?.avatarUrl || '/userPlaceholder.png';
+  const currentUserAvatar = resolveMediaUrl(user?.profile?.avatarUrl, '/userPlaceholder.png');
 
   const fetchFeedPosts = async (
     currentProfileId?: string,
@@ -287,7 +287,6 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 <Dropdown
                   value={sortBy}
                   options={[
-                    { value: 'RECENT', label: 'Sort by' },
                     { value: 'RECENT', label: 'Newest First' },
                     { value: 'POPULAR', label: 'Most Popular' },
                     { value: 'TRENDING', label: 'Trending (48h)' },

@@ -655,6 +655,54 @@ Last reviewed: 2026-08-27
   simulator/device access to verify against (same Xcode blocker as the `ForgotPassword` migration
   above) is a different risk tier than that one form was, so it was deliberately not attempted blind
   this pass. Left as a corrected, scoped backlog item instead.
+- **The backend web session cookie blocker is resolved — the single biggest open item in this
+  document all session.** On report that the backend team had shipped a fix, re-verified live rather
+  than taking it on faith: `curl` directly against `https://my-hockey-network.onrender.com/v1`
+  confirmed `POST /auth/otp/verify` with `X-Client-Type: web` now returns `tokenDelivery: "web"`,
+  real `Set-Cookie` headers for `mhn_at`/`mhn_rt` (both `HttpOnly`) and `mhn_csrf`, and `csrfToken` in
+  the body — exactly the documented contract. But testing the same flow through this app's own
+  same-origin proxy (`localhost:3000/api/backend/...`) still failed: `tokenDelivery: "mobile"`, no
+  cookies at all. Root cause was in this repo, not the backend: `apps/web/src/app/api/backend/
+  [...path]/route.ts`'s `REQUEST_HEADERS` allowlist — the fixed set of headers the proxy forwards to
+  the backend — never included `x-client-type`, so the proxy was silently stripping the one header
+  that tells the backend "this is a web client" on every single proxied request, regardless of what
+  the backend now correctly supports. Added it to the allowlist and re-verified the full loop through
+  the local proxy (`otp/request` → `otp/verify` → `/auth/me`) via `curl`, then completed a real
+  browser login end to end for the first time this session.
+  - That login surfaced two more real, previously undiscoverable-without-a-live-session bugs, both
+    fixed:
+    1. **A stale, malformed avatar URL crashed the entire Home page.** The signed-in test account's
+       `avatarUrl` was `http://localhost:3000/v1/media/local/avatars/...` — leftover from earlier
+       local dev media-storage testing, now just persisted account data. `next.config.js`'s
+       `images.remotePatterns` only allows `https://` hosts (a deliberate choice, not loosened), so
+       `next/image` threw synchronously at render — before `onError` ever gets a chance to run — and
+       took the whole authenticated shell down to a generic "Something went wrong" error boundary.
+       Fixed in two layers: `utils/mediaUtils.ts`'s `resolveMediaUrl`/`resolveCoverUrl` now reject any
+       non-`https://`, non-local-path URL (new exported `isRenderableImageUrl` helper, tested); and
+       `components/ui/fallback-image.tsx` — the shared wrapper nearly every avatar/cover in the app
+       renders through — independently re-validates the same way as defense-in-depth, since several
+       call sites (`screens/home-page.tsx`'s own header avatar, notably) were passing a raw
+       `user.profile.avatarUrl` straight through with only an `||` falsy-check, never actually calling
+       `resolveMediaUrl` at all. Fixed `home-page.tsx`'s specific bypass directly too.
+    2. **The feed's sort dropdown had two options with the same `value: 'RECENT'`** (`screens/
+       home-page.tsx`) — a redundant fake "Sort by" placeholder option colliding with the real
+       "Newest First" option. React logged a duplicate-key warning, and the visible symptom was the
+       dropdown always displaying "Sort by" instead of "Newest First" even when `RECENT` was the
+       active sort (the browser's native `<select>` resolves a duplicate value to the first matching
+       `<option>`). Removed the redundant entry.
+  - Live-verified (screenshots, not just static checks) for the first time this session: `/home`
+    (real feed posts, Matches/Upcoming Events/Invite widgets, dark theme, no console errors), `/network`
+    (pending requests, people-you-may-know, all avatars via `i.pravatar.cc` rendering correctly),
+    `/messaging` (honest "No Conversations" empty state, confirming that work was genuinely correct),
+    `/notifications` (honest "No Notifications" empty state, confirming this pass's own Alerts
+    connection works against a real session).
+  - **New findings surfaced, not yet fixed** — flagged rather than chased further given the size of
+    this pass: `GET /supervision/me/permissions` returns `400` for this (non-parent, `PLAYER`-role)
+    test account rather than a clean not-applicable response — doesn't break anything visibly, but
+    worth a backend-side look; a `placehold.co`-sourced group/team logo 400s through the Next.js image
+    optimizer (gracefully handled by `FallbackImage`, just never loads); the `/notifications` card
+    renders with a light background against the rest of the shell's dark theme — a real, visible
+    dark-mode styling gap for whoever picks up the design-QA pass now that it's unblocked.
 
 ## Current quality gates
 
@@ -664,11 +712,11 @@ Last reviewed: 2026-08-27
 - Production web build must pass.
 - Web/native UI ownership and pnpm-only dependency management checks must pass.
 
-Latest measured enforced-code coverage: 94.02% statements, 88.61% branches, 98.11% functions, and
-94.4% lines (enforced boundary: `packages/api-client`, `auth`, `domain`, `validation` index files;
+Latest measured enforced-code coverage: 94.15% statements, 88.79% branches, 98.14% functions, and
+94.48% lines (enforced boundary: `packages/api-client`, `auth`, `domain`, `validation` index files;
 `packages/core/src/api/signUpRules.ts`; `apps/web/src/platform/auth-storage.ts`,
 `query/query-client.ts`, `utils/guardianUtils.ts`, `utils/mediaUtils.ts`, `utils/toast.ts`,
-`utils/dateUtils.ts`). The Vitest suite contains 203 tests across 32 test files, plus 6 Playwright smoke tests
+`utils/dateUtils.ts`). The Vitest suite contains 208 tests across 32 test files, plus 6 Playwright smoke tests
 (`apps/web/e2e/public.spec.ts`, run separately via `pnpm test:e2e`, not counted in the Vitest total).
 Web form validation, secure storage behavior, query/mutation hook behavior, route-guard
 fail-closed/redirect behavior, dialog/OTP-input keyboard and focus behavior, and route/form
@@ -678,13 +726,26 @@ end-to-end.
 
 ## Maintainability backlog
 
-- Get the backend to actually issue an httpOnly session cookie (+ `csrfToken` in the verify response
-  body) for `X-Client-Type: web` requests. Live-verified this pass: `POST /auth/otp/verify` returns
-  `200` with `tokenDelivery: "mobile"` and bearer tokens in the body, no `Set-Cookie`, no
-  `csrfToken`, even with the exact header the shared API client sends. Until this is fixed
-  backend-side, no web user can complete a real session — see `docs/DATA_FETCHING_AND_AUTH.md`.
-  `apps/web/src/proxy.ts` (added this pass) and `AuthenticatedGuard` are both correctly built against
-  the documented contract; they cannot be more thoroughly live-verified until the backend matches it.
+- ~~Get the backend to issue an httpOnly session cookie for web requests~~ — **resolved.** Both the
+  backend fix and this repo's own proxy header-forwarding bug (see Completed) are confirmed fixed via
+  a real live browser login. `docs/DATA_FETCHING_AND_AUTH.md` still describes the old broken state and
+  needs a follow-up pass to update once someone has time to rewrite it against the now-working flow.
+- Investigate `GET /supervision/me/permissions` returning `400` for a non-parent (`PLAYER`-role)
+  account instead of a clean not-applicable response — found live-testing the newly-unblocked
+  authenticated app; doesn't visibly break anything today, but worth a backend-side look.
+- Fix the `/notifications` card rendering with a light background against the rest of the shell's
+  dark theme — found in the same live-testing pass, a real visible dark-mode gap now that
+  authenticated screens can actually be inspected. Good first target for the design-QA pass this
+  unblocks.
+- A `placehold.co`-sourced group/team logo 400s through the Next.js image optimizer (gracefully
+  handled by `FallbackImage`'s fallback, just never loads the real image) — found in the same pass,
+  low severity.
+- `screens/settings-page.tsx`'s blocked-users list renders `blockedUser.teamLogo` (from
+  `hooks/use-settings.ts`'s `mapBlockedUser`) without ever calling `resolveMediaUrl` on it — the same
+  class of bug as the avatar-URL crash fixed this pass (see Completed), just for team logos instead of
+  user avatars, and not yet confirmed to have actually fired in practice. Lower priority since
+  `FallbackImage`'s own new validation now covers it defensively either way, but the data layer should
+  still be consistent.
 - Expand Playwright beyond the guest-only `public.spec.ts` now running in CI: give
   `authenticated-flow.spec.ts` a CI-owned test account/secret so the full login → feed → post →
   like → comment → logout journey actually runs there instead of only locally on demand.

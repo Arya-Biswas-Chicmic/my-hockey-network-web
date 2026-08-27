@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image, { type ImageProps } from 'next/image';
+import { isRenderableImageUrl } from '@/utils/mediaUtils';
 
 const DEFAULT_FALLBACK = '/userPlaceholder.png';
 
@@ -24,6 +25,13 @@ export interface FallbackImageProps extends Omit<ImageProps, 'src' | 'alt' | 'on
  * (`width`/`height` in the stylesheet), so pass matching `width`/`height`
  * props for a standard render, or `fill` when the call site already has a
  * `position: relative` sized wrapper. See docs/COMPONENT_CATALOG.md.
+ *
+ * `src` is also validated against what `next.config.js`'s image
+ * `remotePatterns` actually allows (any `https://` host, or a local `/`
+ * path) before ever reaching `next/image` — an unconfigured host (e.g. a
+ * stray `http://` URL) makes `<Image>` throw synchronously at render, which
+ * `onError` can never catch since the image never gets a chance to load.
+ * Treated the same as an empty `src`: falls straight to `fallbackSrc`.
  */
 export function FallbackImage({
   src,
@@ -32,7 +40,7 @@ export function FallbackImage({
   hideOnError = false,
   ...imageProps
 }: Readonly<FallbackImageProps>) {
-  const hasSrc = Boolean(src && src.trim());
+  const hasSrc = Boolean(src && src.trim() && isRenderableImageUrl(src.trim()));
   const [currentSrc, setCurrentSrc] = useState(hasSrc ? (src as string) : fallbackSrc);
   const [failed, setFailed] = useState(hideOnError && !hasSrc);
 
