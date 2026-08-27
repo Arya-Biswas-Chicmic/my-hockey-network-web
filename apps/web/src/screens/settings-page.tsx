@@ -7,7 +7,7 @@ import { Ban, MapPin, Search } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Input, Dropdown } from '@/components/common/FormControls';
 import { FallbackImage } from '@/components/ui/fallback-image';
-import { Header } from '@/components/common/Header';
+import { Sidebar } from '@/components/common/Sidebar';
 import { NoDataFound } from '@/components/common/no-data-found';
 import { NetworkSkeletonCard } from '@/components/features/network/NetworkSkeletonLoader';
 import { useAuth } from '@/hooks/use-auth';
@@ -110,9 +110,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
   );
 
   return (
-    <div className="mhn-settings-page-root">
-      <Header activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout} />
+    <div className="mhn-app-shell">
+      <Sidebar activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout} />
 
+      <div className="mhn-app-content mhn-settings-page-root">
       <main className="mhn-settings-main-container">
         <div className="mhn-settings-top-bar">
           <h1 className="mhn-settings-title">Settings</h1>
@@ -293,6 +294,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
           </section>
         </div>
       </main>
+      </div>
     </div>
   );
 };

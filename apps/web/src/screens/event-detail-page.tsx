@@ -2,7 +2,7 @@ import { Button } from '@/components/common/Button';
 import Image from 'next/image';
 import { FallbackImage } from '@/components/ui/fallback-image';
 import React, { useState } from 'react';
-import { Header } from '@/components/common/Header';
+import { Sidebar } from '@/components/common/Sidebar';
 import { Armchair, Ban, ChevronRight, CircleParking, Droplets, Smile, Toilet, Users } from 'lucide-react';
 
 interface EventDetailPageProps {
@@ -39,14 +39,14 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
   };
 
   return (
-    <div className="mhn-event-detail-root">
-      {/* Top Header Navigation Bar */}
-      <Header
+    <div className="mhn-app-shell">
+      <Sidebar
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}
       />
 
+      <div className="mhn-app-content mhn-event-detail-root">
       {/* Main Centered Content */}
       <main className="mhn-event-detail-main">
         {/* Title Bar with Back Arrow */}
@@ -204,6 +204,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
           </div>
         </div>
       </main>
+      </div>
     </div>
   );
 };

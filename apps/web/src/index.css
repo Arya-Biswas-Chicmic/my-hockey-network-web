@@ -94,7 +94,14 @@
     flex-direction: row;
     padding: 1.5rem;
     gap: 2.5rem;
-    align-items: center;
+    /* flex-start, not center: the illustration panel has a fixed height
+       (672px, see `.illustration-panel` below) but the form side doesn't —
+       Create Account's 3-field form is taller than Sign In's 1-field form,
+       so with `center` the row's cross-axis height grew on that step and
+       re-centered the (shorter, fixed-height) illustration, visibly
+       shifting it upward relative to Sign In. flex-start pins both panes
+       to the same top edge regardless of which step's form is taller. */
+    align-items: flex-start;
     justify-content: center;
     min-height: 720px;
     height: auto;
@@ -1597,10 +1604,14 @@
   max-width: 1180px;
   width: 100%;
   margin: 24px auto;
+  /* Reverted from a prior 40px pass — that read as too much gap between the
+     sidebar and the feed once actually live (feedback 2026-08-27). Back to
+     a tighter 24px gutter on the sidebar side; the feed↔right-column gap
+     keeps a bit more (32px) since only the left gap was flagged. */
   padding: 0 24px;
   display: grid;
   grid-template-columns: 1fr 340px;
-  gap: 24px;
+  gap: 32px;
   align-items: start;
   box-sizing: border-box;
 }
@@ -2406,6 +2417,33 @@
   width: 100%;
 }
 
+/* The center feed column scrolls independently of the sidebar/right column
+   (`lg:overflow-y-auto` in home-page.tsx) — it works, but the browser's
+   default scrollbar is thin/near-invisible, which read as "no scroll bar"
+   (feedback 2026-08-27). A visible, theme-aware track/thumb here instead of
+   relying on the OS default. */
+.mhn-layout-col-center {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+.mhn-layout-col-center::-webkit-scrollbar {
+  width: 8px;
+}
+
+.mhn-layout-col-center::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mhn-layout-col-center::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 8px;
+}
+
+.mhn-layout-col-center::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-muted-foreground);
+}
+
 .mhn-feed-post-card {
   background-color: #ffffff;
   border-radius: 8px;
@@ -2470,6 +2508,14 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  /* Positioning context for `.mhn-post-menu-popover` (absolute, `top`/
+     `right`). PostCardHeader.tsx used to rely on a `.mhn-relative-container`
+     class for this — that class has no CSS definition anywhere, so the
+     popover had no positioned ancestor and resolved `right:0` against the
+     page/viewport instead of this button, opening pinned to the page's
+     top-right corner instead of directly under the "..." icon. Same root
+     cause as the sidebar's HeaderProfileDropdown fix earlier this session. */
+  position: relative;
 }
 
 .mhn-btn-follow {
@@ -2567,11 +2613,22 @@
   box-sizing: border-box;
 }
 
+/* Two groups (like/comment/repost on the left, send/save on the right),
+   pushed to opposite ends — matches the Figma "Footer of post" layout
+   (figma.com/design/cqlBXHZtqPkKcLRmR6a1B8, node 1398:3904) rather than one
+   left-aligned row. */
 .mhn-post-actions-group {
   display: flex;
   align-items: center;
-  gap: 20px;
+  justify-content: space-between;
   width: 100%;
+}
+
+.mhn-post-actions-group-left,
+.mhn-post-actions-group-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .mhn-action-item {
@@ -2591,23 +2648,50 @@
   line-height: 1;
 }
 
+.mhn-action-icon-only {
+  padding: 6px 8px;
+}
+
+/* Like button's red reaction badge (Figma `LikeFlow` > red circle + spark
+   icon). Unliked: a neutral outlined circle in the action's own muted
+   color. Liked: filled with the design's reaction red. */
+.mhn-like-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.mhn-like-badge-active {
+  border-color: transparent;
+  background-color: #ff483d;
+  color: #ffffff;
+}
+
+.mhn-repost-icon-active {
+  color: #1860c3;
+}
+
+.mhn-action-count-saved {
+  color: #1860c3;
+}
+
 .mhn-action-item:hover {
   background-color: #f1f5f9;
   color: #0f172a;
 }
 
-.mhn-action-liked {
-  color: #ef4444;
-  background-color: #fef2f2;
-  border-radius: 8px;
-}
-
-.mhn-action-liked .mhn-action-count,
-.mhn-action-count-liked {
-  color: #ef4444;
-  font-weight: 700;
-}
-
+/* No background pill and no color/weight override on the like button or its
+   count — Figma's post footer never puts a background behind an action
+   (figma.com/design/cqlBXHZtqPkKcLRmR6a1B8, node 1398:3904) and its count
+   text is always the same plain `font-medium` regardless of state; the red
+   circular badge (`.mhn-like-badge-active`) is what signals "liked" now,
+   so the text doesn't need to double up with its own red/bold styling. */
 .mhn-action-count-reposted {
   color: #1860c3;
   font-weight: 700;
@@ -2624,7 +2708,8 @@
 
 .like-count-icon,
 .share-count-icon,
-.comment-count-icon {
+.comment-count-icon,
+.save-count-icon {
   width: 20px;
   height: 20px;
   display: inline-flex;
@@ -9212,26 +9297,19 @@
 .mhn-shimmer-box,
 .mhn-skeleton-line,
 .mhn-skeleton-avatar {
+  /* Theme tokens, not hardcoded light-gray hex — so the shimmer itself (not
+     just the card behind it, handled separately above) also switches with
+     the theme instead of always being the light-mode gradient. */
   background: linear-gradient(90deg,
-      #F1F5F9 0%,
-      #E2E8F0 25%,
-      #F8FAFC 50%,
-      #E2E8F0 75%,
-      #F1F5F9 100%);
+      var(--color-secondary) 0%,
+      var(--color-border) 25%,
+      var(--color-muted) 50%,
+      var(--color-border) 75%,
+      var(--color-secondary) 100%);
   background-size: 250% 100%;
   animation: shimmerWave 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-.mhn-header-shimmer-box {
-  background: linear-gradient(90deg,
-      rgba(255, 255, 255, 0.05) 0%,
-      rgba(255, 255, 255, 0.15) 25%,
-      rgba(255, 255, 255, 0.28) 50%,
-      rgba(255, 255, 255, 0.15) 75%,
-      rgba(255, 255, 255, 0.05) 100%);
-  background-size: 250% 100%;
-  animation: shimmerWave 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
 
 .animate-pulse {
   animation: pulseGlow 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -10815,80 +10893,72 @@ img.secure {
   gap: 6px;
 }
 
-/* Header Shimmer Skeleton Styles */
-.mhn-header-shimmer-logo {
-  width: 140px;
-  height: 36px;
-  border-radius: 8px;
-}
-
-.mhn-header-shimmer-nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 68px;
-  padding: 0 20px;
-}
-
-.mhn-header-shimmer-icon {
-  width: 20px;
-  height: 20px;
+/* Sidebar Shimmer Skeleton Styles (`SidebarSkeleton.tsx`, rendered inside
+   `FullAppSkeletonLoader.tsx` via the real `.mhn-app-shell`/`.mhn-sidebar`/
+   `.mhn-sidebar-nav`/`.mhn-sidebar-footer` classes so it's pixel-matched to
+   the real `Sidebar.tsx` and swaps in without a layout shift). Previously
+   this rendered a horizontal top-bar skeleton (`HeaderSkeleton.tsx`,
+   modeled on the old, now fully-removed `Header.tsx` top nav) on every
+   route transition and auth check — visibly wrong once the app moved to a
+   left sidebar (feedback 2026-08-27: "skeleton is still working on the old
+   as we don't have top bar now"). The shimmer gradient uses theme tokens
+   (not a hardcoded white-on-dark gradient) so it reads correctly in both
+   themes, not just the dark one the old version assumed. */
+.mhn-sidebar-skeleton-box {
+  background: linear-gradient(90deg,
+      var(--color-secondary) 0%,
+      var(--color-border) 50%,
+      var(--color-secondary) 100%);
+  background-size: 250% 100%;
+  animation: shimmerWave 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   border-radius: 4px;
 }
 
-.mhn-header-shimmer-label {
-  width: 60px;
-  height: 10px;
+.mhn-sidebar-skeleton-logo {
+  width: 120px;
+  height: 32px;
+  border-radius: 6px;
+}
+
+.mhn-sidebar-skeleton-nav-item {
+  pointer-events: none;
+}
+
+.mhn-sidebar-skeleton-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+
+.mhn-sidebar-skeleton-label {
+  height: 12px;
   border-radius: 3px;
 }
 
-.mhn-header-shimmer-user-pill {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 4px 12px 4px 4px;
-  height: 40px;
-  border-radius: 24px;
-  background-color: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.mhn-sidebar-skeleton-label-sm {
+  width: 48px;
 }
 
-.mhn-header-shimmer-avatar {
+.mhn-sidebar-skeleton-label-md {
+  width: 68px;
+}
+
+.mhn-sidebar-skeleton-label-lg {
+  width: 92px;
+}
+
+.mhn-sidebar-skeleton-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
-.mhn-header-shimmer-name {
-  width: 60px;
-  height: 12px;
-  border-radius: 4px;
-}
-
-.mhn-header-shimmer-chevron {
-  width: 12px;
+.mhn-sidebar-skeleton-name {
+  width: 90px;
   height: 12px;
   border-radius: 3px;
-}
-
-.mhn-app-skeleton-viewport {
-  background-color: #F8FAFC;
-  min-height: 100vh;
-}
-
-.mhn-app-body-skeleton-wrapper {
-  max-width: 1280px;
-  margin: 24px auto;
-  padding: 0 16px 24px 16px;
-  width: 100%;
-}
-
-.mhn-app-skeleton-main {
-  max-width: 1280px;
-  margin: 24px auto;
-  padding: 0 16px;
 }
 
 /* Spinner Classes */
@@ -11709,6 +11779,70 @@ img.secure {
   background-color: #FEF2F2;
 }
 
+/* Repost/Quote choice popover (Figma: figma.com/design/
+   cqlBXHZtqPkKcLRmR6a1B8, node 1766:8766) — a dark card regardless of
+   theme, matching Figma's own fixed dark treatment for this specific
+   popover (unlike the Edit/Delete menu above, which is a themed light
+   card). */
+.mhn-repost-menu-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.mhn-repost-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  border: none;
+  padding: 0;
+  z-index: 49;
+  cursor: default;
+}
+
+.mhn-repost-menu-popover {
+  position: absolute;
+  left: 0;
+  /* Opens upward (`bottom`, not `top`) — the repost button lives in the
+     post footer, the card's last section, and `.mhn-feed-post-card` itself
+     clips overflow (needed for its rounded corners around the header
+     banner/image). A downward popover there extends past the card's own
+     bottom edge and gets silently clipped invisible; opening upward keeps
+     it within the card's existing content bounds instead. */
+  bottom: calc(100% + 6px);
+  z-index: 50;
+  min-width: 148px;
+  background-color: #0a1a31;
+  border: 1px solid #1d2432;
+  border-radius: 10px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.mhn-repost-menu-item {
+  width: 100%;
+  padding: 12px 24px 12px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #1d2432;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 400;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mhn-repost-menu-item:last-child {
+  border-bottom: none;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.mhn-repost-menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
 .mhn-edit-post-modal-card {
   width: 100%;
   max-width: 520px;
@@ -11797,23 +11931,9 @@ img.secure {
   color: #DC2626;
 }
 
-.mhn-action-count-liked {
-  color: #1860C3;
-  font-weight: 700;
-}
-
 .mhn-action-count-commented {
   color: #0091FF;
   font-weight: 700;
-}
-
-.mhn-action-count-reposted {
-  color: #1860C3;
-  font-weight: 700;
-}
-
-.mhn-repost-icon-filter {
-  filter: hue-rotate(200deg);
 }
 
 /* EmptyState Centralized Styles */
@@ -14034,7 +14154,21 @@ img.secure {
   .mhn-chat-sidebar-card,
   .mhn-chat-conversation-card,
   .mhn-no-data-card,
-  .mhn-profile-dropdown
+  .mhn-profile-dropdown,
+  /* Loading-skeleton card containers — hardcoded white regardless of
+     theme, so a loading state on a dark page briefly flashed white
+     (feedback 2026-08-27: "skeleton color should be according to theme").
+     These sit alongside the real, already-dark-themed card classes above
+     because they're the exact same cards mid-load — `.mhn-feed-skeleton-
+     card` pairs with `.mhn-post-figma-card` on the real `FeedPostCard`,
+     `.mhn-profile-skeleton-hero` mirrors `.mhn-profile-hero-card`, etc. */
+  .mhn-post-figma-card,
+  .mhn-skeleton-card,
+  .mhn-feed-skeleton-card,
+  .mhn-profile-skeleton-card,
+  .mhn-widget-skeleton-card,
+  .mhn-profile-skeleton-hero,
+  .mhn-network-skeleton-card
 ) {
   background: var(--color-card);
   border-color: var(--color-border);
@@ -14075,8 +14209,6 @@ img.secure {
 :root[data-theme='dark'] :is(
   .mhn-profile-location-row,
   .mhn-author-subtitle,
-  .mhn-action-item,
-  .mhn-action-count,
   .mhn-match-time-info,
   .mhn-event-info-line,
   .mhn-invite-grow-desc,
@@ -14094,6 +14226,14 @@ img.secure {
   ,.mhn-no-data-description
 ) {
   color: var(--color-muted-foreground);
+}
+
+/* Figma's footer icons/counts are near-white (`text-white`), not the dimmer
+   muted-secondary-text color the rest of the app uses for captions —
+   they're a primary action row, not secondary metadata (feedback about the
+   footer looking "unstylish" 2026-08-27). */
+:root[data-theme='dark'] :is(.mhn-action-item, .mhn-action-count) {
+  color: var(--color-foreground);
 }
 
 :root[data-theme='dark'] :is(
@@ -14182,122 +14322,191 @@ img.secure {
   background: var(--color-border);
 }
 
-@media (min-width: 1024px) {
-  :root[data-theme='dark'] .mhn-header {
-    position: fixed;
-    inset: 0 auto 0 0;
-    width: 184px;
-    border: 0;
-    border-right: 1px solid var(--color-border);
-    background: #031126;
-    box-shadow: 12px 0 32px rgb(0 0 0 / 12%);
-  }
+/* The @media(min-width:1024px) dark-theme block that used to live here
+   (`.mhn-header`, `.mhn-header-container`, `.mhn-header-nav`, `.mhn-nav-item`,
+   `.mhn-profile-dropdown`, plus a `padding-left: 184px` compensation on every
+   page root) styled the OLD `Header.tsx` component as a fixed-position
+   184px-wide sidebar. `Header` has zero remaining usages anywhere in
+   `apps/web/src/screens` — every page now uses `Sidebar.tsx`, a normal flex
+   child, not a fixed/floating element. That left the 184px page-root padding
+   compensating for a sidebar that no longer needs compensating for, on top
+   of `Sidebar`'s own (much narrower, 240px) flex-layout space — the double
+   count read as "way too much" gutter between the sidebar and the feed
+   (feedback 2026-08-27). Removed the whole block, including the
+   `.mhn-home-main-layout`/`.mhn-network-main-layout`/
+   `.mhn-messaging-main-container` grid overrides in it, which duplicated
+   (and, since dark is this app's primary theme, silently overrode) the
+   real light-mode layout rules with stale pre-Sidebar values — layout
+   should only ever come from one shared rule per the "colors only, same
+   UX" theming principle, not a separate dark-mode-only grid. */
 
-  :root[data-theme='dark'] .mhn-header-container {
-    width: 100%;
-    height: 100%;
-    padding: 28px 16px 20px;
-    flex-direction: column;
-    align-items: stretch;
-  }
+/* ==========================================================================
+   Sign In / OTP screens — dark theme (2026-08-27)
 
-  :root[data-theme='dark'] .mhn-header-logo-area {
-    padding: 0 8px 28px;
-  }
+   No Figma reference exists for this screen (confirmed directly with the
+   design owner) — these are the app's existing Sign In / Verify Email
+   layouts (`components/features/auth/login/LoginForm.tsx`,
+   `verify-email/VerifyEmailForm.tsx`), re-themed on the same `--color-*`
+   tokens the rest of the dark redesign uses, not redrawn from scratch. The
+   illustration panel keeps its own brand blue (#0d59cf) in both themes —
+   that's brand color, not a light/dark surface.
 
-  :root[data-theme='dark'] .mhn-header-logo-area .logo {
-    width: 126px;
-    height: auto;
-  }
+   `.auth-input` gets three explicit states: empty (default, muted
+   border), focused (primary-colored ring, while typing), and filled —
+   `:not(:placeholder-shown)` fires once real text has been entered and
+   persists after blur, which is how "email typed in" reads visually
+   different from "still empty" once the user has clicked away.
+   ========================================================================== */
+:root[data-theme='dark'] :is(.onboarding-screen, .onboarding-modal) {
+  background-color: var(--color-background);
+  background: var(--color-background);
+}
 
-  :root[data-theme='dark'] .mhn-header-nav {
-    height: auto;
-    flex: 1;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 5px;
-  }
+:root[data-theme='dark'] .onboarding-title {
+  color: var(--color-foreground);
+}
 
-  :root[data-theme='dark'] .mhn-nav-item {
-    width: 100%;
-    height: 44px;
-    padding: 0 12px;
-    flex-direction: row;
-    justify-content: flex-start;
-    gap: 12px;
-    border-radius: 8px;
-    color: var(--color-muted-foreground);
-  }
+:root[data-theme='dark'] .onboarding-subtitle {
+  color: var(--color-muted-foreground);
+}
 
-  :root[data-theme='dark'] .mhn-nav-item-active {
-    color: var(--color-foreground);
-    background: #0a2344;
-  }
+:root[data-theme='dark'] .auth-label {
+  color: var(--color-foreground);
+}
 
-  :root[data-theme='dark'] .mhn-nav-active-bar {
-    inset: 8px auto 8px 0;
-    width: 3px;
-    height: auto;
-    border-radius: 0 4px 4px 0;
-    background: var(--color-primary);
-  }
+:root[data-theme='dark'] .auth-input {
+  background-color: var(--color-secondary);
+  border-color: var(--color-border);
+  color: var(--color-foreground);
+}
 
-  :root[data-theme='dark'] .mhn-header-user {
-    width: 100%;
-  }
+:root[data-theme='dark'] .auth-input::placeholder {
+  color: var(--color-muted-foreground);
+}
 
-  :root[data-theme='dark'] .mhn-user-profile-btn {
-    width: 100%;
-    padding: 8px;
-    border-radius: 8px;
-  }
+:root[data-theme='dark'] .auth-input:focus {
+  border-color: var(--color-ring);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-ring) 25%, transparent);
+}
 
-  :root[data-theme='dark'] .mhn-user-name {
-    flex: 1;
-    font-size: 12px;
-  }
+:root[data-theme='dark'] .auth-input:not(:placeholder-shown) {
+  border-color: var(--color-muted-foreground);
+}
 
-  :root[data-theme='dark'] .mhn-profile-dropdown {
-    inset: auto auto 0 calc(100% + 12px);
-  }
+:root[data-theme='dark'] .auth-input:not(:placeholder-shown):focus {
+  border-color: var(--color-ring);
+}
 
-  :root[data-theme='dark'] :is(
-    .mhn-home-page-root,
-    .mhn-network-page-root,
-    .mhn-messaging-page-root,
-    .mhn-events-page-root,
-    .mhn-profile-page-root,
-    .mhn-settings-page-root,
-    .mhn-supervision-page-root,
-    .mhn-notifications-page-root
-  ) {
-    padding-left: 184px;
-    box-sizing: border-box;
-  }
+:root[data-theme='dark'] .mhn-input-invalid {
+  border-color: var(--color-destructive);
+  background-color: color-mix(in srgb, var(--color-destructive) 12%, var(--color-secondary));
+}
 
-  :root[data-theme='dark'] .mhn-home-main-layout {
-    max-width: 1120px;
-    grid-template-columns: minmax(0, 1fr) 320px;
-    gap: 20px;
-  }
+:root[data-theme='dark'] .btn-google {
+  background-color: var(--color-secondary);
+  color: var(--color-foreground);
+  border-color: var(--color-border);
+  box-shadow: none;
+}
 
-  :root[data-theme='dark'] .mhn-home-main-layout .mhn-layout-col-left {
-    display: none;
-  }
+:root[data-theme='dark'] .btn-google:hover {
+  background-color: var(--color-accent);
+  border-color: var(--color-ring);
+  box-shadow: none;
+}
 
-  :root[data-theme='dark'] .mhn-network-main-layout,
-  :root[data-theme='dark'] .mhn-messaging-main-container {
-    max-width: 1120px;
-  }
+:root[data-theme='dark'] .btn-google:active {
+  background-color: var(--color-muted);
+}
 
-  :root[data-theme='dark'] .mhn-messaging-main-container {
-    height: calc(100dvh - 48px);
-    grid-template-columns: 300px minmax(0, 1fr);
-  }
+:root[data-theme='dark'] .auth-back-link {
+  color: var(--color-muted-foreground);
+}
 
-  :root[data-theme='dark'] :is(.mhn-chat-sidebar-card, .mhn-chat-conversation-card) {
-    min-height: 100%;
-  }
+:root[data-theme='dark'] .auth-back-link:hover {
+  color: var(--color-foreground);
+}
+
+:root[data-theme='dark'] .auth-footer-text {
+  color: var(--color-muted-foreground);
+}
+
+:root[data-theme='dark'] .auth-primary-link {
+  color: var(--color-primary);
+}
+
+/* Verify Email (OTP) screen — same flow, same treatment */
+:root[data-theme='dark'] :is(.verify-email-title, .verify-email-highlight) {
+  color: var(--color-foreground);
+}
+
+:root[data-theme='dark'] :is(.verify-email-subtitle, .verify-email-footer, .btn-change-email, .mhn-timer-text) {
+  color: var(--color-muted-foreground);
+}
+
+:root[data-theme='dark'] .btn-change-email:hover {
+  color: var(--color-foreground);
+}
+
+:root[data-theme='dark'] .otp-digit-input {
+  background-color: var(--color-secondary);
+  border-color: var(--color-border);
+  color: var(--color-foreground);
+}
+
+:root[data-theme='dark'] .otp-digit-input:focus {
+  border-color: var(--color-ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-ring) 20%, transparent);
+}
+
+/* No `:not(:placeholder-shown)` "filled" rule here, unlike .auth-input:
+   OtpCodeInput.tsx's digit boxes never set a `placeholder` attribute, so
+   that pseudo-class can't distinguish empty from filled for them — each
+   typed digit is already visually obvious as a character, so no separate
+   filled treatment is needed the way the empty email field needed one. */
+
+:root[data-theme='dark'] .mhn-resend-notice-card {
+  background-color: color-mix(in srgb, #22c55e 18%, var(--color-secondary));
+  border-color: #22c55e;
+  color: #86efac;
+}
+
+/* Notifications card — found live-testing as a light card floating on the
+   dark page background (the page root was already dark-covered, this
+   specific card wasn't). Same story as the login screen above: build on
+   tokens so this doesn't need to happen again for the next screen. */
+:root[data-theme='dark'] .mhn-notifications-card {
+  background-color: var(--color-card);
+  border-color: var(--color-border);
+  box-shadow: 0 2px 12px rgb(0 0 0 / 18%);
+}
+
+:root[data-theme='dark'] .mhn-notifications-title {
+  color: var(--color-foreground);
+}
+
+:root[data-theme='dark'] .mhn-notifications-more-btn {
+  background-color: var(--color-secondary);
+  color: var(--color-muted-foreground);
+}
+
+:root[data-theme='dark'] .mhn-notifications-more-btn:hover {
+  background-color: var(--color-accent);
+  color: var(--color-foreground);
+}
+
+:root[data-theme='dark'] .mhn-notif-pill {
+  background-color: var(--color-secondary);
+  color: var(--color-muted-foreground);
+}
+
+:root[data-theme='dark'] .mhn-notif-pill:hover {
+  background-color: var(--color-accent);
+  color: var(--color-foreground);
+}
+
+:root[data-theme='dark'] .mhn-notification-item:hover {
+  background-color: var(--color-secondary);
 }
 
 /* ==========================================================================
@@ -14336,6 +14545,25 @@ img.secure {
   display: flex;
   min-height: 100dvh;
   background: var(--color-background);
+}
+
+/* On very wide screens (beyond a MacBook-14"-ish window) the sidebar was
+   pinned flush to the viewport's left edge while `.mhn-home-main-layout`'s
+   own `margin: 24px auto` centered *only the feed+right columns* within the
+   leftover space — the wider the screen, the bigger and more lopsided that
+   gap between the sidebar and the feed grew (screenshot 2026-08-27). Figma
+   doesn't dock the nav to the edge either — its whole 3-column block (nav
+   + feed + right) sits inset with equal left/right margins in the full
+   frame (nav starts at x=137 of a 1440-wide frame, not x=0). Capping and
+   centering the *whole shell* — sidebar included — reproduces that: the
+   gap between the sidebar and the feed stays constant (from
+   `.mhn-home-main-layout`'s own small residual auto-margin) and any extra
+   width on a big monitor goes to equal outer margins on both sides instead.
+   No breakpoint needed — `max-width` is simply inert below 1440px, so this
+   doesn't change anything on a MacBook 14" (~1440-1512px) or smaller. */
+.mhn-app-shell {
+  max-width: 1440px;
+  margin: 0 auto;
 }
 
 .mhn-app-content {
@@ -14385,6 +14613,13 @@ img.secure {
 .mhn-sidebar-nav-item {
   display: flex;
   align-items: center;
+  /* Button's own base classes (buttonVariants) apply Tailwind's
+     `justify-center` unconditionally — without this override, each item's
+     icon+label group centers within the full-width button instead of
+     left-aligning, and the centering offset varies by label length
+     ("Home" vs "Notifications"), so icons visibly don't line up. */
+  justify-content: flex-start;
+  text-align: left;
   gap: 14px;
   padding: 10px 12px;
   border-radius: 8px;

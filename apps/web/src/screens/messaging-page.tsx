@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Header } from '@/components/common/Header';
+import { Sidebar } from '@/components/common/Sidebar';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { ChatSidebar } from '@/components/features/messaging/ChatSidebar';
@@ -23,14 +23,14 @@ export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
   };
 
   return (
-    <div className="mhn-messaging-page-root">
-      {/* Top Header Navigation Bar */}
-      <Header
+    <div className="mhn-app-shell">
+      <Sidebar
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}
       />
 
+      <div className="mhn-app-content mhn-messaging-page-root">
       {/* Pending Guardian Notice Banner */}
       {!permissions.allowed && permissions.message && (
         <PendingBanner
@@ -63,6 +63,7 @@ export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
           <ChatConversation />
         </section>
       </main>
+      </div>
     </div>
   );
 };

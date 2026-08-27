@@ -74,14 +74,15 @@ export const WidgetSkeleton: React.FC = () => {
   );
 };
 
+// Home is a 2-column layout (`.mhn-home-main-layout { grid-template-columns:
+// 1fr 340px }`, see `index.css`) since the left nav column moved into the
+// app shell's own `Sidebar.tsx` — this used to also render a
+// `.mhn-layout-col-left`/`ProfileSummarySkeleton` third column left over
+// from that older 3-column design, which no longer has a matching grid
+// track to sit in.
 export const HomeSkeletonLoader: React.FC = () => {
   return (
     <div className="mhn-home-main-layout">
-      {/* Left Column */}
-      <aside className="mhn-layout-col-left">
-        <ProfileSummarySkeleton />
-      </aside>
-
       {/* Center Column */}
       <section className="mhn-layout-col-center mhn-col-flex-gap-16">
         <FeedPostSkeleton />

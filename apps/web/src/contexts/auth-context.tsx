@@ -96,7 +96,16 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     });
   }, [loadAuthMe]);
 
-  // Fetch GET /v1/supervision/me/permissions ONLY for minor players (NOT for PARENT or COACH)
+  // Fetch GET /v1/supervision/me/permissions ONLY for minor players — the
+  // endpoint (and this whole guardian-controls concept) only applies to
+  // accounts under active guardian supervision. An 18+ adult player has no
+  // guardian and no supervision controls to fetch; calling it for them was
+  // a real bug (see docs/IMPLEMENTATION_STATUS.md) — the endpoint 400s for
+  // a non-supervised account, and checkSupervisionPermission below used to
+  // fail-closed (block everything) on that error/loading state regardless
+  // of whether the user was ever supposed to be supervised in the first
+  // place. `isParent`/`isCoach` alone were never sufficient: an adult
+  // PLAYER is neither, and still isn't under supervision.
   useEffect(() => {
     async function loadMinorPermissions() {
       if (!user) {
@@ -105,8 +114,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       }
       const isParent = user.primaryRole === 'PARENT' || user.roleAssignments?.some((assignment) => assignment.role === 'PARENT');
       const isCoach = user.primaryRole === 'COACH' || user.roleAssignments?.some((assignment) => assignment.role === 'COACH');
+      const isMinor = Boolean(user.profile?.isMinor);
 
-      if (!isParent && !isCoach) {
+      if (!isParent && !isCoach && isMinor) {
         setIsSupervisionPermissionsLoading(true);
         try {
           const res = await globalQueryClient.fetchQuery({
@@ -136,9 +146,14 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       if (!user) return true;
       const isParent = user.primaryRole === 'PARENT' || user.roleAssignments?.some((assignment) => assignment.role === 'PARENT');
       const isCoach = user.primaryRole === 'COACH' || user.roleAssignments?.some((assignment) => assignment.role === 'COACH');
+      const isMinor = Boolean(user.profile?.isMinor);
 
-      // Parent and Coach always have full permission
-      if (isParent || isCoach) return true;
+      // Parent, Coach, and any adult (non-minor) account always have full
+      // permission — supervision controls only exist for a minor under
+      // active guardian oversight. An 18+ player was never eligible for
+      // this endpoint in the first place, so there's nothing to fail
+      // closed against for them.
+      if (isParent || isCoach || !isMinor) return true;
 
       // Minor permissions fail closed while unavailable or loading.
       if (!supervisionPermissions || isSupervisionPermissionsLoading) return false;

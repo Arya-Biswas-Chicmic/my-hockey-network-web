@@ -2,7 +2,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
 import Image from 'next/image';
 import React, { useState } from 'react';
-import { Header } from '@/components/common/Header';
+import { Sidebar } from '@/components/common/Sidebar';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { CalendarView } from '@/components/features/events/CalendarView';
@@ -37,14 +37,14 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   ];
 
   return (
-    <div className="mhn-events-page-root">
-      {/* Top Navigation Bar Header */}
-      <Header
+    <div className="mhn-app-shell">
+      <Sidebar
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}
       />
 
+      <div className="mhn-app-content mhn-events-page-root">
       {/* Pending Guardian Notice Banner */}
       {!permissions.allowed && permissions.message && (
         <PendingBanner
@@ -147,6 +147,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           />
         )}
       </main>
+      </div>
     </div>
   );
 };

@@ -7,6 +7,7 @@ import { PostCardContent } from '@/components/features/home/PostCardContent';
 import { PostCardActions } from '@/components/features/home/PostCardActions';
 import { PostEditModal } from '@/components/features/home/PostEditModal';
 import { PostDeleteModal } from '@/components/features/home/PostDeleteModal';
+import { QuoteRepostModal } from '@/components/features/home/QuoteRepostModal';
 
 export interface FeedPostProps {
   id: string;
@@ -158,8 +159,22 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         hasReposted={card.hasReposted}
         reposts={card.reposts}
         isSharing={card.isSharing}
-        onShare={() => assertSupervisionPermission('share_posts', card.handleShare)}
+        isRepostMenuOpen={card.isRepostMenuOpen}
+        onRepostButtonClick={() => assertSupervisionPermission('share_posts', card.handleRepostButtonClick)}
+        onCloseRepostMenu={card.closeRepostMenu}
+        onChooseRepost={card.chooseRepost}
+        onChooseQuote={card.chooseQuote}
       />
+
+      {card.isQuoteModalOpen && (
+        <QuoteRepostModal
+          value={card.quoteCommentaryInput}
+          onChange={card.setQuoteCommentaryInput}
+          onClose={card.closeQuoteModal}
+          onSubmit={card.handleQuoteRepost}
+          isSubmitting={card.isSharing}
+        />
+      )}
 
       {card.isEditModalOpen && (
         <PostEditModal

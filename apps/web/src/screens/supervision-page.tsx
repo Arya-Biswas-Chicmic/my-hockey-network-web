@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/common/Button';
-import { Header } from '@/components/common/Header';
+import { Sidebar } from '@/components/common/Sidebar';
 import { ApprovalCodeModal } from '@/components/supervision/ApprovalCodeModal';
 import { ParentOnboardingModal } from '@/components/features/parent';
 import { useAuth } from '@/hooks/use-auth';
@@ -89,9 +89,10 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
   };
 
   return (
-    <div className="mhn-supervision-page-root">
-      <Header activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout} />
+    <div className="mhn-app-shell">
+      <Sidebar activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout} />
 
+      <div className="mhn-app-content mhn-supervision-page-root">
       <main className="mhn-supervision-main-container">
         <div className="mhn-supervision-card-wrapper">
           <SupervisionSidebar
@@ -227,6 +228,7 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
           await wards.refreshAfterParentOnboarding();
         }}
       />
+      </div>
     </div>
   );
 };

@@ -7,14 +7,25 @@ import { useHeaderFamily } from '@/hooks/use-header-family';
 import { HeaderProfileDropdown } from '@/components/common/HeaderProfileDropdown';
 import { FallbackImage } from '@/components/ui/fallback-image';
 import {
+  SidebarHomeIcon,
+  SidebarMessagingIcon,
+  SidebarExploreIcon,
+  SidebarEventsIcon,
+  SidebarGroupsIcon,
+  SidebarTeamsIcon,
+  SidebarNotificationsIcon,
+  SidebarSavedIcon,
+  SidebarProfileIcon,
+  SidebarCreatePostIcon,
+  SidebarMoreIcon,
+} from '@/components/icons/SidebarIcons';
+import {
   Bell,
   Bookmark,
   CalendarCheck2,
-  ChevronDown,
   Home,
   MessageSquare,
   MessagesSquare,
-  Plus,
   Search,
   Shield,
   User,
@@ -22,16 +33,24 @@ import {
 import { useShellUiStore } from '@/stores/shell-ui-store';
 import { useTheme } from '@/components/core/theme-provider';
 
+// Two icons per item: `ActiveIcon` is traced from the Figma sidebar design
+// (node 1398:3904, "Navigation") — Figma's own "filled" variant of Home is
+// visibly bolder/solid than its other (unselected-looking) nav rows, the
+// same active/inactive-outline convention Instagram's nav uses (this
+// design's own layer is literally named "Container (Instagram)"). Reusing
+// the original lucide-react outline icons for `InactiveIcon` matches that:
+// solid Figma icon for the active tab, thin outline icon otherwise — see
+// `components/icons/SidebarIcons.tsx` for the active set.
 const NAV_ITEMS = [
-  { id: 'home', label: 'Home', Icon: Home },
-  { id: 'messaging', label: 'Messaging', Icon: MessageSquare },
-  { id: 'explore', label: 'Explore', Icon: Search },
-  { id: 'events', label: 'Events', Icon: CalendarCheck2 },
-  { id: 'groups', label: 'Groups', Icon: MessagesSquare },
-  { id: 'teams', label: 'Teams', Icon: Shield },
-  { id: 'notifications', label: 'Notifications', Icon: Bell },
-  { id: 'saved', label: 'Saved', Icon: Bookmark },
-  { id: 'profile', label: 'Profile', Icon: User },
+  { id: 'home', label: 'Home', ActiveIcon: SidebarHomeIcon, InactiveIcon: Home },
+  { id: 'messaging', label: 'Messaging', ActiveIcon: SidebarMessagingIcon, InactiveIcon: MessageSquare },
+  { id: 'explore', label: 'Explore', ActiveIcon: SidebarExploreIcon, InactiveIcon: Search },
+  { id: 'events', label: 'Events', ActiveIcon: SidebarEventsIcon, InactiveIcon: CalendarCheck2 },
+  { id: 'groups', label: 'Groups', ActiveIcon: SidebarGroupsIcon, InactiveIcon: MessagesSquare },
+  { id: 'teams', label: 'Teams', ActiveIcon: SidebarTeamsIcon, InactiveIcon: Shield },
+  { id: 'notifications', label: 'Notifications', ActiveIcon: SidebarNotificationsIcon, InactiveIcon: Bell },
+  { id: 'saved', label: 'Saved', ActiveIcon: SidebarSavedIcon, InactiveIcon: Bookmark },
+  { id: 'profile', label: 'Profile', ActiveIcon: SidebarProfileIcon, InactiveIcon: User },
 ] as const;
 
 interface SidebarProps {
@@ -101,22 +120,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       <nav className="mhn-sidebar-nav">
-        {NAV_ITEMS.map(({ id, label, Icon }) => (
-          <Button
-            key={id}
-            onClick={() => handleTabClick(id)}
-            className={`mhn-sidebar-nav-item ${activeTab === id ? 'mhn-sidebar-nav-item-active' : ''}`}
-          >
-            <Icon size={20} aria-hidden="true" />
-            <span>{label}</span>
-          </Button>
-        ))}
+        {NAV_ITEMS.map(({ id, label, ActiveIcon, InactiveIcon }) => {
+          const isActive = activeTab === id;
+          const Icon = isActive ? ActiveIcon : InactiveIcon;
+          return (
+            <Button
+              key={id}
+              onClick={() => handleTabClick(id)}
+              className={`mhn-sidebar-nav-item ${isActive ? 'mhn-sidebar-nav-item-active' : ''}`}
+            >
+              <Icon size={20} aria-hidden="true" />
+              <span>{label}</span>
+            </Button>
+          );
+        })}
 
         <Button
           onClick={onCreatePostClick}
           className="mhn-sidebar-nav-item mhn-sidebar-create-post"
         >
-          <Plus size={20} aria-hidden="true" />
+          <SidebarCreatePostIcon size={20} aria-hidden="true" />
           <span>Create Post</span>
         </Button>
       </nav>
@@ -127,10 +150,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <FallbackImage src={activeUser.avatar} alt={activeUser.name} fill className="mhn-avatar-img" />
           </div>
           <span className="mhn-sidebar-user-name">{activeUser.name}</span>
-          <ChevronDown
-            className={`mhn-user-chevron ${isProfileOpen ? 'mhn-chevron-rotated' : ''}`}
-            size={16}
-          />
+          <SidebarMoreIcon className="mhn-user-chevron" size={16} aria-hidden="true" />
         </div>
 
         {isProfileOpen && (

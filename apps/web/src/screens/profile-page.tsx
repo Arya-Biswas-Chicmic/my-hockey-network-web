@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Header } from '@/components/common/Header';
+import { Sidebar } from '@/components/common/Sidebar';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { CreatePostModal } from '@/components/features/home/CreatePostModal';
 import { EditProfileModal, ProfileSkeletonLoader } from '@/components/features/profile';
@@ -149,13 +149,15 @@ export const ProfilePage: React.FC<PageProps> = ({
   };
 
   return (
-    <div className="mhn-profile-page-root">
-      <Header
+    <div className="mhn-app-shell">
+      <Sidebar
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}
+        onCreatePostClick={handleOpenCreatePost}
       />
 
+      <div className="mhn-app-content mhn-profile-page-root">
       {!permissions.allowed && permissions.message && (
         <PendingBanner
           message={permissions.message}
@@ -305,6 +307,7 @@ export const ProfilePage: React.FC<PageProps> = ({
       />
 
       {cropModal}
+      </div>
     </div>
   );
 };

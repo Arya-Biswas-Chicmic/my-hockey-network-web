@@ -1,7 +1,7 @@
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
 import React, { useState, useEffect } from 'react';
-import { Header, NoDataFound, ServerDown } from '@/components/common';
+import { Sidebar, NoDataFound, ServerDown } from '@/components/common';
 import { ManageNetworkCard } from '@/components/features/network/ManageNetworkCard';
 import { ProfileSummaryCard } from '@/components/features/home/ProfileSummaryCard';
 import { GroupsView } from '@/components/features/network/GroupsView';
@@ -203,14 +203,14 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
   );
 
   return (
-    <div className="mhn-network-page-root">
-      {/* Header */}
-      <Header 
+    <div className="mhn-app-shell">
+      <Sidebar
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}
       />
 
+      <div className="mhn-app-content mhn-network-page-root">
       {/* Main Container */}
       <main className="mhn-network-main-layout">
         {currentView === NetworkViewModeEnum.GROUP_DETAIL ? (
@@ -378,6 +378,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
           </>
         )}
       </main>
+      </div>
     </div>
   );
 };

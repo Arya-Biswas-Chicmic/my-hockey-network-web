@@ -1,6 +1,7 @@
 export * from '@/components/common/Button';
 export * from '@/components/common/FormControls';
 export * from '@/components/common/Header';
+export * from '@/components/common/Sidebar';
 export * from '@/components/common/LogoutModal';
 export * from '@/components/common/PendingBanner';
 export * from '@/components/common/Spinner';
@@ -8,6 +9,6 @@ export * from '@/components/common/Toast';
 export * from '@/components/common/no-data-found';
 export * from '@/components/common/server-down';
 export * from '@/components/common/server-down-screen';
-export * from '@/components/common/HeaderSkeleton';
+export * from '@/components/common/SidebarSkeleton';
 export * from '@/components/common/FullAppSkeletonLoader';
 export * from '@/components/common/OtpCodeInput';

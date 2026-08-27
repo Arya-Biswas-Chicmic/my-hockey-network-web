@@ -16,6 +16,8 @@ const allowedWebPrimitiveFiles = new Set([
 const allowedCustomSvgFiles = new Set([
   'apps/web/src/components/icons/BrandIcons.tsx',
   'apps/web/src/components/icons/HockeyAnalyticsVisuals.tsx',
+  'apps/web/src/components/icons/SidebarIcons.tsx',
+  'apps/web/src/components/icons/FeedActionIcons.tsx',
   'apps/web/src/components/features/auth/guardian/GuardianBackgroundShapes.tsx',
   'apps/web/src/components/features/auth/guardian/GuardianIcons.tsx',
   'apps/web/src/components/features/auth/request-sent/RequestSentIcons.tsx',

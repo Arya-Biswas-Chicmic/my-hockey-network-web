@@ -1,4 +1,4 @@
-import { Input, Dropdown } from '@/components/common/FormControls';
+import { Input } from '@/components/common/FormControls';
 import React, { useState, useEffect, useRef } from 'react';
 import { isEmailValid } from '@my-hockey-network/validation';
 import { Button, PendingBanner, NoDataFound, ServerDown } from '@/components/common';
@@ -270,17 +270,6 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
         <main className="mhn-home-main-layout lg:my-0 lg:min-h-0 lg:flex-1 lg:py-6">
           <section className="mhn-layout-col-center lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
-            <div className="mhn-feed-search-wrapper mhn-feed-search-wrapper-standalone">
-              <Search className="mhn-feed-search-icon" size={16} aria-hidden="true" />
-              <Input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search"
-                className="mhn-feed-search-input"
-              />
-            </div>
-
             <div className="mhn-feed-scope-tabs">
               {([
                 { key: 'FOR_YOU', label: 'For You' },
@@ -308,23 +297,6 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               />
             ) : (
               <>
-                {(filteredPosts.length > 0 || searchQuery.trim().length > 0) && (
-                  <div className="mhn-feed-sort-wrapper">
-                    <Dropdown
-                      value={sortBy}
-                      options={[
-                        { value: 'RECENT', label: 'Newest First' },
-                        { value: 'POPULAR', label: 'Most Popular' },
-                        { value: 'TRENDING', label: 'Trending (48h)' },
-                      ]}
-                      onChange={(val) => {
-                        if (val === 'RECENT' || val === 'POPULAR' || val === 'TRENDING') setSortBy(val);
-                      }}
-                      placeholder=""
-                    />
-                  </div>
-                )}
-
                 {isFeedRefreshing ? (
                   <div className="mhn-col-flex-gap-16">
                     <FeedPostSkeleton />
@@ -377,6 +349,20 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           </section>
 
           <aside className="mhn-layout-col-right lg:h-full lg:overflow-hidden">
+            {/* Figma puts the search bar in the right column, above "Who to
+                follow" (figma.com/design/cqlBXHZtqPkKcLRmR6a1B8, node
+                1398:3904) — not above the feed tabs in the center column. */}
+            <div className="mhn-feed-search-wrapper mhn-feed-search-wrapper-standalone">
+              <Search className="mhn-feed-search-icon" size={16} aria-hidden="true" />
+              <Input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search"
+                className="mhn-feed-search-input"
+              />
+            </div>
+
             <WhoToFollowWidget onViewAll={() => handleTabChange('network')} />
 
             <UpcomingEventsWidget

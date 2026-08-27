@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
-import { Header } from '@/components/common/Header';
+import { Sidebar } from '@/components/common/Sidebar';
 import { useDebounce } from '@/hooks/use-debounce';
 import { showErrorToast, showInfoToast } from '@/utils/toast';
 import { NavTabEnum } from '@my-hockey-network/contracts';
@@ -202,10 +202,10 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
   });
 
   return (
-    <div className="mhn-help-page-container">
-      {/* Top Header Navbar */}
-      <Header activeTab={activeTab} onTabChange={handleTabChange} onLogout={onLogout} />
+    <div className="mhn-app-shell">
+      <Sidebar activeTab={activeTab} onTabChange={handleTabChange} onLogout={onLogout} />
 
+      <div className="mhn-app-content mhn-help-page-container">
       <main className="mhn-help-main-layout">
         
         {/* ==================== HERO SEARCH SECTION ==================== */}
@@ -431,6 +431,7 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
         </section>
 
       </main>
+      </div>
     </div>
   );
 };

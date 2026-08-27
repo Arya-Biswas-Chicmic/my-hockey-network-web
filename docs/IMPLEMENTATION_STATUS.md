@@ -783,10 +783,420 @@ Last reviewed: 2026-08-27
   - **Not done this pass** (explicitly deferred, not overlooked): every other authenticated route
     still renders the old top-nav `Header`, not `Sidebar` — Network/Events/Messaging/Notifications/
     Profile/Settings/Supervision all need the same migration in a follow-up pass, per "then expand
-    outward". `WhoToFollowWidget`'s populated (non-empty) state was reasoned about via the identical,
-    already-proven `/network` "People you may know" code path rather than screenshotted directly —
-    the two real test accounts used to verify this pass both happened to have zero recommendations
-    (fresh accounts, no connection graph yet).
+    outward". `WhoToFollowWidget`'s populated state was later confirmed live too (see the supervision-
+    permission fix entry directly below, same session) — real names, working inline Follow buttons.
+- **Fixed a real, in-production bug reported directly by the user**: an 18+ adult `saksham.garg`
+  test account was seeing "Your parent did not give permission for this feature" on every like/
+  comment/share attempt, and lock icons on all three action buttons, despite having
+  `guardianship.required: false` — i.e. no guardian, nothing to be restricted by. Root cause was in
+  `contexts/auth-context.tsx`, two related bugs in the supervision-permissions logic:
+  1. The effect fetching `GET /supervision/me/permissions` was gated only on `!isParent && !isCoach`
+     — its own comment said "ONLY for minor players", but the code never actually checked
+     `user.profile?.isMinor`. Every adult `PLAYER`/`STAFF` account fell through to calling an
+     endpoint that (correctly, from the backend's perspective) 400s for a non-supervised account —
+     this is the same `/supervision/me/permissions` 400 flagged as a live-testing finding earlier the
+     same day, now traced to its actual user-facing consequence rather than just "doesn't visibly
+     break anything".
+  2. `checkSupervisionPermission()` — the function every lock icon and `assertSupervisionPermission`
+     toast in the app goes through — failed *closed* (blocked) whenever `supervisionPermissions` was
+     null or still loading, for anyone who wasn't Parent or Coach. Since step 1's 400 meant
+     `supervisionPermissions` was permanently null for every adult player, every one of them was
+     permanently blocked from every supervised action, forever, with no way to recover.
+  Fixed both: the fetch now also requires `user.profile?.isMinor`, and `checkSupervisionPermission`
+  now treats any non-minor account the same as Parent/Coach — always allowed, no fetch, nothing to
+  fail closed against. Live-verified with the actual reporting account: no more 400 to
+  `/supervision/me/permissions` (confirmed via network log — the call no longer happens at all), no
+  lock icons, and a real Like click went through end to end (0 → 1) with no error toast.
+- Confirmed the Figma MCP connection on request (`whoami` → authenticated as `Chicmic UI`,
+  `ui@chicmicstudios.in`, with access to ~70 teams including one named "Shunya"). The user's linked
+  node (`cqlBXHZtqPkKcLRmR6a1B8`, node `1418:8806`) turned out to resolve to a section called
+  "Feedback Final" containing ~90 authenticated-app screens (Home, Messaging, Profile, Events,
+  Groups, Teams, ...) — searched every name in it for a Login/Sign-In frame and found none. Confirmed
+  directly with the user: there is no Figma source for this screen; it's the app's existing Sign
+  In / Verify Email flow, dark-themed rather than pixel-matched from a design file.
+- Dark-themed the Sign In and Verify Email (OTP) screens
+  (`components/features/auth/login/LoginForm.tsx`, `verify-email/VerifyEmailForm.tsx` — no component
+  changes, CSS only), on request. Built entirely on the existing `--color-*` semantic tokens rather
+  than new hardcoded hex values, same principle as the sidebar redesign. The illustration panel keeps
+  its brand blue (`#0d59cf`) in both themes — that's brand color, not a light/dark surface, and was
+  already confirmed unchanged between themes earlier this session.
+  - The email input (`.auth-input`) gets three distinct, requested states: empty (default muted
+    border), focused (primary-colored ring while typing — live-verified by clicking in), and filled
+    (`:not(:placeholder-shown)`, which fires once real text is entered and persists after blur —
+    live-verified by typing an email and clicking away: border visibly changes from the empty state's
+    color to a stronger neutral, distinct from both empty and focused).
+  - Also covered the OTP digit boxes, the "Check your email"/masked-address text, the resend timer,
+    the green "code sent" notice card, and the Google/back-link buttons on the Verify Email screen,
+    which is the very next step of the same flow — left unstyled, they'd have been white boxes on a
+    dark page. The digit boxes intentionally do NOT get a `:not(:placeholder-shown)` filled state:
+    `OtpCodeInput.tsx` never sets a `placeholder` attribute on them, so that pseudo-class can't
+    distinguish empty from filled there (verified in the component source before relying on it) —
+    unlike the emphasized case, that's a lower-severity gap acceptable to skip since each typed digit
+    is already visually obvious as a character.
+  - Verified live end-to-end: empty → focused → filled screenshots on Sign In, then the real submit
+    flow through to a live Verify Email screen (auto-prefilled dev OTP), confirming both screens
+    render correctly together, not just in isolation. Clean console. `pnpm verify` passes (typecheck,
+    lint, 208 tests, production build — CSS-only change, no component logic touched).
+  - **Light theme deliberately left alone**, per explicit instruction — every rule added is scoped to
+    `:root[data-theme='dark']`; the existing unscoped (light) rules are untouched.
+  - **No static-data file was needed for this specific screen** — the Sign In/Verify Email flow has
+    no feed, list, or fabricated content to isolate (its own dev-only OTP auto-prefill was already a
+    clearly-commented, separately-flagged temporary behavior in `OnboardingModal.tsx` before this
+    pass). Flagging this explicitly rather than silently skipping the instruction: the "keep static
+    data in its own removable file" pattern applies to the *next* screen that actually needs
+    placeholder content, not retroactively to this one.
+- Fixed two sidebar-consistency issues reported by the user:
+  1. **Icon misalignment.** `Sidebar.tsx`'s nav items visibly jittered left/right by label length
+     ("Home" vs "Notifications") instead of lining up in a clean column. Root cause:
+     `buttonVariants` (`components/ui/button.tsx`) applies Tailwind's `justify-center`
+     unconditionally as a base class, and `.mhn-sidebar-nav-item` never set its own
+     `justify-content`, so nothing overrode it — each full-width button centered its icon+label
+     group within its own width, and the centering offset varied per item. Fixed by adding
+     `justify-content: flex-start; text-align: left;` to `.mhn-sidebar-nav-item` in `index.css`.
+     Verified via `getBoundingClientRect()` on every item's icon (`svgLeft` identical across all 9
+     items after the fix, previously varied by up to ~23px) and a visual screenshot.
+  2. **Sidebar changing on navigation to Profile (and every other non-Home page).** Only
+     `home-page.tsx` had been migrated to the new `Sidebar.tsx` earlier this session; the other 9
+     screens still rendered the old `Header.tsx`, which a separate, earlier pass had independently
+     CSS-styled into a different, narrower (184px), 5-item vertical nav — so navigating away from
+     Home visibly swapped one sidebar design for another. Fixed by migrating the remaining 9 screens
+     (`profile-page.tsx`, `my-network-page.tsx`, `events-page.tsx`, `messaging-page.tsx`,
+     `notifications-page.tsx`, `settings-page.tsx`, `supervision-page.tsx`, `help-page.tsx`,
+     `event-detail-page.tsx`) to the same `<div className="mhn-app-shell"><Sidebar .../><div
+     className="mhn-app-content ...">` shell pattern already used by Home, and adding
+     `.mhn-notifications-card` (and related) dark-theme coverage that Notifications was still
+     missing. `Header.tsx` now has zero remaining usages anywhere in `apps/web/src/screens`
+     (confirmed via grep). `components/common/index.ts` was updated to re-export `Sidebar` since
+     some screens import shared components via that barrel.
+  - Live-verified end-to-end in a fresh login session (`saksham.garg@chicmicstudios.in`): Home →
+    Profile → Messaging all render the identical 9-item `Sidebar`, correctly highlighting the active
+    tab, with no visual swap and a clean console (no parse errors, no hydration mismatches, no
+    `Sidebar is not defined`). Note: mid-verification, a stale Turbopack dev-server cache produced
+    misleading "Unexpected token" parse errors on these exact files even though `tsc --noEmit` was
+    already clean — a `rm -rf apps/web/.next` + dev-server restart cleared it, and the production
+    build (`next build --webpack`) compiled all 22 routes successfully, confirming the files
+    themselves were never broken.
+  - `pnpm --filter @my-hockey-network/web typecheck`, `lint:check`, `node
+    scripts/check-component-reuse.mjs`, and `pnpm --filter @my-hockey-network/web build` all pass.
+  - **Not done this pass**: the inner *content* of Settings/Supervision/Events/Messaging/Help/
+    Event-Detail still uses light-only `.mhn-*` classes (only their nav shell was swapped to
+    `Sidebar` + dark-capable `mhn-app-shell`/`mhn-app-content` wrappers) — same "shell migrated,
+    content not yet dark-themed" pattern already noted for Home's siblings earlier in this doc.
+
+- Icon replacement, feed action row, layout spacing, and a signup-illustration
+  positioning bug, all on request:
+  - **Sidebar icons.** All 9 nav icons plus the "Create Post" and bottom-chip
+    "…" icons were lucide-react stand-ins that didn't match the Figma sidebar
+    (figma.com/design/cqlBXHZtqPkKcLRmR6a1B8, node 1398:3904, "Navigation").
+    Traced the exact path data from that node into new
+    `components/icons/SidebarIcons.tsx` (kept, per request, alongside the
+    raw source SVGs in `assets/icons/sidebar/` — both under `src/`), inlined
+    as `<svg>` with `fill="currentColor"` rather than `<img src>` so hover/
+    active states still inherit the sidebar's existing text-color system
+    (the same reason `BrandIcons.tsx`'s `GoogleIcon` is inlined, not an
+    image). `Sidebar.tsx` now imports these instead of
+    `Home/MessageSquare/Search/CalendarCheck2/MessagesSquare/Shield/Bell/
+    Bookmark/User/Plus/ChevronDown` from lucide-react.
+  - **Feed action icons.** `PostCardActions.tsx` previously rendered only 3
+    actions (Like via `ThumbsUp`/`/like.png`, Comment via `/comment.png`,
+    and a "Share" button that was actually Repost via `/share.png`) — Figma's
+    "Footer of post" component (same file, node 1398:3904) has 5: Like,
+    Comment, Repost, a separate Send (external share) icon, and Save
+    (bookmark), split into a left group (like/comment/repost) and a right
+    group (send/save) with `justify-content: space-between`, not one
+    left-aligned row. Traced all 5 into new
+    `components/icons/FeedActionIcons.tsx`; rebuilt the footer to match:
+    - Like now renders Figma's red (`#ff483d`) circular reaction badge with
+      its spark-icon glyph when liked, a neutral outlined circle when not
+      (previous behavior used a filled blue lucide `ThumbsUp`).
+    - Repost keeps its existing working logic (`handleShare`/`hasReposted`/
+      `reposts` — genuinely a repost, despite the old "Share" naming) but
+      now uses the correct traced icon instead of `/share.png` + a
+      hue-rotate CSS filter hack (`.mhn-repost-icon-filter`, removed —
+      no longer needed once the icon is an inlined SVG that takes `color`
+      directly).
+    - Added the two previously-missing buttons: **Send** (paper-plane, right
+      group) shows an honest "not available yet" toast — there is no
+      external-share feature built, and the codebase has no post-detail
+      route to link to yet; **Save** (bookmark, right group) is a
+      client-only optimistic toggle with a toast noting the Saved page
+      (`screens/saved-page.tsx`) is itself still a coming-soon stub — there
+      is no `savePost`/`SavedPost` endpoint anywhere in `packages/core` to
+      wire it to. Both are flagged in code comments as follow-up work once
+      those backends exist, same honesty standard as the existing "Network
+      feed coming soon" / "Groups feed coming soon" states on this page.
+  - Both new icon files needed adding to `scripts/check-component-reuse.mjs`'s
+    `allowedCustomSvgFiles` allowlist (the same mechanism `BrandIcons.tsx`
+    and `HockeyAnalyticsVisuals.tsx` already use) — inline `<svg>` is
+    disallowed outside that allowlist precisely to keep icon usage
+    centralized instead of scattered inline SVGs.
+  - **Layout spacing.** `.mhn-home-main-layout`'s gutter (sidebar↔feed via
+    its own left padding, feed↔right-column via `grid-gap`) was 24px;
+    increased to 40px on both axes for closer-to-Figma breathing room,
+    proportional rather than pixel-identical since this sidebar is 240px vs
+    Figma's 300px reference. Tab labels ("For You"/"Network"/"Groups") were
+    already correct and unchanged.
+  - **Signup illustration shifting position bug**, confirmed via
+    `getBoundingClientRect()` comparison across steps: `.onboarding-modal`'s
+    row layout (desktop, ≥768px) used `align-items: center`. The
+    illustration panel has a fixed 672px height, but the form side doesn't —
+    Sign In's 1-field form fit within that easily, while Sign Up's Create
+    Account step (3 fields) is taller, growing the row's cross-axis height
+    (720px → 736px at the tested viewport) and re-centering the shorter,
+    fixed-height illustration upward by half the difference (8px) relative
+    to Sign In. Fixed by changing that rule to `align-items: flex-start`,
+    which pins both panes to the same top edge regardless of which step's
+    form is taller — verified the illustration's offset from the card's own
+    top edge is now identically 24px (the card's padding) on Sign In, Role
+    Select, and Create Account, at both a 1100×800 desktop size (where the
+    bug reproduced) and mobile width.
+  - Verified: `pnpm --filter @my-hockey-network/web typecheck`, `lint:check`,
+    `node scripts/check-component-reuse.mjs`, `pnpm test:run` (208/208), and
+    `pnpm --filter @my-hockey-network/web build` all pass. Live-verified in
+    a fresh session (`saksham.garg@chicmicstudios.in`): sidebar and feed
+    icons render correctly on Home, Save button toggles with the expected
+    toast, wider column gutters visible, and the Sign In → Sign Up →
+    Create Account illustration no longer shifts.
+  - **Not done this pass**: the Explore page's own tab set
+    ("Popular"/"Suggested"/"Verified Accounts", node 1495:12242) and its
+    "You Might Like" right-column widget were referenced for context but
+    not touched — the request's tab/spacing/icon scope was the Home page
+    (node 1398:3904); Explore already inherits the sidebar and action-row
+    icon fixes since both pages share `Sidebar.tsx`/`PostCardActions.tsx`.
+
+- Follow-up round of fixes on the icon/spacing/feed pass above, all from live
+  screenshots the user sent back after trying it:
+  - **Sidebar active/inactive icon states.** `Sidebar.tsx` was rendering the
+    same Figma-traced (solid/filled) icon regardless of active state — but
+    Figma's own sidebar shows the active tab bolder/solid and implies a
+    lighter look otherwise (its "Home" example is an explicit `filled`
+    variant; the design's own layer is literally named "Container
+    (Instagram)", which uses this exact filled-active/outline-inactive
+    convention). `NAV_ITEMS` now carries both an `ActiveIcon` (the traced
+    Figma icon) and `InactiveIcon` (the original lucide-react outline icon
+    for that item, reinstated) and `Sidebar.tsx` picks between them by
+    `activeTab === id`. Verified via `svg path` count per item in a live
+    DOM check (2 paths = active/filled Home, 1 path = inactive lucide icons)
+    rather than by eye.
+  - **Post options menu opening at the page's top-right corner instead of
+    under the "…" icon.** Same root cause as the sidebar's
+    `HeaderProfileDropdown` fix earlier this session: `PostCardHeader.tsx`'s
+    wrapper relied on a `.mhn-relative-container` class for positioning
+    context that has no CSS definition anywhere, so `.mhn-post-menu-popover`
+    (`position: absolute; right: 0; top: 36px`) had no positioned ancestor
+    and resolved against the page instead. Added `position: relative` to
+    the real wrapper (`.mhn-post-header-actions`) and dropped the dead
+    class from the JSX. Live-verified: the Edit/Delete popover now opens
+    directly under the icon on the post it was clicked on.
+  - **Feed section, several issues from one Figma re-check**
+    (figma.com/design/cqlBXHZtqPkKcLRmR6a1B8, node 1398:3904):
+    - Removed the "Newest First" sort dropdown — not present in Figma's
+      feed at all.
+    - Moved the search bar from above the feed tabs (center column) to the
+      right column, above "Who to follow" — that's where Figma actually
+      places it (its own metadata has the search `Button` node inside the
+      right-column container, not the center one), not a design guess.
+    - Removed the white/pink pill background `.mhn-action-liked` put behind
+      the entire like button, and the forced bold-red override on its
+      count — Figma's footer never puts a background behind an action and
+      its count text is plain `font-medium` in every state; the red
+      circular reaction badge alone is what signals "liked" now. Also
+      deleted a second, conflicting definition of the same count classes
+      further down the stylesheet (`color: #1860C3` blue vs the nearby
+      block's `color: #ef4444` red for the identical `.mhn-action-count-
+      liked` selector) — pre-existing duplicate CSS the cascade was
+      silently resolving in a way that didn't match either intended color.
+  - **"Spacing between the sidebar and the center content is way too
+    much."** This was NOT the ~24px grid gutter tweaked in the pass above —
+    live DOM measurement found a leftover
+    `:root[data-theme='dark'] { padding-left: 184px }` rule (inside an
+    entire `@media(min-width:1024px)` block) applied to every page root
+    (`.mhn-home-page-root` and 7 others), compensating for the *old*
+    `Header.tsx` component once being styled as a fixed-position 184px-wide
+    floating sidebar. `Header` has zero remaining usages anywhere in
+    `apps/web/src/screens` (fully replaced by `Sidebar.tsx`, a normal flex
+    child) — so that compensating padding was stacking on top of
+    `Sidebar`'s own real flex-layout space, in dark theme specifically
+    (this app's primary/default theme), on every single migrated page, not
+    just Home. Removed the entire obsolete block (`.mhn-header*`,
+    `.mhn-nav-item*`, the old `.mhn-profile-dropdown` positioning, the
+    184px padding, and a stale `.mhn-home-main-layout`/`.mhn-network-main-
+    layout`/`.mhn-messaging-main-container` grid override that also
+    silently overrode the real light-mode layout with pre-Sidebar values —
+    itself a violation of the earlier-agreed "colors only, same UX between
+    themes" principle). Live-verified on Home, Profile, and Messaging.
+  - **"There is no scroll bar."** The center feed column's independent
+    scroll (`overflow-y: auto`, confirmed working via
+    `scrollHeight > clientHeight` in a live check) was real, just using the
+    browser's thin/near-invisible default scrollbar. Added an explicit
+    themed scrollbar (`scrollbar-width: thin` + WebKit
+    `::-webkit-scrollbar*`) to `.mhn-layout-col-center` so it's visibly
+    there.
+  - **Feed footer "looks unstylish" vs Figma's.** Two real, measurable
+    mismatches, not just a vague style gap: (1) icon sizes didn't match
+    Figma's own spec — the reaction spark inside the red badge was sized at
+    11px inside a 16px circle (Figma's is a ~15px spark, nearly filling the
+    circle — the badge read as mostly-empty), and the send/save icons were
+    17px/18px against Figma's 19px/20px. Resized all three to match. (2)
+    the footer's icons and counts inherited the app's general muted
+    secondary-text color (`--color-muted-foreground`, a mid gray-blue) in
+    dark theme, while Figma's footer icons are near-white — a primary
+    action row, not secondary metadata. Gave `.mhn-action-item`/
+    `.mhn-action-count` their own dark-theme rule using
+    `var(--color-foreground)` instead of pulling the muted one.
+  - Verified: `pnpm --filter @my-hockey-network/web typecheck`,
+    `lint:check`, `node scripts/check-component-reuse.mjs`, `pnpm test:run`
+    (208/208), and `pnpm --filter @my-hockey-network/web build` all pass.
+    Live re-verified end-to-end after every fix (not just at the end) —
+    active/inactive sidebar icons via DOM inspection, the post menu
+    position, the removed sort dropdown and relocated search bar, the
+    plain-typography like count, the corrected sidebar↔feed gutter on
+    Home/Profile/Messaging, the visible scrollbar under a forced-short
+    viewport, and the resized/re-colored footer icons.
+  - **Not done this pass**: `HeaderSkeleton.tsx` (the old component's
+    loading-skeleton, still reachable via `FullAppSkeletonLoader.tsx` during
+    brief auth-loading states) still uses the `.mhn-header`/`.mhn-nav-item`
+    class names whose desktop dark-theme fixed-184px-sidebar styling was
+    just removed as dead code — it now falls back to those classes' base
+    (non-dark-specific) rules during that brief flash instead. Low-visibility
+    (shown only momentarily while auth resolves) and out of scope for this
+    pass; flagging as a known follow-up rather than silently leaving it
+    undocumented.
+
+- Fixed the exact follow-up the "Not done this pass" note above predicted the
+  user would hit: the route-transition/auth-check loading skeleton
+  (`FullAppSkeletonLoader.tsx`, shown by `app/loading.tsx` and all four route
+  guards — `guest-guard.tsx`, `authenticated-guard.tsx`,
+  `parent-role-guard.tsx`, `minor-player-guard.tsx`) still rendered the OLD
+  `HeaderSkeleton` — a horizontal top-bar placeholder modeled on the
+  long-removed `Header.tsx` top nav, on a hardcoded light background,
+  regardless of theme (screenshot from the user: "skeleton is still working
+  on the old as we don't have top bar now"). Replaced it with a new
+  `SidebarSkeleton.tsx` that renders through the *real* `.mhn-sidebar`/
+  `.mhn-sidebar-nav`/`.mhn-sidebar-footer` classes (logo, 10 nav-row
+  placeholders, user-chip placeholder) inside the real `.mhn-app-shell`, so
+  it's pixel-matched to the actual `Sidebar.tsx` and swaps in without a
+  layout shift; its shimmer uses theme tokens (`--color-secondary`/
+  `--color-border`) instead of a hardcoded white-only gradient, so it reads
+  correctly in both themes. Deleted `HeaderSkeleton.tsx` and its dead CSS
+  outright (confirmed zero other usages first). Also found and fixed the
+  same stale-layout pattern one level in: `HomeSkeletonLoader.tsx` still
+  rendered a `.mhn-layout-col-left`/`ProfileSummarySkeleton` third column
+  left over from the old 3-column Home design — Home's real grid is 2 columns
+  now (`.mhn-home-main-layout { grid-template-columns: 1fr 340px }`) — removed
+  it so the skeleton has the same 2 columns as the page it's standing in for.
+  - While in this file, also fixed a **real, pre-existing hydration
+    mismatch** it was directly causing on every route: it read
+    `typeof window !== 'undefined' ? window.location.pathname : ''` to pick
+    which content skeleton to show, which is `''` during SSR (always
+    picking `HomeSkeletonLoader`) but the real pathname on the client —
+    disagreeing HTML between server and client hydration on every route but
+    Home. Switched to `usePathname()` (`next/navigation`, the pattern
+    already used in `authenticated-guard.tsx`), which returns the same value
+    in both places; the component now needs (and has) `'use client'`. Note:
+    a *separate*, unrelated hydration warning was already present on this
+    app before any of today's changes (confirmed via live testing — it did
+    not go away after this fix) and is out of scope here; flagging it as a
+    known pre-existing issue rather than silently leaving it undiscussed.
+  - On the "scroll bar still not removed" half of the same message: could
+    not reproduce an unwanted/stray scrollbar on any settled page after
+    these fixes at a normal viewport (checked `document.documentElement.
+    scrollWidth`/`scrollHeight` against the viewport directly — no
+    horizontal or page-level vertical overflow on Home or Profile). The
+    center feed column's own intentional scroll (added last pass, see
+    above) is working and visibly styled. The old skeleton's un-constrained
+    wrapper (`.mhn-app-skeleton-viewport`, now deleted) is the most likely
+    source of whatever stray scrollbar was visible in the screenshot, since
+    it had no height relationship to the real page at all — the new
+    skeleton reuses the exact same `.mhn-app-shell` sizing as the real,
+    already scroll-verified pages, so this should be resolved as a
+    consequence of the skeleton fix; flagging rather than claiming certainty
+    since the exact scrollbar in the screenshot couldn't be isolated and
+    reproduced directly.
+  - Verified: `pnpm --filter @my-hockey-network/web typecheck`, `lint:check`,
+    `node scripts/check-component-reuse.mjs` (the inline `style={{width}}`
+    the first draft used for label-bar widths had to be replaced with three
+    discrete `.mhn-sidebar-skeleton-label-{sm,md,lg}` classes to pass this —
+    inline style objects are disallowed app-wide), `pnpm test:run`
+    (208/208), and `pnpm --filter @my-hockey-network/web build` all pass.
+    Live-verified the new sidebar-shaped skeleton on `/profile` and
+    `/events` (caught mid-transition), confirming it matches the real
+    sidebar's shape/position and settles into the real page with no visible
+    shift.
+
+- Wide-monitor layout gap, missing Repost/Quote choice, and skeleton theming,
+  all from a follow-up screenshot batch (2026-08-27):
+  - **Huge, growing gap between the sidebar and the feed on screens wider
+    than a MacBook 14"** ("in figma we have left and right space" — a
+    symmetric outer margin, not an internal gap). Root cause: `.mhn-sidebar`
+    was a plain flex child docked to the viewport's left edge, while only
+    `.mhn-home-main-layout` (feed+right columns) had `margin: 24px auto` —
+    centering *itself* within whatever width was left after the sidebar. The
+    wider the monitor, the further that centered block drifted from the
+    edge-pinned sidebar. Figma's own 3-column block (nav+feed+right) is
+    itself centered with equal side margins, sidebar included (its nav
+    starts at x=137 of a 1440-wide frame, not x=0). Fixed by capping and
+    centering `.mhn-app-shell` itself (`max-width: 1440px; margin: 0 auto`)
+    — no breakpoint needed, since `max-width` is inert below 1440px, so a
+    MacBook 14" is unaffected. Verified at 1920px: 240px margin on both
+    sides, sidebar and feed sitting at a constant gap between them.
+  - **Missing Repost/Quote choice.** The repost button previously reposted
+    instantly on click. Figma's repost button (node 1766:8766) opens a
+    small "Repost" / "Quote" popover first — traced its 2 icons into
+    `FeedActionIcons.tsx` and built it as a new popover in
+    `PostCardActions.tsx`, backed by new state/handlers in
+    `use-feed-post-card.ts` (`isRepostMenuOpen`, `chooseRepost`,
+    `chooseQuote`) — clicking the button when *not yet* reposted opens the
+    choice; already-reposted still undoes directly with no menu (no
+    ambiguity to resolve there). "Repost" reuses the existing, unmodified
+    `handleShare` plain-repost/undo flow. "Quote" opens a new
+    `QuoteRepostModal.tsx` (modeled on the existing `PostEditModal.tsx`)
+    for commentary text, then calls `repostPost(id, { commentary })` — the
+    backend already supports this (`RepostDTO.commentary` already existed
+    in `packages/core`, unused until now), so this is real, working
+    functionality, not a stub. Both paths go through the same
+    `requirePermission('SHARE_POSTS')` guardian-approval gate `handleShare`
+    already had, plus the existing `assertSupervisionPermission('share_posts',
+    ...)` wrapper at the `FeedPostCard.tsx` call site.
+    - Found and fixed a real clipping bug while wiring this: the popover
+      initially opened downward and was invisible (present in the DOM,
+      `aria-expanded="true"`, but never rendered) — `.mhn-feed-post-card`
+      clips overflow (needed for its rounded corners around the header
+      image), and the repost button sits in the footer, the card's last
+      section, so anything opening downward from it immediately extends
+      past the card's own bottom edge. Opens upward instead, staying
+      within the card's existing content bounds. Live-verified end-to-end
+      with a real quote: repost count went 2→3, "Post quoted successfully!"
+      toast fired.
+  - **Skeleton loaders using hardcoded light-mode colors regardless of
+    theme** ("skeleton color should be according to theme... it should
+    change according to the theme"). Beyond last pass's sidebar-shaped
+    skeleton fix, the *content* skeletons (`HomeSkeletonLoader.tsx`,
+    `ProfileSkeletonLoader.tsx`, `NetworkSkeletonLoader.tsx`, and everything
+    built from the shared `.mhn-shimmer-box`/`.mhn-skeleton-line`/
+    `.mhn-skeleton-avatar` classes) still rendered white cards with a
+    light-gray shimmer unconditionally. Two-part fix: (1) added the ~7
+    skeleton *card* container classes (`.mhn-post-figma-card`,
+    `.mhn-feed-skeleton-card`, `.mhn-profile-skeleton-card`,
+    `.mhn-widget-skeleton-card`, `.mhn-profile-skeleton-hero`,
+    `.mhn-network-skeleton-card`, `.mhn-skeleton-card`) to the *existing*
+    dark-theme card-background override list (the same one `.mhn-feed-post-
+    card` etc. already used) rather than inventing a new one; (2) switched
+    the 3 *shared* shimmer classes from a hardcoded light-gray gradient to
+    one built from `--color-secondary`/`--color-border`/`--color-muted`
+    tokens — since virtually every skeleton in the app is built by combining
+    one of these 3 shared classes with a size-only modifier class (verified
+    this pattern holds via `grep` across every skeleton component before
+    relying on it, rather than patching each one individually), this one
+    change fixes the shimmer color everywhere at once.
+  - Verified: `pnpm --filter @my-hockey-network/web typecheck`, `lint:check`,
+    `node scripts/check-component-reuse.mjs` (the repost-menu backdrop
+    needed converting from a raw `<button>` to the project's `Button`
+    component to pass this), `pnpm test:run` (208/208), and
+    `pnpm --filter @my-hockey-network/web build` all pass. Live-verified at
+    1920px width (symmetric margins, measured via `getBoundingClientRect`),
+    the Repost/Quote popover opening correctly and a full quote-repost
+    round-trip, and the dark-themed skeleton shimmer on page load.
 
 ## Current quality gates
 
@@ -824,9 +1234,10 @@ end-to-end.
   backend fix and this repo's own proxy header-forwarding bug (see Completed) are confirmed fixed via
   a real live browser login. `docs/DATA_FETCHING_AND_AUTH.md` still describes the old broken state and
   needs a follow-up pass to update once someone has time to rewrite it against the now-working flow.
-- Investigate `GET /supervision/me/permissions` returning `400` for a non-parent (`PLAYER`-role)
-  account instead of a clean not-applicable response — found live-testing the newly-unblocked
-  authenticated app; doesn't visibly break anything today, but worth a backend-side look.
+- ~~Investigate `GET /supervision/me/permissions` returning `400` for a non-parent (`PLAYER`-role)
+  account~~ — **resolved.** The frontend now only calls this endpoint for actual minors (see
+  Completed); the 400 itself was expected backend behavior for a non-supervised account being asked
+  for supervision controls, not a backend bug — the frontend just should never have been asking.
 - Fix the `/notifications` card rendering with a light background against the rest of the shell's
   dark theme — found in the same live-testing pass, a real visible dark-mode gap now that
   authenticated screens can actually be inspected. Good first target for the design-QA pass this

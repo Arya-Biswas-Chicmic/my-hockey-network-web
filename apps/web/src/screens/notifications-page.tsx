@@ -1,6 +1,6 @@
 import { Button } from '@/components/common/Button';
 import React, { useMemo, useState } from 'react';
-import { Header } from '@/components/common/Header';
+import { Sidebar } from '@/components/common/Sidebar';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { NoDataFound } from '@/components/common/no-data-found';
@@ -60,14 +60,14 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
   };
 
   return (
-    <div className="mhn-notifications-page-root">
-      {/* Top Header Navigation Bar */}
-      <Header
+    <div className="mhn-app-shell">
+      <Sidebar
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}
       />
 
+      <div className="mhn-app-content mhn-notifications-page-root">
       {/* Pending Guardian Notice Banner */}
       {!permissions.allowed && permissions.message && (
         <PendingBanner
@@ -142,6 +142,7 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
           </div>
         </div>
       </main>
+      </div>
     </div>
   );
 };

@@ -56,7 +56,7 @@ export function PostCardHeader({
         </div>
       </div>
 
-      <div className="mhn-post-header-actions mhn-relative-container">
+      <div className="mhn-post-header-actions">
         {!isSelf && (
           <Button
             onClick={onToggleFollow}

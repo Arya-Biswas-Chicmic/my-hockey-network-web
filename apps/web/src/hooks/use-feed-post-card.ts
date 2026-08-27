@@ -82,6 +82,12 @@ export function useFeedPostCard({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
   const [relationshipId, setRelationshipId] = useState<string | null>(null);
+  // Repost "Repost / Quote" choice popover (Figma: figma.com/design/
+  // cqlBXHZtqPkKcLRmR6a1B8, node 1766:8766) plus the quote-compose modal
+  // it opens into.
+  const [isRepostMenuOpen, setIsRepostMenuOpen] = useState(false);
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [quoteCommentaryInput, setQuoteCommentaryInput] = useState('');
 
   // Sync isFollowing state when prop changes from parent
   useEffect(() => {
@@ -272,6 +278,65 @@ export function useFeedPostCard({
     }
   };
 
+  // Clicking the repost button: already-reposted undoes directly (no
+  // choice needed), otherwise opens the Repost/Quote popover.
+  const handleRepostButtonClick = () => {
+    if (!requirePermission('SHARE_POSTS')) return;
+    if (hasReposted) {
+      void handleShare();
+      return;
+    }
+    setIsRepostMenuOpen((prev) => !prev);
+  };
+
+  const closeRepostMenu = () => setIsRepostMenuOpen(false);
+
+  const chooseRepost = () => {
+    setIsRepostMenuOpen(false);
+    void handleShare();
+  };
+
+  const chooseQuote = () => {
+    setIsRepostMenuOpen(false);
+    setQuoteCommentaryInput('');
+    setIsQuoteModalOpen(true);
+  };
+
+  const closeQuoteModal = () => setIsQuoteModalOpen(false);
+
+  const handleQuoteRepost = async () => {
+    if (!requirePermission('SHARE_POSTS')) return;
+    if (isSharing || !quoteCommentaryInput.trim()) return;
+    setIsSharing(true);
+
+    try {
+      const res = await repostPost(id, { commentary: quoteCommentaryInput.trim() });
+      const createdRepostId = res.post?.id || res.data?.post?.id || res.data?.id;
+
+      setReposts((prev) => prev + 1);
+      setHasReposted(true);
+      if (createdRepostId) {
+        setUserRepostId(createdRepostId);
+      }
+      setIsQuoteModalOpen(false);
+
+      const msg = 'Post quoted successfully!';
+      if (onShareSuccess) {
+        onShareSuccess(msg);
+      } else {
+        showSuccessToast(msg);
+      }
+      if (onRepostComplete) {
+        onRepostComplete();
+      }
+    } catch (err: unknown) {
+      console.error(`❌ [FeedPostCard] Quote Repost API Error:`, err);
+      showErrorToast(err, ERROR_MESSAGES.FAILED_REPOST);
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   const toggleFollow = async () => {
     if (isFollowingLoading) return;
     setIsFollowingLoading(true);
@@ -347,6 +412,16 @@ export function useFeedPostCard({
     hasReposted,
     isSharing,
     handleShare,
+    isRepostMenuOpen,
+    handleRepostButtonClick,
+    closeRepostMenu,
+    chooseRepost,
+    chooseQuote,
+    isQuoteModalOpen,
+    closeQuoteModal,
+    quoteCommentaryInput,
+    setQuoteCommentaryInput,
+    handleQuoteRepost,
     // follow
     isFollowing,
     isFollowingLoading,
