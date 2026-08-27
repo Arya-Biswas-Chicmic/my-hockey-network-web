@@ -4,6 +4,13 @@ Last reviewed: 2026-08-27
 
 ## Completed
 
+- Recovered a missing onboarding asset and finished an in-progress branch merge on
+  `feature/home-screen-redesign`: `apps/web/public/IceHockeyDark.png` was committed on
+  `changes/next-js-update` (`408379c`) but never carried onto this branch, so the
+  `/IceHockeyDark.png` reference in `OnboardingModal.tsx` was pointing at a 404 — restored the file
+  from that commit. Separately, a `git pull` had left `HomeTabs.tsx` as an unmerged path (already
+  hand-resolved on disk, no conflict markers, just not staged) — staged it to unblock the merge
+  commit.
 - Implemented the Figma auth/onboarding section (`2203:29491`) as a responsive Next.js flow for
   sign-in, account creation, OTP verification, role selection, and the parent/guardian player setup
   journey. The shared shell uses the exact 1440×960 reference geometry (40px frame inset, 676×880
