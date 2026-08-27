@@ -1,11 +1,10 @@
 import { Button } from '@/components/common/Button';
 import React, { useState, useEffect } from 'react';
 import { Spinner } from '@/components/common/Spinner';
-import { maskEmail, verificationCodeFormSchema, type VerificationCodeFormValues } from '@my-hockey-network/validation';
+import { verificationCodeFormSchema, type VerificationCodeFormValues } from '@my-hockey-network/validation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { OtpCodeInput } from '@/components/common/OtpCodeInput';
-import { ArrowLeft } from 'lucide-react';
 import { Form, FormField } from '@/components/ui/form';
 
 interface VerifyEmailFormProps {
@@ -73,25 +72,13 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
 
   return (
     <div className="onboarding-form verify-email-form-container">
-      {onChangeEmail && (
-        <Button
-          type="button"
-          onClick={onChangeEmail}
-          disabled={loading}
-          className="mhn-btn-back-link"
-        >
-          <ArrowLeft size={18} strokeWidth={2.5} />
-          <span>Back</span>
-        </Button>
-      )}
-
       <div className="header-wrapper verify-email-header-wrapper">
         <h1 className="onboarding-title verify-email-title">
           Check your email
         </h1>
         <p className="onboarding-subtitle verify-email-subtitle">
           We sent a verification code to <br />
-          <span className="verify-email-highlight">{maskEmail(email)}</span>
+          <span className="verify-email-highlight">{email}</span>
         </p>
       </div>
 
@@ -153,7 +140,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
         <span>Don’t Receive the code? </span>
         {resendCooldown > 0 ? (
           <span className={isLastTenSeconds ? 'mhn-timer-text-urgent' : 'mhn-timer-text'}>
-            Resend OTP in {formattedTimer}
+            Resend Code in {formattedTimer}
           </span>
         ) : (
           <Button
@@ -162,7 +149,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
             disabled={loading}
             className="auth-primary-link btn-resend-code mhn-btn-resend-link"
           >
-            Resend OTP
+            Resend Code
           </Button>
         )}
       </div>

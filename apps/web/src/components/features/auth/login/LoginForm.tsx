@@ -33,8 +33,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   return (
     <div className="onboarding-form">
       <div className="header-wrapper">
-        <h1 className="onboarding-title">Sign In</h1>
-        <p className="onboarding-subtitle">Enter your email to receive a 6-digit code to log in to your account.</p>
+        <h1 className="onboarding-title">Welcome Back</h1>
+        <p className="onboarding-subtitle">Please login your account</p>
       </div>
 
       <Form methods={form} onSubmit={handleSubmit} className="auth-form-stack" noValidate>
@@ -43,7 +43,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           label="Email Address"
           id="loginEmail"
           type="email"
-          placeholder="enter email address"
+          placeholder="admin@gmail.com"
+          required
           isEmailInput
         />
         {errorMessage && !form.formState.errors.email ? (
@@ -61,7 +62,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               <span>Sending Code...</span>
             </span>
           ) : (
-            'Sign In'
+            'Sign in'
           )}
         </Button>
       </Form>
@@ -76,13 +77,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       </Button>
 
       <div className="auth-footer-text mhn-auth-footer-margin">
-        <span>Don&apos;t have an account? </span>
+        <span>Didn&apos;t have an account? </span>
         <Button
           type="button"
           className="auth-primary-link"
           onClick={onSignUpClick}
         >
-          Sign Up
+          Signup
         </Button>
       </div>
     </div>

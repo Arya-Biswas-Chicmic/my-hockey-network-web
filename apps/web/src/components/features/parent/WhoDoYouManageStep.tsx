@@ -9,13 +9,13 @@ interface WhoDoYouManageStepProps {
 
 export const WhoDoYouManageStep: React.FC<WhoDoYouManageStepProps> = ({ onAddPlayer, onSkip }) => {
   return (
-    <div className="mhn-parent-step-container">
+    <div className="mhn-parent-step-container mhn-parent-step-who">
       <h2 className="mhn-parent-step-title">Who do you manage?</h2>
       <p className="mhn-parent-step-desc">
         Add the players you&apos;re responsible for. You can add more later.
       </p>
 
-      <div className="mhn-flex-justify-center mhn-mb-16">
+      <div className="mhn-parent-manage-icon">
         <Image src="/manage.png" alt="Manage" width={96} height={96} className="manage" />
       </div>
 
@@ -36,9 +36,8 @@ export const WhoDoYouManageStep: React.FC<WhoDoYouManageStepProps> = ({ onAddPla
       <Button type="button" className="mhn-parent-btn-primary" onClick={onAddPlayer}>
         Add a Player
       </Button>
-      <div className="mhn-h-12" />
       <Button type="button" className="mhn-parent-btn-secondary" onClick={onSkip}>
-        Skip for now
+        Skip for Now
       </Button>
     </div>
   );

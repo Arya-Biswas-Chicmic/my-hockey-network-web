@@ -12,13 +12,13 @@ describe('React Hook Form authentication forms', () => {
     const onSignIn = vi.fn();
     render(<LoginForm onSignIn={onSignIn} />);
 
-    fireEvent.change(screen.getByLabelText('Email Address'), { target: { value: 'invalid' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Sign In' }));
+    fireEvent.change(screen.getByLabelText(/Email Address/), { target: { value: 'invalid' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
     expect(await screen.findByText('Enter a valid email address.')).toBeTruthy();
     expect(onSignIn).not.toHaveBeenCalled();
 
-    fireEvent.change(screen.getByLabelText('Email Address'), { target: { value: 'player@example.com' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Sign In' }));
+    fireEvent.change(screen.getByLabelText(/Email Address/), { target: { value: 'player@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
     await waitFor(() => expect(onSignIn).toHaveBeenCalledWith('player@example.com'));
   });
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { FallbackImage } from '@/components/ui/fallback-image';
+import { Button } from '@/components/common/Button';
 import { FollowSuggestionUser } from '@/types/home.types';
 
 export interface FollowSuggestionItemProps {
@@ -33,7 +34,7 @@ export const FollowSuggestionItem: React.FC<FollowSuggestionItemProps> = ({
         </div>
       </div>
 
-      <button
+      <Button
         disabled={isFollowing || isLoading}
         onClick={() => onFollow(user)}
         className={`shrink-0 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
@@ -43,7 +44,7 @@ export const FollowSuggestionItem: React.FC<FollowSuggestionItemProps> = ({
         }`}
       >
         {isFollowing ? 'Following' : 'Follow'}
-      </button>
+      </Button>
     </div>
   );
 };

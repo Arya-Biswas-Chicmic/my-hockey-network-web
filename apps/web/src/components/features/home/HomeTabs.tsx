@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@/components/common/Button';
 import { HomeFeedTab } from '@/types/home.types';
 import { HOME_FEED_TABS } from '@/constants/home.constants';
 
