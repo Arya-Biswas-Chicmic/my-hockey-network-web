@@ -1,5 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
+import { Button } from '@/components/common/Button';
 import type { RoleOptionCardProps } from '@/types/onboarding';
 
 export const RoleOptionCard: React.FC<RoleOptionCardProps> = ({
@@ -8,17 +9,11 @@ export const RoleOptionCard: React.FC<RoleOptionCardProps> = ({
   onSelect,
 }) => {
   return (
-    <div
-      role="checkbox"
+    <Button
+      type="button"
+      role="radio"
       aria-checked={isSelected}
-      tabIndex={0}
       onClick={() => onSelect(role.id)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onSelect(role.id);
-        }
-      }}
       className={`role-card ${isSelected ? 'role-card-selected' : ''}`}
     >
       <div className="role-content-left">
@@ -40,16 +35,9 @@ export const RoleOptionCard: React.FC<RoleOptionCardProps> = ({
         </div>
       </div>
 
-      {/* Custom Checkbox Image */}
-      <div className="checkbox-img-box">
-        <Image
-          src={isSelected ? '/checked.png' : '/unchecked.png'}
-          alt={isSelected ? 'Checked' : 'Unchecked'}
-          width={18}
-          height={18}
-          className="checkbox-img"
-        />
+      <div className="role-radio" aria-hidden="true">
+        {isSelected ? <span className="role-radio-dot" /> : null}
       </div>
-    </div>
+    </Button>
   );
 };

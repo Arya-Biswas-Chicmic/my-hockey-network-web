@@ -11,6 +11,22 @@ Last reviewed: 2026-08-27
   `parentOnboardingPlayerDetailsFormSchema` (including its 5–100 year DOB age check, which
   Supervision's form did not previously enforce) and submit through the same `createManagedChild`
   API call.
+- Recovered a missing onboarding asset and finished an in-progress branch merge on
+  `feature/home-screen-redesign`: `apps/web/public/IceHockeyDark.png` was committed on
+  `changes/next-js-update` (`408379c`) but never carried onto this branch, so the
+  `/IceHockeyDark.png` reference in `OnboardingModal.tsx` was pointing at a 404 — restored the file
+  from that commit. Separately, a `git pull` had left `HomeTabs.tsx` as an unmerged path (already
+  hand-resolved on disk, no conflict markers, just not staged) — staged it to unblock the merge
+  commit.
+- Implemented the Figma auth/onboarding section (`2203:29491`) as a responsive Next.js flow for
+  sign-in, account creation, OTP verification, role selection, and the parent/guardian player setup
+  journey. The shared shell uses the exact 1440×960 reference geometry (40px frame inset, 676×880
+  illustration, 450px form column), semantic light/dark theme tokens, and responsive single-column
+  behavior without horizontal overflow at 375×812 or centered overflow at 1512×982. Parent and
+  Supervision linking now reuse the same `LinkExistingPlayerStep`; role, choice, visibility, and
+  toggle interactions use the existing accessible `Button` primitive. Added focused integration
+  coverage for role selection, add-player branching, immutable protection settings, and the created
+  player profile action.
 - Aligned Home Screen implementation & component architecture with the primary 3-column layout (Sidebar, Center Feed with For You/Network/Groups tabs, Right Sidebar with Search, Who to Follow, Upcoming Events, Invite & Grow), modular component hierarchy, and dynamic TanStack Query API data flow.
 - Added authorization, x-acting-for, and x-client-type headers to Next.js server proxy allowlist so authenticated requests send Bearer tokens to backend.
 
@@ -1252,7 +1268,7 @@ Latest measured enforced-code coverage: 94.15% statements, 88.79% branches, 98.1
 94.48% lines (enforced boundary: `packages/api-client`, `auth`, `domain`, `validation` index files;
 `packages/core/src/api/signUpRules.ts`; `apps/web/src/platform/auth-storage.ts`,
 `query/query-client.ts`, `utils/guardianUtils.ts`, `utils/mediaUtils.ts`, `utils/toast.ts`,
-`utils/dateUtils.ts`). The Vitest suite contains 208 tests across 32 test files, plus 6 Playwright smoke tests
+`utils/dateUtils.ts`). The Vitest suite contains 212 tests across 33 test files, plus 6 Playwright smoke tests
 (`apps/web/e2e/public.spec.ts`, run separately via `pnpm test:e2e`, not counted in the Vitest total).
 Web form validation, secure storage behavior, query/mutation hook behavior, route-guard
 fail-closed/redirect behavior, dialog/OTP-input keyboard and focus behavior, and route/form

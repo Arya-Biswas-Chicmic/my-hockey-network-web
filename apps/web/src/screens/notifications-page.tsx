@@ -4,6 +4,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { NotificationCard } from '@/components/features/notifications/NotificationCard';
+import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
 import { showSuccessToast, showInfoToast } from '@/utils/toast';
 
@@ -153,7 +154,7 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
 
         {/* Navigation Tabs Bar (All, Unread, Requests) */}
         <div className="flex items-center gap-8 border-b border-[#182740] pb-2">
-          <button
+          <Button
             onClick={() => setActiveTab('all')}
             className={`text-sm font-semibold relative pb-2 transition-colors ${
               activeTab === 'all'
@@ -162,8 +163,8 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
             }`}
           >
             All ({notifications.length})
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setActiveTab('unread')}
             className={`text-sm font-semibold relative pb-2 transition-colors ${
               activeTab === 'unread'
@@ -172,8 +173,8 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
             }`}
           >
             Unread ({unreadCount})
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setActiveTab('requests')}
             className={`text-sm font-semibold relative pb-2 transition-colors ${
               activeTab === 'requests'
@@ -182,7 +183,7 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
             }`}
           >
             Requests ({requestsCount})
-          </button>
+          </Button>
         </div>
 
         {/* Notification Items List */}

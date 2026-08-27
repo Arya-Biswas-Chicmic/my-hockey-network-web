@@ -28,7 +28,7 @@ export const CreatePlayerProtectStep: React.FC<CreatePlayerProtectStepProps> = (
   loading,
 }) => {
   return (
-    <div className="mhn-parent-step-container mhn-parent-step-container-max440">
+    <div className="mhn-parent-step-container mhn-parent-step-container-max440 mhn-parent-step-protect">
       <h2 className="mhn-parent-step-title">Protect {playerNameFirst}&apos;s profile</h2>
       <p className="mhn-parent-step-desc">You can change these settings anytime.</p>
 
@@ -38,7 +38,10 @@ export const CreatePlayerProtectStep: React.FC<CreatePlayerProtectStepProps> = (
           PROFILE VISIBILITY
         </div>
         <div className="mhn-col-flex-gap-8">
-          <div
+          <Button
+            type="button"
+            role="radio"
+            aria-checked={formData.profileVisibility === 'CONNECTIONS'}
             className={`mhn-parent-visibility-card ${formData.profileVisibility === 'CONNECTIONS' ? 'mhn-selected' : ''}`}
             onClick={() => onChange({ profileVisibility: 'CONNECTIONS' })}
           >
@@ -49,9 +52,12 @@ export const CreatePlayerProtectStep: React.FC<CreatePlayerProtectStepProps> = (
                 Only approved hockey relationships can see {playerNameFirst}&apos;s profile.
               </div>
             </div>
-          </div>
+          </Button>
 
-          <div
+          <Button
+            type="button"
+            role="radio"
+            aria-checked={formData.profileVisibility === 'PUBLIC'}
             className={`mhn-parent-visibility-card ${formData.profileVisibility === 'PUBLIC' ? 'mhn-selected' : ''}`}
             onClick={() => onChange({ profileVisibility: 'PUBLIC' })}
           >
@@ -62,7 +68,7 @@ export const CreatePlayerProtectStep: React.FC<CreatePlayerProtectStepProps> = (
                 Approved team and association members may see limited information.
               </div>
             </div>
-          </div>
+          </Button>
         </div>
       </div>
 
@@ -85,12 +91,16 @@ export const CreatePlayerProtectStep: React.FC<CreatePlayerProtectStepProps> = (
                   <div className="mhn-toggle-label">{item.label}</div>
                   <div className="mhn-toggle-sub">{item.sub}</div>
                 </div>
-                <div
+                <Button
+                  type="button"
+                  role="switch"
+                  aria-checked={isChecked}
+                  aria-label={item.label}
                   className={`mhn-parent-toggle-track ${isChecked ? 'mhn-active' : ''}`}
                   onClick={() => onChange({ [item.key]: !isChecked })}
                 >
                   <div className={`mhn-parent-toggle-thumb ${isChecked ? 'mhn-active' : ''}`} />
-                </div>
+                </Button>
               </div>
             );
           })}

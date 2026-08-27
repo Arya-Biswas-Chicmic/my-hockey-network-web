@@ -21,4 +21,4 @@ export const DEFAULT_ROLE_OPTIONS: RoleOption[] = [
   },
 ];
 
-export const DEFAULT_SELECTED_ROLE_IDS: string[] = ['player'];
+export const DEFAULT_SELECTED_ROLE_IDS: string[] = ['parent'];

@@ -8,6 +8,7 @@ export interface PostCardContentProps {
   onToggleExpand: () => void;
   postImage?: string;
   images?: string[];
+  eventDateTag?: string;
 }
 
 export function PostCardContent({
@@ -16,20 +17,24 @@ export function PostCardContent({
   onToggleExpand,
   postImage,
   images,
+  eventDateTag,
 }: Readonly<PostCardContentProps>) {
   return (
     <div className="mhn-post-content space-y-3">
-      <p className={`mhn-post-text ${!isExpanded ? 'mhn-post-text-truncated' : ''}`}>
-        {content}
-      </p>
+      {content && (
+        <p className={`mhn-post-text ${!isExpanded ? 'mhn-post-text-truncated' : ''}`}>
+          {content}
+        </p>
+      )}
 
-      {content.length > 120 && (
+      {content && content.length > 120 && (
         <Button onClick={onToggleExpand} className="mhn-post-more-btn text-xs text-blue-400 font-medium">
           {isExpanded ? 'Show less' : '...more'}
         </Button>
       )}
 
-      <PostMedia postImage={postImage} images={images} altText="Post attachment" />
+      <PostMedia postImage={postImage} images={images} altText="Post attachment" eventDateTag={eventDateTag} />
     </div>
   );
 }
+

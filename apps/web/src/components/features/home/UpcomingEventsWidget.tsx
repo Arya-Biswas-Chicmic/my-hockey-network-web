@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@/components/common/Button';
 import { UpcomingEvent } from '@/types/home.types';
 import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
 import { UpcomingEventCard } from '@/components/features/home/UpcomingEventCard';
@@ -21,12 +22,12 @@ export const UpcomingEventsWidget: React.FC<UpcomingEventsWidgetProps> = ({
       <div className="mhn-sidebar-card-header flex items-center justify-between mb-3">
         <h3 className="mhn-sidebar-card-title text-sm font-bold text-slate-100">Upcoming Events</h3>
         {onViewAll && (
-          <button
+          <Button
             onClick={onViewAll}
             className="mhn-sidebar-view-all text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
           >
             View All
-          </button>
+          </Button>
         )}
       </div>
 

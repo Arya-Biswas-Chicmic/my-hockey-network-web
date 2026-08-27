@@ -53,10 +53,10 @@ export const ONBOARDING_STRINGS = {
 } as const;
 
 export const CREATE_ACCOUNT_STRINGS = {
-  title: 'Create Account',
-  subtitle: "Let's Create your account",
+  title: 'Create account',
+  subtitle: 'Let’s Create your account',
   fullNameLabel: 'Full Name',
-  fullNamePlaceholder: 'enter your name',
+  fullNamePlaceholder: 'Enter your name',
   emailLabel: 'Email',
   emailPlaceholder: 'admin@gmail.com',
   dobLabel: 'DOB',
@@ -65,7 +65,7 @@ export const CREATE_ACCOUNT_STRINGS = {
   googleButton: 'Continue with Google',
   backButton: 'Back',
   alreadyHaveAccount: 'Already have an account? ',
-  signInLink: 'Sign-in',
+  signInLink: 'SignIn',
 } as const;
 
 export const GUARDIAN_APPROVAL_STRINGS = {

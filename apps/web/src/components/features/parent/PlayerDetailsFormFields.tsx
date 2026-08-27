@@ -20,6 +20,7 @@ export interface PlayerDetailsFormFieldsProps {
   onBack: () => void;
   isSubmitting?: boolean;
   submitLabel?: string;
+  containerClassName?: string;
 }
 
 const EMPTY_VALUES: PlayerDetailsFormValues = {
@@ -42,6 +43,7 @@ export function PlayerDetailsFormFields({
   onBack,
   isSubmitting = false,
   submitLabel = 'Continue',
+  containerClassName = 'mhn-parent-step-container',
 }: Readonly<PlayerDetailsFormFieldsProps>) {
   const form = useForm<PlayerDetailsFormValues>({
     resolver: zodResolver(parentOnboardingPlayerDetailsFormSchema),
@@ -52,7 +54,7 @@ export function PlayerDetailsFormFields({
   const handleSubmit = form.handleSubmit((values) => onSubmit(values));
 
   return (
-    <div className="mhn-parent-step-container">
+    <div className={containerClassName}>
       <h2 className="mhn-parent-step-title">Player Details</h2>
       <p className="mhn-parent-step-desc">Tell us a little about your player.</p>
 
@@ -62,7 +64,7 @@ export function PlayerDetailsFormFields({
           label="Full Name"
           required
           maxLength={50}
-          placeholder="e.g. Connor McDavid"
+          placeholder="Enter your name"
           isNameInput
         />
 
@@ -85,7 +87,7 @@ export function PlayerDetailsFormFields({
           label="Email"
           required
           type="email"
-          placeholder="e.g. admin@gmail.com"
+          placeholder="admin@gmail.com"
           isEmailInput
         />
 

@@ -16,7 +16,7 @@ export const OnboardingIllustration: React.FC<OnboardingIllustrationProps> = ({
         src={imageSrc}
         alt={altText}
         fill
-        sizes="(min-width: 768px) 490px, 100vw"
+        sizes="(min-width: 1440px) 676px, (min-width: 1024px) 48vw, 100vw"
         className="illustration-img"
         priority
       />

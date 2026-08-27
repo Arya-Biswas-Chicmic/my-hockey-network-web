@@ -1,7 +1,7 @@
 import React from 'react';
 import { Search, X } from 'lucide-react';
-import { Input } from '@/components/common/FormControls';
 import { Button } from '@/components/common/Button';
+import { Input } from '@/components/common/FormControls';
 
 export interface SearchWidgetProps {
   value: string;
@@ -22,10 +22,10 @@ export const SearchWidget: React.FC<SearchWidgetProps> = ({
       <Input
         type="text"
         value={value}
+        disableAutoSanitize
         onValueChange={(nextValue) => onChange(nextValue)}
         placeholder={placeholder}
         aria-label="Search"
-        disableAutoSanitize
         className="w-full rounded-xl border border-slate-800/80 bg-slate-900/60 py-2.5 pl-10 pr-9 text-xs text-slate-100 placeholder-slate-400 outline-none transition-colors focus:border-slate-700 focus:bg-slate-900"
       />
       {value && (

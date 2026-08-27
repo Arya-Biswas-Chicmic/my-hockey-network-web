@@ -14,6 +14,14 @@ import { EventCard } from '@/components/features/events/EventCard';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
 
+import { CategoryTabs, TabItem } from '@/components/features/home/HomeTabs';
+
+const EVENTS_TOP_TABS: TabItem<'personal' | 'network' | 'explore'>[] = [
+  { key: 'personal', label: 'Personal' },
+  { key: 'network', label: 'Network' },
+  { key: 'explore', label: 'Explore' },
+];
+
 interface PageProps {
   onNavigate?: (screen: string) => void;
   onLogout?: () => void;
@@ -101,10 +109,10 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   };
 
   const filterPills = [
-    { id: 'yours', label: 'Yours', count: 5 },
+    { id: 'yours', label: 'Yours', count: 2 },
     { id: 'interested', label: 'Interested', count: 2 },
     { id: 'registered', label: 'Registered', count: 2 },
-    { id: 'saved', label: 'Saved', count: 0 },
+    { id: 'saved', label: 'Saved', count: 34 },
   ];
 
   const filteredEvents = events.filter((ev) => {
@@ -166,7 +174,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
             {/* View Mode Switcher */}
             <div className="h-10 bg-[#0D1627] border border-[#182740] rounded-xl p-1 flex items-center gap-1">
-              <button
+              <Button
                 onClick={() => setViewMode('list')}
                 className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                   viewMode === 'list' ? 'bg-[#15243B] text-[#168BFF]' : 'text-slate-400 hover:text-slate-200'
@@ -174,8 +182,8 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 title="List View"
               >
                 <List size={16} />
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setViewMode('grid')}
                 className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                   viewMode === 'grid' ? 'bg-[#15243B] text-[#168BFF]' : 'text-slate-400 hover:text-slate-200'
@@ -183,7 +191,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 title="Grid View"
               >
                 <Grid size={16} />
-              </button>
+              </Button>
             </div>
 
             {/* + Create Event Button */}
@@ -195,62 +203,36 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         </div>
 
         {/* Top-Level Tabs Bar (Personal, Network, Explore) */}
-        <div className="flex items-center gap-8 border-b border-[#182740] pb-2">
-          <button
-            onClick={() => setActiveTopTab('personal')}
-            className={`text-sm font-semibold relative pb-2 transition-colors ${
-              activeTopTab === 'personal'
-                ? 'text-white after:content-[""] after:absolute after:bottom-[-9px] after:left-0 after:right-0 after:h-[2px] after:bg-[#168BFF]'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Personal
-          </button>
-          <button
-            onClick={() => setActiveTopTab('network')}
-            className={`text-sm font-semibold relative pb-2 transition-colors ${
-              activeTopTab === 'network'
-                ? 'text-white after:content-[""] after:absolute after:bottom-[-9px] after:left-0 after:right-0 after:h-[2px] after:bg-[#168BFF]'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Network
-          </button>
-          <button
-            onClick={() => setActiveTopTab('explore')}
-            className={`text-sm font-semibold relative pb-2 transition-colors ${
-              activeTopTab === 'explore'
-                ? 'text-white after:content-[""] after:absolute after:bottom-[-9px] after:left-0 after:right-0 after:h-[2px] after:bg-[#168BFF]'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Explore
-          </button>
-        </div>
+        <CategoryTabs
+          tabs={EVENTS_TOP_TABS}
+          activeTab={activeTopTab}
+          onChange={setActiveTopTab}
+          className="w-full"
+        />
 
         {/* Sub-Category Filter Pills Bar */}
         <div className="flex items-center gap-3 flex-wrap">
           {filterPills.map((pill) => (
-            <button
+            <Button
               key={pill.id}
               onClick={() => setActiveFilterPill(pill.id)}
-              className={`h-8 px-3.5 rounded-full text-xs font-semibold flex items-center gap-2 transition-all ${
+              className={`h-9 px-4 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all ${
                 activeFilterPill === pill.id
-                  ? 'bg-[#152744] text-white border border-[#168BFF] shadow-sm'
-                  : 'bg-[#0D1627] text-slate-400 border border-[#182740] hover:text-slate-200 hover:bg-[#121E34]'
+                  ? 'bg-[#0A1A30] text-[#168BFF] border border-[#168BFF] shadow-sm'
+                  : 'bg-[#09111E] text-slate-400 border border-[#162238] hover:text-slate-200 hover:bg-[#121E34]'
               }`}
             >
               <span>{pill.label}</span>
               <span
-                className={`px-1.5 py-0.5 text-[10px] rounded-full font-bold ${
+                className={`px-2 py-0.5 text-[11px] rounded-md font-bold ${
                   activeFilterPill === pill.id
-                    ? 'bg-[#168BFF] text-white'
-                    : 'bg-[#16253B] text-slate-400'
+                    ? 'bg-[#168BFF]/20 text-[#168BFF]'
+                    : 'bg-[#152238] text-slate-400'
                 }`}
               >
                 {pill.count}
               </span>
-            </button>
+            </Button>
           ))}
         </div>
 

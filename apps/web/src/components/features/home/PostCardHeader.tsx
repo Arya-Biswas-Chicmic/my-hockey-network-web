@@ -1,7 +1,7 @@
 import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/common/Spinner';
 import { FallbackImage } from '@/components/ui/fallback-image';
-import { LockKeyhole, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { LockKeyhole, MoreHorizontal, Pencil, Trash2, EyeOff, Flag } from 'lucide-react';
 
 export interface PostCardHeaderProps {
   authorName: string;
@@ -15,8 +15,10 @@ export interface PostCardHeaderProps {
   onToggleFollow: () => void;
   isMenuOpen: boolean;
   onToggleMenu: () => void;
-  onEditClick: () => void;
-  onDeleteClick: () => void;
+  onEditClick?: () => void;
+  onDeleteClick?: () => void;
+  onNotInterestedClick?: () => void;
+  onReportClick?: () => void;
 }
 
 export function PostCardHeader({
@@ -33,6 +35,8 @@ export function PostCardHeader({
   onToggleMenu,
   onEditClick,
   onDeleteClick,
+  onNotInterestedClick,
+  onReportClick,
 }: Readonly<PostCardHeaderProps>) {
   return (
     <div className="mhn-post-header flex items-center justify-between p-4">
@@ -55,10 +59,10 @@ export function PostCardHeader({
 
       <div className="mhn-post-header-actions flex items-center gap-2">
         {!isSelf && (
-          <button
+          <Button
             onClick={onToggleFollow}
             disabled={isFollowingLoading}
-            className={`mhn-btn-follow rounded-xl px-4 py-1.5 text-xs font-semibold transition-all ${
+            className={`mhn-btn-follow rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${
               isFollowing
                 ? 'bg-[#0D1A30] text-white border border-[#152238] shadow-sm'
                 : 'bg-[#07101E] text-[#168BFF] border border-[#168BFF] hover:bg-[#168BFF]/10'
@@ -77,7 +81,7 @@ export function PostCardHeader({
             ) : (
               'Follow'
             )}
-          </button>
+          </Button>
         )}
 
         <div className="relative">
@@ -89,20 +93,64 @@ export function PostCardHeader({
             <MoreHorizontal size={20} aria-hidden={true} />
           </Button>
 
-          {isSelf && isMenuOpen && (
-            <div className="mhn-post-menu-popover absolute right-0 top-8 z-30 w-36 rounded-xl border border-slate-800 bg-slate-900 p-1 shadow-xl">
-              <Button onClick={onEditClick} className="mhn-post-menu-item flex w-full items-center gap-2 rounded-lg p-2 text-xs text-slate-200 hover:bg-slate-800">
-                <Pencil size={14} aria-hidden={true} />
-                <span>Edit Post</span>
-              </Button>
-              <Button onClick={onDeleteClick} className="mhn-post-menu-item-danger flex w-full items-center gap-2 rounded-lg p-2 text-xs text-rose-400 hover:bg-rose-500/10">
-                <Trash2 size={14} aria-hidden={true} />
-                <span>Delete Post</span>
-              </Button>
-            </div>
+          {isMenuOpen && (
+            <>
+              <div className="fixed inset-0 z-20" onClick={onToggleMenu} />
+
+              <div className="mhn-post-menu-popover absolute right-0 top-8 z-30 w-44 rounded-xl border border-[#182740] bg-[#0A1220] p-1.5 shadow-2xl flex flex-col gap-0.5">
+                {isSelf ? (
+                  <>
+                    <Button
+                      onClick={() => {
+                        onToggleMenu();
+                        onEditClick?.();
+                      }}
+                      className="mhn-post-menu-item flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-slate-200 hover:bg-[#15243B] transition-colors"
+                    >
+                      <Pencil size={14} className="text-slate-400" aria-hidden={true} />
+                      <span>Edit Post</span>
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        onToggleMenu();
+                        onDeleteClick?.();
+                      }}
+                      className="mhn-post-menu-item-danger flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-rose-400 hover:bg-rose-500/10 transition-colors"
+                    >
+                      <Trash2 size={14} aria-hidden={true} />
+                      <span>Delete Post</span>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      onClick={() => {
+                        onToggleMenu();
+                        onNotInterestedClick?.();
+                      }}
+                      className="mhn-post-menu-item flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-slate-200 hover:bg-[#15243B] transition-colors"
+                    >
+                      <EyeOff size={14} className="text-slate-400" aria-hidden={true} />
+                      <span>Not interested</span>
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        onToggleMenu();
+                        onReportClick?.();
+                      }}
+                      className="mhn-post-menu-item-danger flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-rose-400 hover:bg-rose-500/10 transition-colors"
+                    >
+                      <Flag size={14} aria-hidden={true} />
+                      <span>Report</span>
+                    </Button>
+                  </>
+                )}
+              </div>
+            </>
           )}
         </div>
       </div>
     </div>
   );
 }
+

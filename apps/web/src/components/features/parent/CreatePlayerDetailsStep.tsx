@@ -34,6 +34,7 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
       defaultValues={formData}
       onSubmit={handleSubmit}
       onBack={onBack}
+      containerClassName="mhn-parent-step-container mhn-parent-step-details"
     />
   );
 };

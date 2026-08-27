@@ -2,7 +2,7 @@ import { HomeFeedTab, HomeFeedTabOption } from '@/types/home.types';
 
 export { HomeFeedTab };
 
-export const HOME_FEED_TABS: readonly HomeFeedTabOption[] = [
+export const HOME_FEED_TABS: HomeFeedTabOption[] = [
   { key: HomeFeedTab.FOR_YOU, label: 'For You' },
   { key: HomeFeedTab.NETWORK, label: 'Network' },
   { key: HomeFeedTab.GROUPS, label: 'Groups' },

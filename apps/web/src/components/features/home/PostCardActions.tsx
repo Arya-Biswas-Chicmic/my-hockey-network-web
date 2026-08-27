@@ -68,7 +68,7 @@ export function PostCardActions({
     <div className="mhn-post-footer px-4 py-3 border-t border-slate-800/60">
       <div className="mhn-post-actions-group flex items-center justify-between">
         <div className="mhn-post-actions-group-left flex items-center gap-5">
-          <button
+          <Button
             onClick={onLike}
             disabled={isLiking}
             className="mhn-action-item flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
@@ -83,9 +83,9 @@ export function PostCardActions({
               </span>
             )}
             <span className="mhn-action-count font-medium">{likes}</span>
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={onToggleComments}
             className={`mhn-action-item flex items-center gap-1.5 text-xs transition-colors ${
               showComments ? 'text-blue-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
@@ -99,11 +99,11 @@ export function PostCardActions({
               <FeedCommentIcon size={16} className="comment-count-icon text-slate-400" aria-hidden="true" />
             )}
             <span className="mhn-action-count font-medium">{currentCommentsCount}</span>
-          </button>
+          </Button>
 
           {!isSelf && (
             <div className="mhn-repost-menu-wrapper relative">
-              <button
+              <Button
                 onClick={onRepostButtonClick}
                 disabled={isSharing}
                 className={`mhn-action-item flex items-center gap-1.5 text-xs transition-colors ${
@@ -126,7 +126,7 @@ export function PostCardActions({
                   />
                 )}
                 <span className="mhn-action-count font-medium">{reposts}</span>
-              </button>
+              </Button>
 
               {isRepostMenuOpen && (
                 <>
@@ -151,16 +151,16 @@ export function PostCardActions({
         </div>
 
         <div className="mhn-post-actions-group-right flex items-center gap-4 text-slate-400">
-          <button
+          <Button
             onClick={() => showInfoToast('Sharing posts externally is not available yet.')}
             className="mhn-action-item hover:text-slate-200 transition-colors p-1"
             aria-label="Send post"
             title="Send"
           >
             <FeedShareIcon size={18} aria-hidden="true" />
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={() => {
               setIsSaved((prev) => !prev);
               showInfoToast(isSaved ? 'Removed from Saved.' : 'Saved — the Saved page is coming soon.');
@@ -174,7 +174,7 @@ export function PostCardActions({
             ) : (
               <FeedSaveIcon size={18} aria-hidden="true" />
             )}
-          </button>
+          </Button>
         </div>
       </div>
 

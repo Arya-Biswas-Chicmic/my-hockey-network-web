@@ -17,6 +17,7 @@ export interface FormInputProps<
   inputClassName?: string;
   errorClassName?: string;
   maxLength?: number;
+  showCharacterCount?: boolean;
   /**
    * Suppress the shared FormMessage render for this field. Use only when the
    * consuming form renders its own single error affordance (e.g. a styled
@@ -37,6 +38,7 @@ export function FormInput<
   errorClassName = 'mhn-input-error-msg',
   className,
   maxLength,
+  showCharacterCount = true,
   hideMessage = false,
   ...inputProps
 }: Readonly<FormInputProps<TFieldValues, TName>>) {
@@ -48,9 +50,9 @@ export function FormInput<
           {label ? (
             <div className="mhn-dob-header-row">
               <FormLabel className="auth-label">
-                {label}{required ? <span className="auth-required-star"> *</span> : null}
+                {label}{required ? <span className="auth-required-star" aria-hidden="true"> *</span> : null}
               </FormLabel>
-              {maxLength !== undefined ? (
+              {maxLength !== undefined && showCharacterCount ? (
                 <span className="auth-char-counter">{String(field.value ?? '').length}/{maxLength}</span>
               ) : null}
             </div>

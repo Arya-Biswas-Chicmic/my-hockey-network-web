@@ -30,6 +30,14 @@
   --color-border: #e2e8f0;
   --color-input: #e2e8f0;
   --color-ring: #1860c3;
+  --color-auth-surface: #ffffff;
+  --color-auth-field: #ffffff;
+  --color-auth-stroke: #d9d9d9;
+  --color-auth-subtext: #64748b;
+  --color-auth-placeholder: #8c8c8c;
+  --color-auth-action: #0b66c2;
+  --color-auth-action-bright: #439cf7;
+  --color-auth-selected: #f0f7ff;
   --radius: 0.75rem;
 }
 
@@ -14143,6 +14151,14 @@ img.secure {
   --color-border: #18304e;
   --color-input: #18304e;
   --color-ring: #168bff;
+  --color-auth-surface: #010a1b;
+  --color-auth-field: #0a0e1c;
+  --color-auth-stroke: #1b2330;
+  --color-auth-subtext: #f0f0f0;
+  --color-auth-placeholder: #6f6f6f;
+  --color-auth-action: #0b66c2;
+  --color-auth-action-bright: #439cf7;
+  --color-auth-selected: #0a172d;
 }
 
 :root[data-theme='dark'] body,
@@ -14714,8 +14730,14 @@ img.secure {
 }
 
 .mhn-sidebar-nav-item-active {
-  color: var(--color-foreground);
+  color: #439CF7 !important;
   font-weight: 700;
+}
+
+.mhn-sidebar-nav-item-active svg,
+.mhn-sidebar-nav-item-active span {
+  color: #439CF7 !important;
+  fill: currentColor;
 }
 
 .mhn-sidebar-create-post {
@@ -14877,3 +14899,641 @@ img.secure {
    components on the semantic tokens instead of literal hex values (see the
    file header comment on the dark-mode block further up for the class of
    bug this avoids). */
+
+/* Figma onboarding flow — source section 2203:29491. */
+.onboarding-screen {
+  min-height: 100dvh;
+  padding: 0;
+  overflow-x: hidden;
+  background: var(--color-auth-surface);
+}
+
+.onboarding-modal {
+  width: 100%;
+  max-width: 1440px;
+  min-height: min(960px, 100dvh);
+  padding: clamp(16px, 2.78vw, 40px);
+  gap: clamp(28px, 5vw, 72px);
+  border-radius: 0;
+  background: var(--color-auth-surface);
+  color: var(--color-foreground);
+  box-sizing: border-box;
+}
+
+.illustration-panel {
+  height: clamp(220px, 42vw, 360px);
+  min-height: 0;
+  border-radius: 22px;
+}
+
+.illustration-img {
+  border-radius: 22px;
+}
+
+.onboarding-form {
+  width: min(100%, 450px);
+  max-width: 450px;
+  min-width: 0;
+}
+
+.header-wrapper {
+  margin-bottom: 32px;
+}
+
+.onboarding-title,
+.verify-email-title {
+  color: var(--color-foreground);
+  font-size: clamp(32px, 3vw, 40px);
+  line-height: 1.175;
+  letter-spacing: -0.02em;
+}
+
+.onboarding-subtitle,
+.verify-email-subtitle,
+.verify-email-highlight {
+  color: var(--color-auth-subtext);
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.auth-form-stack {
+  gap: 20px;
+  margin-bottom: 12px;
+}
+
+.auth-form-group {
+  gap: 8px;
+}
+
+.auth-label {
+  color: var(--color-auth-subtext);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.auth-required-star {
+  color: #c20404;
+}
+
+.auth-input,
+.mhn-parent-modal-overlay.mhn-inline .mhn-dropdown-select,
+.mhn-parent-modal-overlay.mhn-inline .mhn-form-input {
+  min-height: 44px;
+  height: 44px;
+  padding-inline: 24px;
+  border: 1px solid var(--color-auth-stroke);
+  border-radius: 8px;
+  background: var(--color-auth-field);
+  color: var(--color-foreground);
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.auth-input::placeholder,
+.mhn-parent-modal-overlay.mhn-inline .mhn-form-input::placeholder {
+  color: var(--color-auth-placeholder);
+}
+
+.auth-input:focus,
+.mhn-parent-modal-overlay.mhn-inline .mhn-dropdown-select:focus,
+.mhn-parent-modal-overlay.mhn-inline .mhn-form-input:focus {
+  border-color: var(--color-auth-action-bright);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-auth-action-bright) 24%, transparent);
+}
+
+.btn-submit,
+.btn-confirm-otp,
+.btn-continue {
+  min-height: 44px;
+  height: 44px;
+  margin-top: 20px;
+  border-radius: 8px;
+  background: var(--color-auth-action-bright);
+  color: #fdfdfd;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 28px;
+  box-shadow: none;
+}
+
+:root .onboarding-modal .btn-google {
+  min-height: 50px;
+  margin-top: 12px;
+  border: 1px solid var(--color-auth-action-bright);
+  background: transparent;
+  color: var(--color-auth-action-bright);
+  font-size: 18px;
+  font-weight: 400;
+  box-shadow: none;
+}
+
+:root .onboarding-modal .btn-google:hover,
+:root .onboarding-modal .btn-google:active {
+  border-color: var(--color-auth-action-bright);
+  background: color-mix(in srgb, var(--color-auth-action-bright) 8%, transparent);
+  color: var(--color-auth-action-bright);
+  box-shadow: none;
+}
+
+.auth-footer-text {
+  margin-top: 32px;
+  color: var(--color-muted-foreground);
+  font-size: 16px;
+}
+
+.auth-primary-link,
+.btn-resend-code {
+  color: var(--color-auth-action-bright);
+}
+
+.role-options-stack {
+  gap: 12px;
+  margin: 40px 0;
+}
+
+.role-card {
+  width: 100%;
+  min-height: 80px;
+  padding: 16px;
+  border: 1px solid var(--color-auth-stroke);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-foreground);
+  text-align: left;
+  box-sizing: border-box;
+  box-shadow: none;
+}
+
+.role-card-selected,
+.role-card-selected:hover {
+  border: 1px solid var(--color-auth-action);
+  background: var(--color-auth-selected);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 10%);
+}
+
+.role-content-left {
+  min-width: 0;
+  gap: 10px;
+}
+
+.role-icon-box {
+  width: 50px;
+  height: 48px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--color-auth-action) 10%, transparent);
+}
+
+.role-icon-img {
+  width: 36px;
+  height: 36px;
+}
+
+.role-title {
+  color: var(--color-foreground);
+}
+
+.role-description {
+  margin-top: 4px;
+  color: var(--color-auth-subtext);
+}
+
+.role-radio {
+  width: 16px;
+  height: 16px;
+  border: 1px solid #dde2e5;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+
+.role-card-selected .role-radio {
+  border-color: var(--color-auth-action);
+}
+
+.role-radio-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-auth-action);
+}
+
+.auth-visually-subtle-back {
+  margin: 12px auto 0;
+  padding: 6px 10px;
+  color: var(--color-muted-foreground);
+  font-size: 13px;
+}
+
+.auth-visually-subtle-back:hover {
+  color: var(--color-auth-action-bright);
+}
+
+.otp-digit-input {
+  width: 48px;
+  height: 56px;
+  border: 2px solid var(--color-auth-stroke);
+  border-radius: 12px;
+  background: var(--color-auth-field);
+  color: var(--color-foreground);
+}
+
+.verify-email-footer {
+  color: var(--color-muted-foreground);
+}
+
+.btn-change-email {
+  color: var(--color-foreground);
+}
+
+.mhn-parent-modal-overlay.mhn-inline,
+.mhn-parent-modal-overlay.mhn-inline .mhn-parent-modal-card,
+.mhn-parent-modal-overlay.mhn-inline .mhn-parent-form-panel {
+  width: 100%;
+  max-width: 450px;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  background: transparent;
+  color: var(--color-foreground);
+  box-shadow: none;
+}
+
+.mhn-parent-step-container {
+  width: 100%;
+  max-width: 450px;
+  margin: 0;
+  color: var(--color-foreground);
+}
+
+.mhn-parent-step-title {
+  margin: 0;
+  color: var(--color-foreground);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 40px;
+  letter-spacing: -0.01em;
+}
+
+.mhn-parent-step-desc {
+  margin: 4px auto 0;
+  color: var(--color-auth-subtext);
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.mhn-parent-step-who .mhn-parent-step-desc {
+  max-width: 306px;
+}
+
+.mhn-parent-manage-icon {
+  margin: 32px auto 0;
+}
+
+.mhn-parent-manage-icon img.manage {
+  width: 96px;
+  height: 96px;
+  margin: 0 0 20px;
+}
+
+.mhn-parent-card-title {
+  color: var(--color-auth-subtext);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.mhn-parent-card-sub {
+  color: var(--color-muted-foreground);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.mhn-parent-info-banner {
+  margin: 32px 0;
+  padding: 16px;
+  border: 1px solid var(--color-auth-stroke);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--color-foreground);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.mhn-parent-btn-primary,
+.mhn-parent-btn-secondary {
+  min-height: 44px;
+  height: 44px;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 28px;
+}
+
+.mhn-parent-btn-primary {
+  background: var(--color-auth-action);
+}
+
+.mhn-parent-step-who .mhn-parent-btn-primary {
+  background: var(--color-auth-action-bright);
+}
+
+.mhn-parent-btn-secondary {
+  margin-top: 12px;
+  border: 1px solid var(--color-auth-action-bright) !important;
+  background: transparent !important;
+  color: var(--color-auth-action-bright) !important;
+}
+
+.mhn-parent-actions-stack {
+  gap: 0;
+  margin: 40px 0 0;
+}
+
+.mhn-parent-stack-gap-16 {
+  width: min(100%, 379px);
+  gap: 16px;
+  margin: 40px auto 0;
+}
+
+.mhn-parent-choice-card {
+  width: 100%;
+  min-height: 101px;
+  padding: 16px;
+  border: 1px solid var(--color-auth-stroke);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-foreground);
+  text-align: left;
+  box-shadow: none;
+}
+
+.mhn-parent-choice-card.mhn-active {
+  border: 1px solid var(--color-auth-action);
+  background: var(--color-auth-selected);
+}
+
+.mhn-parent-choice-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: var(--color-muted-foreground);
+}
+
+.mhn-parent-choice-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.mhn-parent-choice-card .mhn-parent-card-title {
+  color: var(--color-foreground);
+  font-size: 18px;
+  line-height: 20px;
+}
+
+.mhn-parent-choice-card.mhn-active .mhn-parent-card-title,
+.mhn-parent-chevron-blue {
+  color: var(--color-auth-action-bright);
+}
+
+.mhn-parent-choice-card .mhn-parent-card-sub {
+  margin-top: 8px;
+  color: var(--color-auth-subtext);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.mhn-parent-chevron-blue,
+.mhn-parent-chevron-gray {
+  width: 18px;
+  height: 18px;
+  margin-left: 8px;
+}
+
+.mhn-col-flex-gap-18 {
+  gap: 20px;
+  margin: 32px 0 0;
+}
+
+.mhn-parent-modal-overlay.mhn-inline .mhn-form-field-label,
+.mhn-parent-modal-overlay.mhn-inline .mhn-section-header-title,
+.mhn-parent-modal-overlay.mhn-inline .mhn-section-header-title-mb10 {
+  color: var(--color-muted-foreground);
+}
+
+.mhn-parent-step-protect {
+  align-items: stretch;
+}
+
+.mhn-parent-step-protect .mhn-parent-step-desc {
+  margin-bottom: 32px;
+}
+
+.mhn-parent-visibility-card {
+  padding: 16px;
+  border: 1px solid var(--color-auth-stroke);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-foreground);
+  text-align: left;
+}
+
+.mhn-parent-visibility-card.mhn-selected {
+  border: 1px solid var(--color-auth-action);
+  background: var(--color-auth-selected);
+}
+
+.mhn-parent-card-title-lg,
+.mhn-toggle-label {
+  color: var(--color-foreground);
+}
+
+.mhn-parent-card-sub-sm,
+.mhn-toggle-sub {
+  color: var(--color-auth-subtext);
+}
+
+.mhn-parent-radio-dot {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d1d5dc;
+}
+
+.mhn-parent-radio-dot.mhn-selected {
+  border: 2px solid var(--color-auth-action);
+}
+
+.mhn-parent-radio-dot.mhn-selected::after {
+  top: 3px;
+  left: 3px;
+  width: 10px;
+  height: 10px;
+  background: var(--color-auth-action);
+}
+
+.mhn-parent-step-protect .mhn-col-flex-gap-8:last-child {
+  padding: 12px 16px;
+  border: 1px solid var(--color-auth-stroke);
+  border-radius: 8px;
+}
+
+.mhn-toggle-row-between + .mhn-toggle-row-between {
+  border-top: 1px solid var(--color-auth-stroke);
+  padding-top: 12px;
+}
+
+.mhn-parent-toggle-track {
+  width: 40px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: #364153;
+}
+
+.mhn-parent-toggle-track.mhn-active {
+  background: var(--color-auth-action);
+}
+
+.mhn-parent-toggle-thumb {
+  width: 18px;
+  height: 18px;
+}
+
+.mhn-parent-toggle-thumb.mhn-active {
+  transform: translateX(18px);
+}
+
+.mhn-parent-step-success .mhn-parent-icon-circle {
+  width: 129px;
+  height: 129px;
+  margin-bottom: 32px;
+  background: rgb(22 163 74 / 19%);
+  color: #16a34a;
+}
+
+.mhn-parent-step-success .mhn-parent-icon-circle svg {
+  width: 67px;
+  height: 67px;
+}
+
+.mhn-parent-step-success .mhn-parent-step-desc {
+  margin-bottom: 0;
+}
+
+.mhn-parent-modal-overlay.mhn-inline .mhn-flow-container {
+  width: 100%;
+  max-width: 450px;
+  color: var(--color-foreground);
+}
+
+.mhn-parent-modal-overlay.mhn-inline .mhn-flow-title {
+  color: var(--color-foreground);
+  font-size: 32px;
+  line-height: 40px;
+}
+
+.mhn-parent-modal-overlay.mhn-inline .mhn-flow-subtitle,
+.mhn-parent-modal-overlay.mhn-inline .having {
+  color: var(--color-auth-subtext);
+}
+
+.mhn-parent-modal-overlay.mhn-inline .mhn-btn-solid-blue {
+  background: var(--color-auth-action-bright);
+}
+
+.mhn-parent-modal-overlay.mhn-inline .mhn-btn-outline {
+  border-color: var(--color-auth-action-bright);
+  color: var(--color-auth-action-bright);
+  background: transparent;
+}
+
+@media (min-width: 1024px) {
+  .onboarding-modal {
+    min-height: min(960px, 100dvh);
+    height: min(960px, 100dvh);
+    max-height: none;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: clamp(64px, 9.44vw, 136px);
+  }
+
+  .illustration-panel {
+    width: clamp(420px, 46.95vw, 676px);
+    height: 100%;
+    min-height: 0;
+    align-self: stretch;
+  }
+
+  .onboarding-form,
+  .mhn-parent-modal-overlay.mhn-inline {
+    flex: 0 1 450px;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 1023px) {
+  .onboarding-modal {
+    max-width: 720px;
+    min-height: 100dvh;
+    justify-content: flex-start;
+  }
+
+  .illustration-panel {
+    width: 100%;
+    flex: none;
+  }
+}
+
+@media (max-width: 639px) {
+  .onboarding-modal {
+    padding: 16px;
+    gap: 28px;
+  }
+
+  .illustration-panel {
+    height: 190px;
+    border-radius: 16px;
+  }
+
+  .illustration-img {
+    border-radius: 16px;
+  }
+
+  .onboarding-title,
+  .verify-email-title,
+  .mhn-parent-step-title,
+  .mhn-parent-modal-overlay.mhn-inline .mhn-flow-title {
+    font-size: 28px;
+    line-height: 34px;
+  }
+
+  .role-card {
+    min-height: 76px;
+  }
+
+  .role-description {
+    white-space: normal;
+  }
+
+  .otp-digit-input {
+    width: clamp(40px, 12vw, 48px);
+    height: 52px;
+  }
+
+  .mhn-parent-choice-card .mhn-parent-card-title {
+    font-size: 16px;
+    white-space: normal;
+  }
+
+  .mhn-parent-choice-icon {
+    width: 30px;
+  }
+}

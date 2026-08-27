@@ -7,6 +7,7 @@ export interface OnboardingCompletionData {
   selectedRoles: string[];
   accountData?: { fullName: string; email: string; dob: string; parentEmail?: string };
   onboardingResult?: OnboardingResponse | AuthMeResponse;
+  redirectProfileId?: string;
 }
 
 interface OnboardingPageProps {

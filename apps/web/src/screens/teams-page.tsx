@@ -93,8 +93,7 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     }
   };
 
-  const handleCreateTeam = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateTeam = () => {
     if (!newTeamName.trim()) return;
 
     const newTeam: TeamItem = {
@@ -166,7 +165,7 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
         {/* Navigation Tabs Bar (Your Teams vs Discover) */}
         <div className="flex items-center gap-8 border-b border-[#182740] pb-2">
-          <button
+          <Button
             onClick={() => setActiveTab('your-teams')}
             className={`text-sm font-semibold relative pb-2 transition-colors ${
               activeTab === 'your-teams'
@@ -175,8 +174,8 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             }`}
           >
             Your Teams
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setActiveTab('discover')}
             className={`text-sm font-semibold relative pb-2 transition-colors ${
               activeTab === 'discover'
@@ -185,7 +184,7 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             }`}
           >
             Discover
-          </button>
+          </Button>
         </div>
 
         {/* Team Items List */}
@@ -214,17 +213,17 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
                 {/* Sub-links row: Posts · Staff · Roster */}
                 <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <button className="hover:text-slate-200 transition-colors font-medium">
+                  <Button className="hover:text-slate-200 transition-colors font-medium">
                     Posts
-                  </button>
+                  </Button>
                   <span>·</span>
-                  <button className="hover:text-slate-200 transition-colors font-medium">
+                  <Button className="hover:text-slate-200 transition-colors font-medium">
                     Staff
-                  </button>
+                  </Button>
                   <span>·</span>
-                  <button className="hover:text-slate-200 transition-colors font-medium">
+                  <Button className="hover:text-slate-200 transition-colors font-medium">
                     Roster
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -238,21 +237,27 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           <div className="bg-[#0A1220] border border-[#162238] rounded-2xl w-full max-w-md p-6 shadow-2xl flex flex-col gap-5">
             <div className="flex items-center justify-between border-b border-[#182740] pb-3">
               <h3 className="text-lg font-bold text-slate-100">Create New Team</h3>
-              <button
+              <Button
                 onClick={() => setIsCreateModalOpen(false)}
                 className="text-slate-400 hover:text-slate-100 transition-colors"
               >
                 <X size={20} />
-              </button>
+              </Button>
             </div>
 
-            <form onSubmit={handleCreateTeam} className="flex flex-col gap-4">
+            {/* Plain div wrapper (not a semantic form element) — mirrors the
+                other modal inputs in this codebase (QuoteRepostModal,
+                PostEditModal), which submit via a button click. */}
+            <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-slate-300">Team Name</label>
                 <Input
                   type="text"
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleCreateTeam();
+                  }}
                   placeholder="e.g. Columbus Blue Jackets"
                   className="w-full h-10 px-3.5 bg-[#0D1627] border border-[#182740] rounded-xl text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-[#168BFF]"
                   autoFocus
@@ -268,14 +273,15 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   Cancel
                 </Button>
                 <Button
-                  type="submit"
+                  type="button"
+                  onClick={handleCreateTeam}
                   disabled={!newTeamName.trim()}
                   className="px-5 py-2 bg-[#168BFF] hover:bg-[#147CE6] text-white text-xs font-semibold rounded-xl shadow-md disabled:opacity-50"
                 >
                   Create
                 </Button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}

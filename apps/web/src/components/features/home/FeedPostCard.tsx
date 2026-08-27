@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { useFeedPostCard } from '@/hooks/use-feed-post-card';
@@ -8,6 +8,7 @@ import { PostCardActions } from '@/components/features/home/PostCardActions';
 import { PostEditModal } from '@/components/features/home/PostEditModal';
 import { PostDeleteModal } from '@/components/features/home/PostDeleteModal';
 import { QuoteRepostModal } from '@/components/features/home/QuoteRepostModal';
+import { showInfoToast, showSuccessToast } from '@/utils/toast';
 
 export interface FeedPostProps {
   id: string;
@@ -19,6 +20,7 @@ export interface FeedPostProps {
   content: string;
   postImage?: string;
   images?: string[];
+  eventDateTag?: string;
   likesCount: number;
   commentsCount: number;
   repostCount?: number;
@@ -60,6 +62,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   content: initialContent,
   postImage,
   images,
+  eventDateTag,
   likesCount: initialLikes,
   commentsCount,
   repostCount: initialReposts = 0,
@@ -75,6 +78,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   onNavigate,
 }) => {
   const { checkSupervisionPermission, assertSupervisionPermission } = useAuth();
+  const [isNotInterested, setIsNotInterested] = useState(false);
   const canReact = checkSupervisionPermission('react_to_posts');
   const canComment = checkSupervisionPermission('comment_on_posts');
   const canShare = checkSupervisionPermission('share_posts');
@@ -101,7 +105,16 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
     onUpdateSuccess,
   });
 
-  if (card.isDeleted) {
+  const handleNotInterested = () => {
+    setIsNotInterested(true);
+    showInfoToast("Marked as Not interested. We'll show fewer posts like this.");
+  };
+
+  const handleReport = () => {
+    showSuccessToast("Thank you for reporting. Our moderation team will review this post.");
+  };
+
+  if (card.isDeleted || isNotInterested) {
     return null;
   }
 
@@ -121,6 +134,8 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         onToggleMenu={() => card.setIsMenuOpen((prev) => !prev)}
         onEditClick={card.openEditModal}
         onDeleteClick={card.openDeleteModal}
+        onNotInterestedClick={handleNotInterested}
+        onReportClick={handleReport}
       />
 
       <div className="px-4 pb-3">
@@ -130,6 +145,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
           onToggleExpand={() => card.setIsExpanded(!card.isExpanded)}
           postImage={postImage}
           images={images}
+          eventDateTag={eventDateTag}
         />
       </div>
 

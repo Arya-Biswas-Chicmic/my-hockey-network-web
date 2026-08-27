@@ -6,5 +6,17 @@ import { OnboardingPage } from '@/screens/onboarding-page';
 
 export function RouteClient() {
   const { onNavigate } = useAppNavigation();
-  return <GuestGuard><OnboardingPage onComplete={() => onNavigate('home')} /></GuestGuard>;
+  return (
+    <GuestGuard>
+      <OnboardingPage
+        onComplete={(data) => {
+          if (data?.redirectProfileId) {
+            onNavigate('profile', { userId: data.redirectProfileId });
+            return;
+          }
+          onNavigate('home');
+        }}
+      />
+    </GuestGuard>
+  );
 }
