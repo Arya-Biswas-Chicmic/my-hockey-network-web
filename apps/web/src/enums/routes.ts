@@ -12,4 +12,8 @@ export enum AppRoute {
   ONBOARDING = 'onboarding',
   GUARDIAN = 'guardian',
   SENT = 'sent',
+  EXPLORE = 'explore',
+  GROUPS = 'groups',
+  TEAMS = 'teams',
+  SAVED = 'saved',
 }

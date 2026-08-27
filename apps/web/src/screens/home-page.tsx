@@ -1,14 +1,13 @@
-import { Input, Select, Dropdown } from '@/components/common/FormControls';
+import { Input, Dropdown } from '@/components/common/FormControls';
 import React, { useState, useEffect, useRef } from 'react';
-import { maskEmail, isEmailValid } from '@my-hockey-network/validation';
-import { Header, PendingBanner, NoDataFound, ServerDown } from '@/components/common';
-import { ProfileSummaryCard } from '@/components/features/home/ProfileSummaryCard';
+import { isEmailValid } from '@my-hockey-network/validation';
+import { Button, PendingBanner, NoDataFound, ServerDown } from '@/components/common';
+import { Sidebar } from '@/components/common/Sidebar';
 import { FeedPostCard, FeedPostProps } from '@/components/features/home/FeedPostCard';
-import { MatchesWidget } from '@/components/features/home/MatchesWidget';
+import { WhoToFollowWidget } from '@/components/features/home/WhoToFollowWidget';
 import { UpcomingEventsWidget } from '@/components/features/home/UpcomingEventsWidget';
 import { InviteGrowWidget } from '@/components/features/home/InviteGrowWidget';
 import { CreatePostModal } from '@/components/features/home/CreatePostModal';
-import { EmptyState } from '@/components/features/network/EmptyState';
 import { HomeSkeletonLoader, FeedPostSkeleton } from '@/components/features/home/HomeSkeletonLoader';
 import { getFeed } from '@my-hockey-network/core';
 import { Search } from 'lucide-react';
@@ -18,7 +17,7 @@ import { globalQueryClient, invalidateQueryPrefix } from '@/query';
 import { useCreatePostMutation } from '@/hooks/use-post-mutations';
 import { feedQueryKey } from '@/hooks/use-feed-query';
 
-import { resolveCoverUrl, resolveMediaUrl } from '@/utils/mediaUtils';
+import { resolveMediaUrl } from '@/utils/mediaUtils';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { useDebounce } from '@/hooks/use-debounce';
 import { extractErrorMessage, getApiErrorStatus, showSuccessToast, showErrorToast, showInfoToast } from '@/utils/toast';
@@ -51,6 +50,10 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [sortBy, setSortBy] = useState<'RECENT' | 'POPULAR' | 'TRENDING'>('RECENT');
   const [feedError, setFeedError] = useState<{ isServerError: boolean; message?: string; statusCode?: number } | null>(null);
   const [isFeedRefreshing, setIsFeedRefreshing] = useState<boolean>(false);
+  // "Network"/"Groups" have no backend filter yet (no connections-only or
+  // group-post feed endpoint) — real per-project policy is an honest empty
+  // state over fabricating a filtered result, not silently no-op-ing the tab.
+  const [feedScope, setFeedScope] = useState<'FOR_YOU' | 'NETWORK' | 'GROUPS'>('FOR_YOU');
 
   const currentUserName = user?.profile?.displayName || 'Player';
   const currentUserAvatar = resolveMediaUrl(user?.profile?.avatarUrl, '/userPlaceholder.png');
@@ -217,165 +220,188 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     }
   };
 
-  const currentUserRole = user?.profile?.type || user?.primaryRole || 'PLAYER';
+  const handleOpenCreatePost = () => {
+    if (requirePermission('CREATE_POST')) {
+      setIsCreatePostOpen(true);
+    }
+  };
 
   if (isPageLoading) {
     return (
-      <div className="mhn-home-page-root">
-        <Header
+      <div className="mhn-app-shell">
+        <Sidebar
           activeTab={activeNavTab}
           onTabChange={handleTabChange}
           onLogout={onLogout}
+          onCreatePostClick={handleOpenCreatePost}
         />
-        <HomeSkeletonLoader />
+        <div className="mhn-app-content">
+          <HomeSkeletonLoader />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mhn-home-page-root min-h-dvh lg:flex lg:h-dvh lg:flex-col lg:overflow-hidden">
-      <Header
+    <div className="mhn-app-shell">
+      <Sidebar
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}
+        onCreatePostClick={handleOpenCreatePost}
       />
 
-      {!permissions.allowed && permissions.message && (
-        <PendingBanner
-          message={permissions.message}
-          actionText={permissions.ctaText || 'Complete Profile'}
-          onActionClick={() => {
-            if (permissions.ctaAction === 'COMPLETE_PROFILE') {
-              if (onNavigate) onNavigate('profile');
-            } else if (permissions.ctaAction === 'GUARDIAN_APPROVAL') {
-              if (onNavigate) onNavigate('supervision');
-            } else if (permissions.ctaAction === 'LOGIN') {
-              if (onNavigate) onNavigate('login');
-            }
-          }}
-        />
-      )}
-
-      <main className="mhn-home-main-layout lg:my-0 lg:min-h-0 lg:flex-1 lg:py-6">
-        <aside className="mhn-layout-col-left lg:h-full lg:overflow-hidden">
-          <ProfileSummaryCard
-            coverUrl={resolveCoverUrl(user?.profile?.coverImageUrl || user?.profile?.coverUrl, "/cover.png")}
-            location={user?.profile?.city}
-            onPostClick={() => {
-              if (requirePermission('CREATE_POST')) {
-                setIsCreatePostOpen(true);
+      <div className="mhn-app-content mhn-home-page-root min-h-dvh lg:flex lg:h-dvh lg:flex-col lg:overflow-hidden">
+        {!permissions.allowed && permissions.message && (
+          <PendingBanner
+            message={permissions.message}
+            actionText={permissions.ctaText || 'Complete Profile'}
+            onActionClick={() => {
+              if (permissions.ctaAction === 'COMPLETE_PROFILE') {
+                if (onNavigate) onNavigate('profile');
+              } else if (permissions.ctaAction === 'GUARDIAN_APPROVAL') {
+                if (onNavigate) onNavigate('supervision');
+              } else if (permissions.ctaAction === 'LOGIN') {
+                if (onNavigate) onNavigate('login');
               }
             }}
           />
-        </aside>
+        )}
 
-        <section className="mhn-layout-col-center lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
-          {(filteredPosts.length > 0 || searchQuery.trim().length > 0) && (
-            <div className="mhn-feed-header-bar">
-              <div className="mhn-feed-search-wrapper">
-                <Search className="mhn-feed-search-icon" size={16} aria-hidden="true" />
-                <Input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search"
-                  className="mhn-feed-search-input"
-                />
-              </div>
-
-              <div className="mhn-feed-sort-wrapper">
-                <Dropdown
-                  value={sortBy}
-                  options={[
-                    { value: 'RECENT', label: 'Newest First' },
-                    { value: 'POPULAR', label: 'Most Popular' },
-                    { value: 'TRENDING', label: 'Trending (48h)' },
-                  ]}
-                  onChange={(val) => {
-                    if (val === 'RECENT' || val === 'POPULAR' || val === 'TRENDING') setSortBy(val);
-                  }}
-                  placeholder=""
-                />
-              </div>
+        <main className="mhn-home-main-layout lg:my-0 lg:min-h-0 lg:flex-1 lg:py-6">
+          <section className="mhn-layout-col-center lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
+            <div className="mhn-feed-search-wrapper mhn-feed-search-wrapper-standalone">
+              <Search className="mhn-feed-search-icon" size={16} aria-hidden="true" />
+              <Input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search"
+                className="mhn-feed-search-input"
+              />
             </div>
-          )}
 
-          {isFeedRefreshing ? (
-            <div className="mhn-col-flex-gap-16">
-              <FeedPostSkeleton />
-            </div>
-          ) : feedError?.isServerError ? (
-            <ServerDown
-              title="We’re having trouble loading your feed"
-              description={feedError.message || "Something went wrong while connecting to the server. Please try again."}
-              statusCode={feedError.statusCode || 502}
-              onRetry={() => fetchFeedPosts(user?.profile?.id || user?.id)}
-            />
-          ) : filteredPosts.length === 0 ? (
-            <NoDataFound
-              title="No Posts Found"
-              description={searchQuery ? `No posts match your search "${searchQuery}".` : "There are no posts in your feed right now. Be the first to share an update with your network!"}
-              actionLabel="Create Post"
-              onAction={() => setIsCreatePostOpen(true)}
-            />
-          ) : (
-            <div className="mhn-feed-posts-stack">
-              {filteredPosts.map((post) => (
-                <FeedPostCard
-                  key={post.id}
-                  {...post}
-                  onNavigate={onNavigate}
-                  onFollowChange={handleFollowChange}
-                  onDeleteSuccess={(deletedId) => {
-                    setFeedPosts((prev) => prev.filter((p) => p.id !== deletedId));
-                    const profileId = user?.profile?.id || user?.id;
-                    fetchFeedPosts(profileId, searchQuery, sortBy, true);
-                  }}
-
-                  onUpdateSuccess={(updatedId, newContent) => {
-                    setFeedPosts((previousPosts) => previousPosts.map((item) =>
-                      item.id === updatedId ? { ...item, content: newContent } : item
-                    ));
-                    void invalidateQueryPrefix(globalQueryClient, QueryKeys.FEED_POSTS);
-                  }}
-
-                  onRepostComplete={() => {
-                    const profileId = user?.profile?.id || user?.id;
-                    fetchFeedPosts(profileId, searchQuery, sortBy, true);
-                  }}
-                />
+            <div className="mhn-feed-scope-tabs">
+              {([
+                { key: 'FOR_YOU', label: 'For You' },
+                { key: 'NETWORK', label: 'Network' },
+                { key: 'GROUPS', label: 'Groups' },
+              ] as const).map((scope) => (
+                <Button
+                  key={scope.key}
+                  onClick={() => setFeedScope(scope.key)}
+                  className={`mhn-feed-scope-tab ${feedScope === scope.key ? 'mhn-feed-scope-tab-active' : ''}`}
+                >
+                  {scope.label}
+                </Button>
               ))}
             </div>
-          )}
-        </section>
 
-        <aside className="mhn-layout-col-right lg:h-full lg:overflow-hidden">
-          <MatchesWidget
-            onViewAll={() => showInfoToast('Match discovery is not available yet.')}
+            {feedScope !== 'FOR_YOU' ? (
+              <NoDataFound
+                title={feedScope === 'NETWORK' ? 'Network feed coming soon' : 'Groups feed coming soon'}
+                description={
+                  feedScope === 'NETWORK'
+                    ? "A feed of just your connections' posts isn't available yet."
+                    : "A feed of your groups' posts isn't available yet."
+                }
+              />
+            ) : (
+              <>
+                {(filteredPosts.length > 0 || searchQuery.trim().length > 0) && (
+                  <div className="mhn-feed-sort-wrapper">
+                    <Dropdown
+                      value={sortBy}
+                      options={[
+                        { value: 'RECENT', label: 'Newest First' },
+                        { value: 'POPULAR', label: 'Most Popular' },
+                        { value: 'TRENDING', label: 'Trending (48h)' },
+                      ]}
+                      onChange={(val) => {
+                        if (val === 'RECENT' || val === 'POPULAR' || val === 'TRENDING') setSortBy(val);
+                      }}
+                      placeholder=""
+                    />
+                  </div>
+                )}
+
+                {isFeedRefreshing ? (
+                  <div className="mhn-col-flex-gap-16">
+                    <FeedPostSkeleton />
+                  </div>
+                ) : feedError?.isServerError ? (
+                  <ServerDown
+                    title="We’re having trouble loading your feed"
+                    description={feedError.message || "Something went wrong while connecting to the server. Please try again."}
+                    statusCode={feedError.statusCode || 502}
+                    onRetry={() => fetchFeedPosts(user?.profile?.id || user?.id)}
+                  />
+                ) : filteredPosts.length === 0 ? (
+                  <NoDataFound
+                    title="No Posts Found"
+                    description={searchQuery ? `No posts match your search "${searchQuery}".` : "There are no posts in your feed right now. Be the first to share an update with your network!"}
+                    actionLabel="Create Post"
+                    onAction={handleOpenCreatePost}
+                  />
+                ) : (
+                  <div className="mhn-feed-posts-stack">
+                    {filteredPosts.map((post) => (
+                      <FeedPostCard
+                        key={post.id}
+                        {...post}
+                        onNavigate={onNavigate}
+                        onFollowChange={handleFollowChange}
+                        onDeleteSuccess={(deletedId) => {
+                          setFeedPosts((prev) => prev.filter((p) => p.id !== deletedId));
+                          const profileId = user?.profile?.id || user?.id;
+                          fetchFeedPosts(profileId, searchQuery, sortBy, true);
+                        }}
+
+                        onUpdateSuccess={(updatedId, newContent) => {
+                          setFeedPosts((previousPosts) => previousPosts.map((item) =>
+                            item.id === updatedId ? { ...item, content: newContent } : item
+                          ));
+                          void invalidateQueryPrefix(globalQueryClient, QueryKeys.FEED_POSTS);
+                        }}
+
+                        onRepostComplete={() => {
+                          const profileId = user?.profile?.id || user?.id;
+                          fetchFeedPosts(profileId, searchQuery, sortBy, true);
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+
+          <aside className="mhn-layout-col-right lg:h-full lg:overflow-hidden">
+            <WhoToFollowWidget onViewAll={() => handleTabChange('network')} />
+
+            <UpcomingEventsWidget
+              onViewAll={() => handleTabChange('events')}
+              onEventClick={() => handleTabChange('event-detail')}
+            />
+
+            <InviteGrowWidget
+              onInviteClick={() => showInfoToast('Member invitations are not available yet.')}
+              illustrationUrl="/player.png"
+            />
+          </aside>
+        </main>
+
+        {isCreatePostOpen && (
+          <CreatePostModal
+            isOpen={isCreatePostOpen}
+            onClose={() => setIsCreatePostOpen(false)}
+            onSubmit={handleCreatePost}
+            isLoading={createPostMutation.isPending}
+            userName={currentUserName}
+            userAvatar={currentUserAvatar}
           />
-
-          <UpcomingEventsWidget
-            onViewAll={() => handleTabChange('events')}
-            onEventClick={() => handleTabChange('event-detail')}
-          />
-
-          <InviteGrowWidget
-            onInviteClick={() => showInfoToast('Member invitations are not available yet.')}
-            illustrationUrl="/player.png"
-          />
-        </aside>
-      </main>
-
-      {isCreatePostOpen && (
-        <CreatePostModal
-          isOpen={isCreatePostOpen}
-          onClose={() => setIsCreatePostOpen(false)}
-          onSubmit={handleCreatePost}
-          isLoading={createPostMutation.isPending}
-          userName={currentUserName}
-          userAvatar={currentUserAvatar}
-        />
-      )}
+        )}
+      </div>
     </div>
   );
 };

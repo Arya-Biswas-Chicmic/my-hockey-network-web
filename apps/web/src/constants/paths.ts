@@ -10,6 +10,10 @@ export const paths = {
   supervision: '/supervision',
   eventDetail: '/event-detail',
   help: '/help',
+  explore: '/explore',
+  groups: '/groups',
+  teams: '/teams',
+  saved: '/saved',
   auth: {
     onboarding: '/onboarding',
     guardian: '/guardian',

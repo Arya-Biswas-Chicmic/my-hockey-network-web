@@ -63,6 +63,26 @@ export const ROUTE_MAP: Record<AppRoute, RouteDefinition> = {
     path: paths.help,
     isProtected: true,
   },
+  [AppRoute.EXPLORE]: {
+    key: AppRoute.EXPLORE,
+    path: paths.explore,
+    isProtected: true,
+  },
+  [AppRoute.GROUPS]: {
+    key: AppRoute.GROUPS,
+    path: paths.groups,
+    isProtected: true,
+  },
+  [AppRoute.TEAMS]: {
+    key: AppRoute.TEAMS,
+    path: paths.teams,
+    isProtected: true,
+  },
+  [AppRoute.SAVED]: {
+    key: AppRoute.SAVED,
+    path: paths.saved,
+    isProtected: true,
+  },
   [AppRoute.ONBOARDING]: {
     key: AppRoute.ONBOARDING,
     path: paths.auth.onboarding,

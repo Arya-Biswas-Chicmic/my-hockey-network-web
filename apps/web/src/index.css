@@ -1591,14 +1591,15 @@
   opacity: 0.85;
 }
 
-/* --- 3. Main 3-Column Grid Layout --- */
+/* --- 3. Main Content Grid Layout (left nav column moved to .mhn-sidebar,
+   the app shell's own fixed column — see the sidebar-nav section below) --- */
 .mhn-home-main-layout {
-  max-width: 1380px;
+  max-width: 1180px;
   width: 100%;
   margin: 24px auto;
   padding: 0 24px;
   display: grid;
-  grid-template-columns: 270px 1fr 340px;
+  grid-template-columns: 1fr 340px;
   gap: 24px;
   align-items: start;
   box-sizing: border-box;
@@ -1606,7 +1607,7 @@
 
 @media (max-width: 1120px) {
   .mhn-home-main-layout {
-    grid-template-columns: 240px 1fr;
+    grid-template-columns: 1fr;
   }
 
   .mhn-layout-col-right {
@@ -1616,13 +1617,8 @@
 
 @media (max-width: 768px) {
   .mhn-home-main-layout {
-    grid-template-columns: 1fr;
     padding: 0 16px;
     margin: 16px auto;
-  }
-
-  .mhn-layout-col-left {
-    display: none;
   }
 }
 
@@ -14303,3 +14299,264 @@ img.secure {
     min-height: 100%;
   }
 }
+
+/* ==========================================================================
+   Sidebar navigation shell (2026-08-27)
+
+   Left-sidebar nav replacing the top `Header` bar, approved as the app's
+   dark-theme reference design. Rolled out to /home first; other
+   authenticated routes still use `Header` until migrated in a follow-up
+   pass — see docs/IMPLEMENTATION_STATUS.md. Uses the same semantic
+   `--color-*` tokens the dark-mode block above defines, plus a light-mode
+   default set below so this new shell (and anything else that adopts these
+   tokens) actually works in both themes instead of only being patched for
+   one, unlike most of the legacy classes above it.
+   ========================================================================== */
+:root {
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
+  --color-primary: #1860c3;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f1f5f9;
+  --color-secondary-foreground: #0f172a;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+  --color-accent: #eff6ff;
+  --color-accent-foreground: #1860c3;
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
+  --color-ring: #1860c3;
+}
+
+.mhn-app-shell {
+  display: flex;
+  min-height: 100dvh;
+  background: var(--color-background);
+}
+
+.mhn-app-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.mhn-sidebar {
+  flex-shrink: 0;
+  width: 240px;
+  min-height: 100dvh;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-background);
+  border-right: 1px solid var(--color-border);
+  padding: 24px 16px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .mhn-sidebar {
+    display: none;
+  }
+}
+
+.mhn-sidebar-logo {
+  cursor: pointer;
+  margin-bottom: 32px;
+  padding: 0 8px;
+}
+
+.mhn-sidebar-logo-img {
+  height: auto;
+  max-width: 140px;
+}
+
+.mhn-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.mhn-sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--color-muted-foreground);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  background: transparent;
+  border: none;
+  text-align: left;
+  width: 100%;
+}
+
+.mhn-sidebar-nav-item:hover {
+  background: var(--color-secondary);
+  color: var(--color-foreground);
+}
+
+.mhn-sidebar-nav-item-active {
+  color: var(--color-foreground);
+  font-weight: 700;
+}
+
+.mhn-sidebar-create-post {
+  margin-top: 12px;
+  color: var(--color-primary);
+}
+
+.mhn-sidebar-footer {
+  position: relative;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.mhn-sidebar-user-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.mhn-sidebar-user-chip:hover {
+  background: var(--color-secondary);
+}
+
+.mhn-sidebar-user-avatar {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.mhn-sidebar-user-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+/* HeaderProfileDropdown (reused as-is from the top-nav Header) normally
+   opens downward from a top-right avatar button (`top: calc(100% + 12px);
+   right: 0`) — flip it to open upward-left from the sidebar's bottom-fixed
+   user chip instead, since there's no room below it. */
+.mhn-sidebar-footer .mhn-profile-dropdown {
+  top: auto;
+  bottom: calc(100% + 12px);
+  left: 0;
+  right: auto;
+}
+
+/* Feed scope tabs (For You / Network / Groups) */
+.mhn-feed-search-wrapper-standalone {
+  margin-bottom: 16px;
+}
+
+.mhn-feed-scope-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 16px;
+}
+
+.mhn-feed-scope-tab {
+  padding: 0 0 12px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--color-muted-foreground);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mhn-feed-scope-tab-active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* Who to Follow widget (Home sidebar, replaces the fabricated-data Matches
+   widget in that slot) */
+.mhn-who-to-follow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mhn-who-to-follow-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mhn-who-to-follow-avatar {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--color-muted);
+}
+
+.mhn-who-to-follow-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.mhn-who-to-follow-btn {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--color-primary);
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mhn-who-to-follow-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.mhn-coming-soon-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* No dark-mode override block needed below this point: every rule above
+   consumes var(--color-*) directly, and the dark token values are already
+   defined once, earlier in this file — the whole point of building new
+   components on the semantic tokens instead of literal hex values (see the
+   file header comment on the dark-mode block further up for the class of
+   bug this avoids). */

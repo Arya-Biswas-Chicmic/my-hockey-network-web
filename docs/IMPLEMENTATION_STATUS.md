@@ -703,6 +703,90 @@ Last reviewed: 2026-08-27
     optimizer (gracefully handled by `FallbackImage`, just never loads); the `/notifications` card
     renders with a light background against the rest of the shell's dark theme — a real, visible
     dark-mode styling gap for whoever picks up the design-QA pass now that it's unblocked.
+- Live-verified the adult vs. minor signup/onboarding age branching end to end, on request, using the
+  now-working session — two full real signups through the browser, not just code reading:
+  - **Adult (18+) player**: signed up with DOB giving age 25. Confirmed the form live-computes and
+    displays "Age: 25 yrs" as typed. Went straight from OTP verification to `/home` — no guardian
+    step, no `RequestSentCard`. `/auth/me` afterward: `isMinor: false`, `accessLevel: "INDEPENDENT"`,
+    `guardianship: { required: false, approved: false, guardians: [] }`, correct `dateOfBirth`
+    (`2001-08-15T00:00:00.000Z`, matching the entered `15/08/2001`), correct `primaryRole`/
+    `roleAssignments`/`displayName`. Matches `OnboardingModal.tsx`'s branching exactly (role
+    PLAYER/COACH/STAFF + age ≥ 18 → `finalizeOnboarding()` directly, no guardian step) and
+    `packages/core/src/api/signUpRules.ts`'s documented rule.
+  - **Minor (under 18) player**: signed up with DOB giving age 15 ("Age: 15 yrs (Under 18)" shown live
+    in orange). Correctly routed to the "Guardian Approval Required" screen instead of Home; entering
+    a parent email and submitting showed "Request Sent! ... you'll have limited access ... until they
+    approve" and landed on Home with a persistent "Your account is waiting for guardian approval —
+    Check Approval" banner. `/auth/me` afterward: `isMinor: true`, `accessLevel: "LIMITED"`,
+    `guardianship: { required: true, approved: false, pendingRequestId: "<uuid>", pendingRequestSentTo:
+    "<the entered parent email>", pendingRequestExpiresAt: "<+24h>" }` — all correctly recorded.
+    Traced the actual restriction mechanism: `packages/domain/src/permissions/feedPermissions.ts`'s
+    `evaluateFeedPermissions()` returns `allowed: false` (reason `GUARDIAN_APPROVAL_REQUIRED`) whenever
+    `guardianship.required && !approved`, and every one of `canCreatePost`/`canLikePost`/`canComment`/
+    `canSharePost`/`canRepost`/`canFollowOthers`/`canSendMessages`/`canCreateGroupChats` checks that
+    first before its own specific control — so a pending minor is correctly locked out of every
+    feed/social write action, not just a subset.
+  - **Two real bugs found live-testing this, one fixed, one flagged:**
+    1. **Fixed**: `screens/home-page.tsx`'s empty-feed "Create Post" button (`NoDataFound`'s
+       `onAction`) called `setIsCreatePostOpen(true)` directly, completely bypassing
+       `requirePermission('CREATE_POST')` — while the *identical* action from the left-sidebar
+       composer (`ProfileSummaryCard`'s `onPostClick`), on the same page, correctly went through it.
+       Live-confirmed: the pending-minor account above could open the full post composer via this one
+       button. Fixed by routing it through the same `requirePermission` check; re-verified live — now
+       shows the "Your account is waiting for guardian approval" toast instead of opening the modal.
+       Audited every other `setIsCreatePostOpen`/`openCreatePostModal` call site
+       (`ProfilePostsTab.tsx`'s two triggers, `profile-page.tsx`'s `handleOpenCreatePost`) — all
+       already correctly gated; this was the only bypass.
+    2. **Flagged, not fixed**: the "Check Approval" CTA the pending-minor banner and toast both point
+       to (`ctaAction: 'GUARDIAN_APPROVAL'` → `onNavigate('supervision')` in
+       `hooks/use-feed-permissions.ts`) silently does nothing from the minor's perspective — live-
+       confirmed via network log that it briefly navigates to `/supervision` and is immediately
+       bounced back to `/home` by `components/routing/parent-role-guard.tsx`'s `ParentRoleGuard`,
+       which is correctly parent-only for the Supervision *management* page itself. The bug is the
+       destination, not the guard: there is currently no page a minor can actually reach to check
+       their own pending guardian-request status. Not fixed this pass because the right destination is
+       a product decision (e.g. a read-only status view, or just re-fetching `/auth/me` and toasting
+       the current state instead of navigating anywhere) rather than an obvious code fix.
+- Started the approved sidebar-nav redesign (dark-theme reference screenshots supplied by the user,
+  2026-08-27 — full replace of the top `Header` bar app-wide, `/home` first per explicit sequencing,
+  then expand outward page by page). This pass:
+  - Added `components/common/Sidebar.tsx` — the new left nav (Home, Messaging, Explore, Events,
+    Groups, Teams, Notifications, Saved, Profile, Create Post, plus the user chip + reused
+    `HeaderProfileDropdown` at the bottom). Reuses `hooks/use-header-family.ts` and
+    `stores/shell-ui-store.ts` rather than duplicating that state.
+  - Added light-mode default values for the `--color-*` semantic tokens at plain `:root` (previously
+    only defined inside `:root[data-theme='dark']`) and built every new class in this pass —
+    `.mhn-app-shell`, `.mhn-sidebar*`, `.mhn-feed-scope-tab*`, `.mhn-who-to-follow*` — on those
+    tokens rather than literal hex values, specifically to not repeat the "9% dark-mode coverage"
+    problem diagnosed earlier the same day (see the dark-theme discussion above the QA entry).
+  - Rebuilt `screens/home-page.tsx` to match the mockup: removed the `ProfileSummaryCard` left column
+    entirely (its only job — opening the post composer — moved to the sidebar's own "Create Post"
+    item); added "For You / Network / Groups" tabs above the feed (Network/Groups show an honest
+    "coming soon" `NoDataFound` — no backend connections-only or group-post feed filter exists yet,
+    and fabricating one isn't this project's policy); replaced the fabricated-data `MatchesWidget` in
+    the right column with a new `WhoToFollowWidget`.
+  - Added `hooks/use-who-to-follow.ts` + `WhoToFollowWidget.tsx`, wiring the already-existing (but
+    previously only used on `/network`) `getPeopleYouMayKnow` endpoint into a compact 5-person
+    sidebar card with an inline Follow action — same pattern as `/network`'s own "People you may
+    know", not a new endpoint.
+  - Added four new stub routes the sidebar nav needs but that don't have real pages yet — `/explore`,
+    `/groups`, `/teams`, `/saved` — each just `Sidebar` + a shared `ComingSoonPage` honest-empty-state
+    component, not full pages (those are separate, larger "expand outward" work per the user's own
+    sequencing). New `AppRoute` enum members, `paths`, and `ROUTE_MAP` entries for all four.
+  - Verified: typecheck, lint (`--max-warnings=0`), `pnpm check:component-reuse` (fixed 3 raw
+    `<button>` usages it caught — new code must use the shared `Button` component too, same rule as
+    everything else in this codebase), full test suite, and production build all pass. Live-verified
+    in the browser with two different real accounts (one restricted/pending, one unrestricted): nav
+    highlighting, the dropdown (repositioned to open upward from the bottom-fixed user chip instead
+    of downward — `HeaderProfileDropdown` is reused as-is, just the anchor CSS is flipped), all four
+    new stub routes, the For You/Network/Groups tabs, and a clean fresh-tab console (zero errors).
+  - **Not done this pass** (explicitly deferred, not overlooked): every other authenticated route
+    still renders the old top-nav `Header`, not `Sidebar` — Network/Events/Messaging/Notifications/
+    Profile/Settings/Supervision all need the same migration in a follow-up pass, per "then expand
+    outward". `WhoToFollowWidget`'s populated (non-empty) state was reasoned about via the identical,
+    already-proven `/network` "People you may know" code path rather than screenshotted directly —
+    the two real test accounts used to verify this pass both happened to have zero recommendations
+    (fresh accounts, no connection graph yet).
 
 ## Current quality gates
 
@@ -726,6 +810,16 @@ end-to-end.
 
 ## Maintainability backlog
 
+- Migrate the remaining authenticated routes (Network, Events, Messaging, Notifications, Profile,
+  Settings, Supervision) from the old top-nav `Header` to the new `Sidebar` component, and rebuild
+  each page's own layout to match its dark-theme mockup the way `/home` was this pass — Connections
+  (Following/Followers), a richer Events page (Personal/Network/Explore tabs, Yours/Interested/
+  Registered/Saved filters), and a Profile page with an Age/DOB/Height/Weight/Position/Shoots stat
+  grid were all shown in the reference set but not built yet. `Header.tsx` itself should not be
+  deleted until every page has migrated off it.
+- Build out the four new stub pages (`/explore`, `/groups`, `/teams`, `/saved`) for real once their
+  backend endpoints and full designs exist — they're currently `ComingSoonPage` honest-empty-states
+  so the sidebar nav has somewhere to go, not finished features.
 - ~~Get the backend to issue an httpOnly session cookie for web requests~~ — **resolved.** Both the
   backend fix and this repo's own proxy header-forwarding bug (see Completed) are confirmed fixed via
   a real live browser login. `docs/DATA_FETCHING_AND_AUTH.md` still describes the old broken state and
@@ -746,6 +840,12 @@ end-to-end.
   user avatars, and not yet confirmed to have actually fired in practice. Lower priority since
   `FallbackImage`'s own new validation now covers it defensively either way, but the data layer should
   still be consistent.
+- Give a minor pending guardian approval somewhere real to land when they click "Check Approval" —
+  today `hooks/use-feed-permissions.ts` sends them to `/supervision`, which `ParentRoleGuard` (correctly)
+  bounces straight back to `/home` since Supervision is parent-only management tooling, not a child-
+  facing status page. Confirmed live: the CTA currently does nothing visible. Needs a product decision
+  on the right destination (a read-only pending-status view, or just re-checking `/auth/me` and
+  toasting the current state) before implementing — see Completed for the full trace.
 - Expand Playwright beyond the guest-only `public.spec.ts` now running in CI: give
   `authenticated-flow.spec.ts` a CI-owned test account/secret so the full login → feed → post →
   like → comment → logout journey actually runs there instead of only locally on demand.
