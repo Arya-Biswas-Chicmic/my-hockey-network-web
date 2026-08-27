@@ -1,6 +1,6 @@
 # Implementation status
 
-Last reviewed: 2026-08-26
+Last reviewed: 2026-08-27
 
 ## Completed
 
@@ -432,6 +432,157 @@ Last reviewed: 2026-08-26
   smoke coverage to assert the root-to-sign-in flow. Public profiles remain separately available at
   `/players/[id]`.
 
+- Fixed an asymmetric error-handling bug in the guardian-request decline flow, found during a code
+  review of the recent guardian/auth implementation pass: `handleDeclineGuardianReq`
+  (`screens/profile-page.tsx`) and `handleDeclineCodeSubmit` (`screens/supervision-page.tsx`) caught
+  their own errors and never rethrew, while their `handleAcceptGuardianReq`/`handleApproveCodeSubmit`
+  counterparts correctly did. Since `ApprovalCodeModal`'s `onSubmit` wrapper unconditionally closes
+  the modal after `await`ing the handler, a failed decline (wrong/expired code, network error) closed
+  the modal as if it had succeeded — showing a contradictory error toast with no way to retry without
+  reopening the flow — while a failed approve correctly kept the modal open with an inline,
+  retryable error. Both handlers now rethrow on failure, matching their approve counterparts; the
+  fire-and-forget "quick decline" call sites on `GuardianRelationshipRequestCard` (which have no modal
+  to keep open) now explicitly `.catch(() => {})` since the toast/notice already fires inside the
+  handler before it rethrows.
+- Decomposed `screens/profile-page.tsx` (1,750 → 577 lines) and `screens/supervision-page.tsx`
+  (1,872 → 231 lines) into focused components and hooks, and converted every remaining
+  manually-managed form in the project to React Hook Form + Zod.
+  - Profile: `components/features/profile/ProfileHeroCard.tsx`, `ProfileAboutTab.tsx`,
+    `ProfileIntroSection.tsx`, `ProfilePersonalDetailsSection.tsx`, `ProfileCareerSection.tsx`,
+    `ProfilePostsTab.tsx`, `ProfileMediaTab.tsx`, `ProfileStatsTab.tsx`,
+    `ProfileGuardianRequestsTab.tsx`; `hooks/use-profile-image-uploads.ts`,
+    `hooks/use-profile-career.ts`.
+  - Supervision: `components/features/supervision/SupervisionSidebar.tsx`,
+    `SupervisionAddPlayerFlow.tsx`, `SupervisionCreatePlayerDetailsStep.tsx`,
+    `CreatePlayerProtectStep.tsx`, `LinkExistingPlayerStep.tsx`, `SupervisionPermissionsTab.tsx`,
+    `SupervisionRequestsTab.tsx`, `SupervisionLogsTab.tsx`; `hooks/use-supervision-wards.ts`,
+    `hooks/use-supervision-permissions.ts`, `hooks/use-supervision-requests.ts`,
+    `hooks/use-supervision-logs.ts`.
+  - New Zod schemas in `packages/validation/src/forms.ts`: `profileIntroFormSchema`,
+    `profilePersonalDetailsFormSchema`, `careerFormSchema`, `linkPlayerFormSchema`,
+    `createPlayerDetailsFormSchema`, `parentOnboardingPlayerDetailsFormSchema` — each wraps the
+    exact prior hand-rolled validation rules (via `validateProfileField`/`validateCareerField` or,
+    for the two player-details forms, an inline age check) rather than re-deriving new rules, so
+    behavior is unchanged even though the state layer moved to RHF.
+  - Also converted a 6th manual form discovered only during a final project-wide sweep:
+    `components/features/parent/CreatePlayerDetailsStep.tsx` (the separate `ParentOnboardingModal`
+    flow's player-details step) — nearly identical in shape to the new
+    `SupervisionCreatePlayerDetailsStep.tsx` but with its own stricter 5–100 year age validation,
+    which was preserved via a dedicated schema rather than reusing the supervision one. Renamed the
+    new supervision component from `CreatePlayerDetailsStep` to
+    `SupervisionCreatePlayerDetailsStep` once this pre-existing, differently-located component of
+    the same name was found, to avoid two identically-named components in the codebase.
+  - Two bugs caught and fixed during this pass: a TypeScript correlated-generics error where a
+    plain inline arrow lost the `field`/`value` type correlation `react-hook-form`'s `setValue`
+    needs (fixed with an explicitly generic bridge function); and a genuine circular-update bug —
+    an initially-added `useEffect` that resynced `formData` back into the form would have reset
+    RHF's own state (touched/errors/dirty) on every keystroke, since the parent's `onChange` gives
+    it a new object reference each time. Removed once traced, since the step component unmounts/
+    remounts per wizard step anyway, so `defaultValues` alone is correct.
+  - Project policy applied throughout: hardcoded data stays where no backend endpoint exists yet
+    (see the Events/media-gallery entry above), consistently marked with a comment naming the
+    missing endpoint.
+- Closed the TanStack Query, coverage-boundary, and accessibility-testing backlog items, and
+  completed the route inventory:
+  - **TanStack Query**: Settings had zero adoption — added `hooks/use-settings.ts`
+    (`useBlockedUsersQuery`, `useUnblockUserMutation`, `useNotificationSettingsQuery`,
+    `useUpdateNotificationSettingsMutation`) and rewired `screens/settings-page.tsx` onto it. Also
+    fixed a real bug found while touching that screen: the General tab's Email/Primary Role fields
+    were hardcoded to a garbled placeholder string, not read from `useAuth()`. Profile's remaining
+    raw calls: added `hooks/use-update-profile.ts` (`useUpdateProfileMutation`), used with three
+    separate instances (Intro/Details/Edit-Profile-modal) so each keeps its own independent
+    `isPending` — one shared instance would have made all three sections show "saving" together.
+    Wired `useCreatePostMutation` into `profile-page.tsx`'s own create-post flow, which surfaced a
+    second real bug: that flow never accepted `CreatePostModal`'s 4th `imageFile` argument, so
+    attached post images there were never actually uploaded — only a local `blob:` preview URL was
+    ever sent, which the backend cannot resolve. Also converted career create/update/delete
+    (`hooks/use-profile-career.ts`) onto `useMutation`. Home's feed-read stays imperative (documented
+    reasoning unchanged) and Events/Calendar stay hardcoded (project policy, no backend endpoint).
+  - **Coverage boundary**: added `apps/web/src/utils/guardianUtils.ts`, `mediaUtils.ts`, `toast.ts`
+    to `vitest.config.mts`'s `include` list, each with new comprehensive tests (44 new tests total).
+    Found and fixed a real bug while writing the `mediaUtils.ts` tests: `resolveCoverUrl`'s
+    placeholder-path guard did a case-sensitive `.includes('placeholder')` check, so it never
+    actually matched the app's real placeholder path (`/userPlaceholder.png`, capital P) — fixed to
+    `.toLowerCase().includes(...)`. Overall coverage rose from 92.59% to 93.94% statements.
+  - **Accessibility/keyboard testing**: added `components/ui/__tests__/modal.a11y.test.tsx` (10
+    tests: ARIA role/name, focus-on-open, Escape-to-close incl. the `closeOnEscape=false` case,
+    overlay-click-to-close incl. `closeOnOverlayClick=false`, closed-state safety, listener cleanup
+    on unmount) and `components/common/__tests__/OtpCodeInput.a11y.test.tsx` (10 tests: per-digit
+    labels, auto-advance, Backspace-to-previous-field, non-digit key rejection, Tab/arrow-key
+    passthrough, paste-completion, error-triggered refocus). Not exhaustive across every interactive
+    component — these are the two most interaction-critical primitives (dialogs, OTP entry), not full
+    site coverage; treat further a11y/keyboard suites as a follow-up, not "done."
+  - **Route inventory** (`docs/WEB_SEO_AND_RENDERING_STRATEGY.md`): documented every route's actual
+    rendering mode, confirmed from a real `pnpm build:web` output rather than assumed from source —
+    this also resolved the "root layout sets noindex as an unconsidered default" backlog item, since
+    the blanket default plus `/players/[id]`'s single override turns out to already be the correct,
+    now-documented decision for every current route, not a placeholder.
+  - **Not attempted** (flagged, not silently skipped): package consolidation (`core`/`shared`/
+    `types`/`utils`/`design-system`) is real, monorepo-wide, high-risk work, distinct in kind from
+    everything above; centralized error monitoring needs a provider chosen first; the Events backend
+    connection and the OTP/cookie backend fix are outside this repo entirely; the mobile Expo SDK
+    upgrade and RTK `fetchBaseQuery` removal are real but the RTK piece is not dead code as
+    previously assumed — see the correction directly below. The CSS `!important` reduction, listed
+    here as deferred in the prior review, was completed in a later pass the same day — see the
+    dedicated entry below instead of this line.
+- Corrected a prior claim in this document: `apps/mobile/src/redux/store/api.ts`'s RTK
+  `fetchBaseQuery` setup was **not** unused/dead code — `screens/ForgotPassword/index.tsx` genuinely
+  used `useForgotPasswordMutation` from it. This was resolved in a later pass the same day — see the
+  dedicated entry below instead of this line.
+- Migrated `apps/mobile/src/screens/ForgotPassword/index.tsx` off RTK Query onto TanStack Query, on
+  direct request, then removed the RTK plumbing entirely (`redux/ApiReducer/index.ts` and
+  `redux/store/api.ts`, deleted; `redux/store/index.ts` no longer registers an `api` reducer/
+  middleware). `login`/`signup` RTK mutations in the same file were confirmed dead (no consumers
+  anywhere in `apps/mobile/src`) and removed with it rather than ported, since porting unused code
+  serves no purpose. Added `@tanstack/react-query` (`^5.102.4`, matching web's pinned version) as a
+  mobile dependency, a `QueryClientProvider` at the `App.tsx` root mirroring
+  `apps/web/src/query/query-client.ts`'s retry/staleTime rules
+  (`apps/mobile/src/platform/query-client.ts`), and `hooks/use-forgot-password.ts`'s
+  `useForgotPasswordMutation` (TanStack, same exported name as the RTK hook it replaces, to keep the
+  screen's diff minimal). The forgot-password call itself now goes through the same layered
+  `Endpoints -> API services -> hooks -> components` path every other auth call already uses, not a
+  one-off: added `API_ENDPOINTS.AUTH.FORGOT_PASSWORD`, `ForgotPasswordDTO`/`ForgotPasswordResponse`
+  to `packages/contracts`, a `forgotPassword` method on the shared `AuthService`
+  (`packages/auth/src/index.ts`, with a new test), and a `forgotPassword` export from
+  `packages/core`'s `authApi.ts` — explicitly documented as mobile-only there and in the `AuthService`
+  interface, since web has no password field and never calls it. Verified: `pnpm -r typecheck` and
+  `pnpm -r lint:check` pass for both apps, the full shared-package test suite passes (190 tests,
+  coverage still above the 80% gate), and `pnpm --filter @my-hockey-network/mobile build:ios` (Metro
+  bundling all 1,244 modules via `expo export`) succeeds with no unresolved-import or bundling
+  errors. **Not verified**: this machine's Xcode isn't `xcode-select`-configured (needs a `sudo`
+  command only the user can run), so the iOS Simulator tool could not attach and the screen was never
+  exercised live — the try/catch error-message path in particular (`ApiError` from
+  `@my-hockey-network/api-client` vs. the old RTK `normalizeApiError` shape) is covered by static
+  typing and the shared-service test, not by an actual failed-request screenshot.
+- Reduced `apps/web/src/index.css`'s `!important` usage from 226 declarations to 3, on direct
+  request, using a custom static analyzer (no visual-regression tooling exists in this repo, and
+  `postcss` is only a transitive/hoisted dependency, not directly resolvable from the workspace per
+  `docs/THIRD_PARTY_AND_DEPENDENCY_POLICY.md` — writing a small from-scratch analyzer avoided adding
+  a new dependency for a one-off pass). The analyzer parses the file into rule blocks and classifies
+  every `!important` declaration by whether another rule anywhere in the file sets the same property
+  for the exact same selector text: 212 were "redundant" (no competing declaration exists at all, so
+  `!important` cannot be resolving any in-file conflict). The remaining 14 "duplicate-selector" cases
+  were individually read and reasoned about by hand: 11 turned out to be either identical-value
+  duplicate rule blocks (e.g. `.mhn-action-count-reposted` was accidentally defined twice, ~9,200
+  lines apart, with the same color/font-weight) or legitimate mobile-first `@media` breakpoint
+  overrides where normal cascade order already picks the right rule without `!important`
+  (`.illustration-panel`/`.guardian-panel`'s `height`/`min-height`/`padding` at the `768px`
+  breakpoint) — all 11 were safe to strip. The final 3, all on `.mhn-parent-btn-secondary`
+  (`background-color`, `color`, `border`), were **left untouched**: that class is genuinely defined
+  three separate times in the file with conflicting values (heights 48px vs. 46px, border widths
+  1px vs. 1.5px, font-weights 700 vs. 600), so `!important` there is plausibly load-bearing today;
+  fixing it properly means consolidating the three duplicate rule blocks first, not stripping a
+  keyword. Verified: `pnpm verify` passes in full (typecheck, lint with zero warnings, all 189
+  tests, production build), and the two breakpoint-affecting selectors were visually spot-checked
+  before/after at both desktop and mobile viewport widths on `/onboarding` (the only page exercising
+  `.illustration-panel`) with no visible difference. Not verified beyond that spot-check: the
+  `.guardian-panel`/`.mhn-action-count-reposted`/etc. selectors' rendering on authenticated screens
+  this session had no live-login access to re-screenshot; the underlying diff for those is a
+  byte-for-byte-equivalent `!important` strip on either identical-value or uniquely-set
+  declarations, which is why they were included in the same safe-to-strip class as the visually
+  re-verified ones, but that reasoning has not been independently re-confirmed by an actual
+  screenshot on those specific screens.
+
 ## Current quality gates
 
 - Obfuscation/security scan must report zero findings.
@@ -440,18 +591,20 @@ Last reviewed: 2026-08-26
 - Production web build must pass.
 - Web/native UI ownership and pnpm-only dependency management checks must pass.
 
-Latest measured enforced-code coverage: 92.59% statements, 85.99% branches, 97.5% functions, and
-93.33% lines. The Vitest suite contains 126 tests across 24 test files, plus 6 Playwright smoke tests
+Latest measured enforced-code coverage: 93.94% statements, 88.28% branches, 98.03% functions, and
+94.44% lines (enforced boundary: `packages/api-client`, `auth`, `domain`, `validation` index files;
+`packages/core/src/api/signUpRules.ts`; `apps/web/src/platform/auth-storage.ts`,
+`query/query-client.ts`, `utils/guardianUtils.ts`, `utils/mediaUtils.ts`, `utils/toast.ts`). The
+Vitest suite contains 189 tests across 28 test files, plus 6 Playwright smoke tests
 (`apps/web/e2e/public.spec.ts`, run separately via `pnpm test:e2e`, not counted in the Vitest total).
 Web form validation, secure storage behavior, query/mutation hook behavior, route-guard
-fail-closed/redirect behavior, and route/form integration are represented in addition to shared
-logic. The latest web, Android, and iOS production bundle commands pass. `pnpm verify` passes
+fail-closed/redirect behavior, dialog/OTP-input keyboard and focus behavior, and route/form
+integration are represented in addition to shared logic. The latest web, Android, and iOS production
+bundle commands pass. `pnpm verify` passes
 end-to-end.
 
 ## Maintainability backlog
 
-- Split the largest presentation files (`profile-page.tsx` and `supervision-page.tsx`, each ~1,800
-  lines with 30-47 `useState` calls) without creating duplicate primitives.
 - Get the backend to actually issue an httpOnly session cookie (+ `csrfToken` in the verify response
   body) for `X-Client-Type: web` requests. Live-verified this pass: `POST /auth/otp/verify` returns
   `200` with `tokenDelivery: "mobile"` and bearer tokens in the body, no `Set-Cookie`, no
@@ -465,16 +618,29 @@ end-to-end.
 - Re-pin `eslint` to the latest compatible major once `eslint-config-next` supports it without the
   `scopeManager.addGlobals is not a function` crash seen on ESLint 10.9.1 during this migration pass;
   currently pinned to `^9.30.1` to match the working Admin Panel baseline.
-- Apply the per-route SEO/rendering classification (SSR/SSG/ISR/dynamic) from
-  `WEB_SEO_AND_RENDERING_STRATEGY.md`; the root layout currently sets `noindex` globally as a safe
-  default rather than a considered per-route decision.
 - Consolidate the compatibility packages (`core`, `shared`, `types`, `constants`, `utils`,
   `design-system`) into their target owners per `NEXTJS_MIGRATION_PLAN.md`, incrementally and only
   after each package's import inventory and tests are verified.
-- Remove remaining fabricated/mock production data still present in some feature screens.
-- Reduce `apps/web/src/index.css` (currently ~13,850 lines, 226 `!important` declarations) in favor
-  of Tailwind utilities and component variants as touched screens are refactored.
+- Project policy on fabricated/mock data: where a backend endpoint genuinely doesn't exist yet
+  (`events-page.tsx`'s `eventsList`, `CalendarView.tsx`'s `selectedDayEvents`, `profile-page.tsx`'s
+  `mediaPhotos` — no list/gallery endpoint, only signed-upload URLs), hardcoded placeholder data is
+  accepted and stays, marked with a comment noting the missing endpoint; replace gradually as each
+  API lands, not as a blocking rewrite. This is different from dead fabricated code that duplicates
+  data already served by a real endpoint — removed one example of that during this pass
+  (`profile-page.tsx`'s unused `userPosts` array; the Posts tab already renders real data via
+  `liveUserPosts`/`getUserPosts`). Do not make a hardcoded-data screen public/ISR (Events) until it's
+  connected to a real endpoint.
+- Consolidate `apps/web/src/index.css`'s three separate `.mhn-parent-btn-secondary` rule blocks
+  (currently defined with conflicting `height`/`border`/`font-weight` values across the file) into
+  one, so the remaining 3 `!important` declarations that are today resolving that conflict can be
+  removed too. Left as-is this pass rather than guessed at, since picking the wrong one of the three
+  conflicting definitions would be a real visual regression with no automated way to catch it here.
 - Expand UI integration/e2e coverage as stable Figma screens are implemented.
 - Migrate Expo SDK 54 to a patched SDK in a dedicated native change, then re-run Android/iOS
-  regression tests; remove the unused mobile RTK `fetchBaseQuery` path
-  (`apps/mobile/src/redux/store/api.ts`) in that same change.
+  regression tests.
+- Live-verify the migrated `apps/mobile/src/screens/ForgotPassword/index.tsx` (TanStack Query,
+  formerly RTK) on an actual iOS Simulator — this machine's Xcode isn't `xcode-select`-configured, so
+  only static verification (typecheck, lint, tests, `expo export` bundling) was possible this pass.
+  Run it once Xcode is configured, and check the failed-request error-message path specifically,
+  since that's the one behavior difference between the old RTK error shape and the new `ApiError`
+  one that static checks can't fully rule out.

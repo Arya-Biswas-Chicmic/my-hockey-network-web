@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 
@@ -9,6 +10,7 @@ import RootNavigator from './src/navigation/RootNavigator';
 import store, { persistor } from './src/redux/store';
 import './src/localization';
 import { configureMobilePlatform } from './src/platform/api-client';
+import { globalQueryClient } from './src/platform/query-client';
 
 configureMobilePlatform();
 
@@ -38,10 +40,12 @@ function AppContent() {
 
 export default function App() {
   return (
-    <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <AppContent />
-      </PersistGate>
-    </Provider>
+    <QueryClientProvider client={globalQueryClient}>
+      <Provider store={store}>
+        <PersistGate loading={null} persistor={persistor}>
+          <AppContent />
+        </PersistGate>
+      </Provider>
+    </QueryClientProvider>
   );
 }

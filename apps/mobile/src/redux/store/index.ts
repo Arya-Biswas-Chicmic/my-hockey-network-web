@@ -1,5 +1,4 @@
 import CommonReducer from '@/redux/CommonReducer';
-import api from '@/redux/store/api';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
@@ -9,7 +8,6 @@ import devToolsEnhancer from 'redux-devtools-expo-dev-plugin';
 
 const reducers = combineReducers({
   common: CommonReducer,
-  [api.reducerPath]: api.reducer,
 });
 
 const persistConfig = {
@@ -26,7 +24,7 @@ const store = configureStore({
     getDefaultMiddleware({
       immutableCheck: false,
       serializableCheck: false,
-    }).concat(api.middleware),
+    }),
   devTools: false,
   enhancers: getDefaultEnhancers =>
     getDefaultEnhancers().concat(devToolsEnhancer()),

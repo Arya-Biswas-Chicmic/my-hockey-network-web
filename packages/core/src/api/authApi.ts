@@ -11,7 +11,9 @@ import type {
   OnboardingDTO,
   OnboardingResponse,
   AuthMeResponse,
-  GuardianRequestResponse
+  GuardianRequestResponse,
+  ForgotPasswordDTO,
+  ForgotPasswordResponse
 } from './types';
 
 function getSharedAuthService() {
@@ -87,6 +89,15 @@ export async function logout(_clientType: 'web' | 'mobile' = 'web'): Promise<{ m
  */
 export async function sendGuardianRequest(parentEmail: string, _clientType: 'web' | 'mobile' = 'web'): Promise<GuardianRequestResponse> {
   return getSharedAuthService().sendGuardianRequest(parentEmail);
+}
+
+/**
+ * Request a password-reset email (Mobile-only — delegates to @my-hockey-network/auth. Web has no
+ * password field and never calls this; it exists in the shared auth service purely so mobile can
+ * reuse the same "Endpoints -> API services -> hooks -> components" layering as every other call.)
+ */
+export async function forgotPassword(dto: ForgotPasswordDTO, _clientType: 'web' | 'mobile' = 'mobile'): Promise<ForgotPasswordResponse> {
+  return getSharedAuthService().forgotPassword(dto);
 }
 
 /**

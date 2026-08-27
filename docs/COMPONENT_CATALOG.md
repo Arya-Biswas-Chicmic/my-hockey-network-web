@@ -217,3 +217,54 @@ Both invalidate their direction-specific query key after a successful mutation.
 endpoints. `ApprovalCodeModal` remains the reusable RHF/Zod six-digit-code dialog and now accepts
 typed title/submit-label variants for both approve and decline confirmation; it is built on the
 shared `Modal` primitive.
+
+## Profile and Supervision screen decomposition
+
+`screens/profile-page.tsx` and `screens/supervision-page.tsx` are thin orchestrators (577 and 231
+lines) over feature components and hooks, not monolithic screens. Before adding a new
+Profile/Supervision feature, look for an existing section/tab component or hook here first.
+
+**Profile** (`components/features/profile/`): `ProfileHeroCard` (cover/avatar/name/stats/tab bar),
+`ProfileAboutTab` (owns the Intro/Career/Details sidebar nav and composes the three sections below),
+`ProfileIntroSection`, `ProfilePersonalDetailsSection`, `ProfileCareerSection` (all three RHF+Zod —
+see below), `ProfilePostsTab`, `ProfileMediaTab`, `ProfileStatsTab`, `ProfileGuardianRequestsTab`.
+Supporting hooks: `hooks/use-profile-image-uploads.ts` (cover/avatar crop-upload flow),
+`hooks/use-profile-career.ts` (career entries CRUD).
+
+**Supervision** (`components/features/supervision/`): `SupervisionSidebar` (wards list),
+`SupervisionAddPlayerFlow` (the add-player wizard — composes `SupervisionCreatePlayerDetailsStep`,
+`CreatePlayerProtectStep`, `LinkExistingPlayerStep`; the choice/success/link-sent steps stay inline
+in the flow component since they own no form state — see its file doc comment for why),
+`SupervisionPermissionsTab`, `SupervisionRequestsTab`, `SupervisionLogsTab`. Supporting hooks:
+`hooks/use-supervision-wards.ts`, `hooks/use-supervision-permissions.ts`,
+`hooks/use-supervision-requests.ts`, `hooks/use-supervision-logs.ts` (the last has a documented,
+preserved-not-fixed duplicate-fetch quirk inherited from the original screen — read its file doc
+comment before touching it).
+
+**Naming note**: `components/features/parent/CreatePlayerDetailsStep.tsx` (used by
+`ParentOnboardingModal`) and `components/features/supervision/SupervisionCreatePlayerDetailsStep.tsx`
+are two distinct components with historically near-identical purposes and, before this pass,
+identical names — the supervision one was renamed to disambiguate. They are not currently unified
+into one shared component: they have different field-naming conventions, different validation
+strictness (only the `parent` one age-validates the child's DOB), and different external contracts
+(controlled-from-parent vs. self-contained). Unifying them is a legitimate follow-up but a distinct,
+larger change from converting each to RHF+Zod in place, which is what this pass did.
+
+## Profile/Supervision form Zod schemas
+
+All manually-managed forms across the project (the ones tracked as a `docs/IMPLEMENTATION_STATUS.md`
+backlog item) are now RHF + Zod. The schemas live in `packages/validation/src/forms.ts`:
+`profileIntroFormSchema`, `profilePersonalDetailsFormSchema`, `careerFormSchema`,
+`linkPlayerFormSchema`, `createPlayerDetailsFormSchema` (Supervision's add-player wizard — no age
+validation, matching its prior behavior), and `parentOnboardingPlayerDetailsFormSchema`
+(`ParentOnboardingModal`'s equivalent step — does age-validate, matching its prior behavior). Each
+wraps the exact prior hand-rolled validation rules rather than introducing new ones; do not
+"strengthen" one to match the other without an explicit product decision, since their differing
+strictness is preserved intentionally, not accidentally.
+
+Where `CareerFormFields`/`PersonalDetailsFields` (pre-existing controlled `values`/`onChange`/`errors`
+components) are reused rather than rebuilt on `Controller`, the owning RHF form bridges state via
+`form.watch()`/`useWatch({ control })` + `form.setValue()` rather than per-field `Controller` — a
+standard, valid RHF pattern for wrapping a multi-field controlled child. Use `useWatch({ control })`,
+not `form.watch()`, in any new form component: `pnpm lint:check` enforces this (`form.watch()` trips
+the `react-hooks/incompatible-library` rule, since React Compiler can't safely memoize around it).

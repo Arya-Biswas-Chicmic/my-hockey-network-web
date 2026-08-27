@@ -1,26 +1,27 @@
-import { Button } from '@/components/common/Button';
-import { Input, Select, Dropdown } from '@/components/common/FormControls';
+'use client';
+
+import { useState } from 'react';
 import Image from 'next/image';
-import { FallbackImage } from '@/components/ui/fallback-image';
-import React, { useState, useEffect } from 'react';
-import { Header } from '@/components/common/Header';
-import { NoDataFound } from '@/components/common/no-data-found';
-import { useDebounce } from '@/hooks/use-debounce';
-import { NetworkSkeletonCard } from '@/components/features/network/NetworkSkeletonLoader';
-import {
-  getNotificationSettings,
-  updateNotificationSettings,
-  getBlockedUsersSettings,
-  removeRelationship,
-  type BlockedUserDTO,
-  type NotificationSettingItem,
-} from '@my-hockey-network/core';
-import { extractErrorMessage, showSuccessToast, showErrorToast } from '@/utils/toast';
-import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
-import { NavTabEnum, SettingsSubTabEnum } from '@my-hockey-network/contracts';
 import { Ban, MapPin, Search } from 'lucide-react';
 
-
+import { Button } from '@/components/common/Button';
+import { Input, Dropdown } from '@/components/common/FormControls';
+import { FallbackImage } from '@/components/ui/fallback-image';
+import { Header } from '@/components/common/Header';
+import { NoDataFound } from '@/components/common/no-data-found';
+import { NetworkSkeletonCard } from '@/components/features/network/NetworkSkeletonLoader';
+import { useAuth } from '@/hooks/use-auth';
+import { useDebounce } from '@/hooks/use-debounce';
+import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
+import { NavTabEnum, SettingsSubTabEnum } from '@my-hockey-network/contracts';
+import {
+  useBlockedUsersQuery,
+  useUnblockUserMutation,
+  useNotificationSettingsQuery,
+  useUpdateNotificationSettingsMutation,
+  type NotificationSettingsView,
+} from '@/hooks/use-settings';
 
 interface SettingsPageProps {
   onNavigate?: (screen: string) => void;
@@ -28,152 +29,60 @@ interface SettingsPageProps {
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout }) => {
+  const { user } = useAuth();
   const [activeNavTab, setActiveNavTab] = useState<NavTabEnum | string>(NavTabEnum.SETTINGS);
   const [activeSubTab, setActiveSubTab] = useState<SettingsSubTabEnum>(SettingsSubTabEnum.BLOCKED);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 800);
 
-  const [blockedUsers, setBlockedUsers] = useState<Array<{
-    id: string;
-    name: string;
-    roleTag: string;
-    avatarUrl: string;
-    teamName: string;
-    teamLogo: string;
-    location: string;
-  }>>([]);
-  const [isLoadingBlocked, setIsLoadingBlocked] = useState(true);
-  const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
+  const blockedUsersQuery = useBlockedUsersQuery();
+  const unblockUserMutation = useUnblockUserMutation();
+  const notificationSettingsQuery = useNotificationSettingsQuery();
+  const updateNotificationSettingsMutation = useUpdateNotificationSettingsMutation();
   const [updatingNotifKey, setUpdatingNotifKey] = useState<string | null>(null);
+  // Tracked separately from unblockUserMutation.isPending/variables: a single shared mutation
+  // instance only reflects its most recent call, so it can't represent two Unblock clicks on
+  // different cards in flight at once — this set can.
   const [unblockingIds, setUnblockingIds] = useState<string[]>([]);
-
-  // Load live blocked users from GET /v1/settings/blocked
-  const fetchBlockedUsers = async (showSkeleton = true) => {
-    if (showSkeleton) setIsLoadingBlocked(true);
-    try {
-      const res = await getBlockedUsersSettings();
-      if (res && res.items && Array.isArray(res.items)) {
-        const mapped = res.items.map((b: BlockedUserDTO) => {
-          const cp = b.counterparty || b;
-          return {
-            id: b.id || b.targetId || `b_${Math.random()}`,
-            name: cp.displayName || cp.name || 'Blocked User',
-            roleTag: cp.roleTag || (cp.position ? `${cp.position} ${cp.jerseyNumber ? `• #${cp.jerseyNumber}` : ''}` : cp.primaryRole || 'Player'),
-            avatarUrl: cp.avatarUrl || '/userPlaceholder.png',
-            teamName: cp.teamName || 'HC Bloemendaal',
-            teamLogo: cp.teamLogo || '/kcBlue.png',
-            location: cp.location || cp.city || 'Canada',
-          };
-        });
-        setBlockedUsers(mapped);
-      } else {
-        setBlockedUsers([]);
-      }
-    } catch (err: unknown) {
-      console.warn('❌ [SettingsPage] getBlockedUsersSettings notice:', extractErrorMessage(err));
-    } finally {
-      if (showSkeleton) setIsLoadingBlocked(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchBlockedUsers(true);
-  }, []);
-
-  // Load live notification settings from GET /v1/settings/notifications
-  const fetchNotificationSettings = async (showShimmer = true) => {
-    if (showShimmer) setIsLoadingNotifications(true);
-    try {
-      const res = await getNotificationSettings();
-      if (res && Array.isArray(res.items)) {
-        const itemMap: Record<string, boolean> = {};
-        res.items.forEach((it: NotificationSettingItem) => {
-          if (it.key === 'MESSAGE') itemMap.message = !!it.enabled;
-          if (it.key === 'CONNECTION_REQUEST') itemMap.connectionRequest = !!it.enabled;
-          if (it.key === 'ACTIVITY') itemMap.activity = !!it.enabled;
-          if (it.key === 'MENTION') itemMap.mention = !!it.enabled;
-          if (it.key === 'GROUP') itemMap.group = !!it.enabled;
-        });
-        setNotifications((prev) => ({
-          message: itemMap.message ?? prev.message,
-          connectionRequest: itemMap.connectionRequest ?? prev.connectionRequest,
-          activity: itemMap.activity ?? prev.activity,
-          mention: itemMap.mention ?? prev.mention,
-          group: itemMap.group ?? prev.group,
-        }));
-      }
-    } catch (err: unknown) {
-      console.warn('❌ [SettingsPage] getNotificationSettings notice:', extractErrorMessage(err));
-    } finally {
-      if (showShimmer) setIsLoadingNotifications(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchNotificationSettings(true);
-  }, []);
 
   const handleUnblock = async (userId: string) => {
     if (unblockingIds.includes(userId)) return;
     setUnblockingIds((prev) => [...prev, userId]);
-
     try {
-      await removeRelationship(userId);
-
-      // Show Toast Notification
+      await unblockUserMutation.mutateAsync(userId);
       showSuccessToast(SUCCESS_MESSAGES.USER_UNBLOCKED);
-
-      // Re-fetch GET API with shimmer loader enabled
-      await fetchBlockedUsers(true);
     } catch (err: unknown) {
-      console.error('❌ [SettingsPage] Unblock Error:', err);
       showErrorToast(err, ERROR_MESSAGES.FAILED_UNBLOCK);
     } finally {
       setUnblockingIds((prev) => prev.filter((id) => id !== userId));
     }
   };
 
+  const blockedUsers = blockedUsersQuery.data ?? [];
   const filteredBlockedUsers = blockedUsers.filter(
-    (user) =>
+    (user_) =>
       !debouncedSearchQuery.trim() ||
-      user.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-      user.roleTag.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+      user_.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      user_.roleTag.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
   );
 
-  // Notification Toggle Switch States matching Figma Image 30
-  const [notifications, setNotifications] = useState({
+  const notifications = notificationSettingsQuery.data ?? {
     message: true,
     connectionRequest: true,
     activity: false,
     mention: true,
     group: true,
-  });
+  };
 
-  const toggleNotification = async (key: keyof typeof notifications) => {
-    const updatedValue = !notifications[key];
-    const newNotifs = { ...notifications, [key]: updatedValue };
-    setNotifications(newNotifs);
+  const toggleNotification = async (key: keyof NotificationSettingsView) => {
+    const newNotifs = { ...notifications, [key]: !notifications[key] };
     setUpdatingNotifKey(key);
-
     try {
-      const itemsPayload = [
-        { key: 'MESSAGE', enabled: newNotifs.message },
-        { key: 'CONNECTION_REQUEST', enabled: newNotifs.connectionRequest },
-        { key: 'ACTIVITY', enabled: newNotifs.activity },
-        { key: 'MENTION', enabled: newNotifs.mention },
-        { key: 'GROUP', enabled: newNotifs.group },
-      ];
-      await updateNotificationSettings(itemsPayload);
-
+      await updateNotificationSettingsMutation.mutateAsync(newNotifs);
       showSuccessToast(SUCCESS_MESSAGES.NOTIFICATION_SETTING_UPDATED);
-
-      // Re-fetch GET API with shimmer loader enabled after updating settings
-      await fetchNotificationSettings(true);
     } catch (err: unknown) {
-      console.warn('❌ [SettingsPage] updateNotificationSettings notice:', extractErrorMessage(err));
       showErrorToast(err, ERROR_MESSAGES.FAILED_NOTIFICATION_SETTING);
     } finally {
-
       setUpdatingNotifKey(null);
     }
   };
@@ -186,36 +95,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
   };
 
   const notificationItems = [
-    {
-      id: 'message' as const,
-      title: 'Message notifications',
-      subtitle: 'Get notified when you receive a message',
-      enabled: notifications.message,
-    },
-    {
-      id: 'connectionRequest' as const,
-      title: 'Connection request notifications',
-      subtitle: 'Get notified about incoming requests',
-      enabled: notifications.connectionRequest,
-    },
-    {
-      id: 'activity' as const,
-      title: 'Activity notifications',
-      subtitle: 'Reactions, comments on your posts',
-      enabled: notifications.activity,
-    },
-    {
-      id: 'mention' as const,
-      title: 'Mention notifications',
-      subtitle: 'Get notified when someone mentions you',
-      enabled: notifications.mention,
-    },
-    {
-      id: 'group' as const,
-      title: 'Group notifications',
-      subtitle: 'Get notified when someone is added to the group',
-      enabled: notifications.group,
-    },
+    { id: 'message' as const, title: 'Message notifications', subtitle: 'Get notified when you receive a message', enabled: notifications.message },
+    { id: 'connectionRequest' as const, title: 'Connection request notifications', subtitle: 'Get notified about incoming requests', enabled: notifications.connectionRequest },
+    { id: 'activity' as const, title: 'Activity notifications', subtitle: 'Reactions, comments on your posts', enabled: notifications.activity },
+    { id: 'mention' as const, title: 'Mention notifications', subtitle: 'Get notified when someone mentions you', enabled: notifications.mention },
+    { id: 'group' as const, title: 'Group notifications', subtitle: 'Get notified when someone is added to the group', enabled: notifications.group },
   ];
 
   const filteredNotificationItems = notificationItems.filter(
@@ -227,16 +111,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
 
   return (
     <div className="mhn-settings-page-root">
-      {/* Top Header Navbar */}
-      <Header
-        activeTab={activeNavTab}
-        onTabChange={handleTabChange}
-        onLogout={onLogout}
-      />
+      <Header activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout} />
 
-      {/* Main Content Area */}
       <main className="mhn-settings-main-container">
-        {/* Top Header Row with Title and Search Input */}
         <div className="mhn-settings-top-bar">
           <h1 className="mhn-settings-title">Settings</h1>
           <div className="mhn-settings-search-wrapper">
@@ -261,9 +138,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
           </div>
         </div>
 
-        {/* 2-Column Settings Card Container */}
         <div className="mhn-settings-card-wrapper">
-          {/* Left Sub-Navigation Menu Column */}
           <aside className="mhn-settings-sidebar">
             <Button
               onClick={() => setActiveSubTab(SettingsSubTabEnum.GENERAL)}
@@ -285,11 +160,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
             </Button>
           </aside>
 
-          {/* Right Content Area */}
           <section className="mhn-settings-content-area">
             {activeSubTab === SettingsSubTabEnum.NOTIFICATION && (
               <div className="mhn-notification-settings-list">
-                {isLoadingNotifications ? (
+                {notificationSettingsQuery.isLoading ? (
                   [1, 2, 3, 4, 5].map((n) => (
                     <div key={n} className="mhn-notification-setting-row mhn-notif-skeleton-row">
                       <div className="mhn-comment-skeleton-meta">
@@ -312,11 +186,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                         <p className="mhn-notification-item-subtitle">{item.subtitle}</p>
                       </div>
                       <div className="mhn-btn-loading-flex">
-                        {updatingNotifKey === item.id && (
-                          <div
-                            className="mhn-spinner-mini"
-                          />
-                        )}
+                        {updatingNotifKey === item.id && <div className="mhn-spinner-mini" />}
                         <Button
                           type="button"
                           onClick={() => toggleNotification(item.id)}
@@ -338,21 +208,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                 <h3 className="mhn-settings-section-heading">Account & General Settings</h3>
                 <div className="mhn-general-setting-field">
                   <label className="mhn-setting-label">Email Address</label>
-                  <Input
-                    type="email"
-                    value="sakshaiukym.garg@chicmicstudios.in"
-                    readOnly
-                    className="mhn-setting-input"
-                  />
+                  <Input type="email" value={user?.email ?? ''} readOnly className="mhn-setting-input" />
                 </div>
                 <div className="mhn-general-setting-field">
                   <label className="mhn-setting-label">Primary Role</label>
-                  <Input
-                    type="text"
-                    value="PLAYER"
-                    readOnly
-                    className="mhn-setting-input"
-                  />
+                  <Input type="text" value={user?.primaryRole ?? ''} readOnly className="mhn-setting-input" />
                 </div>
                 <Dropdown
                   label="Language"
@@ -369,7 +229,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
 
             {activeSubTab === SettingsSubTabEnum.BLOCKED && (
               <div className="mhn-blocked-users-view">
-                {isLoadingBlocked ? (
+                {blockedUsersQuery.isLoading ? (
                   <div className="mhn-blocked-users-grid">
                     {[1, 2, 3, 4].map((n) => (
                       <NetworkSkeletonCard key={n} />
@@ -383,45 +243,41 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
                         ? `No blocked users match "${searchQuery}".`
                         : "You haven't blocked any users yet."
                     }
-                    icon={(
-                      <Ban size={32} color="#64748B" aria-hidden="true" />
-                    )}
+                    icon={<Ban size={32} color="#64748B" aria-hidden="true" />}
                   />
                 ) : (
                   <div className="mhn-blocked-users-grid">
-                    {filteredBlockedUsers.map((user) => (
-                      <div key={user.id} className="mhn-blocked-user-card">
+                    {filteredBlockedUsers.map((blockedUser) => (
+                      <div key={blockedUser.id} className="mhn-blocked-user-card">
                         <FallbackImage
-                          src={user.avatarUrl}
-                          alt={user.name}
+                          src={blockedUser.avatarUrl}
+                          alt={blockedUser.name}
                           width={56}
                           height={56}
                           className="mhn-blocked-user-avatar"
                         />
-                        <h4 className="mhn-blocked-user-name">{user.name}</h4>
-                        <span className="mhn-blocked-user-role">{user.roleTag}</span>
+                        <h4 className="mhn-blocked-user-name">{blockedUser.name}</h4>
+                        <span className="mhn-blocked-user-role">{blockedUser.roleTag}</span>
 
                         <div className="mhn-blocked-user-team-row">
-                          <Image src={user.teamLogo} alt={user.teamName} width={14} height={14} className="mhn-blocked-team-logo" />
-                          <span className="mhn-blocked-team-name">{user.teamName}</span>
+                          <Image src={blockedUser.teamLogo} alt={blockedUser.teamName} width={14} height={14} className="mhn-blocked-team-logo" />
+                          <span className="mhn-blocked-team-name">{blockedUser.teamName}</span>
                         </div>
 
                         <div className="mhn-blocked-user-loc-row">
                           <MapPin size={12} aria-hidden="true" />
-                          <span>{user.location}</span>
+                          <span>{blockedUser.location}</span>
                         </div>
 
                         <Button
                           type="button"
-                          onClick={() => handleUnblock(user.id)}
-                          disabled={unblockingIds.includes(user.id)}
+                          onClick={() => handleUnblock(blockedUser.id)}
+                          disabled={unblockingIds.includes(blockedUser.id)}
                           className="mhn-btn-unblock mhn-btn-loading-flex"
                         >
-                          {unblockingIds.includes(user.id) ? (
+                          {unblockingIds.includes(blockedUser.id) ? (
                             <>
-                              <div
-                                className="mhn-spinner-white-mini"
-                              />
+                              <div className="mhn-spinner-white-mini" />
                               <span>Unblocking...</span>
                             </>
                           ) : (

@@ -2,6 +2,8 @@ import type { ApiClient, AuthStorageAdapter } from '@my-hockey-network/api-clien
 import {
   API_ENDPOINTS,
   type AuthMeResponse,
+  type ForgotPasswordDTO,
+  type ForgotPasswordResponse,
   type GuardianRequestResponse,
   type OnboardingDTO,
   type OnboardingResponse,
@@ -18,6 +20,8 @@ export interface AuthService {
   getMe(): Promise<AuthMeResponse>;
   logout(): Promise<void>;
   sendGuardianRequest(parentEmail: string): Promise<GuardianRequestResponse>;
+  /** Mobile-only password reset request; web has no password field and never calls this. */
+  forgotPassword(dto: ForgotPasswordDTO): Promise<ForgotPasswordResponse>;
 }
 
 export function createAuthService(client: ApiClient, storage: AuthStorageAdapter): AuthService {
@@ -46,6 +50,11 @@ export function createAuthService(client: ApiClient, storage: AuthStorageAdapter
       client.request(API_ENDPOINTS.RELATIONSHIPS.GUARDIAN_REQUESTS, {
         method: 'POST',
         body: JSON.stringify({ parentEmail }),
+      }),
+    forgotPassword: (dto) =>
+      client.request(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, {
+        method: 'POST',
+        body: JSON.stringify(dto),
       }),
   };
 }

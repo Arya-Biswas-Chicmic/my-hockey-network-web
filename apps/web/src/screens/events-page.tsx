@@ -30,7 +30,10 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     }
   };
 
-  // Sample events matching the Figma design screenshot
+  // No backend events endpoint exists yet (API_ENDPOINTS has no EVENTS entry) — hardcoded pending
+  // that API, per project policy: use hardcoded data where no API exists yet, replace gradually as
+  // APIs land. Do not make this route public/ISR before it's connected to real data — see
+  // docs/IMPLEMENTATION_STATUS.md.
   const eventsList: EventCardProps[] = [
     {
       id: 'e1',

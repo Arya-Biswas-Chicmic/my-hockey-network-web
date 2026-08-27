@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { CreatePostAudienceEnum } from '@my-hockey-network/contracts';
-import { validateProfileField } from './profileValidation';
+import { validateProfileField, validateCareerField } from './profileValidation';
 
 import { emailSchema, sixDigitOtpSchema } from './base';
 
@@ -67,6 +67,123 @@ export const editProfileFormSchema = z.object({
   }
 });
 
+// Reuses validateProfileField (same rules the standalone edit-profile modal already validates
+// with) so the inline Profile > About > Intro/Personal Details forms stay behaviorally identical
+// after moving from hand-rolled useState + imperative validation onto RHF + Zod.
+export const profileIntroFormSchema = z.object({
+  bio: z.string(),
+  position: z.string(),
+  jerseyNumber: z.string(),
+}).superRefine((values, context) => {
+  for (const name of ['bio', 'jerseyNumber'] as const) {
+    const message = validateProfileField(name, values[name]);
+    if (message) context.addIssue({ code: 'custom', path: [name], message });
+  }
+});
+
+export const profilePersonalDetailsFormSchema = z.object({
+  city: z.string(),
+  dateOfBirth: z.string(),
+  genderCategory: z.string(),
+}).superRefine((values, context) => {
+  for (const name of ['city', 'dateOfBirth'] as const) {
+    const message = validateProfileField(name, values[name]);
+    if (message) context.addIssue({ code: 'custom', path: [name], message });
+  }
+});
+
+// Reuses validateCareerField the same way — see profileIntroFormSchema above.
+export const careerFormSchema = z.object({
+  teamName: z.string(),
+  position: z.string(),
+  location: z.string(),
+  isCurrentPlaying: z.boolean(),
+  startMonth: z.string(),
+  startYear: z.string(),
+  endMonth: z.string(),
+  endYear: z.string(),
+  note: z.string(),
+}).superRefine((values, context) => {
+  const alwaysValidated = ['teamName', 'position', 'location', 'note', 'startMonth', 'startYear'] as const;
+  for (const name of alwaysValidated) {
+    const message = validateCareerField(name, values[name], values);
+    if (message) context.addIssue({ code: 'custom', path: [name], message });
+  }
+  if (!values.isCurrentPlaying) {
+    for (const name of ['endMonth', 'endYear'] as const) {
+      const message = validateCareerField(name, values[name], values);
+      if (message) context.addIssue({ code: 'custom', path: [name], message });
+    }
+  }
+});
+
+export const linkPlayerFormSchema = z.object({
+  email: requiredEmailSchema('Enter the player’s email address.'),
+});
+
+// Matches the exact prior hand-rolled rules from screens/supervision-page.tsx (a length check on
+// the DD/MM/YYYY text, not a parsed-date/age check) rather than the stricter
+// `createAccountFormSchema` — this form doesn't validate the child's age at all today, and
+// tightening that is a product decision, not something to change silently in a form-library swap.
+export const createPlayerDetailsFormSchema = z.object({
+  fullName: z.string().trim().min(2, 'Full Name must be at least 2 characters.').max(49, 'Maximum 50 characters allowed.'),
+  dob: z.string().min(10, 'Please enter a valid Date of Birth (DD/MM/YYYY).'),
+  relationship: z.string().min(1, 'Relationship to player is required.'),
+  email: requiredEmailSchema('Email is required.'),
+});
+
+// DD/MM/YYYY-only age calculation matching packages/core's `calculateAge` for that one format —
+// duplicated rather than imported to avoid making `validation` (a leaf package other packages,
+// including `core`, may depend on) depend on `core` itself for one small pure function.
+function ageFromDdMmYyyy(value: string): number | null {
+  const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value.trim());
+  if (!match) return null;
+  const [, ddStr, mmStr, yyyyStr] = match;
+  const dd = Number(ddStr);
+  const mm = Number(mmStr);
+  const yyyy = Number(yyyyStr);
+  const currentYear = new Date().getFullYear();
+  if (mm < 1 || mm > 12 || dd < 1 || dd > 31 || yyyy < 1900 || yyyy > currentYear) return null;
+  const birthDate = new Date(yyyy, mm - 1, dd);
+  if (Number.isNaN(birthDate.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const beforeBirthday = today.getMonth() < birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate());
+  if (beforeBirthday) age -= 1;
+  return age;
+}
+
+// Matches the exact prior hand-rolled rules from components/features/parent/CreatePlayerDetailsStep.tsx
+// (used by ParentOnboardingModal) — including its 5–100 year age check, which
+// `createPlayerDetailsFormSchema` above deliberately does not have (that form's prior behavior
+// never validated age at all; see the comment there).
+export const parentOnboardingPlayerDetailsFormSchema = z.object({
+  fullName: z.string().trim().min(2, 'Full Name must be at least 2 characters.').max(49, 'Maximum 50 characters allowed.'),
+  dateOfBirth: z.string(),
+  guardianRelation: z.enum(['MOTHER', 'FATHER', 'LEGAL_GUARDIAN', 'GRANDPARENT', 'OTHER'], {
+    error: 'Relationship to player is required.',
+  }),
+  email: requiredEmailSchema('Email is required.'),
+}).superRefine((values, context) => {
+  if (!values.dateOfBirth) {
+    context.addIssue({ code: 'custom', path: ['dateOfBirth'], message: 'Date of Birth is required.' });
+    return;
+  }
+  if (values.dateOfBirth.length < 10) {
+    context.addIssue({ code: 'custom', path: ['dateOfBirth'], message: 'Please enter a valid Date of Birth (DD/MM/YYYY).' });
+    return;
+  }
+  const age = ageFromDdMmYyyy(values.dateOfBirth);
+  if (age === null || age < 0) {
+    context.addIssue({ code: 'custom', path: ['dateOfBirth'], message: 'Please enter a valid Date of Birth.' });
+  } else if (age < 5) {
+    context.addIssue({ code: 'custom', path: ['dateOfBirth'], message: 'Minimum age for player profile is 5 years.' });
+  } else if (age > 100) {
+    context.addIssue({ code: 'custom', path: ['dateOfBirth'], message: 'Maximum age for player profile is 100 years.' });
+  }
+});
+
 export const supportTicketFormSchema = z.object({
   category: z.string(),
   subject: z.string().trim().min(1, 'Subject is required.').min(5, 'Subject must be at least 5 characters.'),
@@ -122,5 +239,11 @@ export type VerificationCodeFormValues = z.infer<typeof verificationCodeFormSche
 export type CommentFormValues = z.infer<typeof commentFormSchema>;
 export type CreatePostFormValues = z.infer<typeof createPostFormSchema>;
 export type EditProfileFormValues = z.infer<typeof editProfileFormSchema>;
+export type ProfileIntroFormValues = z.infer<typeof profileIntroFormSchema>;
+export type ProfilePersonalDetailsFormValues = z.infer<typeof profilePersonalDetailsFormSchema>;
+export type CareerFormValues = z.infer<typeof careerFormSchema>;
+export type LinkPlayerFormValues = z.infer<typeof linkPlayerFormSchema>;
+export type CreatePlayerDetailsFormValues = z.infer<typeof createPlayerDetailsFormSchema>;
+export type ParentOnboardingPlayerDetailsFormValues = z.infer<typeof parentOnboardingPlayerDetailsFormSchema>;
 export type SupportTicketFormValues = z.infer<typeof supportTicketFormSchema>;
 export type CreateAccountFormValues = z.infer<ReturnType<typeof createAccountFormSchema>>;

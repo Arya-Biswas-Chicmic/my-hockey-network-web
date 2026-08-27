@@ -7,6 +7,7 @@ export const API_ENDPOINTS = {
     OTP_REQUEST: '/auth/otp/request',
     OTP_VERIFY: '/auth/otp/verify',
     ONBOARDING: '/auth/onboarding',
+    FORGOT_PASSWORD: '/auth/forgot-password',
     REFRESH: '/auth/refresh',
     LOGOUT: '/auth/logout',
     LOGOUT_ALL: '/auth/logout-all',

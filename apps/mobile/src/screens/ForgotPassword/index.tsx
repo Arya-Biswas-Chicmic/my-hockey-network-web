@@ -13,9 +13,9 @@ import Button from '@components/Button';
 import Input from '@components/Input';
 import ScreenWrapper from '@components/ScreenWrapper';
 import useStyles from '@hooks/useStyles';
+import { useForgotPasswordMutation } from '@hooks/use-forgot-password';
 import { ROUTES } from '@/navigation/constants';
 import { RootStackParamList } from '@/navigation/types';
-import { useForgotPasswordMutation } from '@redux/ApiReducer';
 import { isValidEmail, sanitizeEmail } from '@utils/validation';
 
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -26,7 +26,8 @@ type Props = NativeStackScreenProps<RootStackParamList, ROUTES.FORGOT_PASSWORD>;
 
 const ForgotPasswordScreen = ({ navigation }: Props) => {
   const { dynamicStyles, Layout } = useStyles(styles);
-  const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
+  const forgotPasswordMutation = useForgotPasswordMutation();
+  const isLoading = forgotPasswordMutation.isPending;
 
   const [email, setEmail] = useState('');
   const [submitError, setSubmitError] = useState<string | undefined>(undefined);
@@ -54,9 +55,9 @@ const ForgotPasswordScreen = ({ navigation }: Props) => {
     if (!canSubmit || isLoading) return;
 
     try {
-      const res = await forgotPassword({
+      const res = await forgotPasswordMutation.mutateAsync({
         email: sanitizeEmail(email),
-      }).unwrap();
+      });
       setSuccess(res?.message || 'If your email exists, we sent a reset link.');
       setTimeout(() => navigation.navigate(ROUTES.LOGIN), 600);
     } catch (err) {

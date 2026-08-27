@@ -16,7 +16,7 @@ export function resolveCoverUrl(url?: string | null, fallback: string = '/cover.
     !url.trim() ||
     url === 'null' ||
     url === 'undefined' ||
-    url.includes('placeholder')
+    url.toLowerCase().includes('placeholder')
   ) {
     return fallback;
   }

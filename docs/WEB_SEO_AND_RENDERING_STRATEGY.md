@@ -31,6 +31,40 @@ Personalized, permission-controlled, draft, or session-derived output must never
 or public shared cache. Authorization must be enforced server-side; crawler directives are not an
 access-control mechanism.
 
+## Route inventory
+
+Every route currently in `apps/web/src/app`, with its actual rendering mode confirmed from a real
+`pnpm build:web` output (○ = static/prerendered, ƒ = dynamic/server-rendered on demand) rather than
+assumed from source alone.
+
+| Route | Class | Rendering | Search policy | Notes |
+| --- | --- | --- | --- | --- |
+| `/` | Auth transition | ○ static (redirect) | `noindex, nofollow`, excluded from sitemap | Immediately redirects to `/onboarding`; no landing-page content by product decision |
+| `/onboarding` | Auth transition | ○ static | `noindex, nofollow`, excluded from sitemap | Personalization (guest vs. authenticated) happens client-side after hydration, so the shell itself is safe to prerender |
+| `/guardian` | Auth transition | ○ static | `noindex, nofollow`, excluded from sitemap | Same reasoning as `/onboarding` |
+| `/sent` | Auth transition | ○ static | `noindex, nofollow`, excluded from sitemap | Same reasoning as `/onboarding` |
+| `/players/[id]` | Public, changing content | ƒ dynamic + ISR (`revalidate = 300`) | Indexed; per-profile `generateMetadata`/OG tags | The only implemented public entity route; server-only credential-free fetch (`infrastructure/server/public-profile.ts`) |
+| `/home` | Authenticated | ƒ dynamic (`force-dynamic` on `(authenticated)/layout.tsx`) | `noindex`, excluded from sitemap | |
+| `/network` | Authenticated | ƒ dynamic | `noindex`, excluded from sitemap | |
+| `/events` | Authenticated | ƒ dynamic | `noindex`, excluded from sitemap | 100% hardcoded placeholder data pending a real backend endpoint — see the "Project policy" entry in `IMPLEMENTATION_STATUS.md`; do not reclassify as public until connected to real data |
+| `/event-detail` | Authenticated | ƒ dynamic | `noindex`, excluded from sitemap | Same hardcoded-data caveat as `/events` |
+| `/messaging` | Authenticated | ƒ dynamic | `noindex`, excluded from sitemap | |
+| `/notifications` | Authenticated | ƒ dynamic | `noindex`, excluded from sitemap | |
+| `/profile` | Authenticated | ƒ dynamic | `noindex`, excluded from sitemap | Distinct from the public `/players/[id]` — this is the authenticated self/managed-profile editor |
+| `/profile/guardian-requests` | Authenticated | ƒ dynamic | `noindex`, excluded from sitemap | Gated additionally by `MinorPlayerGuard` |
+| `/settings` | Authenticated | ƒ dynamic | `noindex`, excluded from sitemap | |
+| `/supervision` | Authenticated | ƒ dynamic | `noindex`, excluded from sitemap | |
+| `/help` | Authenticated | ƒ dynamic | `noindex`, excluded from sitemap | |
+| `/api/backend/[...path]` | BFF proxy | ƒ dynamic (`force-dynamic`) | N/A — not a page | Same-origin cookie-forwarding proxy; never cached |
+
+All `(authenticated)` routes share one classification decision at the layout level
+(`apps/web/src/app/(authenticated)/layout.tsx`'s `export const dynamic = 'force-dynamic'`) rather
+than repeating it per route — this is the "one rendering and indexing policy" the inventory rule
+above asks for, applied once at the correct boundary instead of copy-pasted. `(auth)` routes have no
+equivalent layout-level directive; they render static by Next.js's own default because nothing in
+their server-rendered shell reads `cookies()`/`headers()` — the actual guest/authenticated check
+happens client-side in `GuestGuard`, confirmed empirically above rather than assumed.
+
 ## ISR rules
 
 - Use time-based revalidation only when bounded staleness is acceptable and documented per route.

@@ -13,4 +13,6 @@ export enum QueryKeys {
   USER_PROFILE = 'profile:user',
   USER_POSTS = 'profile:posts',
   REFERENCE_DATA = 'reference:data',
+  SETTINGS_BLOCKED_USERS = 'settings:blocked-users',
+  SETTINGS_NOTIFICATIONS = 'settings:notifications',
 }

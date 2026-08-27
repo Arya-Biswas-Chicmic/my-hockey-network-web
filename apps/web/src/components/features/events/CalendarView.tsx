@@ -30,7 +30,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onEventClick }) => {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  // Events list for the selected day (matching Image 2 design)
+  // Same no-backend-endpoint situation as events-page.tsx's eventsList — hardcoded pending a real
+  // events API, per project policy: use hardcoded data where no API exists yet, replace gradually.
   const selectedDayEvents: EventItem[] = [
     {
       id: 'ce1',

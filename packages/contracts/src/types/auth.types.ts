@@ -128,3 +128,14 @@ export interface GuardianRequestResponse {
   status: string;
   message?: string;
 }
+
+// Mobile-only: the mobile app supports password-based login/reset in
+// addition to the shared OTP flow above; web has no password field and
+// never calls this.
+export interface ForgotPasswordDTO {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  message?: string;
+}

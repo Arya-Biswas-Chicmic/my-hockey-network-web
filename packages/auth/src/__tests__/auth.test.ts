@@ -44,6 +44,20 @@ describe('shared auth service', () => {
     expect(request).toHaveBeenNthCalledWith(4, API_ENDPOINTS.RELATIONSHIPS.GUARDIAN_REQUESTS, expect.objectContaining({ method: 'POST' }));
   });
 
+  it('requests a mobile-only password reset by email', async () => {
+    const { request, service } = createMocks();
+    request.mockResolvedValueOnce({ message: 'Check your inbox.' });
+
+    await expect(service.forgotPassword({ email: 'p@example.com' })).resolves.toEqual({
+      message: 'Check your inbox.',
+    });
+
+    expect(request).toHaveBeenCalledWith(
+      API_ENDPOINTS.AUTH.FORGOT_PASSWORD,
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ email: 'p@example.com' }) }),
+    );
+  });
+
   it('persists a verified session through the injected platform storage', async () => {
     const { request, storage, service } = createMocks();
     request.mockResolvedValue(session);
