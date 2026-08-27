@@ -69,14 +69,16 @@ export const PostMedia: React.FC<PostMediaProps> = ({
 
           <div className="mhn-media-dots absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex gap-1.5">
             {mediaList.map((_, idx) => (
-              <button
+              <Button
                 key={idx}
                 onClick={() => setActiveIndex(idx)}
                 className={`h-1.5 rounded-full transition-all ${
                   idx === activeIndex ? 'w-4 bg-blue-500' : 'w-1.5 bg-white/50'
                 }`}
                 aria-label={`Go to image ${idx + 1}`}
-              />
+              >
+                <span className="sr-only">{`Go to image ${idx + 1}`}</span>
+              </Button>
             ))}
           </div>
         </>

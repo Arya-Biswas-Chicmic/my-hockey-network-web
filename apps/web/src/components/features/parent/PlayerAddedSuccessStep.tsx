@@ -42,7 +42,7 @@ export const PlayerAddedSuccessStep: React.FC<PlayerAddedSuccessStepProps> = ({
   const displayNameShort = formatShortPlayerName(playerName, 14);
 
   return (
-    <div className="mhn-parent-step-container mhn-text-center mhn-parent-step-container-max380">
+    <div className="mhn-parent-step-container mhn-text-center mhn-parent-step-container-max380 mhn-parent-step-success">
       <div className="mhn-parent-icon-circle mhn-green">
         <Check size={32} aria-hidden="true" />
       </div>
@@ -68,9 +68,7 @@ export const PlayerAddedSuccessStep: React.FC<PlayerAddedSuccessStepProps> = ({
               <LoaderCircle size={18} className="mhn-spin" aria-hidden="true" />
               <span>Loading...</span>
             </>
-          ) : (
-            'Go to Home'
-          )}
+          ) : `Go to ${displayNameShort}’s Profile`}
         </Button>
         <Button type="button" className="mhn-parent-btn-secondary" onClick={onAddAnother} disabled={isFinishing}>
           Add Another Player

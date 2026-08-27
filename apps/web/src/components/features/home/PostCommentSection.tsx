@@ -1,4 +1,5 @@
 import { Button } from '@/components/common/Button';
+import { Input } from '@/components/common/FormControls';
 import React, { useState } from 'react';
 import { getComments, addComment, type PostCommentItem } from '@my-hockey-network/core';
 import { useAuth } from '@/hooks/use-auth';
@@ -139,7 +140,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
       ) : commentsQuery.isError ? (
         <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-300 flex items-center justify-between">
           <span>{commentsQuery.error instanceof Error ? commentsQuery.error.message : 'Failed to load comments.'}</span>
-          <button onClick={() => void commentsQuery.refetch()} className="font-semibold underline">Retry</button>
+          <Button onClick={() => void commentsQuery.refetch()} className="font-semibold underline">Retry</Button>
         </div>
       ) : comments.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-4 text-center text-xs text-slate-400 gap-1">
@@ -179,8 +180,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
 
                     {/* Reaction Badges below bubble */}
                     <div className="flex items-center gap-2 mt-2 pt-1 border-t border-slate-800/40">
-                      <button
-                        type="button"
+                      <Button
                         onClick={() => toggleCommentLike(item.id, item.likeCount || 0)}
                         className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${
                           likeInfo.isLiked
@@ -190,14 +190,13 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
                       >
                         <Heart size={11} className={likeInfo.isLiked ? 'fill-rose-500 text-rose-500' : ''} />
                         <span>{likeInfo.count > 0 ? likeInfo.count : 'Like'}</span>
-                      </button>
+                      </Button>
 
-                      <button
-                        type="button"
+                      <Button
                         className="text-[11px] font-medium text-slate-400 hover:text-slate-200 transition-colors"
                       >
                         Reply
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -226,7 +225,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
         </div>
 
         <div className="flex-1 flex items-center gap-2 rounded-2xl border border-slate-800 bg-[#091222] p-1.5 pl-4 shadow-inner">
-          <input
+          <Input
             type="text"
             {...commentForm.register('comment')}
             placeholder={placeholder}
@@ -235,14 +234,14 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
           />
 
           <div className="flex items-center gap-1.5 shrink-0 pr-1">
-            <button type="button" className="text-slate-400 hover:text-slate-200 p-1" aria-label="Add emoji">
+            <Button className="text-slate-400 hover:text-slate-200 p-1" aria-label="Add emoji">
               <Smile size={16} />
-            </button>
-            <button type="button" className="text-slate-400 hover:text-slate-200 p-1" aria-label="Attach file">
+            </Button>
+            <Button className="text-slate-400 hover:text-slate-200 p-1" aria-label="Attach file">
               <Paperclip size={16} />
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="submit"
               disabled={!commentValue.trim() || commentForm.formState.isSubmitting}
               className={`flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white transition-all shadow-md ${
@@ -257,7 +256,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
               ) : (
                 <Send size={14} className="ml-0.5" aria-hidden="true" />
               )}
-            </button>
+            </Button>
           </div>
         </div>
       </Form>

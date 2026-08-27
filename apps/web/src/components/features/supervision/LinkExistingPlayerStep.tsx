@@ -68,8 +68,10 @@ export function LinkExistingPlayerStep({ onSend, onBack, onNavigateHelp, isSendi
         <a
           href="/help"
           onClick={(e) => {
-            e.preventDefault();
-            onNavigateHelp?.();
+            if (onNavigateHelp) {
+              e.preventDefault();
+              onNavigateHelp();
+            }
           }}
           className="mhn-trouble-link"
         >

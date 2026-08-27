@@ -55,7 +55,7 @@ export function PostCardHeader({
 
       <div className="mhn-post-header-actions flex items-center gap-2">
         {!isSelf && (
-          <button
+          <Button
             onClick={onToggleFollow}
             disabled={isFollowingLoading}
             className={`mhn-btn-follow rounded-xl px-4 py-1.5 text-xs font-semibold transition-all ${
@@ -77,7 +77,7 @@ export function PostCardHeader({
             ) : (
               'Follow'
             )}
-          </button>
+          </Button>
         )}
 
         <div className="relative">

@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import React from 'react';
+import { Button } from '@/components/common/Button';
 
 interface InviteGrowWidgetProps {
   onInviteClick?: () => void;
@@ -20,12 +21,12 @@ export const InviteGrowWidget: React.FC<InviteGrowWidgetProps> = ({
           </p>
         </div>
 
-        <button
+        <Button
           onClick={onInviteClick}
           className="mhn-btn-invite-now mt-3 self-start rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-md transition-all hover:bg-blue-500 active:scale-95"
         >
           Invite Now
-        </button>
+        </Button>
       </div>
 
       <div className="mhn-invite-grow-illustration absolute -right-2 -bottom-2 h-32 w-28 opacity-90 pointer-events-none z-0">

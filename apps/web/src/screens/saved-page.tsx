@@ -12,6 +12,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { FallbackImage } from '@/components/ui/fallback-image';
+import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
 import { showInfoToast } from '@/utils/toast';
 
@@ -141,7 +142,7 @@ export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
         {/* Navigation Tabs Bar (All, Posts, Events) */}
         <div className="flex items-center gap-8 border-b border-[#182740] pb-2">
-          <button
+          <Button
             onClick={() => setActiveTab('all')}
             className={`text-sm font-semibold relative pb-2 transition-colors ${
               activeTab === 'all'
@@ -150,8 +151,8 @@ export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             }`}
           >
             All ({savedItems.length})
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setActiveTab('posts')}
             className={`text-sm font-semibold relative pb-2 transition-colors ${
               activeTab === 'posts'
@@ -160,8 +161,8 @@ export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             }`}
           >
             Posts ({postsCount})
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setActiveTab('events')}
             className={`text-sm font-semibold relative pb-2 transition-colors ${
               activeTab === 'events'
@@ -170,7 +171,7 @@ export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             }`}
           >
             Events ({eventsCount})
-          </button>
+          </Button>
         </div>
 
         {/* Saved Items Stream */}
@@ -208,13 +209,13 @@ export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         </div>
                       </div>
 
-                      <button
+                      <Button
                         onClick={() => handleRemoveSaved(item.id)}
                         className="text-slate-400 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-slate-800/40"
                         title="Remove from saved"
                       >
                         <Bookmark size={18} fill="#168BFF" className="text-[#168BFF]" />
-                      </button>
+                      </Button>
                     </div>
 
                     {/* Post Content */}
@@ -269,13 +270,13 @@ export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         </div>
                       </div>
 
-                      <button
+                      <Button
                         onClick={() => handleRemoveSaved(item.id)}
                         className="text-[#168BFF] p-1.5 rounded-lg hover:bg-slate-800/40 shrink-0"
                         title="Remove from saved"
                       >
                         <Bookmark size={18} fill="#168BFF" />
-                      </button>
+                      </Button>
                     </div>
                   </>
                 )}

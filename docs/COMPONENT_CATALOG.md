@@ -35,6 +35,17 @@ page → feature/container → feature component → existing platform primitive
 - `GuardianApprovalModal` and `RequestSentCard`: reused in onboarding and dedicated auth pages.
 - Feature components exist for events, feed/posts, messaging, network/groups, notifications, profile,
   and onboarding. Search the appropriate feature folder before adding another card/modal/view.
+- `features/onboarding/OnboardingModal` owns the responsive Figma auth/onboarding shell and selects
+  the appropriate shared illustration and feature step. Auth forms remain under `features/auth`;
+  role presentation remains under `features/onboarding`; parent-specific compositions remain under
+  `features/parent`. Do not duplicate this shell for another auth state.
+- `features/supervision/LinkExistingPlayerStep` is the canonical existing-player link form for both
+  parent onboarding and authenticated Supervision. Extend its typed props when those flows require
+  a presentation variation; do not restore a second parent copy.
+- `features/parent/AddPlayerChoiceStep`, `CreatePlayerDetailsStep`,
+  `CreatePlayerProtectStep`, and `PlayerAddedSuccessStep` compose the parent onboarding journey from
+  shared `Button`, form, spinner, Lucide, validation, and service layers. Their callbacks own routing
+  and API orchestration outside presentation components.
 
 ## Existing mobile primitives
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@/components/common/Button';
 import { useFollowSuggestions } from '@/hooks/useFollowSuggestions';
 import { FollowSuggestionItem } from '@/components/features/home/FollowSuggestionItem';
 
@@ -14,12 +15,12 @@ export function WhoToFollowWidget({ onViewAll }: Readonly<WhoToFollowWidgetProps
       <div className="mhn-sidebar-card-header flex items-center justify-between mb-3">
         <h3 className="mhn-sidebar-card-title text-sm font-bold text-slate-100">Who to follow</h3>
         {onViewAll && (
-          <button
+          <Button
             onClick={onViewAll}
             className="mhn-sidebar-view-all text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
           >
             View All
-          </button>
+          </Button>
         )}
       </div>
 

@@ -4,12 +4,13 @@ import { WhoDoYouManageStep } from '@/components/features/parent/WhoDoYouManageS
 import { AddPlayerChoiceStep } from '@/components/features/parent/AddPlayerChoiceStep';
 import { CreatePlayerDetailsStep, PlayerDetailsFormData } from '@/components/features/parent/CreatePlayerDetailsStep';
 import { CreatePlayerProtectStep, PlayerProtectFormData } from '@/components/features/parent/CreatePlayerProtectStep';
-import { LinkExistingPlayerStep } from '@/components/features/parent/LinkExistingPlayerStep';
+import { LinkExistingPlayerStep } from '@/components/features/supervision/LinkExistingPlayerStep';
 import { PlayerAddedSuccessStep } from '@/components/features/parent/PlayerAddedSuccessStep';
 import { createManagedChild, sendGuardianInvite } from '@my-hockey-network/core';
 import type { CreateManagedChildDTO } from '@my-hockey-network/core';
 import { formatDobToIso } from '@/utils/guardianUtils';
 import { extractErrorMessage } from '@/utils/toast';
+import type { LinkPlayerFormValues } from '@my-hockey-network/validation';
 
 export enum ParentOnboardingStep {
   WHO_MANAGE = 'WHO_MANAGE',
@@ -23,7 +24,7 @@ export enum ParentOnboardingStep {
 export interface ParentOnboardingModalProps {
   isOpen?: boolean;
   onClose?: () => void;
-  onComplete?: (data?: { type: 'create' | 'link'; playerName: string; childEmail?: string }) => void;
+  onComplete?: (data?: { type: 'create' | 'link'; playerName: string; childEmail?: string; playerId?: string }) => void;
   isStandaloneModal?: boolean;
 }
 
@@ -50,13 +51,13 @@ export const ParentOnboardingModal: React.FC<ParentOnboardingModalProps> = ({
     requireApprovalMedia: true,
   });
 
-  const [childEmailInput, setChildEmailInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successData, setSuccessData] = useState<{
     type: 'create' | 'link';
     playerName: string;
     childEmail?: string;
+    playerId?: string;
   } | null>(null);
 
   if (!isOpen) return null;
@@ -84,6 +85,7 @@ export const ParentOnboardingModal: React.FC<ParentOnboardingModalProps> = ({
       setSuccessData({
         type: 'create',
         playerName: res?.child?.displayName || detailsForm.fullName.trim(),
+        playerId: res?.child?.id,
       });
       setStep(ParentOnboardingStep.SUCCESS);
     } catch (err: unknown) {
@@ -94,16 +96,16 @@ export const ParentOnboardingModal: React.FC<ParentOnboardingModalProps> = ({
     }
   };
 
-  const handleLinkPlayerSubmit = async () => {
+  const handleLinkPlayerSubmit = async ({ email }: LinkPlayerFormValues) => {
     setLoading(true);
     setErrorMessage(null);
 
     try {
-      await sendGuardianInvite(childEmailInput.trim());
+      await sendGuardianInvite(email.trim());
       setSuccessData({
         type: 'link',
-        playerName: childEmailInput.trim(),
-        childEmail: childEmailInput.trim(),
+        playerName: email.trim(),
+        childEmail: email.trim(),
       });
       setStep(ParentOnboardingStep.SUCCESS);
     } catch (err: unknown) {
@@ -121,7 +123,6 @@ export const ParentOnboardingModal: React.FC<ParentOnboardingModalProps> = ({
 
   const handleAddAnother = () => {
     setDetailsForm({ fullName: '', dateOfBirth: '', guardianRelation: 'MOTHER', email: '' });
-    setChildEmailInput('');
     setSuccessData(null);
     setErrorMessage(null);
     setStep(ParentOnboardingStep.CHOOSE_METHOD);
@@ -150,7 +151,6 @@ export const ParentOnboardingModal: React.FC<ParentOnboardingModalProps> = ({
             <AddPlayerChoiceStep
               onCreateNew={() => setStep(ParentOnboardingStep.CREATE_STEP_1)}
               onLinkExisting={() => setStep(ParentOnboardingStep.LINK_EXISTING)}
-              onBack={() => setStep(ParentOnboardingStep.WHO_MANAGE)}
             />
           )}
 
@@ -176,11 +176,9 @@ export const ParentOnboardingModal: React.FC<ParentOnboardingModalProps> = ({
 
           {step === ParentOnboardingStep.LINK_EXISTING && (
             <LinkExistingPlayerStep
-              childEmail={childEmailInput}
-              onChangeEmail={setChildEmailInput}
-              onSubmit={handleLinkPlayerSubmit}
+              onSend={handleLinkPlayerSubmit}
               onBack={() => setStep(ParentOnboardingStep.CHOOSE_METHOD)}
-              loading={loading}
+              isSending={loading}
             />
           )}
 

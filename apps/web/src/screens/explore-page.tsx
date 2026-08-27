@@ -102,7 +102,7 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
           {/* Sub-Navigation Categories Bar */}
           <div className="mhn-explore-tabs-bar flex items-center gap-8 border-b border-[#182740] pb-2">
-            <button
+            <Button
               onClick={() => setActiveExploreTab('popular')}
               className={`text-sm font-semibold relative pb-2 transition-colors ${
                 activeExploreTab === 'popular'
@@ -111,8 +111,8 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               }`}
             >
               Popular
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setActiveExploreTab('suggested')}
               className={`text-sm font-semibold relative pb-2 transition-colors ${
                 activeExploreTab === 'suggested'
@@ -121,8 +121,8 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               }`}
             >
               Suggested
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setActiveExploreTab('verified')}
               className={`text-sm font-semibold relative pb-2 transition-colors ${
                 activeExploreTab === 'verified'
@@ -131,7 +131,7 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               }`}
             >
               Verified Accounts
-            </button>
+            </Button>
           </div>
 
           {/* POST 1: KC Blueknocks */}
@@ -175,14 +175,14 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
             {/* Post Content text */}
             <div className="text-sm text-slate-200 leading-relaxed">
-              <span>First tournament of the season! Let's go!</span>
+              <span>First tournament of the season! Let&apos;s go!</span>
               {!post1Expanded ? (
-                <button
+                <Button
                   onClick={() => setPost1Expanded(true)}
                   className="text-slate-400 hover:text-slate-200 text-xs ml-1 font-medium"
                 >
                   ... more
-                </button>
+                </Button>
               ) : (
                 <span className="block mt-1 text-slate-300">
                   Big thanks to all our players, coaches, and supporters who brought incredible energy to the rink today. On to the finals! 🏒⚡
@@ -215,7 +215,7 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             {/* Post Action Footer */}
             <div className="flex items-center justify-between border-t border-[#162238] pt-3 text-slate-400">
               <div className="flex items-center gap-6">
-                <button
+                <Button
                   onClick={() => {
                     setPost1Liked(!post1Liked);
                     setPost1Likes((prev) => (post1Liked ? prev - 1 : prev + 1));
@@ -226,31 +226,31 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 >
                   <Heart size={18} fill={post1Liked ? 'currentColor' : 'none'} />
                   <span>{post1Likes}</span>
-                </button>
+                </Button>
 
-                <button className="flex items-center gap-2 text-xs font-semibold hover:text-slate-200 transition-colors">
+                <Button className="flex items-center gap-2 text-xs font-semibold hover:text-slate-200 transition-colors">
                   <MessageCircle size={18} />
                   <span>2</span>
-                </button>
+                </Button>
 
-                <button className="flex items-center gap-2 text-xs font-semibold hover:text-slate-200 transition-colors">
+                <Button className="flex items-center gap-2 text-xs font-semibold hover:text-slate-200 transition-colors">
                   <Repeat size={18} />
                   <span>1</span>
-                </button>
+                </Button>
               </div>
 
               <div className="flex items-center gap-4">
-                <button className="text-slate-400 hover:text-slate-200 transition-colors">
+                <Button className="text-slate-400 hover:text-slate-200 transition-colors">
                   <Send size={18} />
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => setPost1Bookmarked(!post1Bookmarked)}
                   className={`transition-colors ${
                     post1Bookmarked ? 'text-[#168BFF]' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   <Bookmark size={18} fill={post1Bookmarked ? 'currentColor' : 'none'} />
-                </button>
+                </Button>
               </div>
             </div>
           </article>
@@ -286,10 +286,10 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             <div className="text-sm text-slate-200 leading-relaxed flex flex-col gap-2">
               <p className="font-semibold">🏒 FINAL MATCH DAY! 🏆</p>
               <p>
-                Everything we've trained for comes down to this moment. The pressure is high, the ice is ready, and we're prepared to give it everything we've got.
+                Everything we&apos;ve trained for comes down to this moment. The pressure is high, the ice is ready, and we&apos;re prepared to give it everything we&apos;ve got.
               </p>
               <p>
-                No fear. No excuses. Just heart, teamwork, and the hunger to win. One final battle. One chance to become champions. Let's bring the trophy home! 🔥🏆
+                No fear. No excuses. Just heart, teamwork, and the hunger to win. One final battle. One chance to become champions. Let&apos;s bring the trophy home! 🔥🏆
               </p>
               <div className="flex flex-wrap gap-1.5 text-[#168BFF] font-medium text-xs mt-1">
                 <span>#IceHockey</span>
@@ -303,7 +303,7 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             {/* Post Action Footer */}
             <div className="flex items-center justify-between border-t border-[#162238] pt-3 text-slate-400">
               <div className="flex items-center gap-6">
-                <button
+                <Button
                   onClick={() => {
                     setPost2Liked(!post2Liked);
                     setPost2Likes((prev) => (post2Liked ? prev - 1 : prev + 1));
@@ -314,31 +314,31 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 >
                   <Heart size={18} fill={post2Liked ? 'currentColor' : 'none'} />
                   <span>{post2Likes}</span>
-                </button>
+                </Button>
 
-                <button className="flex items-center gap-2 text-xs font-semibold hover:text-slate-200 transition-colors">
+                <Button className="flex items-center gap-2 text-xs font-semibold hover:text-slate-200 transition-colors">
                   <MessageCircle size={18} />
                   <span>8</span>
-                </button>
+                </Button>
 
-                <button className="flex items-center gap-2 text-xs font-semibold hover:text-slate-200 transition-colors">
+                <Button className="flex items-center gap-2 text-xs font-semibold hover:text-slate-200 transition-colors">
                   <Repeat size={18} />
                   <span>4</span>
-                </button>
+                </Button>
               </div>
 
               <div className="flex items-center gap-4">
-                <button className="text-slate-400 hover:text-slate-200 transition-colors">
+                <Button className="text-slate-400 hover:text-slate-200 transition-colors">
                   <Send size={18} />
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => setPost2Bookmarked(!post2Bookmarked)}
                   className={`transition-colors ${
                     post2Bookmarked ? 'text-[#168BFF]' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   <Bookmark size={18} fill={post2Bookmarked ? 'currentColor' : 'none'} />
-                </button>
+                </Button>
               </div>
             </div>
           </article>
@@ -349,12 +349,12 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           <div className="mhn-you-might-like-card bg-[#0A1220] border border-[#162238] rounded-2xl p-4 flex flex-col gap-4 shadow-lg">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-100">You Might Like</h3>
-              <button
+              <Button
                 onClick={() => onNavigate && onNavigate('network')}
                 className="text-xs font-semibold text-[#168BFF] hover:underline"
               >
                 View All
-              </button>
+              </Button>
             </div>
 
             <div className="flex flex-col gap-3">
@@ -375,7 +375,7 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                     </span>
                   </div>
 
-                  <button
+                  <Button
                     onClick={() => toggleFollowUser(person.id)}
                     className={`shrink-0 px-3.5 py-1 text-xs font-semibold rounded-xl transition-all ${
                       person.isFollowing
@@ -384,7 +384,7 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                     }`}
                   >
                     {person.isFollowing ? 'Following' : 'Follow'}
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>
@@ -394,4 +394,3 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     </AppShell>
   );
 };
-

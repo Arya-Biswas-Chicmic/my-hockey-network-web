@@ -43,8 +43,7 @@ export const EventCard: React.FC<EventCardProps> = ({
           className="object-cover transition-transform duration-300 hover:scale-105"
         />
         {/* Top-Right Menu Options Button */}
-        <button
-          type="button"
+        <Button
           onClick={(e) => {
             e.stopPropagation();
           }}
@@ -52,7 +51,7 @@ export const EventCard: React.FC<EventCardProps> = ({
           aria-label="Event Options"
         >
           <MoreHorizontal size={16} />
-        </button>
+        </Button>
       </div>
 
       {/* Event Card Content */}

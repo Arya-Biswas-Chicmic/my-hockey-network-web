@@ -1,26 +1,24 @@
 import React from 'react';
-import Image from 'next/image';
 import { Button } from '@/components/common/Button';
+import { ChevronRight, Link2, Plus } from 'lucide-react';
 
 interface AddPlayerChoiceStepProps {
   onCreateNew: () => void;
   onLinkExisting: () => void;
-  onBack: () => void;
 }
 
 export const AddPlayerChoiceStep: React.FC<AddPlayerChoiceStepProps> = ({
   onCreateNew,
   onLinkExisting,
-  onBack,
 }) => {
   return (
-    <div className="mhn-parent-step-container">
+    <div className="mhn-parent-step-container mhn-parent-step-choice">
       <h2 className="mhn-parent-step-title">How would you like to add them?</h2>
 
       <div className="mhn-parent-stack-gap-16">
-        <div className="mhn-parent-choice-card mhn-active" onClick={onCreateNew}>
+        <Button type="button" className="mhn-parent-choice-card mhn-active" onClick={onCreateNew}>
           <div className="mhn-parent-flex-row-center-16">
-            <Image src="/addPlayer.png" alt="Add Player" width={40} height={40} className="add-player-img" />
+            <span className="mhn-parent-choice-icon" aria-hidden="true"><Plus /></span>
             <div>
               <div className="mhn-parent-card-title">
                 Create a new player profile
@@ -30,12 +28,12 @@ export const AddPlayerChoiceStep: React.FC<AddPlayerChoiceStepProps> = ({
               </div>
             </div>
           </div>
-          <div className="mhn-parent-chevron-blue">›</div>
-        </div>
+          <ChevronRight className="mhn-parent-chevron-blue" aria-hidden="true" />
+        </Button>
 
-        <div className="mhn-parent-choice-card" onClick={onLinkExisting}>
+        <Button type="button" className="mhn-parent-choice-card" onClick={onLinkExisting}>
           <div className="mhn-parent-flex-row-center-16">
-            <Image src="/linking.png" alt="Link Existing" width={40} height={40} className="add-player-img" />
+            <span className="mhn-parent-choice-icon" aria-hidden="true"><Link2 /></span>
             <div>
               <div className="mhn-parent-card-title">
                 Link an existing player
@@ -45,15 +43,10 @@ export const AddPlayerChoiceStep: React.FC<AddPlayerChoiceStepProps> = ({
               </div>
             </div>
           </div>
-          <div className="mhn-parent-chevron-gray">›</div>
-        </div>
-      </div>
-
-      <div className="mhn-parent-btn-center-row">
-        <Button type="button" className="mhn-parent-btn-back" onClick={onBack}>
-          Back
+          <ChevronRight className="mhn-parent-chevron-gray" aria-hidden="true" />
         </Button>
       </div>
+
     </div>
   );
 };

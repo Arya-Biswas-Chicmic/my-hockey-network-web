@@ -148,7 +148,7 @@ export const GroupsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
           {/* Navigation Tabs Bar (Your Groups vs Discover) */}
           <div className="flex items-center gap-8 border-b border-[#182740] pb-2">
-            <button
+            <Button
               onClick={() => setActiveTab('your-groups')}
               className={`text-sm font-semibold relative pb-2 transition-colors ${
                 activeTab === 'your-groups'
@@ -157,8 +157,8 @@ export const GroupsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               }`}
             >
               Your Groups
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setActiveTab('discover')}
               className={`text-sm font-semibold relative pb-2 transition-colors ${
                 activeTab === 'discover'
@@ -167,7 +167,7 @@ export const GroupsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               }`}
             >
               Discover
-            </button>
+            </Button>
           </div>
 
           {/* Group Cards Grid */}
@@ -190,8 +190,7 @@ export const GroupsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                     className="object-cover transition-transform duration-300 hover:scale-105"
                   />
                   {/* Top-Right Menu Options Button */}
-                  <button
-                    type="button"
+                  <Button
                     onClick={(e) => {
                       e.stopPropagation();
                     }}
@@ -199,7 +198,7 @@ export const GroupsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                     aria-label="Group Options"
                   >
                     <MoreHorizontal size={16} />
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Card Body */}

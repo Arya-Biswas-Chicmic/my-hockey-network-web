@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTheme } from '@/components/core/theme-provider';
 import { OnboardingIllustration } from '@/components/features/onboarding/OnboardingIllustration';
 import { RoleSelectionForm } from '@/components/features/onboarding/RoleSelectionForm';
 import { CreateAccountForm, VerifyEmailForm, LoginForm, GuardianApprovalModal, RequestSentCard } from '@/components/features/auth';
@@ -13,11 +14,12 @@ import { extractErrorMessage, getApiErrorKey, getApiErrorStatus } from '@/utils/
 
 interface OnboardingModalProps {
   initialMode?: 'signup' | 'login';
-  onComplete?: (data: { selectedRoles: string[]; accountData?: { fullName: string; email: string; dob: string; parentEmail?: string }; onboardingResult?: OnboardingResponse | AuthMeResponse }) => void;
+  onComplete?: (data: { selectedRoles: string[]; accountData?: { fullName: string; email: string; dob: string; parentEmail?: string }; onboardingResult?: OnboardingResponse | AuthMeResponse; redirectProfileId?: string }) => void;
 }
 
-function getIllustrationSource(step: number, authMode: AuthModeEnum, loginStep: number): string {
-  if (step === 6) return '/empowering.png';
+function getIllustrationSource(step: number, authMode: AuthModeEnum, loginStep: number, isDark: boolean): string {
+  if (step >= 4) return '/empowering.png';
+  if (isDark) return '/IceHockeyDark.png';
   const isOtpStep = (authMode === AuthModeEnum.SIGNUP && step === 3)
     || (authMode === AuthModeEnum.LOGIN && loginStep === 2);
   return isOtpStep ? '/OTPbg.png' : '/Welcome.png';
@@ -25,6 +27,7 @@ function getIllustrationSource(step: number, authMode: AuthModeEnum, loginStep: 
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = AuthModeEnum.LOGIN, onComplete }) => {
   const { setAuthSession, loadAuthMe, showToast } = useAuth();
+  const { resolvedTheme } = useTheme();
   const [authMode, setAuthMode] = useState<AuthModeEnum>(String(initialMode) === 'signup' ? AuthModeEnum.SIGNUP : AuthModeEnum.LOGIN);
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1); // 1: Role, 2: CreateAccount, 3: VerifyOTP, 4: GuardianApproval, 5: RequestSent, 6: ParentOnboarding
   const [loginStep, setLoginStep] = useState<1 | 2>(1);
@@ -159,7 +162,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
     }
   };
 
-  const finalizeOnboarding = async (parentEmail?: string, sessionToSave?: OtpVerifyResponse) => {
+  const finalizeOnboarding = async (parentEmail?: string, sessionToSave?: OtpVerifyResponse, redirectProfileId?: string) => {
     setLoading(true);
     try {
       const activeSession = sessionToSave || verifiedSession;
@@ -202,7 +205,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
       await loadAuthMe(true, true);
 
       if (onComplete) {
-        onComplete({ selectedRoles, accountData: { ...accountData, parentEmail }, onboardingResult });
+        onComplete({ selectedRoles, accountData: { ...accountData, parentEmail }, onboardingResult, redirectProfileId });
       }
     } catch (err: unknown) {
       setErrorMessage(extractErrorMessage(err, 'Failed to complete profile onboarding.'));
@@ -328,7 +331,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
     <div className="onboarding-modal">
       {step !== 4 && step !== 5 && (
         <OnboardingIllustration
-          imageSrc={getIllustrationSource(step, authMode, loginStep)}
+          imageSrc={getIllustrationSource(step, authMode, loginStep, resolvedTheme === 'dark')}
         />
       )}
 
@@ -347,7 +350,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
               selectedRoles={selectedRoles}
               onToggleRole={handleToggleRole}
               onContinue={handleRoleSelectionContinue}
-              onBack={handleSwitchToLogin}
             />
           )}
           {step === 2 && (
@@ -355,7 +357,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
               selectedRole={currentSelectedRole}
               onSignUp={handleSignUp}
               onGoogleSignIn={() => setStep(3)}
-              onBack={() => setStep(1)}
               onSignInClick={handleSwitchToLogin}
               loading={loading}
             />
@@ -390,7 +391,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
           {step === 6 && (
             <ParentOnboardingModal
               isStandaloneModal={false}
-              onComplete={() => finalizeOnboarding()}
+              onComplete={(data) => finalizeOnboarding(undefined, undefined, data?.playerId)}
               onClose={() => finalizeOnboarding()}
             />
           )}

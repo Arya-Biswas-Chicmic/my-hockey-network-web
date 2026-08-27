@@ -222,10 +222,11 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
         isOpen={isAddPlayerModalOpen}
         isStandaloneModal={true}
         onClose={() => setIsAddPlayerModalOpen(false)}
-        onComplete={async () => {
+        onComplete={async (data) => {
           setIsAddPlayerModalOpen(false);
           showToast(SUCCESS_MESSAGES.PLAYER_UPDATED, ToastTypeEnum.SUCCESS);
           await wards.refreshAfterParentOnboarding();
+          if (data?.playerId) onNavigate?.('profile', { userId: data.playerId });
         }}
       />
       </div>

@@ -75,7 +75,7 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
   const handleContinueClick = form.handleSubmit(() => onContinue());
 
   return (
-    <div className="mhn-parent-step-container">
+    <div className="mhn-parent-step-container mhn-parent-step-details">
       <h2 className="mhn-parent-step-title">Player Details</h2>
       <p className="mhn-parent-step-desc">Tell us a little about your player.</p>
 
@@ -87,7 +87,7 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
             value={values.fullName}
             onChange={(e) => setField('fullName', e.target.value)}
             maxLength={50}
-            placeholder="e.g. Connor McDavid"
+            placeholder="Enter your name"
           />
         </FormField>
 
@@ -131,7 +131,7 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
             className={`auth-input ${errors.email ? 'mhn-input-invalid' : ''}`}
             value={values.email}
             onValueChange={(value) => setField('email', value)}
-            placeholder="e.g. admin@gmail.com"
+            placeholder="admin@gmail.com"
           />
         </FormField>
       </div>

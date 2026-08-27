@@ -166,7 +166,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
             {/* View Mode Switcher */}
             <div className="h-10 bg-[#0D1627] border border-[#182740] rounded-xl p-1 flex items-center gap-1">
-              <button
+              <Button
                 onClick={() => setViewMode('list')}
                 className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                   viewMode === 'list' ? 'bg-[#15243B] text-[#168BFF]' : 'text-slate-400 hover:text-slate-200'
@@ -174,8 +174,8 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 title="List View"
               >
                 <List size={16} />
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setViewMode('grid')}
                 className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                   viewMode === 'grid' ? 'bg-[#15243B] text-[#168BFF]' : 'text-slate-400 hover:text-slate-200'
@@ -183,7 +183,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 title="Grid View"
               >
                 <Grid size={16} />
-              </button>
+              </Button>
             </div>
 
             {/* + Create Event Button */}
@@ -196,7 +196,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
         {/* Top-Level Tabs Bar (Personal, Network, Explore) */}
         <div className="flex items-center gap-8 border-b border-[#182740] pb-2">
-          <button
+          <Button
             onClick={() => setActiveTopTab('personal')}
             className={`text-sm font-semibold relative pb-2 transition-colors ${
               activeTopTab === 'personal'
@@ -205,8 +205,8 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             }`}
           >
             Personal
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setActiveTopTab('network')}
             className={`text-sm font-semibold relative pb-2 transition-colors ${
               activeTopTab === 'network'
@@ -215,8 +215,8 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             }`}
           >
             Network
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setActiveTopTab('explore')}
             className={`text-sm font-semibold relative pb-2 transition-colors ${
               activeTopTab === 'explore'
@@ -225,13 +225,13 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             }`}
           >
             Explore
-          </button>
+          </Button>
         </div>
 
         {/* Sub-Category Filter Pills Bar */}
         <div className="flex items-center gap-3 flex-wrap">
           {filterPills.map((pill) => (
-            <button
+            <Button
               key={pill.id}
               onClick={() => setActiveFilterPill(pill.id)}
               className={`h-8 px-3.5 rounded-full text-xs font-semibold flex items-center gap-2 transition-all ${
@@ -250,7 +250,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               >
                 {pill.count}
               </span>
-            </button>
+            </Button>
           ))}
         </div>
 
