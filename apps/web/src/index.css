@@ -5231,7 +5231,23 @@
   gap: 16px;
   flex: 1;
   overflow-y: auto;
-  max-height: 520px;
+  max-height: 620px;
+}
+
+.mhn-chat-group-banner {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.mhn-chat-banner-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .mhn-chat-date-divider {
@@ -5480,19 +5496,16 @@
 }
 
 .mhn-notifications-main-container {
-  max-width: 1380px;
+  max-width: 1240px;
   width: 100%;
-  margin: 32px auto;
-  padding: 0 24px;
-  display: flex;
-  justify-content: center;
+  margin: 0 auto;
+  padding: 0;
   box-sizing: border-box;
 }
 
 @media (max-width: 768px) {
   .mhn-notifications-main-container {
-    padding: 0 16px;
-    margin: 16px auto;
+    margin: 0 auto;
   }
 }
 

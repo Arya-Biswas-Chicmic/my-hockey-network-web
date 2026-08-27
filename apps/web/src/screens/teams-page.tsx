@@ -1,18 +1,285 @@
-import { Shield } from 'lucide-react';
-import { ComingSoonPage } from '@/components/common/ComingSoonPage';
+import React, { useState } from 'react';
+import { Search, Plus, X } from 'lucide-react';
+import { AppShell } from '@/components/layout/AppShell';
+import { PendingBanner } from '@/components/common/PendingBanner';
+import { useFeedPermissions } from '@/hooks/use-feed-permissions';
+import { FallbackImage } from '@/components/ui/fallback-image';
+import { Button } from '@/components/common/Button';
+import { Input } from '@/components/common/FormControls';
+import { showSuccessToast } from '@/utils/toast';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
   onLogout?: () => void;
 }
 
-export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => (
-  <ComingSoonPage
-    activeTab="teams"
-    title="Teams is coming soon"
-    description="Team rosters, schedules, and management tools will appear here."
-    icon={<Shield size={32} strokeWidth={1.75} aria-hidden="true" />}
-    onNavigate={onNavigate}
-    onLogout={onLogout}
-  />
-);
+interface TeamItem {
+  id: string;
+  name: string;
+  logo: string;
+  league?: string;
+  isMember?: boolean;
+}
+
+const YOUR_TEAMS: TeamItem[] = [
+  {
+    id: 'team-1',
+    name: 'Columbus Blue Jackets',
+    logo: '/columbus.png',
+    league: 'NHL',
+    isMember: true,
+  },
+  {
+    id: 'team-2',
+    name: 'Florida Panthers',
+    logo: '/kcBlue.png',
+    league: 'NHL',
+    isMember: true,
+  },
+  {
+    id: 'team-3',
+    name: 'Boston Bruins',
+    logo: '/HC.png',
+    league: 'NHL',
+    isMember: true,
+  },
+  {
+    id: 'team-4',
+    name: 'Toronto Maple Leafs',
+    logo: '/HockeyClub2.png',
+    league: 'NHL',
+    isMember: true,
+  },
+];
+
+const DISCOVER_TEAMS: TeamItem[] = [
+  {
+    id: 'team-5',
+    name: 'Chicago Blackhawks',
+    logo: '/classic.png',
+    league: 'NHL',
+    isMember: false,
+  },
+  {
+    id: 'team-6',
+    name: 'New York Rangers',
+    logo: '/event3.png',
+    league: 'NHL',
+    isMember: false,
+  },
+  {
+    id: 'team-7',
+    name: 'Edmonton Oilers',
+    logo: '/event6.png',
+    league: 'NHL',
+    isMember: false,
+  },
+];
+
+export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
+  const { permissions } = useFeedPermissions(onNavigate);
+  const [activeNavTab, setActiveNavTab] = useState('teams');
+  const [activeTab, setActiveTab] = useState<'your-teams' | 'discover'>('your-teams');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [teams, setTeams] = useState<TeamItem[]>(YOUR_TEAMS);
+  const [discoverTeams] = useState<TeamItem[]>(DISCOVER_TEAMS);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newTeamName, setNewTeamName] = useState('');
+
+  const handleTabChange = (tab: string) => {
+    setActiveNavTab(tab);
+    if (onNavigate) {
+      onNavigate(tab);
+    }
+  };
+
+  const handleCreateTeam = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTeamName.trim()) return;
+
+    const newTeam: TeamItem = {
+      id: `team-${Date.now()}`,
+      name: newTeamName.trim(),
+      logo: '/columbus.png',
+      league: 'Custom League',
+      isMember: true,
+    };
+
+    setTeams([newTeam, ...teams]);
+    showSuccessToast(`Team "${newTeamName.trim()}" created successfully!`);
+    setNewTeamName('');
+    setIsCreateModalOpen(false);
+  };
+
+  const currentList = activeTab === 'your-teams' ? teams : discoverTeams;
+
+  const filteredTeams = currentList.filter((t) =>
+    !searchQuery.trim() || t.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <AppShell activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout}>
+      {!permissions.allowed && permissions.message && (
+        <PendingBanner
+          message={permissions.message}
+          actionText={permissions.ctaText || 'Complete Profile'}
+          onActionClick={() => {
+            if (permissions.ctaAction === 'COMPLETE_PROFILE') {
+              if (onNavigate) onNavigate('profile');
+            } else if (permissions.ctaAction === 'GUARDIAN_APPROVAL') {
+              if (onNavigate) onNavigate('supervision');
+            } else if (permissions.ctaAction === 'LOGIN') {
+              if (onNavigate) onNavigate('login');
+            }
+          }}
+        />
+      )}
+
+      <main className="mhn-teams-main-container max-w-[1240px] w-full my-6 mx-auto px-6 flex flex-col gap-6 box-border lg:my-0 lg:min-h-0 lg:flex-1 lg:py-6 lg:overflow-y-auto pb-16">
+        {/* Top Header Row */}
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-2xl font-bold text-slate-100">Teams</h1>
+
+          <div className="flex items-center gap-3">
+            {/* Search Box */}
+            <div className="relative w-64">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+              <Input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search"
+                className="w-full h-10 pl-9 pr-4 bg-[#0D1627] border border-[#182740] rounded-xl text-xs text-slate-100 placeholder:text-slate-400 outline-none focus:border-[#168BFF] transition-all"
+              />
+            </div>
+
+            {/* + Create Team Button */}
+            <Button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="h-10 px-4 bg-[#168BFF] hover:bg-[#147CE6] text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-md shadow-[#168BFF]/20 transition-all shrink-0"
+            >
+              <Plus size={16} />
+              <span>Create Team</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Navigation Tabs Bar (Your Teams vs Discover) */}
+        <div className="flex items-center gap-8 border-b border-[#182740] pb-2">
+          <button
+            onClick={() => setActiveTab('your-teams')}
+            className={`text-sm font-semibold relative pb-2 transition-colors ${
+              activeTab === 'your-teams'
+                ? 'text-white after:content-[""] after:absolute after:bottom-[-9px] after:left-0 after:right-0 after:h-[2px] after:bg-[#168BFF]'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Your Teams
+          </button>
+          <button
+            onClick={() => setActiveTab('discover')}
+            className={`text-sm font-semibold relative pb-2 transition-colors ${
+              activeTab === 'discover'
+                ? 'text-white after:content-[""] after:absolute after:bottom-[-9px] after:left-0 after:right-0 after:h-[2px] after:bg-[#168BFF]'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Discover
+          </button>
+        </div>
+
+        {/* Team Items List */}
+        <div className="flex flex-col gap-2 mt-2 max-w-[580px]">
+          {filteredTeams.map((team) => (
+            <div
+              key={team.id}
+              className="flex items-center gap-4 py-3.5 border-b border-[#162238]/60 last:border-none transition-colors"
+            >
+              {/* Team Crest Logo */}
+              <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 bg-slate-900 border border-[#1E2D4A]">
+                <FallbackImage
+                  src={team.logo}
+                  alt={team.name}
+                  fill
+                  fallbackSrc="/columbus.png"
+                  className="object-cover"
+                />
+              </div>
+
+              {/* Team Details & Sub-links */}
+              <div className="flex flex-col gap-1 min-w-0 flex-1">
+                <h3 className="text-base font-bold text-slate-100 truncate">
+                  {team.name}
+                </h3>
+
+                {/* Sub-links row: Posts · Staff · Roster */}
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <button className="hover:text-slate-200 transition-colors font-medium">
+                    Posts
+                  </button>
+                  <span>·</span>
+                  <button className="hover:text-slate-200 transition-colors font-medium">
+                    Staff
+                  </button>
+                  <span>·</span>
+                  <button className="hover:text-slate-200 transition-colors font-medium">
+                    Roster
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </main>
+
+      {/* Create Team Modal */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[#0A1220] border border-[#162238] rounded-2xl w-full max-w-md p-6 shadow-2xl flex flex-col gap-5">
+            <div className="flex items-center justify-between border-b border-[#182740] pb-3">
+              <h3 className="text-lg font-bold text-slate-100">Create New Team</h3>
+              <button
+                onClick={() => setIsCreateModalOpen(false)}
+                className="text-slate-400 hover:text-slate-100 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateTeam} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-slate-300">Team Name</label>
+                <Input
+                  type="text"
+                  value={newTeamName}
+                  onChange={(e) => setNewTeamName(e.target.value)}
+                  placeholder="e.g. Columbus Blue Jackets"
+                  className="w-full h-10 px-3.5 bg-[#0D1627] border border-[#182740] rounded-xl text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-[#168BFF]"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-slate-100 transition-colors"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!newTeamName.trim()}
+                  className="px-5 py-2 bg-[#168BFF] hover:bg-[#147CE6] text-white text-xs font-semibold rounded-xl shadow-md disabled:opacity-50"
+                >
+                  Create
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </AppShell>
+  );
+};
+

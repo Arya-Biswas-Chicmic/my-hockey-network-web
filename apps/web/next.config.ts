@@ -16,7 +16,10 @@ const nextConfig: NextConfig = {
     // backend-controlled host that varies per environment; there is no fixed
     // domain list to enumerate. See docs/DATA_FETCHING_AND_AUTH.md and
     // packages/core/src/api/mediaApi.ts for the upload flow this serves.
-    remotePatterns: [{ protocol: 'https', hostname: '**' }],
+    remotePatterns: [
+      { protocol: 'https', hostname: '**' },
+      { protocol: 'http', hostname: '**' },
+    ],
   },
   transpilePackages: [
     '@my-hockey-network/api-client',

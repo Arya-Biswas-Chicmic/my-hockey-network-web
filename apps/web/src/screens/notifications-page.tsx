@@ -1,49 +1,85 @@
-import { Button } from '@/components/common/Button';
-import React, { useMemo, useState } from 'react';
-import { Sidebar } from '@/components/common/Sidebar';
+import React, { useState } from 'react';
+import { Search } from 'lucide-react';
+import { AppShell } from '@/components/layout/AppShell';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
-import { NoDataFound } from '@/components/common/no-data-found';
 import { NotificationCard } from '@/components/features/notifications/NotificationCard';
-import { useAlertsQuery, useMarkAlertReadMutation, useMarkAllAlertsReadMutation } from '@/hooks/use-notifications';
-import { formatRelativeTime } from '@/utils/dateUtils';
-import type { AlertItem } from '@my-hockey-network/core';
-import { MoreHorizontal } from 'lucide-react';
+import { Input } from '@/components/common/FormControls';
+import { showSuccessToast, showInfoToast } from '@/utils/toast';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
   onLogout?: () => void;
 }
 
-function toNotificationItem(alert: AlertItem) {
-  const data = alert.data;
-  const avatar =
-    (typeof data?.avatarUrl === 'string' && data.avatarUrl) ||
-    (typeof data?.actorAvatarUrl === 'string' && data.actorAvatarUrl) ||
-    '';
-  return {
-    id: alert.id,
-    avatar,
-    senderName: alert.title,
-    text: alert.body,
-    time: formatRelativeTime(alert.createdAt),
-    isUnread: !alert.isRead,
-  };
+interface NotificationItemData {
+  id: string;
+  avatar: string;
+  senderName: string;
+  text: string;
+  time: string;
+  isUnread?: boolean;
+  isRequest?: boolean;
+  requestStatus?: 'pending' | 'accepted' | 'rejected';
 }
+
+const INITIAL_NOTIFICATIONS: NotificationItemData[] = [
+  {
+    id: 'notif-1',
+    senderName: 'Lucifer',
+    avatar: '/steve.png',
+    text: 'Follow your friends to get things started.',
+    time: '1h',
+    isUnread: false,
+    isRequest: false,
+  },
+  {
+    id: 'notif-2',
+    senderName: 'David',
+    avatar: '/david.png',
+    text: 'send you friend request',
+    time: '1h',
+    isUnread: false,
+    isRequest: true,
+    requestStatus: 'pending',
+  },
+  {
+    id: 'notif-3',
+    senderName: 'John',
+    avatar: '/gerard.png',
+    text: 'Invite your friends to get things started.',
+    time: '1h',
+    isUnread: true,
+    isRequest: false,
+  },
+  {
+    id: 'notif-4',
+    senderName: 'Steve',
+    avatar: '/saylor.png',
+    text: 'Invite you to join there team',
+    time: '1h',
+    isUnread: false,
+    isRequest: true,
+    requestStatus: 'pending',
+  },
+  {
+    id: 'notif-5',
+    senderName: 'Noah',
+    avatar: '/mai.png',
+    text: 'wants to add you as their guardian',
+    time: '1h',
+    isUnread: false,
+    isRequest: true,
+    requestStatus: 'pending',
+  },
+];
 
 export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { permissions } = useFeedPermissions(onNavigate);
   const [activeNavTab, setActiveNavTab] = useState('notifications');
-  const [activeFilterTab, setActiveFilterTab] = useState<'all' | 'unread'>('all');
-
-  const alertsQuery = useAlertsQuery(activeFilterTab === 'unread');
-  const markReadMutation = useMarkAlertReadMutation();
-  const markAllReadMutation = useMarkAllAlertsReadMutation();
-
-  const items = useMemo(
-    () => (alertsQuery.data?.items ?? []).map(toNotificationItem),
-    [alertsQuery.data],
-  );
+  const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'requests'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [notifications, setNotifications] = useState<NotificationItemData[]>(INITIAL_NOTIFICATIONS);
 
   const handleTabChange = (tab: string) => {
     setActiveNavTab(tab);
@@ -52,23 +88,36 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
     }
   };
 
-  const handleItemClick = (id: string) => {
-    const alert = alertsQuery.data?.items.find((a) => a.id === id);
-    if (alert && !alert.isRead) {
-      markReadMutation.mutate(id);
-    }
+  const handleAcceptRequest = (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, requestStatus: 'accepted' } : n))
+    );
+    showSuccessToast('Request accepted');
   };
 
-  return (
-    <div className="mhn-app-shell">
-      <Sidebar
-        activeTab={activeNavTab}
-        onTabChange={handleTabChange}
-        onLogout={onLogout}
-      />
+  const handleRejectRequest = (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, requestStatus: 'rejected' } : n))
+    );
+    showInfoToast('Request rejected');
+  };
 
-      <div className="mhn-app-content mhn-notifications-page-root">
-      {/* Pending Guardian Notice Banner */}
+  const unreadCount = notifications.filter((n) => n.isUnread).length;
+  const requestsCount = notifications.filter((n) => n.isRequest && n.requestStatus === 'pending').length;
+
+  const filteredNotifications = notifications.filter((n) => {
+    const matchesSearch =
+      !searchQuery.trim() ||
+      n.senderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      n.text.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (activeTab === 'unread') return matchesSearch && n.isUnread;
+    if (activeTab === 'requests') return matchesSearch && n.isRequest;
+    return matchesSearch;
+  });
+
+  return (
+    <AppShell activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout}>
       {!permissions.allowed && permissions.message && (
         <PendingBanner
           message={permissions.message}
@@ -85,64 +134,77 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
         />
       )}
 
-      {/* Main Centered Content Container */}
-      <main className="mhn-notifications-main-container">
-        <div className="mhn-notifications-card">
-          {/* Header Bar */}
-          <div className="mhn-notifications-card-header">
-            <h2 className="mhn-notifications-title">Notifications</h2>
-            <Button
-              className="mhn-notifications-more-btn"
-              aria-label="Mark all notifications as read"
-              onClick={() => markAllReadMutation.mutate(undefined)}
-              disabled={markAllReadMutation.isPending || items.length === 0}
-            >
-              <MoreHorizontal size={20} aria-hidden="true" />
-            </Button>
-          </div>
+      <main className="mhn-notifications-main-container max-w-[1240px] w-full mx-auto px-6 flex flex-col gap-6 box-border lg:min-h-0 lg:flex-1 py-6 lg:overflow-y-auto pb-16">
+        {/* Top Header Bar */}
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-2xl font-bold text-slate-100">Notifications</h1>
 
-          {/* Filter Pills Bar */}
-          <div className="mhn-notifications-pills-bar">
-            <Button
-              onClick={() => setActiveFilterTab('all')}
-              className={`mhn-notif-pill ${activeFilterTab === 'all' ? 'mhn-notif-pill-active' : ''}`}
-            >
-              All
-            </Button>
-            <Button
-              onClick={() => setActiveFilterTab('unread')}
-              className={`mhn-notif-pill ${activeFilterTab === 'unread' ? 'mhn-notif-pill-active' : ''}`}
-            >
-              Unread
-            </Button>
-          </div>
-
-          {/* Notifications List */}
-          <div className="mhn-notifications-list">
-            {alertsQuery.isLoading ? (
-              [1, 2, 3].map((n) => (
-                <div key={n} className="mhn-notification-item mhn-notif-skeleton-row">
-                  <div className="mhn-shimmer-box mhn-notification-avatar-box" />
-                  <div className="mhn-notification-content">
-                    <div className="mhn-shimmer-box mhn-notif-skeleton-title-line" />
-                    <div className="mhn-shimmer-box mhn-notif-skeleton-sub-line" />
-                  </div>
-                </div>
-              ))
-            ) : items.length === 0 ? (
-              <NoDataFound
-                title={activeFilterTab === 'unread' ? 'No Unread Notifications' : 'No Notifications'}
-                description="You're all caught up! There are no notifications to display right now."
-              />
-            ) : (
-              items.map((item) => (
-                <NotificationCard key={item.id} {...item} onItemClick={handleItemClick} />
-              ))
-            )}
+          <div className="relative w-64">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+            <Input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search"
+              className="w-full h-10 pl-9 pr-4 bg-[#0D1627] border border-[#182740] rounded-xl text-xs text-slate-100 placeholder:text-slate-400 outline-none focus:border-[#168BFF] transition-all"
+            />
           </div>
         </div>
+
+        {/* Navigation Tabs Bar (All, Unread, Requests) */}
+        <div className="flex items-center gap-8 border-b border-[#182740] pb-2">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`text-sm font-semibold relative pb-2 transition-colors ${
+              activeTab === 'all'
+                ? 'text-white after:content-[""] after:absolute after:bottom-[-9px] after:left-0 after:right-0 after:h-[2px] after:bg-[#168BFF]'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            All ({notifications.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('unread')}
+            className={`text-sm font-semibold relative pb-2 transition-colors ${
+              activeTab === 'unread'
+                ? 'text-white after:content-[""] after:absolute after:bottom-[-9px] after:left-0 after:right-0 after:h-[2px] after:bg-[#168BFF]'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Unread ({unreadCount})
+          </button>
+          <button
+            onClick={() => setActiveTab('requests')}
+            className={`text-sm font-semibold relative pb-2 transition-colors ${
+              activeTab === 'requests'
+                ? 'text-white after:content-[""] after:absolute after:bottom-[-9px] after:left-0 after:right-0 after:h-[2px] after:bg-[#168BFF]'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Requests ({requestsCount})
+          </button>
+        </div>
+
+        {/* Notification Items List */}
+        <div className="flex flex-col gap-1 mt-2 max-w-[840px]">
+          {filteredNotifications.map((notif) => (
+            <NotificationCard
+              key={notif.id}
+              id={notif.id}
+              avatar={notif.avatar}
+              senderName={notif.senderName}
+              text={notif.text}
+              time={notif.time}
+              isUnread={notif.isUnread}
+              isRequest={notif.isRequest}
+              requestStatus={notif.requestStatus}
+              onAccept={handleAcceptRequest}
+              onReject={handleRejectRequest}
+            />
+          ))}
+        </div>
       </main>
-      </div>
-    </div>
+    </AppShell>
   );
 };
+

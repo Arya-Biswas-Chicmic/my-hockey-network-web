@@ -1,57 +1,46 @@
-import { Button } from '@/components/common/Button';
-import { FallbackImage } from '@/components/ui/fallback-image';
-import { useWhoToFollow } from '@/hooks/use-who-to-follow';
+import React from 'react';
+import { useFollowSuggestions } from '@/hooks/useFollowSuggestions';
+import { FollowSuggestionItem } from '@/components/features/home/FollowSuggestionItem';
 
 export interface WhoToFollowWidgetProps {
   onViewAll?: () => void;
 }
 
-/** Home sidebar's "Who to follow" card — a short people-you-may-know list
- * with an inline Follow action. Replaces the fabricated-data `MatchesWidget`
- * in that slot per the new sidebar-nav design. */
 export function WhoToFollowWidget({ onViewAll }: Readonly<WhoToFollowWidgetProps>) {
-  const { people, isLoading, followedIds, followingId, handleFollow } = useWhoToFollow();
-
-  if (!isLoading && people.length === 0) return null;
+  const { suggestions, isLoading, followedIds, followingId, handleFollow } = useFollowSuggestions();
 
   return (
-    <div className="mhn-sidebar-card mhn-who-to-follow-card">
-      <div className="mhn-sidebar-card-header">
-        <h3 className="mhn-sidebar-card-title">Who to follow</h3>
+    <div className="mhn-sidebar-card mhn-who-to-follow-card rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 backdrop-blur-sm mb-4">
+      <div className="mhn-sidebar-card-header flex items-center justify-between mb-3">
+        <h3 className="mhn-sidebar-card-title text-sm font-bold text-slate-100">Who to follow</h3>
         {onViewAll && (
-          <Button className="mhn-sidebar-view-all" onClick={onViewAll}>
+          <button
+            onClick={onViewAll}
+            className="mhn-sidebar-view-all text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+          >
             View All
-          </Button>
+          </button>
         )}
       </div>
 
-      <div className="mhn-who-to-follow-list">
+      <div className="mhn-who-to-follow-list flex flex-col gap-1">
         {isLoading ? (
           [1, 2, 3].map((n) => (
-            <div key={n} className="mhn-who-to-follow-row mhn-notif-skeleton-row">
-              <div className="mhn-shimmer-box mhn-who-to-follow-avatar" />
-              <div className="mhn-shimmer-box mhn-notif-skeleton-title-line" />
+            <div key={n} className="mhn-who-to-follow-row flex items-center gap-3 py-2 animate-pulse">
+              <div className="h-9 w-9 rounded-full bg-slate-800" />
+              <div className="h-4 w-28 rounded bg-slate-800" />
             </div>
           ))
         ) : (
-          people.map((person) => {
-            const isFollowed = followedIds.has(person.id);
-            return (
-              <div key={person.id} className="mhn-who-to-follow-row">
-                <div className="mhn-who-to-follow-avatar">
-                  <FallbackImage src={person.avatar} alt={person.name} fill className="mhn-avatar-img" />
-                </div>
-                <span className="mhn-who-to-follow-name">{person.name}</span>
-                <Button
-                  className="mhn-who-to-follow-btn"
-                  disabled={isFollowed || followingId === person.id}
-                  onClick={() => handleFollow(person)}
-                >
-                  {isFollowed ? 'Following' : 'Follow'}
-                </Button>
-              </div>
-            );
-          })
+          suggestions.map((person) => (
+            <FollowSuggestionItem
+              key={person.id}
+              user={person}
+              isFollowing={followedIds.has(person.id)}
+              isLoading={followingId === person.id}
+              onFollow={handleFollow}
+            />
+          ))
         )}
       </div>
     </div>

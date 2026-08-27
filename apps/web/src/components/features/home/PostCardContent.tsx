@@ -1,38 +1,35 @@
+import React from 'react';
 import { Button } from '@/components/common/Button';
-import { FallbackImage } from '@/components/ui/fallback-image';
+import { PostMedia } from '@/components/features/home/PostMedia';
 
 export interface PostCardContentProps {
   content: string;
   isExpanded: boolean;
   onToggleExpand: () => void;
   postImage?: string;
+  images?: string[];
 }
 
-/** Feed post card body: truncatable text with a More/Show-less toggle, plus
- * an optional attached image. Extracted from `FeedPostCard.tsx`. */
-export function PostCardContent({ content, isExpanded, onToggleExpand, postImage }: Readonly<PostCardContentProps>) {
+export function PostCardContent({
+  content,
+  isExpanded,
+  onToggleExpand,
+  postImage,
+  images,
+}: Readonly<PostCardContentProps>) {
   return (
-    <div className="mhn-post-content">
+    <div className="mhn-post-content space-y-3">
       <p className={`mhn-post-text ${!isExpanded ? 'mhn-post-text-truncated' : ''}`}>
         {content}
       </p>
-      {content.length > 30 && (
-        <Button onClick={onToggleExpand} className="mhn-post-more-btn">
-          {isExpanded ? 'Show less' : 'More'}
+
+      {content.length > 120 && (
+        <Button onClick={onToggleExpand} className="mhn-post-more-btn text-xs text-blue-400 font-medium">
+          {isExpanded ? 'Show less' : '...more'}
         </Button>
       )}
-      {postImage && (
-        <div className="mhn-post-media-container">
-          <FallbackImage
-            src={postImage}
-            alt="Post attachment"
-            width={800}
-            height={450}
-            hideOnError
-            className="mhn-post-media-img"
-          />
-        </div>
-      )}
+
+      <PostMedia postImage={postImage} images={images} altText="Post attachment" />
     </div>
   );
 }

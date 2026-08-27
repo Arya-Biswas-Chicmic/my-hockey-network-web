@@ -39,11 +39,6 @@ export interface PostCardActionsProps {
   onChooseQuote: () => void;
 }
 
-/** Feed post card footer: like/comment/repost/send/save action buttons plus
- * the (conditionally rendered) comment thread. Extracted from
- * `FeedPostCard.tsx`. Icon set and two-group (left/right) layout match the
- * Figma "Footer of post" design (figma.com/design/cqlBXHZtqPkKcLRmR6a1B8,
- * node 1398:3904) — see `components/icons/FeedActionIcons.tsx`. */
 export function PostCardActions({
   postId,
   isSelf,
@@ -67,97 +62,85 @@ export function PostCardActions({
   onChooseRepost,
   onChooseQuote,
 }: Readonly<PostCardActionsProps>) {
-  // Save/bookmark has no backend endpoint yet (no `savePost`/`SavedPost` API
-  // anywhere in `packages/core`) — this is a client-only optimistic toggle,
-  // matching the "Saved" nav page, which is itself a coming-soon stub
-  // (`screens/saved-page.tsx`). Remove this local state once a real
-  // save-posts endpoint exists and wire it the same way `isLiked` is wired.
   const [isSaved, setIsSaved] = useState(false);
 
   return (
-    <div className="mhn-post-footer">
-      <div className="mhn-post-actions-group">
-        <div className="mhn-post-actions-group-left">
-          <Button
+    <div className="mhn-post-footer px-4 py-3 border-t border-slate-800/60">
+      <div className="mhn-post-actions-group flex items-center justify-between">
+        <div className="mhn-post-actions-group-left flex items-center gap-5">
+          <button
             onClick={onLike}
             disabled={isLiking}
-            className="mhn-action-item"
+            className="mhn-action-item flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
             aria-label="Like post"
             title={!canReact ? 'Parent did not give permission' : undefined}
           >
             {!canReact ? (
-              <LockKeyhole size={18} className="like-count-icon" aria-hidden="true" />
+              <LockKeyhole size={16} className="text-slate-500" aria-hidden="true" />
             ) : (
-              <span className={`mhn-like-badge ${isLiked ? 'mhn-like-badge-active' : ''}`}>
-                <FeedLikeSparkIcon size={15} className="like-count-icon" aria-hidden="true" />
+              <span className={`mhn-like-badge flex items-center justify-center h-4 w-4 rounded-full ${isLiked ? 'bg-rose-500 text-white' : 'bg-rose-500/20 text-rose-500'}`}>
+                <FeedLikeSparkIcon size={12} aria-hidden="true" />
               </span>
             )}
-            <span className="mhn-action-count">{likes}</span>
-          </Button>
+            <span className="mhn-action-count font-medium">{likes}</span>
+          </button>
 
-          <Button
+          <button
             onClick={onToggleComments}
-            className={`mhn-action-item ${showComments ? 'mhn-action-active' : ''}`}
+            className={`mhn-action-item flex items-center gap-1.5 text-xs transition-colors ${
+              showComments ? 'text-blue-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
+            }`}
             aria-label="Toggle comments"
             title={!canComment ? 'Parent did not give permission' : undefined}
           >
             {!canComment ? (
-              <LockKeyhole size={18} className="comment-count-icon" aria-hidden="true" />
+              <LockKeyhole size={16} className="text-slate-500" aria-hidden="true" />
             ) : (
-              <FeedCommentIcon size={16} className="comment-count-icon" aria-hidden="true" />
+              <FeedCommentIcon size={16} className="comment-count-icon text-slate-400" aria-hidden="true" />
             )}
-            <span className={`mhn-action-count ${showComments ? 'mhn-action-count-commented' : ''}`}>
-              {currentCommentsCount}
-            </span>
-          </Button>
+            <span className="mhn-action-count font-medium">{currentCommentsCount}</span>
+          </button>
 
           {!isSelf && (
-            <div className="mhn-repost-menu-wrapper">
-              <Button
+            <div className="mhn-repost-menu-wrapper relative">
+              <button
                 onClick={onRepostButtonClick}
                 disabled={isSharing}
-                className={`mhn-action-item ${hasReposted ? 'mhn-action-active' : ''} ${isSharing ? 'mhn-loading' : ''}`}
+                className={`mhn-action-item flex items-center gap-1.5 text-xs transition-colors ${
+                  hasReposted ? 'text-emerald-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
+                }`}
                 aria-label="Repost"
                 aria-haspopup="menu"
                 aria-expanded={isRepostMenuOpen}
                 title={!canShare ? 'Parent did not give permission' : hasReposted ? 'Undo Repost' : 'Repost or Quote'}
               >
                 {!canShare ? (
-                  <LockKeyhole size={18} className="share-count-icon" aria-hidden="true" />
+                  <LockKeyhole size={16} className="text-slate-500" aria-hidden="true" />
                 ) : isSharing ? (
-                  <Spinner size="sm" color="#1860C3" />
+                  <Spinner size="sm" color="#10B981" />
                 ) : (
                   <FeedRepostIcon
                     size={16}
-                    className={`share-count-icon ${hasReposted ? 'mhn-repost-icon-active' : ''}`}
+                    className={`share-count-icon ${hasReposted ? 'text-emerald-400' : 'text-slate-400'}`}
                     aria-hidden="true"
                   />
                 )}
-                <span className={`mhn-action-count ${hasReposted ? 'mhn-action-count-reposted' : ''}`}>
-                  {reposts}
-                </span>
-              </Button>
+                <span className="mhn-action-count font-medium">{reposts}</span>
+              </button>
 
-              {/* Repost/Quote choice popover (Figma: figma.com/design/
-                  cqlBXHZtqPkKcLRmR6a1B8, node 1766:8766) — only offered
-                  before reposting; clicking the button when already
-                  reposted undoes directly (see `onRepostButtonClick`). */}
               {isRepostMenuOpen && (
                 <>
-                  <Button
-                    className="mhn-repost-menu-backdrop"
-                    aria-label="Close repost menu"
+                  <div
+                    className="fixed inset-0 z-20"
                     onClick={onCloseRepostMenu}
-                  >
-                    <span className="sr-only">Close repost menu</span>
-                  </Button>
-                  <div className="mhn-repost-menu-popover" role="menu">
-                    <Button onClick={onChooseRepost} className="mhn-repost-menu-item" role="menuitem">
-                      <RepostMenuRepostIcon size={20} aria-hidden="true" />
+                  />
+                  <div className="mhn-repost-menu-popover absolute left-0 bottom-8 z-30 w-32 rounded-xl border border-slate-800 bg-slate-900 p-1 shadow-xl" role="menu">
+                    <Button onClick={onChooseRepost} className="mhn-repost-menu-item flex w-full items-center gap-2 rounded-lg p-2 text-xs text-slate-200 hover:bg-slate-800" role="menuitem">
+                      <RepostMenuRepostIcon size={16} aria-hidden="true" />
                       <span>Repost</span>
                     </Button>
-                    <Button onClick={onChooseQuote} className="mhn-repost-menu-item" role="menuitem">
-                      <RepostMenuQuoteIcon size={20} aria-hidden="true" />
+                    <Button onClick={onChooseQuote} className="mhn-repost-menu-item flex w-full items-center gap-2 rounded-lg p-2 text-xs text-slate-200 hover:bg-slate-800" role="menuitem">
+                      <RepostMenuQuoteIcon size={16} aria-hidden="true" />
                       <span>Quote</span>
                     </Button>
                   </div>
@@ -167,31 +150,31 @@ export function PostCardActions({
           )}
         </div>
 
-        <div className="mhn-post-actions-group-right">
-          <Button
+        <div className="mhn-post-actions-group-right flex items-center gap-4 text-slate-400">
+          <button
             onClick={() => showInfoToast('Sharing posts externally is not available yet.')}
-            className="mhn-action-item mhn-action-icon-only"
+            className="mhn-action-item hover:text-slate-200 transition-colors p-1"
             aria-label="Send post"
             title="Send"
           >
-            <FeedShareIcon size={19} className="share-count-icon" aria-hidden="true" />
-          </Button>
+            <FeedShareIcon size={18} aria-hidden="true" />
+          </button>
 
-          <Button
+          <button
             onClick={() => {
               setIsSaved((prev) => !prev);
               showInfoToast(isSaved ? 'Removed from Saved.' : 'Saved — the Saved page is coming soon.');
             }}
-            className={`mhn-action-item mhn-action-icon-only ${isSaved ? 'mhn-action-active' : ''}`}
+            className={`mhn-action-item transition-colors p-1 ${isSaved ? 'text-blue-400' : 'hover:text-slate-200'}`}
             aria-label={isSaved ? 'Remove from saved' : 'Save post'}
             title={isSaved ? 'Remove from saved' : 'Save'}
           >
             {isSaved ? (
-              <FeedSaveFilledIcon size={20} className="save-count-icon mhn-action-count-saved" aria-hidden="true" />
+              <FeedSaveFilledIcon size={18} className="text-blue-400" aria-hidden="true" />
             ) : (
-              <FeedSaveIcon size={20} className="save-count-icon" aria-hidden="true" />
+              <FeedSaveIcon size={18} aria-hidden="true" />
             )}
-          </Button>
+          </button>
         </div>
       </div>
 

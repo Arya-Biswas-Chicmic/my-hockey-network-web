@@ -4,6 +4,9 @@ Last reviewed: 2026-08-27
 
 ## Completed
 
+- Aligned Home Screen implementation & component architecture with the primary 3-column layout (Sidebar, Center Feed with For You/Network/Groups tabs, Right Sidebar with Search, Who to Follow, Upcoming Events, Invite & Grow), modular component hierarchy, and dynamic TanStack Query API data flow.
+- Added authorization, x-acting-for, and x-client-type headers to Next.js server proxy allowlist so authenticated requests send Bearer tokens to backend.
+
 - Completed the ordered 2026-08-27 stabilization pass: credential-free auth/onboarding routes no
   longer receive the authenticated full-screen outage overlay when `/auth/me` is unavailable;
   mutation failures remain local to their feature error UI.

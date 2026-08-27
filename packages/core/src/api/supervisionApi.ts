@@ -200,26 +200,33 @@ interface SupervisionPermissionsPayload {
 export async function getMySupervisionPermissions(
   clientType: 'web' | 'mobile' = 'web'
 ): Promise<SupervisionPermissionsResponse> {
-  const res = await apiFetch<SupervisionPermissionsPayload>(
-    API_ENDPOINTS.SUPERVISION.MY_PERMISSIONS,
-    { method: 'GET' },
-    clientType
-  );
+  try {
+    const res = await apiFetch<SupervisionPermissionsPayload>(
+      API_ENDPOINTS.SUPERVISION.MY_PERMISSIONS,
+      { method: 'GET' },
+      clientType
+    );
 
-  const controlsList = res.controls || res.data?.controls || [];
-  const controlsMap: Record<string, boolean | string> = {};
+    const controlsList = res?.controls || res?.data?.controls || [];
+    const controlsMap: Record<string, boolean | string> = {};
 
-  if (Array.isArray(controlsList)) {
-    controlsList.forEach((item) => {
-      const key = item.control || item.name;
-      if (key) {
-        controlsMap[key] = item.value;
-      }
-    });
+    if (Array.isArray(controlsList)) {
+      controlsList.forEach((item) => {
+        const key = item.control || item.name;
+        if (key) {
+          controlsMap[key] = item.value;
+        }
+      });
+    }
+
+    return {
+      controlsMap,
+      raw: res,
+    };
+  } catch {
+    return {
+      controlsMap: {},
+      raw: null,
+    };
   }
-
-  return {
-    controlsMap,
-    raw: res,
-  };
 }

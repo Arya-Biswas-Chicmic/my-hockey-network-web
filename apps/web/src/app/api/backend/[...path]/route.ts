@@ -8,10 +8,12 @@ export const dynamic = 'force-dynamic';
 const REQUEST_HEADERS = [
   'accept',
   'accept-language',
+  'authorization',
   'content-type',
   'cookie',
   'if-match',
   'if-none-match',
+  'x-acting-for',
   'x-client-type',
   'x-csrf-token',
   'x-request-id',

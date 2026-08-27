@@ -18,6 +18,7 @@ export interface FeedPostProps {
   authorAvatar?: string;
   content: string;
   postImage?: string;
+  images?: string[];
   likesCount: number;
   commentsCount: number;
   repostCount?: number;
@@ -49,23 +50,16 @@ export interface FeedPostProps {
   onNavigate?: (screen: string) => void;
 }
 
-/**
- * A single feed post card: header (author/follow/menu), content (text +
- * image), and actions (like/comment/share) plus its edit/delete modals.
- * This component owns permission gating (`useAuth`) and layout only — all
- * mutation state and handlers live in `useFeedPostCard`, and each visual
- * section is its own component (`PostCardHeader`/`PostCardContent`/
- * `PostCardActions`/`PostEditModal`/`PostDeleteModal`).
- */
 export const FeedPostCard: React.FC<FeedPostProps> = ({
   id,
   authorId,
   authorName,
   authorRole = 'Official Team',
   authorTime = '1d',
-  authorAvatar = '/CoachTeam.png',
+  authorAvatar = '/userPlaceholder.png',
   content: initialContent,
   postImage,
+  images,
   likesCount: initialLikes,
   commentsCount,
   repostCount: initialReposts = 0,
@@ -112,7 +106,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   }
 
   return (
-    <article className="mhn-feed-post-card">
+    <article className="mhn-feed-post-card rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur-sm overflow-hidden mb-4 transition-all">
       <PostCardHeader
         authorName={authorName}
         authorRole={authorRole}
@@ -129,12 +123,15 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         onDeleteClick={card.openDeleteModal}
       />
 
-      <PostCardContent
-        content={card.postContent}
-        isExpanded={card.isExpanded}
-        onToggleExpand={() => card.setIsExpanded(!card.isExpanded)}
-        postImage={postImage}
-      />
+      <div className="px-4 pb-3">
+        <PostCardContent
+          content={card.postContent}
+          isExpanded={card.isExpanded}
+          onToggleExpand={() => card.setIsExpanded(!card.isExpanded)}
+          postImage={postImage}
+          images={images}
+        />
+      </div>
 
       <PostCardActions
         postId={id}

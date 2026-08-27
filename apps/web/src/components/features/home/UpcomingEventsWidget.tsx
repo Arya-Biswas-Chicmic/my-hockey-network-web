@@ -1,76 +1,49 @@
-import { Button } from '@/components/common/Button';
 import React from 'react';
-import { Clock, MapPin } from 'lucide-react';
+import { UpcomingEvent } from '@/types/home.types';
+import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
+import { UpcomingEventCard } from '@/components/features/home/UpcomingEventCard';
 
-export interface EventItem {
-  id: string;
-  month: string;
-  day: string;
-  title: string;
-  time: string;
-  location: string;
-}
-
-interface UpcomingEventsWidgetProps {
-  events?: EventItem[];
+export interface UpcomingEventsWidgetProps {
+  events?: UpcomingEvent[];
   onViewAll?: () => void;
   onEventClick?: (id: string) => void;
 }
 
-const DEFAULT_EVENTS: EventItem[] = [
-  {
-    id: 'e1',
-    month: 'MAY',
-    day: '27',
-    title: 'Team Practice',
-    time: '5:00 PM - 7:00 PM',
-    location: 'Toronto'
-  }
-];
-
 export const UpcomingEventsWidget: React.FC<UpcomingEventsWidgetProps> = ({
-  events = DEFAULT_EVENTS,
+  events: initialEvents,
   onViewAll,
-  onEventClick
+  onEventClick,
 }) => {
+  const { events, isLoading } = useUpcomingEvents(initialEvents);
+
   return (
-    <div className="mhn-sidebar-card">
-      <div className="mhn-sidebar-card-header">
-        <h3 className="mhn-sidebar-card-title">Upcoming Events</h3>
-        <Button onClick={onViewAll} className="mhn-sidebar-view-all">
-          View All
-        </Button>
+    <div className="mhn-sidebar-card rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 backdrop-blur-sm mb-4">
+      <div className="mhn-sidebar-card-header flex items-center justify-between mb-3">
+        <h3 className="mhn-sidebar-card-title text-sm font-bold text-slate-100">Upcoming Events</h3>
+        {onViewAll && (
+          <button
+            onClick={onViewAll}
+            className="mhn-sidebar-view-all text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            View All
+          </button>
+        )}
       </div>
 
-      <div className="mhn-events-list">
-        {events.map((event) => (
-          <div 
-            key={event.id} 
-            className="mhn-event-card-item mhn-cursor-pointer"
-            onClick={() => onEventClick && onEventClick(event.id)}
-          >
-            {/* Left Date Badge Box */}
-            <div className="mhn-event-date-box">
-              <span className="mhn-event-month">{event.month}</span>
-              <span className="mhn-event-day">{event.day}</span>
-            </div>
-
-            {/* Right Event Meta */}
-            <div className="mhn-event-details">
-              <h4 className="mhn-event-title">{event.title}</h4>
-              
-              <div className="mhn-event-info-line">
-                <Clock size={14} aria-hidden="true" />
-                <span>{event.time}</span>
-              </div>
-
-              <div className="mhn-event-info-line">
-                <MapPin size={14} aria-hidden="true" />
-                <span>{event.location}</span>
-              </div>
+      <div className="mhn-events-list flex flex-col gap-3">
+        {isLoading ? (
+          <div className="mhn-event-card-item flex items-center gap-4 rounded-xl border border-slate-800/80 p-3 animate-pulse">
+            <div className="h-14 w-14 rounded-lg bg-slate-800" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-32 rounded bg-slate-800" />
+              <div className="h-3 w-24 rounded bg-slate-800" />
             </div>
           </div>
-        ))}
+        ) : (
+          events.map((event) => (
+            <UpcomingEventCard key={event.id} event={event} onClick={onEventClick} />
+          ))
+        )}
       </div>
     </div>
   );
