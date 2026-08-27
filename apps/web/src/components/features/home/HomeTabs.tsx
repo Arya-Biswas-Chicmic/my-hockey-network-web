@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@/components/common/Button';
 import { HomeFeedTab } from '@/types/home.types';
 import { HOME_FEED_TABS } from '@/constants/home.constants';
 
@@ -17,7 +18,7 @@ export const HomeTabs: React.FC<HomeTabsProps> = ({ activeTab, onChange }) => {
       {HOME_FEED_TABS.map((scope) => {
         const isActive = activeTab === scope.key;
         return (
-          <button
+          <Button
             key={scope.key}
             role="tab"
             aria-selected={isActive}
@@ -29,7 +30,7 @@ export const HomeTabs: React.FC<HomeTabsProps> = ({ activeTab, onChange }) => {
             }`}
           >
             <span>{scope.label}</span>
-          </button>
+          </Button>
         );
       })}
     </div>

@@ -154,6 +154,7 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: flex-start;
   padding: 0;
 }
@@ -166,6 +167,7 @@
     padding: 0.5rem 0;
     display: flex;
     flex-direction: column;
+    align-items: center;
     justify-content: center;
     box-sizing: border-box;
   }
@@ -14464,8 +14466,12 @@ img.secure {
   color: var(--color-foreground);
 }
 
-:root[data-theme='dark'] :is(.verify-email-subtitle, .verify-email-footer, .btn-change-email, .mhn-timer-text) {
+:root[data-theme='dark'] :is(.verify-email-subtitle, .verify-email-footer, .btn-change-email) {
   color: var(--color-muted-foreground);
+}
+
+:root[data-theme='dark'] .mhn-timer-text {
+  color: var(--color-foreground);
 }
 
 :root[data-theme='dark'] .btn-change-email:hover {
@@ -14512,6 +14518,47 @@ img.secure {
 :root[data-theme='dark'] .mhn-notifications-more-btn {
   background-color: var(--color-secondary);
   color: var(--color-muted-foreground);
+}
+
+/* "Who do you manage?" parent-onboarding step — same gap as the cards above:
+   these classes never got a dark pass, so they kept light-mode literal hex
+   colors (dark navy text, pale blue banner) on the dark page background.
+   Scoped under .mhn-parent-step-container because .mhn-parent-card-title/
+   -card-sub are reused by an unrelated settings-row component elsewhere
+   with their own (already-fine) styling — this keeps the fix local to this
+   screen instead of re-theming that other usage. */
+:root[data-theme='dark'] .mhn-parent-step-title {
+  color: var(--color-foreground);
+}
+
+:root[data-theme='dark'] .mhn-parent-step-desc {
+  color: var(--color-muted-foreground);
+}
+
+:root[data-theme='dark'] .mhn-parent-step-container .mhn-parent-card-title {
+  color: var(--color-foreground);
+}
+
+:root[data-theme='dark'] .mhn-parent-step-container .mhn-parent-card-sub {
+  color: var(--color-muted-foreground);
+}
+
+:root[data-theme='dark'] .mhn-parent-info-banner {
+  background-color: var(--color-accent);
+  border-color: var(--color-border);
+  color: var(--color-accent-foreground);
+}
+
+:root[data-theme='dark'] .mhn-parent-btn-secondary {
+  background-color: var(--color-secondary) !important;
+  color: var(--color-foreground) !important;
+  border-color: var(--color-border) !important;
+}
+
+:root[data-theme='dark'] .mhn-parent-btn-secondary:hover {
+  background-color: var(--color-accent);
+  border-color: var(--color-ring);
+  color: var(--color-foreground);
 }
 
 :root[data-theme='dark'] .mhn-notifications-more-btn:hover {

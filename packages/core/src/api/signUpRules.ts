@@ -1,3 +1,4 @@
+import { REGEX_PATTERNS } from '@my-hockey-network/constants';
 import type { SignUpValidationResult } from './types';
 
 /**
@@ -137,8 +138,7 @@ export function validateSignUpAgeAndApproval(
   const isMinor = age < 18;
 
   if (isMinor) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const hasValidParentEmail = parentEmail ? emailRegex.test(parentEmail.trim()) : false;
+    const hasValidParentEmail = parentEmail ? REGEX_PATTERNS.EMAIL.test(parentEmail.trim()) : false;
 
     if (!hasValidParentEmail) {
       return {

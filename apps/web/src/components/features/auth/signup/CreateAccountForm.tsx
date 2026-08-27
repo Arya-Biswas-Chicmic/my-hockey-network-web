@@ -82,16 +82,6 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
         <span>{CREATE_ACCOUNT_STRINGS.googleButton}</span>
       </Button>
 
-      {onBack && (
-        <Button
-          type="button"
-          className="auth-back-link"
-          onClick={onBack}
-        >
-          {CREATE_ACCOUNT_STRINGS.backButton}
-        </Button>
-      )}
-
       <div className="auth-footer-text">
         <span>{CREATE_ACCOUNT_STRINGS.alreadyHaveAccount}</span>
         <Button

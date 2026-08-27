@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { CreatePostAudienceEnum } from '@my-hockey-network/contracts';
 import { validateProfileField, validateCareerField } from './profileValidation';
 
-import { emailSchema, sixDigitOtpSchema } from './base';
+import { emailSchema, nameSchema, sixDigitOtpSchema } from './base';
 
 function requiredEmailSchema(requiredMessage: string) {
   return z.string().trim().superRefine((value, context) => {
@@ -121,17 +121,6 @@ export const linkPlayerFormSchema = z.object({
   email: requiredEmailSchema('Enter the player’s email address.'),
 });
 
-// Matches the exact prior hand-rolled rules from screens/supervision-page.tsx (a length check on
-// the DD/MM/YYYY text, not a parsed-date/age check) rather than the stricter
-// `createAccountFormSchema` — this form doesn't validate the child's age at all today, and
-// tightening that is a product decision, not something to change silently in a form-library swap.
-export const createPlayerDetailsFormSchema = z.object({
-  fullName: z.string().trim().min(2, 'Full Name must be at least 2 characters.').max(49, 'Maximum 50 characters allowed.'),
-  dob: z.string().min(10, 'Please enter a valid Date of Birth (DD/MM/YYYY).'),
-  relationship: z.string().min(1, 'Relationship to player is required.'),
-  email: requiredEmailSchema('Email is required.'),
-});
-
 // DD/MM/YYYY-only age calculation matching packages/core's `calculateAge` for that one format —
 // duplicated rather than imported to avoid making `validation` (a leaf package other packages,
 // including `core`, may depend on) depend on `core` itself for one small pure function.
@@ -154,12 +143,12 @@ function ageFromDdMmYyyy(value: string): number | null {
   return age;
 }
 
-// Matches the exact prior hand-rolled rules from components/features/parent/CreatePlayerDetailsStep.tsx
-// (used by ParentOnboardingModal) — including its 5–100 year age check, which
-// `createPlayerDetailsFormSchema` above deliberately does not have (that form's prior behavior
-// never validated age at all; see the comment there).
+// Shared "Player Details" form used both by signup's ParentOnboardingModal and by
+// Supervision's "+ Add Player" flow (`PlayerDetailsFormFields`) — including the 5–100 year
+// age check, which Supervision's form did not previously enforce (see git history for
+// `createPlayerDetailsFormSchema`, removed when the two forms were unified).
 export const parentOnboardingPlayerDetailsFormSchema = z.object({
-  fullName: z.string().trim().min(2, 'Full Name must be at least 2 characters.').max(49, 'Maximum 50 characters allowed.'),
+  fullName: nameSchema({ max: 49 }),
   dateOfBirth: z.string(),
   guardianRelation: z.enum(['MOTHER', 'FATHER', 'LEGAL_GUARDIAN', 'GRANDPARENT', 'OTHER'], {
     error: 'Relationship to player is required.',
@@ -213,7 +202,7 @@ function ageAt(date: Date, now = new Date()): number {
 
 export function createAccountFormSchema(selectedRole: string) {
   return z.object({
-    fullName: z.string().trim().min(2, 'Full Name must be at least 2 characters.').max(50, 'Full Name cannot be more than 50 characters.'),
+    fullName: nameSchema(),
     email: requiredEmailSchema('Email Address is required.'),
     dob: z.string().min(1, 'Date of Birth is required.').superRefine((value, context) => {
       const parsed = parseDisplayDate(value);
@@ -243,7 +232,7 @@ export type ProfileIntroFormValues = z.infer<typeof profileIntroFormSchema>;
 export type ProfilePersonalDetailsFormValues = z.infer<typeof profilePersonalDetailsFormSchema>;
 export type CareerFormValues = z.infer<typeof careerFormSchema>;
 export type LinkPlayerFormValues = z.infer<typeof linkPlayerFormSchema>;
-export type CreatePlayerDetailsFormValues = z.infer<typeof createPlayerDetailsFormSchema>;
 export type ParentOnboardingPlayerDetailsFormValues = z.infer<typeof parentOnboardingPlayerDetailsFormSchema>;
+export type PlayerDetailsFormValues = ParentOnboardingPlayerDetailsFormValues;
 export type SupportTicketFormValues = z.infer<typeof supportTicketFormSchema>;
 export type CreateAccountFormValues = z.infer<ReturnType<typeof createAccountFormSchema>>;

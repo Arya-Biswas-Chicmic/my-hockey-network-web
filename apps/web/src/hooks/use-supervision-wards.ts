@@ -9,7 +9,7 @@ import {
 } from '@my-hockey-network/core';
 import { QueryKeys, ToastTypeEnum } from '@my-hockey-network/contracts';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
-import type { CreatePlayerDetailsFormValues, LinkPlayerFormValues } from '@my-hockey-network/validation';
+import type { PlayerDetailsFormValues, LinkPlayerFormValues } from '@my-hockey-network/validation';
 
 import { resolveMediaUrl } from '@/utils/mediaUtils';
 import { formatDobToIso } from '@/utils/guardianUtils';
@@ -80,7 +80,7 @@ export function useSupervisionWards({ initialWardId, onWardsRefreshed, showToast
     setApiLoading(isSupDataLoading);
   }, [rawSupervisionData, isSupDataLoading, initialWardId]);
 
-  const createPlayer = async (values: CreatePlayerDetailsFormValues): Promise<boolean> => {
+  const createPlayer = async (values: PlayerDetailsFormValues): Promise<boolean> => {
     const nameToUse = values.fullName.trim() || 'Noah';
     setAddedPlayerName(nameToUse);
 
@@ -91,15 +91,14 @@ export function useSupervisionWards({ initialWardId, onWardsRefreshed, showToast
     setApiLoading(true);
     setIsCreatingPlayer(true);
     try {
-      const formattedDob = formatDobToIso(values.dob) || '2015-05-15';
-      const validRelation = values.relationship as 'MOTHER' | 'FATHER' | 'LEGAL_GUARDIAN' | 'GRANDPARENT' | 'OTHER';
+      const formattedDob = formatDobToIso(values.dateOfBirth) || '2015-05-15';
 
       const res = await createManagedChild({
         displayName: nameToUse,
         firstName,
         lastName,
         dateOfBirth: formattedDob,
-        guardianRelation: validRelation,
+        guardianRelation: values.guardianRelation,
         email: values.email.trim() || undefined,
       });
 

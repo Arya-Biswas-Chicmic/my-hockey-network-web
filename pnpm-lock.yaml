@@ -319,6 +319,9 @@ importers:
       '@my-hockey-network/auth':
         specifier: workspace:*
         version: link:../auth
+      '@my-hockey-network/constants':
+        specifier: workspace:*
+        version: link:../constants
       '@my-hockey-network/contracts':
         specifier: workspace:*
         version: link:../contracts
@@ -371,6 +374,9 @@ importers:
 
   packages/validation:
     dependencies:
+      '@my-hockey-network/constants':
+        specifier: workspace:*
+        version: link:../constants
       '@my-hockey-network/contracts':
         specifier: workspace:*
         version: link:../contracts

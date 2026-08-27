@@ -4,6 +4,13 @@ Last reviewed: 2026-08-27
 
 ## Completed
 
+- Unified the signup parent-onboarding "Add Player" step and the Supervision "+ Add Player" flow
+  onto one shared `PlayerDetailsFormFields` component (`apps/web/src/components/features/parent/`)
+  built on the common `FormInput`/`FormDateInput`/`FormSelect` fields, replacing each flow's separate
+  hand-rolled `Input`/`Dropdown`/`FormField` wiring. Both flows now validate with the single
+  `parentOnboardingPlayerDetailsFormSchema` (including its 5–100 year DOB age check, which
+  Supervision's form did not previously enforce) and submit through the same `createManagedChild`
+  API call.
 - Aligned Home Screen implementation & component architecture with the primary 3-column layout (Sidebar, Center Feed with For You/Network/Groups tabs, Right Sidebar with Search, Who to Follow, Upcoming Events, Invite & Grow), modular component hierarchy, and dynamic TanStack Query API data flow.
 - Added authorization, x-acting-for, and x-client-type headers to Next.js server proxy allowlist so authenticated requests send Bearer tokens to backend.
 

@@ -5,6 +5,7 @@
   "types": "src/index.ts",
   "private": true,
   "dependencies": {
+    "@my-hockey-network/constants": "workspace:*",
     "@my-hockey-network/contracts": "workspace:*",
     "zod": "^4.4.3"
   }

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import NextImage from 'next/image';
 import { SupervisionViewModeEnum } from '@my-hockey-network/contracts';
-import type { CreatePlayerDetailsFormValues, LinkPlayerFormValues } from '@my-hockey-network/validation';
+import type { PlayerDetailsFormValues, LinkPlayerFormValues } from '@my-hockey-network/validation';
 
 import { Button } from '@/components/common/Button';
 import { SupervisionCreatePlayerDetailsStep } from '@/components/features/supervision/SupervisionCreatePlayerDetailsStep';
@@ -27,7 +27,7 @@ export interface SupervisionAddPlayerFlowProps {
   addedPlayerName: string;
   createdWardId: string | null;
   selectedWardId: string;
-  onCreatePlayer: (details: CreatePlayerDetailsFormValues) => Promise<boolean>;
+  onCreatePlayer: (details: PlayerDetailsFormValues) => Promise<boolean>;
   onSendLinkInvite: (values: LinkPlayerFormValues) => Promise<boolean>;
   onGoToSupervision: (targetId: string, playerName: string) => void;
   onNavigateHelp?: () => void;
@@ -55,7 +55,7 @@ export function SupervisionAddPlayerFlow({
   onGoToSupervision,
   onNavigateHelp,
 }: Readonly<SupervisionAddPlayerFlowProps>) {
-  const [pendingPlayerDetails, setPendingPlayerDetails] = useState<CreatePlayerDetailsFormValues | null>(null);
+  const [pendingPlayerDetails, setPendingPlayerDetails] = useState<PlayerDetailsFormValues | null>(null);
 
   if (viewMode === SupervisionViewModeEnum.CHOICE) {
     return (
