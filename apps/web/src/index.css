@@ -2418,12 +2418,19 @@
 }
 
 /* The center feed column scrolls independently of the sidebar/right column
-   (`lg:overflow-y-auto` in home-page.tsx) — it works, but the browser's
-   default scrollbar is thin/near-invisible, which read as "no scroll bar"
-   (feedback 2026-08-27). A visible, theme-aware track/thumb here instead of
-   relying on the OS default. */
+   (`lg:overflow-y-auto` in home-page.tsx) — that part works on its own, no
+   styling needed. This only controls the scrollbar's own look: transparent
+   at rest (Figma's static mockup has no persistent scrollbar line — flagged
+   directly, 2026-08-27: "no lines in the figma, match exactly" — and an
+   always-visible thumb read as exactly that, a line), a subtle themed thumb
+   appears only on hover, matching how most modern browsers already behave
+   by default rather than adding a permanent decoration. */
 .mhn-layout-col-center {
   scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.mhn-layout-col-center:hover {
   scrollbar-color: var(--color-border) transparent;
 }
 
@@ -2436,8 +2443,12 @@
 }
 
 .mhn-layout-col-center::-webkit-scrollbar-thumb {
-  background-color: var(--color-border);
+  background-color: transparent;
   border-radius: 8px;
+}
+
+.mhn-layout-col-center:hover::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
 }
 
 .mhn-layout-col-center::-webkit-scrollbar-thumb:hover {
@@ -14581,7 +14592,10 @@ img.secure {
   display: flex;
   flex-direction: column;
   background: var(--color-background);
-  border-right: 1px solid var(--color-border);
+  /* No border here — Figma's sidebar and feed share the same background
+     with no divider line between them (figma.com/design/
+     cqlBXHZtqPkKcLRmR6a1B8, node 1398:3904); feedback 2026-08-27 flagged
+     this exact line as not matching. */
   padding: 24px 16px;
   box-sizing: border-box;
 }
@@ -14653,7 +14667,9 @@ img.secure {
   position: relative;
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid var(--color-border);
+  /* No border here either — Figma's bottom profile chip isn't separated
+     from the nav by a line (feedback 2026-08-27, same as the sidebar's own
+     right border above). */
 }
 
 .mhn-sidebar-user-chip {
@@ -14702,13 +14718,19 @@ img.secure {
 
 /* Feed scope tabs (For You / Network / Groups) */
 .mhn-feed-search-wrapper-standalone {
-  margin-bottom: 16px;
+  /* No margin here — `.mhn-layout-col-right`'s own flex `gap: 16px` already
+     spaces this from the "Who to follow" card below it; this extra margin
+     was stacking on top of that gap, doubling it to ~32px against Figma's
+     tighter ~21px (feedback 2026-08-27: "check spacing between search and
+     who to follow"). */
 }
 
 .mhn-feed-scope-tabs {
   display: flex;
   gap: 24px;
-  border-bottom: 1px solid var(--color-border);
+  /* No full-row border — Figma only underlines the active tab itself
+     (`.mhn-feed-scope-tab-active`, below), not the whole row (feedback
+     2026-08-27, same "no lines in Figma" note as the sidebar borders). */
   margin-bottom: 16px;
 }
 

@@ -1198,6 +1198,38 @@ Last reviewed: 2026-08-27
     the Repost/Quote popover opening correctly and a full quote-repost
     round-trip, and the dark-themed skeleton shimmer on page load.
 
+- Removed 3 divider lines the Home layout had that Figma doesn't
+  (figma.com/design/cqlBXHZtqPkKcLRmR6a1B8, node 1398:3904 — confirmed by
+  re-checking the reference screenshot, sidebar and feed share one
+  background with nothing between them there) — flagged directly with
+  screenshots, 2026-08-27 ("no lines in the figma, match exactly"):
+  - `.mhn-sidebar`'s `border-right` (the line between the sidebar and the
+    feed).
+  - `.mhn-sidebar-footer`'s `border-top` (the line above the bottom profile
+    chip).
+  - `.mhn-feed-scope-tabs`'s full-row `border-bottom` — Figma only
+    underlines the *active* tab itself (already handled by
+    `.mhn-feed-scope-tab-active`), not the whole tab row.
+  - The visible, always-on scrollbar thumb added to `.mhn-layout-col-center`
+    last pass (to fix "no scroll bar") itself read as a 4th unwanted line
+    once actually themed and colored — switched to transparent at rest,
+    with the themed thumb appearing only on `:hover` (matches how most
+    browsers already behave by default; scrolling itself was never the
+    problem, only its constant visual presence).
+  - **Search-to-"Who to follow" spacing** ("check spacing between search and
+    who to follow"): `.mhn-feed-search-wrapper-standalone`'s own
+    `margin-bottom: 16px` was stacking on top of `.mhn-layout-col-right`'s
+    flex `gap: 16px`, doubling the real gap to ~32px against Figma's own
+    ~21px (search bar bottom at y=92, "Who to follow" card top at y=113 in
+    Figma's metadata). Removed the redundant margin so the flex gap alone
+    (16px) sets the spacing.
+  - Verified: `pnpm --filter @my-hockey-network/web typecheck`, `lint:check`,
+    `node scripts/check-component-reuse.mjs`, `pnpm test:run` (208/208), and
+    `pnpm --filter @my-hockey-network/web build` all pass. Live-verified all
+    3 borders compute to `0px` and the scroll column still genuinely scrolls
+    (`scrollHeight > clientHeight`, `overflow-y: auto` both confirmed via
+    `getComputedStyle`) — the fix removed the line, not the scrolling.
+
 ## Current quality gates
 
 - Obfuscation/security scan must report zero findings.
