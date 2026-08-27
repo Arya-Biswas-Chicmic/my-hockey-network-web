@@ -1,6 +1,6 @@
 # My Hockey Network frontend context
 
-Last reviewed: 2026-08-26
+Last reviewed: 2026-08-27
 
 Canonical location: `docs/PROJECT_CONTEXT.md`
 
@@ -39,7 +39,9 @@ and Axios are prohibited.
 
 Web forms use React Hook Form with Zod for interaction state and centralized validators rather than
 page-local regular expressions; Formik has been fully removed. Authenticated routes render under the
-`(authenticated)` route group. The desktop Home shell keeps side content in place while the center
+`(authenticated)` route group. The authenticated desktop shell defaults to the approved dark navy
+theme, uses the shared `ThemeProvider` and semantic Tailwind tokens, and renders the common Header
+as a persistent left navigation rail. The Home shell keeps side content in place while the center
 feed owns vertical scrolling; mobile retains document scrolling. Application imports use `@/`,
 explicit `any` is forbidden, and ordinary web UI icons use Lucide. Custom SVG is restricted to
 approved reusable brand/illustration components.

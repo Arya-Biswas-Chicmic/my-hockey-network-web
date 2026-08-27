@@ -41,7 +41,7 @@ export function useProfileCardData(fallbacks: ProfileCardFallbacks) {
       authProfile?.coverImageUrl || authProfile?.coverUrl || authProfile?.coverImageKey || fallbacks.coverUrl,
       '/cover.png',
     ),
-    location: apiProfile?.city || apiProfile?.location || authProfile?.city || authProfile?.location || fallbacks.location || '-',
+    location: apiProfile?.city || apiProfile?.location || authProfile?.city || authProfile?.location || fallbacks.location,
     teamName: String(role).toUpperCase() === 'PARENT' ? undefined : careerTeam || profileTeam || fallbacks.teamName,
     followers: user?.counts?.followers ?? fallbacks.followers ?? 0,
     following: user?.counts?.following ?? fallbacks.following ?? 0,

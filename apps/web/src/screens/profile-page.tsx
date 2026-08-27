@@ -375,7 +375,16 @@ export const ProfilePage: React.FC<PageProps> = ({
     if (isParent) return liveRole;
     const teamString = primaryTeam ? ` • @${primaryTeam}` : '';
     if (isPlayer) {
-      return `${livePosition === 'Left Wing' ? 'LW' : livePosition === 'Right Wing' ? 'RW' : livePosition === 'Center' ? 'C' : livePosition === 'Defense' ? 'D' : livePosition === 'Goaltender' ? 'G' : (livePosition || 'LW')} • #${liveJersey || '8'}${teamString}`;
+      const positionAbbreviations: Record<string, string> = {
+        'Left Wing': 'LW',
+        'Right Wing': 'RW',
+        Center: 'C',
+        Defense: 'D',
+        Goaltender: 'G',
+      };
+      const position = livePosition ? positionAbbreviations[livePosition] || livePosition : liveRole;
+      const jersey = liveJersey ? ` • #${liveJersey}` : '';
+      return `${position}${jersey}${teamString}`;
     }
     return `${liveRole}${teamString}`;
   })();
@@ -386,8 +395,6 @@ export const ProfilePage: React.FC<PageProps> = ({
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}
-        userName="Jack Ruffle"
-        userAvatar="/jack.png"
       />
 
       {!permissions.allowed && permissions.message && (

@@ -1,6 +1,6 @@
 # Testing and coverage strategy
 
-Last reviewed: 2026-08-26
+Last reviewed: 2026-08-27
 
 ## Test layers
 
@@ -11,7 +11,7 @@ Last reviewed: 2026-08-26
   comment fetch error propagation.
 - Web toast tests cover feature-safe error fallback messaging.
 - Auth integration tests exercise shared auth use cases through the real API client with mocked HTTP.
-- jsdom integration tests exercise Formik auth, OTP, post, and comment submission plus
+- jsdom integration tests exercise React Hook Form auth, OTP, post, and comment submission plus
   authenticated/role route redirects. Platform/UI tests continue to grow screen-by-screen.
 - Query tests exercise TanStack Query caching, request deduplication, retries, and prefix invalidation.
 - API-client tests verify credentialed cookie requests, refresh serialization, and storage boundaries.
@@ -23,7 +23,8 @@ Last reviewed: 2026-08-26
 
 - Unit: domain rules, validation, metadata/canonical builders, cache-tag mapping, serializers, query
   keys, error normalization, and permission decisions. **In place** for domain/validation/API-client
-  layers (126 Vitest tests total, ≥80% coverage on the enforced boundary).
+  layers plus atomic control sanitization, accessible file selection, and feed mapping (196 Vitest
+  tests across 31 files, ≥80% coverage on the enforced boundary).
 - Component integration: React Hook Form + Zod behavior, loading/empty/error states, accessible
   primitives, Client Component interactions, and TanStack Query mutation/invalidation behavior. **In
   place** for auth and content forms.
@@ -64,6 +65,9 @@ meaningless render-line coverage.
 The enforced minimum is 80% for statements, branches, functions, and lines. Coverage output is
 written to `coverage/` and is not committed.
 
+Latest verified result (2026-08-27): 93.96% statements, 88.28% branches, 98.07% functions, and
+94.46% lines. All 196 tests passed.
+
 ## Commands
 
 - `pnpm test:run`: fast test suite without coverage.
@@ -76,6 +80,5 @@ Coverage is necessary but not sufficient. New or changed logic must be meaningfu
 critical route, security, SEO, accessibility, and production-start behavior must pass even when the
 numeric threshold is already satisfied.
 
-Planned post-migration command names should provide separate `test:unit`, `test:integration`,
-`test:smoke`, `test:e2e`, `test:coverage`, and aggregate `verify` gates under pnpm. These commands do
-not exist yet and must not be added before migration authorization.
+Playwright smoke/e2e remains a separate `pnpm --filter @my-hockey-network/web test:e2e` command.
+Authenticated write coverage requires a dedicated non-production test account and remains gated.

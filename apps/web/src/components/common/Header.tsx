@@ -19,10 +19,13 @@ import {
   Home,
   LogOut,
   MessageSquare,
+  Moon,
   Settings,
+  Sun,
   Users,
 } from 'lucide-react';
 import { useShellUiStore } from '@/stores/shell-ui-store';
+import { useTheme } from '@/components/core/theme-provider';
 
 
 interface HeaderProps {
@@ -41,6 +44,7 @@ export const Header: React.FC<HeaderProps> = ({
   userAvatar,
 }) => {
   const { user, handleLogout: contextLogout } = useAuth();
+  const { resolvedTheme, setTheme } = useTheme();
   const [currentTab, setCurrentTab] = useState(activeTab);
   const {
     isProfileMenuOpen: isProfileOpen,
@@ -324,6 +328,22 @@ export const Header: React.FC<HeaderProps> = ({
                     <span className="mhn-dropdown-item-text">Settings & Privacy</span>
                   </div>
                   <ChevronRight size={16} color="#64748B" />
+                </Button>
+
+                <Button
+                  className="mhn-dropdown-item"
+                  onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                  aria-label={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} mode`}
+                >
+                  <div className="mhn-dropdown-item-left">
+                    <div className="mhn-dropdown-icon-box">
+                      {resolvedTheme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                    </div>
+                    <span className="mhn-dropdown-item-text">
+                      {resolvedTheme === 'dark' ? 'Light mode' : 'Dark mode'}
+                    </span>
+                  </div>
+                  <ChevronRight size={16} aria-hidden="true" />
                 </Button>
 
                 {/* Parent-only management route. Child approvals stay under Profile. */}

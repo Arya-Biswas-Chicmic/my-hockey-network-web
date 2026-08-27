@@ -44,6 +44,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [postImage, setPostImage] = useState<string | null>(null);
   const [postImageFile, setPostImageFile] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [isLocationFieldVisible, setIsLocationFieldVisible] = useState(false);
   const form = useForm<CreatePostFormValues>({
     resolver: zodResolver(createPostFormSchema),
     mode: 'onChange',
@@ -179,8 +180,26 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 <div className="mhn-modal-location-tag">
                   <MapPin size={14} aria-hidden="true" />
                   <span>{values.locationTag}</span>
-                  <Button type="button" onClick={() => form.setValue('locationTag', '')}>×</Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      form.setValue('locationTag', '');
+                      setIsLocationFieldVisible(false);
+                    }}
+                    aria-label="Remove location"
+                  >
+                    <X size={14} aria-hidden="true" />
+                  </Button>
                 </div>
+              )}
+
+              {isLocationFieldVisible && !values.locationTag && (
+                <Input
+                  {...form.register('locationTag')}
+                  placeholder="Add a city, venue, or rink"
+                  aria-label="Post location"
+                  maxLength={100}
+                />
               )}
 
               {imageError && <p className="mhn-edit-profile-field-error">{imageError}</p>}
@@ -201,7 +220,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   <Button
                     type="button"
                     className="mhn-modal-icon-btn"
-                    onClick={() => form.setValue('locationTag', values.locationTag ? '' : 'Austria, Europe')}
+                    onClick={() => setIsLocationFieldVisible((isVisible) => !isVisible)}
                     title="Add location"
                   >
                     <MapPin size={20} aria-hidden="true" />

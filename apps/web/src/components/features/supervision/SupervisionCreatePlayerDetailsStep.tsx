@@ -100,7 +100,7 @@ export function SupervisionCreatePlayerDetailsStep({ onContinue, onBack, isSubmi
           <Input
             type="email"
             value={values.email}
-            onChange={(e) => form.setValue('email', e.target.value, { shouldValidate: form.formState.isSubmitted })}
+            onValueChange={(value) => form.setValue('email', value, { shouldValidate: form.formState.isSubmitted })}
             placeholder="admin@gmail.com"
             className={`mhn-form-input ${errors.email ? 'mhn-input-error' : ''}`}
           />

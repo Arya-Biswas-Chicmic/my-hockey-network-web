@@ -13971,3 +13971,331 @@ img.secure {
   animation: mhn-spin 0.8s linear infinite;
   margin: auto;
 }
+
+/* ==========================================================================
+   Authenticated dark workspace
+
+   The semantic palette below is the single app-wide source for the dark
+   desktop experience. Component overrides intentionally consume these
+   tokens so future screens do not introduce one-off navy values.
+   ========================================================================== */
+:root[data-theme='dark'] {
+  --color-background: #020817;
+  --color-foreground: #f4f7fb;
+  --color-card: #07152a;
+  --color-card-foreground: #f4f7fb;
+  --color-popover: #0b1a31;
+  --color-popover-foreground: #f4f7fb;
+  --color-primary: #168bff;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #0d1d35;
+  --color-secondary-foreground: #dce7f5;
+  --color-muted: #0d1d35;
+  --color-muted-foreground: #8190a6;
+  --color-accent: #10284a;
+  --color-accent-foreground: #69b4ff;
+  --color-border: #18304e;
+  --color-input: #18304e;
+  --color-ring: #168bff;
+}
+
+:root[data-theme='dark'] body,
+:root[data-theme='dark'] #root {
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+:root[data-theme='dark'] :is(
+  .mhn-home-page-root,
+  .mhn-network-page-root,
+  .mhn-messaging-page-root,
+  .mhn-events-page-root,
+  .mhn-profile-page-root,
+  .mhn-settings-page-root,
+  .mhn-supervision-page-root,
+  .mhn-notifications-page-root
+) {
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+:root[data-theme='dark'] :is(
+  .mhn-profile-summary-card,
+  .mhn-feed-post-card,
+  .mhn-sidebar-card,
+  .mhn-match-card-item,
+  .mhn-event-card-item,
+  .mhn-network-profile-card,
+  .mhn-manage-menu-card,
+  .mhn-group-card,
+  .mhn-group-member-card,
+  .mhn-group-hero-card,
+  .mhn-group-widget-box,
+  .mhn-chat-sidebar-card,
+  .mhn-chat-conversation-card,
+  .mhn-no-data-card,
+  .mhn-profile-dropdown
+) {
+  background: var(--color-card);
+  border-color: var(--color-border);
+  color: var(--color-card-foreground);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 18%);
+}
+
+:root[data-theme='dark'] :is(
+  .mhn-profile-name,
+  .mhn-author-name,
+  .mhn-post-text,
+  .mhn-sidebar-card-title,
+  .mhn-match-league-tag,
+  .mhn-match-team-name,
+  .mhn-event-title,
+  .mhn-invite-grow-title,
+  .mhn-network-user-name,
+  .mhn-network-user-role,
+  .mhn-network-stat-label,
+  .mhn-manage-menu-title,
+  .mhn-manage-menu-text,
+  .mhn-groups-main-title,
+  .mhn-group-title,
+  .mhn-group-member-name,
+  .mhn-group-main-name,
+  .mhn-group-widget-title,
+  .mhn-admin-name,
+  .mhn-chat-sidebar-title,
+  .mhn-chat-item-name,
+  .mhn-conv-title,
+  .mhn-msg-sender-name,
+  .mhn-msg-text
+  ,.mhn-no-data-title
+) {
+  color: var(--color-foreground);
+}
+
+:root[data-theme='dark'] :is(
+  .mhn-profile-location-row,
+  .mhn-author-subtitle,
+  .mhn-action-item,
+  .mhn-action-count,
+  .mhn-match-time-info,
+  .mhn-event-info-line,
+  .mhn-invite-grow-desc,
+  .mhn-profile-location-line,
+  .location2,
+  .mhn-profile-team-name,
+  .mhn-groups-main-subtitle,
+  .mhn-group-members,
+  .mhn-group-member-joined,
+  .mhn-group-members-count,
+  .mhn-admin-role,
+  .mhn-chat-item-last-msg,
+  .mhn-conv-subtitle,
+  .mhn-msg-timestamp
+  ,.mhn-no-data-description
+) {
+  color: var(--color-muted-foreground);
+}
+
+:root[data-theme='dark'] :is(
+  .mhn-feed-search-input,
+  .mhn-feed-sort-wrapper .mhn-dropdown-select,
+  .mhn-search-input,
+  .mhn-network-search-input,
+  .mhn-groups-search-input,
+  .mhn-chat-search-input,
+  .mhn-chat-input-pill-wrapper,
+  .mhn-chat-input-footer
+) {
+  background: var(--color-secondary);
+  border-color: var(--color-border);
+  color: var(--color-foreground);
+}
+
+:root[data-theme='dark'] :is(
+  .mhn-btn-follow,
+  .mhn-chat-icon-btn,
+  .mhn-chat-pill,
+  .mhn-msg-bubble,
+  .mhn-reaction-pill,
+  .mhn-btn-group-outline,
+  .mhn-btn-view-group
+) {
+  background: var(--color-secondary);
+  border-color: var(--color-border);
+  color: var(--color-secondary-foreground);
+}
+
+:root[data-theme='dark'] :is(
+  .mhn-post-footer,
+  .mhn-network-stats-row,
+  .mhn-chat-conv-header,
+  .mhn-chat-input-footer,
+  .mhn-group-subnav-tabs
+) {
+  border-color: var(--color-border);
+}
+
+:root[data-theme='dark'] .mhn-invite-grow-card {
+  background: linear-gradient(135deg, #0b2140 0%, #0e2f5b 100%);
+  border-color: #17487d;
+}
+
+:root[data-theme='dark'] .mhn-chat-item:hover,
+:root[data-theme='dark'] .mhn-manage-menu-item:hover,
+:root[data-theme='dark'] .mhn-action-item:hover,
+:root[data-theme='dark'] .mhn-btn-more-options:hover {
+  background: var(--color-secondary);
+  color: var(--color-foreground);
+}
+
+:root[data-theme='dark'] .mhn-chat-item-active {
+  background: var(--color-accent);
+}
+
+:root[data-theme='dark'] .mhn-chat-pill-active {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+}
+
+:root[data-theme='dark'] :is(.mhn-dropdown-item, .mhn-dropdown-logout-btn) {
+  color: var(--color-foreground);
+}
+
+:root[data-theme='dark'] :is(.mhn-dropdown-item:hover, .mhn-family-member-item:hover) {
+  background: var(--color-secondary);
+}
+
+:root[data-theme='dark'] :is(.mhn-dropdown-item-text, .mhn-family-member-name) {
+  color: var(--color-foreground);
+}
+
+:root[data-theme='dark'] .mhn-dropdown-icon-box {
+  background: var(--color-accent);
+  color: var(--color-accent-foreground);
+}
+
+:root[data-theme='dark'] .mhn-date-divider-label {
+  background: var(--color-card);
+}
+
+:root[data-theme='dark'] .mhn-chat-date-divider::before {
+  background: var(--color-border);
+}
+
+@media (min-width: 1024px) {
+  :root[data-theme='dark'] .mhn-header {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 184px;
+    border: 0;
+    border-right: 1px solid var(--color-border);
+    background: #031126;
+    box-shadow: 12px 0 32px rgb(0 0 0 / 12%);
+  }
+
+  :root[data-theme='dark'] .mhn-header-container {
+    width: 100%;
+    height: 100%;
+    padding: 28px 16px 20px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  :root[data-theme='dark'] .mhn-header-logo-area {
+    padding: 0 8px 28px;
+  }
+
+  :root[data-theme='dark'] .mhn-header-logo-area .logo {
+    width: 126px;
+    height: auto;
+  }
+
+  :root[data-theme='dark'] .mhn-header-nav {
+    height: auto;
+    flex: 1;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+  }
+
+  :root[data-theme='dark'] .mhn-nav-item {
+    width: 100%;
+    height: 44px;
+    padding: 0 12px;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    border-radius: 8px;
+    color: var(--color-muted-foreground);
+  }
+
+  :root[data-theme='dark'] .mhn-nav-item-active {
+    color: var(--color-foreground);
+    background: #0a2344;
+  }
+
+  :root[data-theme='dark'] .mhn-nav-active-bar {
+    inset: 8px auto 8px 0;
+    width: 3px;
+    height: auto;
+    border-radius: 0 4px 4px 0;
+    background: var(--color-primary);
+  }
+
+  :root[data-theme='dark'] .mhn-header-user {
+    width: 100%;
+  }
+
+  :root[data-theme='dark'] .mhn-user-profile-btn {
+    width: 100%;
+    padding: 8px;
+    border-radius: 8px;
+  }
+
+  :root[data-theme='dark'] .mhn-user-name {
+    flex: 1;
+    font-size: 12px;
+  }
+
+  :root[data-theme='dark'] .mhn-profile-dropdown {
+    inset: auto auto 0 calc(100% + 12px);
+  }
+
+  :root[data-theme='dark'] :is(
+    .mhn-home-page-root,
+    .mhn-network-page-root,
+    .mhn-messaging-page-root,
+    .mhn-events-page-root,
+    .mhn-profile-page-root,
+    .mhn-settings-page-root,
+    .mhn-supervision-page-root,
+    .mhn-notifications-page-root
+  ) {
+    padding-left: 184px;
+    box-sizing: border-box;
+  }
+
+  :root[data-theme='dark'] .mhn-home-main-layout {
+    max-width: 1120px;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 20px;
+  }
+
+  :root[data-theme='dark'] .mhn-home-main-layout .mhn-layout-col-left {
+    display: none;
+  }
+
+  :root[data-theme='dark'] .mhn-network-main-layout,
+  :root[data-theme='dark'] .mhn-messaging-main-container {
+    max-width: 1120px;
+  }
+
+  :root[data-theme='dark'] .mhn-messaging-main-container {
+    height: calc(100dvh - 48px);
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+
+  :root[data-theme='dark'] :is(.mhn-chat-sidebar-card, .mhn-chat-conversation-card) {
+    min-height: 100%;
+  }
+}

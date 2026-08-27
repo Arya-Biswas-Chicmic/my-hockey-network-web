@@ -23,11 +23,11 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
   role,
   avatarUrl,
   coverUrl = '/cover.png',
-  location = 'Austria, Europe',
-  teamName = 'HC Bloemendaal',
-  teamLogo = '/HC.png',
-  followers = '-',
-  following = '700',
+  location,
+  teamName,
+  teamLogo = '/userPlaceholder.png',
+  followers,
+  following,
   onPostClick
 }) => {
   const { user, checkSupervisionPermission, assertSupervisionPermission } = useAuth();

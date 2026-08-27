@@ -28,9 +28,9 @@ function mapBlockedUser(b: BlockedUserDTO): BlockedUserView {
     name: cp.displayName || cp.name || 'Blocked User',
     roleTag: cp.roleTag || (cp.position ? `${cp.position} ${cp.jerseyNumber ? `• #${cp.jerseyNumber}` : ''}` : cp.primaryRole || 'Player'),
     avatarUrl: cp.avatarUrl || '/userPlaceholder.png',
-    teamName: cp.teamName || 'HC Bloemendaal',
-    teamLogo: cp.teamLogo || '/kcBlue.png',
-    location: cp.location || cp.city || 'Canada',
+    teamName: cp.teamName || '',
+    teamLogo: cp.teamLogo || '',
+    location: cp.location || cp.city || '',
   };
 }
 

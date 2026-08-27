@@ -40,13 +40,18 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
   const isServerError = iconType === 'server-error';
   const isNoData = iconType === 'nodata';
+  const iconWrapperClassName = [
+    'mhn-empty-state-icon-wrapper',
+    isServerError && 'mhn-icon-server-error',
+    isNoData && 'mhn-icon-nodata',
+  ].filter(Boolean).join(' ');
 
   return (
     <div
       className={`mhn-empty-state-card ${isServerError ? 'mhn-server-error-border' : ''}`}
     >
       <div
-        className={`mhn-empty-state-icon-wrapper ${isServerError ? 'mhn-icon-server-error' : isNoData ? 'mhn-icon-nodata' : ''}`}
+        className={iconWrapperClassName}
       >
         {renderIcon()}
       </div>

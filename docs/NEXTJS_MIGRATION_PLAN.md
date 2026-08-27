@@ -1,10 +1,10 @@
 # Next.js web migration plan
 
-Last reviewed: 2026-08-26
+Last reviewed: 2026-08-27
 
 ## Status
 
-Approved and in progress. The owner authorized implementation and the migration is underway on
+Approved; the application-stack migration baseline is complete. The owner authorized implementation on
 branch `changes/next-js-update`. `apps/web` now runs on Next.js App Router (see
 `docs/IMPLEMENTATION_STATUS.md` for the current delivered-vs-remaining breakdown); Vite, React
 Router, and Formik have been removed from `apps/web`. Continue the migration through the remaining
@@ -113,17 +113,17 @@ No permanent "compatibility catch-all" package should remain after migration com
    `MinorPlayerGuard`. Directional guardian relationship routes are implemented. **Gap:** these
    guards are still client-side only; server-side/session-aware authorization at the route or data
    boundary (the actual security control per `FRONTEND_ARCHITECTURE.md` §5.2) is not yet implemented.
-5. **Feature migration** — in progress. All existing screens render under the App Router and all
-   semantic web forms use React Hook Form + Zod (Formik is fully removed). **Remaining:** full
-   TanStack Query adoption audit, decomposition of oversized screens (`profile-page.tsx`,
-   `supervision-page.tsx`, both ~1,800 lines), removal of fabricated/mock data still present in some
-   feature screens, and the package consolidation above.
+5. **Feature migration** — baseline done. All existing screens render under the App Router, all
+   semantic web forms use React Hook Form + Zod, and production screens render API-backed data or
+   explicit empty/error states instead of fabricated records. **Remaining:** continued TanStack
+   Query adoption audit, responsibility-based decomposition of oversized screens, and package
+   consolidation above.
 6. **Rendering and SEO** — partially done. `robots.ts`, `sitemap.ts`, and a root metadata baseline
    exist; the root layout currently sets `robots: { index: false, follow: false }` globally as a
    safe default. **Remaining:** per-route metadata/canonical/Open Graph data and the full
    SSR/SSG/ISR classification matrix from `WEB_SEO_AND_RENDERING_STRATEGY.md` have not been applied
    route-by-route.
-7. **Cutover** — not started. Vite, React Router, Formik, and npm artifacts are already removed from
+7. **Cutover** — application stack complete. Vite, React Router, Formik, and npm artifacts are removed from
    `apps/web`. Playwright coverage is partly implemented (guest smoke runs in CI; authenticated
    writes require a dedicated account), while full regression, accessibility, performance, and
    security review remain

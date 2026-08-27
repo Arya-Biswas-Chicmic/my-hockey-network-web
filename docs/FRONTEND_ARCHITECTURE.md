@@ -1,14 +1,14 @@
 # My Hockey Network frontend architecture standard
 
-Last reviewed: 2026-08-26
-Status: approved target; Next.js migration is authorized and in progress
+Last reviewed: 2026-08-27
+Status: implemented baseline; incremental hardening and feature completion continue
 
 ## 1. Authority and implementation status
 
 This is the primary frontend architecture document for the My Hockey Network User Panel. Every
 contributor and AI coding agent must read it before changing the frontend.
 
-The project owner authorized the Next.js migration and implementation is underway on branch
+The project owner authorized the Next.js migration and the baseline is implemented on branch
 `changes/next-js-update`. `apps/web` now runs on Next.js App Router, pnpm workspaces, React Hook
 Form + Zod, and TanStack Query; Vite, React Router, Formik, and npm have been removed from `apps/web`.
 See `docs/IMPLEMENTATION_STATUS.md` for the current delivered-vs-remaining breakdown and
@@ -84,7 +84,7 @@ JSX; it means stable shared behavior underneath separate platform experiences.
 | Complex tables | TanStack Table | Not yet needed/introduced |
 | Client state | Zustand only when local, URL, form, derived, or server state is insufficient | Available (`stores/shell-ui-store.ts`); use sparingly per rules in `NEXTJS_MIGRATION_PLAN.md` |
 | Icons | Lucide; isolated project components for brand art and real illustrations | Implemented |
-| Unit/integration tests | Vitest and React Testing Library | Implemented, 126 tests passing |
+| Unit/integration tests | Vitest and React Testing Library | Implemented, 196 tests passing |
 | Browser smoke/e2e | Playwright | Configured; guest smoke suite runs in CI, authenticated write flow awaits a dedicated account |
 | Package manager | pnpm workspaces with one root lockfile | Implemented |
 

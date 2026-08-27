@@ -34,7 +34,7 @@ export const LinkExistingPlayerStep: React.FC<LinkExistingPlayerStepProps> = ({
             type="email"
             className="auth-input"
             value={childEmail}
-            onChange={(e) => onChangeEmail(e.target.value)}
+            onValueChange={(value) => onChangeEmail(value)}
             placeholder="kid@example.com"
           />
         </div>

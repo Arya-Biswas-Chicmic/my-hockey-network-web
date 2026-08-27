@@ -13,7 +13,7 @@ interface PageProps {
 export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { permissions } = useFeedPermissions(onNavigate);
   const [activeNavTab, setActiveNavTab] = useState('messaging');
-  const [selectedChatId, setSelectedChatId] = useState('c1');
+  const [selectedChatId, setSelectedChatId] = useState<string>();
 
   const handleTabChange = (tab: string) => {
     setActiveNavTab(tab);
@@ -60,11 +60,7 @@ export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
 
         {/* Right Column: Chat Conversation Window */}
         <section className="mhn-messaging-conversation-col">
-          <ChatConversation
-            title="Hockey Club"
-            subtitle="187 People • 4 Online"
-            avatarUrl="/HockeyClub2.png"
-          />
+          <ChatConversation />
         </section>
       </main>
     </div>

@@ -4,6 +4,26 @@ Last reviewed: 2026-08-27
 
 ## Completed
 
+- Completed the ordered 2026-08-27 stabilization pass: credential-free auth/onboarding routes no
+  longer receive the authenticated full-screen outage overlay when `/auth/me` is unavailable;
+  mutation failures remain local to their feature error UI.
+- Made the shared atomic form controls event-safe and accessible. Sanitized values flow through
+  `onValueChange`; no code mutates `event.target.value` or constructs synthetic change events.
+  File selection uses an associated label/native input rather than `ref.current.click()`.
+- Removed remaining confirmed fabricated Home/Profile/Career/Events/Messaging/Notifications values.
+  Screens without a backend list endpoint now render centralized honest empty states, while real
+  API-backed Groups/Feed data continues through TanStack Query and shared service layers.
+- Added the approved dark authenticated workspace: semantic app-wide navy tokens, persisted
+  light/dark/system resolution, reusable Header theme toggle, persistent desktop left navigation,
+  and Home/Messaging/Network/Groups dark surfaces. Home retains center-only scrolling.
+- Fixed Groups navigation to pass the real selected backend group ID into Group Detail instead of
+  ignoring the click and retaining a fabricated `g1` value.
+- Extracted feed response mapping into `mapFeedPosts`, removed the duplicate onboarding interface,
+  removed static profile identity props and nested position ternaries, and added focused unit tests.
+- Verification on 2026-08-27: obfuscation scan, TypeScript, ESLint, 196 Vitest tests, production
+  Next.js build, and the four-metric coverage gate pass. Coverage is 93.96% statements, 88.28%
+  branches, 98.07% functions, and 94.46% lines.
+
 - Imported home screen components and home-page from refactor/imports-and-styles branch.
 - Fixed CORS preflight header rejection by sending only server-allowlisted headers in API client.
 
@@ -591,11 +611,11 @@ Last reviewed: 2026-08-27
 - Production web build must pass.
 - Web/native UI ownership and pnpm-only dependency management checks must pass.
 
-Latest measured enforced-code coverage: 93.94% statements, 88.28% branches, 98.03% functions, and
-94.44% lines (enforced boundary: `packages/api-client`, `auth`, `domain`, `validation` index files;
+Latest measured enforced-code coverage: 93.96% statements, 88.28% branches, 98.07% functions, and
+94.46% lines (enforced boundary: `packages/api-client`, `auth`, `domain`, `validation` index files;
 `packages/core/src/api/signUpRules.ts`; `apps/web/src/platform/auth-storage.ts`,
 `query/query-client.ts`, `utils/guardianUtils.ts`, `utils/mediaUtils.ts`, `utils/toast.ts`). The
-Vitest suite contains 189 tests across 28 test files, plus 6 Playwright smoke tests
+Vitest suite contains 196 tests across 31 test files, plus 6 Playwright smoke tests
 (`apps/web/e2e/public.spec.ts`, run separately via `pnpm test:e2e`, not counted in the Vitest total).
 Web form validation, secure storage behavior, query/mutation hook behavior, route-guard
 fail-closed/redirect behavior, dialog/OTP-input keyboard and focus behavior, and route/form
@@ -621,15 +641,10 @@ end-to-end.
 - Consolidate the compatibility packages (`core`, `shared`, `types`, `constants`, `utils`,
   `design-system`) into their target owners per `NEXTJS_MIGRATION_PLAN.md`, incrementally and only
   after each package's import inventory and tests are verified.
-- Project policy on fabricated/mock data: where a backend endpoint genuinely doesn't exist yet
-  (`events-page.tsx`'s `eventsList`, `CalendarView.tsx`'s `selectedDayEvents`, `profile-page.tsx`'s
-  `mediaPhotos` — no list/gallery endpoint, only signed-upload URLs), hardcoded placeholder data is
-  accepted and stays, marked with a comment noting the missing endpoint; replace gradually as each
-  API lands, not as a blocking rewrite. This is different from dead fabricated code that duplicates
-  data already served by a real endpoint — removed one example of that during this pass
-  (`profile-page.tsx`'s unused `userPosts` array; the Posts tab already renders real data via
-  `liveUserPosts`/`getUserPosts`). Do not make a hardcoded-data screen public/ISR (Events) until it's
-  connected to a real endpoint.
+- Events, profile media/stats, messaging, and notifications currently use explicit empty states
+  where no production list endpoint is implemented. Connect those screens through the required
+  endpoint → service → TanStack hook → component hierarchy when APIs land; do not restore sample
+  production records. Do not make Events public/ISR until it is backed by real publishable data.
 - Consolidate `apps/web/src/index.css`'s three separate `.mhn-parent-btn-secondary` rule blocks
   (currently defined with conflicting `height`/`border`/`font-weight` values across the file) into
   one, so the remaining 3 `!important` declarations that are today resolving that conflict can be

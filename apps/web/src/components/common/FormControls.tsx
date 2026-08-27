@@ -13,12 +13,15 @@ export interface EnhancedInputProps extends InputHTMLAttributes<HTMLInputElement
   isNameInput?: boolean;
   isEmailInput?: boolean;
   disableAutoSanitize?: boolean;
+  /** Receives the normalized value without mutating the browser event. */
+  onValueChange?: (value: string, event: React.SyntheticEvent<HTMLInputElement>) => void;
 }
 
 export const Input = forwardRef<HTMLInputElement, EnhancedInputProps>(
   (
     {
       onChange,
+      onValueChange,
       onBlur,
       onKeyDown,
       type,
@@ -59,37 +62,25 @@ export const Input = forwardRef<HTMLInputElement, EnhancedInputProps>(
         nameLower.includes('team'));
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      let rawVal = e.target.value;
+      let nextValue = e.currentTarget.value;
       if (isEmail) {
-        rawVal = sanitizeEmailInput(rawVal);
-        e.target.value = rawVal;
+        nextValue = sanitizeEmailInput(nextValue);
       } else if (isName) {
-        rawVal = sanitizeNameInput(rawVal);
-        e.target.value = rawVal;
+        nextValue = sanitizeNameInput(nextValue);
       }
-      if (onChange) {
-        onChange(e);
-      }
+      if (onValueChange) onValueChange(nextValue, e);
+      else onChange?.(e);
     };
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-      const rawVal = e.target.value;
+      const rawVal = e.currentTarget.value;
       if (isName) {
         const normalized = normalizeNameBlur(rawVal);
-        if (normalized !== rawVal) {
-          e.target.value = normalized;
-          if (onChange) {
-            const syntheticEvent = {
-              ...e,
-              target: e.target,
-            } as React.ChangeEvent<HTMLInputElement>;
-            onChange(syntheticEvent);
-          }
+        if (normalized !== rawVal && onValueChange) {
+          onValueChange(normalized, e);
         }
       }
-      if (onBlur) {
-        onBlur(e);
-      }
+      onBlur?.(e);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -169,6 +160,8 @@ export function Dropdown({
           onChange={(event) => onChange(event.target.value)}
           disabled={disabled}
           className={`mhn-dropdown-select ${error ? 'mhn-dropdown-error' : ''} ${disabled ? 'mhn-dropdown-disabled' : ''}`}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${selectId}-error` : undefined}
         >
           {placeholder && <option value="">{placeholder}</option>}
           {normalizedOptions.map((option) => (

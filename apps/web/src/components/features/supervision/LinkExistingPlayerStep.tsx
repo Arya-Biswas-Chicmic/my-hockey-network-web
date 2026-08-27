@@ -45,7 +45,7 @@ export function LinkExistingPlayerStep({ onSend, onBack, onNavigateHelp, isSendi
           <Input
             type="email"
             value={email}
-            onChange={(e) => form.setValue('email', e.target.value, { shouldValidate: form.formState.isSubmitted })}
+            onValueChange={(value) => form.setValue('email', value, { shouldValidate: form.formState.isSubmitted })}
             placeholder="email@example.com"
             className={`mhn-form-input ${error ? 'mhn-input-error' : ''}`}
           />

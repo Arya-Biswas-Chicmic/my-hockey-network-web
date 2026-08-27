@@ -1,9 +1,9 @@
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
-import Image from 'next/image';
 import { FallbackImage } from '@/components/ui/fallback-image';
 import React, { useState } from 'react';
-import { Plus, Search, Settings, Smile, Upload } from 'lucide-react';
+import { MessageCircle, Plus, Search, Send, Settings, Smile, Upload } from 'lucide-react';
+import { NoDataFound } from '@/components/common/no-data-found';
 
 export interface ReactionItem {
   emoji: string;
@@ -23,60 +23,37 @@ interface ChatConversationProps {
   title?: string;
   subtitle?: string;
   avatarUrl?: string;
+  messages?: MessageItem[];
+  onSendMessage?: (message: string) => void | Promise<void>;
 }
 
-const DEFAULT_MESSAGES_FRIDAY: MessageItem[] = [
-  {
-    id: 'm1',
-    senderName: 'Mai Sakurajima',
-    senderAvatar: '/mai.png',
-    time: '02:22 AM',
-    text: 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'
-  },
-  {
-    id: 'm2',
-    senderName: 'Saylor Swift',
-    senderAvatar: '/saylor.png',
-    time: '02:22 AM',
-    text: 'Lorem ipsum dolor sit amet,',
-    reactions: []
-  }
-];
-
-const DEFAULT_MESSAGES_TODAY: MessageItem[] = [
-  {
-    id: 'm3',
-    senderName: 'Gerard White',
-    senderAvatar: '/gerard.png',
-    time: '02:22 AM',
-    text: 'Etiam tempor orci eu lobortis elementum. Tincidunt augue interdum velit euismod in pellentesque massa placerat duis. Facilisis magna etiam tempor orci eu lobortis',
-    reactions: [
-      { emoji: '👍', count: 22 },
-      { emoji: '😀', count: 8 }
-    ]
-  }
-];
-
 export const ChatConversation: React.FC<ChatConversationProps> = ({
-  title = 'Hockey Club',
-  subtitle = '187 People • 4 Online',
-  avatarUrl = '/HockeyClub2.png'
+  title,
+  subtitle,
+  avatarUrl,
+  messages = [],
+  onSendMessage,
 }) => {
   const [inputText, setInputText] = useState('');
-  const [messagesToday, setMessagesToday] = useState<MessageItem[]>(DEFAULT_MESSAGES_TODAY);
 
-  const handleSendMessage = () => {
-    if (!inputText.trim()) return;
-    const newMsg: MessageItem = {
-      id: Date.now().toString(),
-      senderName: 'Jack Ruffle',
-      senderAvatar: '/player.png',
-      time: 'Just now',
-      text: inputText.trim()
-    };
-    setMessagesToday(prev => [...prev, newMsg]);
+  const handleSendMessage = async () => {
+    const message = inputText.trim();
+    if (!message || !onSendMessage) return;
+    await onSendMessage(message);
     setInputText('');
   };
+
+  if (!title) {
+    return (
+      <div className="mhn-chat-conversation-card mhn-chat-conversation-empty">
+        <NoDataFound
+          title="Select a Conversation"
+          description="Choose a conversation to view messages."
+          icon={<MessageCircle size={34} aria-hidden="true" />}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="mhn-chat-conversation-card">
@@ -85,7 +62,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
         <div className="mhn-conv-user-group">
           <div className="mhn-conv-avatar-box">
             <FallbackImage
-              src={avatarUrl}
+              src={avatarUrl || '/userPlaceholder.png'}
               alt={title}
               fill
               fallbackSrc="/CoachTeam.png"
@@ -113,51 +90,9 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
 
       {/* Messages Stream Scroll Area */}
       <div className="mhn-chat-messages-stream">
-        {/* Date Divider 1: Friday */}
-        <div className="mhn-chat-date-divider">
-          <span className="mhn-date-divider-label">Friday</span>
-        </div>
-
-        {DEFAULT_MESSAGES_FRIDAY.map((msg) => (
-          <div key={msg.id} className="mhn-message-row">
-            <div className="mhn-msg-avatar-box">
-              <FallbackImage
-                src={msg.senderAvatar}
-                alt={msg.senderName}
-                fill
-                className="mhn-msg-avatar-img"
-              />
-            </div>
-
-            <div className="mhn-msg-content-col">
-              <div className="mhn-msg-header">
-                <span className="mhn-msg-sender-name">{msg.senderName}</span>
-                <span className="mhn-msg-timestamp">{msg.time}</span>
-              </div>
-              <div className="mhn-msg-bubble">
-                <p className="mhn-msg-text">{msg.text}</p>
-              </div>
-
-              {msg.reactions && msg.reactions.length > 0 && (
-                <div className="mhn-msg-reactions-row">
-                  {msg.reactions.map((r, idx) => (
-                    <div key={idx} className="mhn-reaction-pill">
-                      <span>{r.emoji}</span>
-                      <span className="mhn-reaction-count">{r.count}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-
-        {/* Date Divider 2: Today */}
-        <div className="mhn-chat-date-divider">
-          <span className="mhn-date-divider-label">Today</span>
-        </div>
-
-        {messagesToday.map((msg) => (
+        {messages.length === 0 ? (
+          <NoDataFound title="No Messages" description="Start the conversation when messaging becomes available." />
+        ) : messages.map((msg) => (
           <div key={msg.id} className="mhn-message-row">
             <div className="mhn-msg-avatar-box">
               <FallbackImage
@@ -199,7 +134,9 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void handleSendMessage();
+            }}
             placeholder="Enter your response..."
             className="mhn-chat-input-field"
           />
@@ -224,11 +161,12 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
 
         {/* Circular Send Button */}
         <Button
-          onClick={handleSendMessage}
+          onClick={() => void handleSendMessage()}
           className="mhn-btn-chat-send"
           aria-label="Send message"
+          disabled={!inputText.trim() || !onSendMessage}
         >
-          <Image src="/send.png" alt="Send message" width={18} height={18} />
+          <Send size={18} aria-hidden="true" />
         </Button>
       </div>
     </div>

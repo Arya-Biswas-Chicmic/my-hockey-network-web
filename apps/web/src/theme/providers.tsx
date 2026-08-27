@@ -21,10 +21,17 @@ interface ProvidersProps {
   defaultTheme?: ThemePreference;
 }
 
-// Public profile routes must render even if an unrelated auth bootstrap
-// read fails. `/` redirects to onboarding and is not a public content page.
-function isPublicRoute(pathname: string | null): boolean {
-  return Boolean(pathname?.startsWith('/players/'));
+// Credential-free and authentication routes must remain usable when the
+// initial `/auth/me` probe cannot reach the backend. Mutations on those
+// screens still render their own errors; only authenticated application
+// routes use the blocking outage overlay.
+function isBackendIndependentRoute(pathname: string | null): boolean {
+  return Boolean(
+    pathname === '/onboarding' ||
+      pathname === '/guardian' ||
+      pathname === '/sent' ||
+      pathname?.startsWith('/players/'),
+  );
 }
 
 export function Providers({ children, defaultTheme }: ProvidersProps) {
@@ -111,7 +118,7 @@ export function Providers({ children, defaultTheme }: ProvidersProps) {
             />
           )}
 
-          {serverDownState.isDown && !isPublicRoute(pathname) && (
+          {serverDownState.isDown && !isBackendIndependentRoute(pathname) && (
             <ServerDownScreen
               statusCode={serverDownState.statusCode}
               message={serverDownState.message}

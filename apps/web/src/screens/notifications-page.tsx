@@ -4,7 +4,6 @@ import { Header } from '@/components/common/Header';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { NoDataFound } from '@/components/common/no-data-found';
-import { NotificationCard, NotificationItemProps } from '@/components/features/notifications/NotificationCard';
 import { MoreHorizontal } from 'lucide-react';
 
 interface PageProps {
@@ -23,29 +22,6 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
       onNavigate(tab);
     }
   };
-
-  const notificationsList: NotificationItemProps[] = [
-    {
-      id: 'n1',
-      avatar: '/steve.png',
-      senderName: 'Steve',
-      text: 'Follow your friends to get things started.',
-      time: '1h',
-      isUnread: false
-    },
-    {
-      id: 'n2',
-      avatar: '/gerard.png',
-      senderName: 'Steve',
-      text: 'Invite your friends to get things started.',
-      time: '1h',
-      isUnread: true
-    }
-  ];
-
-  const filteredNotifications = activeFilterTab === 'unread'
-    ? notificationsList.filter(n => n.isUnread)
-    : notificationsList;
 
   return (
     <div className="mhn-notifications-page-root">
@@ -102,16 +78,10 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
 
           {/* Notifications List */}
           <div className="mhn-notifications-list">
-            {filteredNotifications.length === 0 ? (
-              <NoDataFound
-                title="No Notifications"
-                description="You're all caught up! There are no notifications to display right now."
-              />
-            ) : (
-              filteredNotifications.map((item) => (
-                <NotificationCard key={item.id} {...item} />
-              ))
-            )}
+            <NoDataFound
+              title={activeFilterTab === 'unread' ? 'No Unread Notifications' : 'No Notifications'}
+              description="You're all caught up! There are no notifications to display right now."
+            />
           </div>
         </div>
       </main>

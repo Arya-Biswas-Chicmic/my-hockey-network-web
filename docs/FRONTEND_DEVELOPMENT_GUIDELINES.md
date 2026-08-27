@@ -1,6 +1,6 @@
 # Frontend technical architecture and development guidelines
 
-Last reviewed: 2026-08-26
+Last reviewed: 2026-08-27
 
 This document is mandatory for new frontend work. The owner has authorized the Next.js migration and
 implementation is underway in `apps/web`. Vite, React Router, Formik, and npm have been removed from
@@ -39,8 +39,9 @@ The stack above is implemented and builds/tests/typechecks cleanly (see
 - A CI-owned account for the authenticated Playwright write journey; guest smoke coverage is configured and runs in CI.
 - Package consolidation of `core`/`shared`/`types`/`constants`/`utils`/`design-system` per
   `NEXTJS_MIGRATION_PLAN.md`.
-- Decomposition of oversized screens (`profile-page.tsx`, `supervision-page.tsx`) and removal of
-  remaining fabricated/mock data.
+- Continued responsibility-based decomposition of oversized screens (`profile-page.tsx`,
+  `supervision-page.tsx`). Production UI must render real API data or an honest empty/error state;
+  fabricated profile, feed, event, notification, or messaging records are prohibited.
 
 Introduce further target-stack pieces (TanStack Table, additional Zustand stores, etc.) only when a
 genuine requirement appears, not speculatively.
@@ -113,8 +114,11 @@ models, contain complex business rules, own form validation, manage global state
 large page. Extract responsibilities only when the resulting boundary is meaningful and reusable.
 
 API response normalization belongs in typed API/data-access modules. Business decisions belong in
-domain functions or hooks. Form state belongs to Formik and validation belongs to centralized
-schemas/validators. TanStack Query owns web server state; React Router owns web URLs.
+domain functions or hooks. Form state belongs to React Hook Form and validation belongs to shared
+Zod schemas. TanStack Query owns interactive web server state; Next.js App Router owns web URLs.
+
+The authenticated dark palette is defined once through semantic tokens in `index.css` and resolved
+by `components/core/theme-provider.tsx`. Do not add feature-local hex palettes for themeable UI.
 
 ## 7. Next.js rendering strategy
 

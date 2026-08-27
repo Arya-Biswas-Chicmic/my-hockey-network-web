@@ -59,6 +59,7 @@ export function FormInput<
             <Input
               {...inputProps}
               {...field}
+              onValueChange={(nextValue) => field.onChange(nextValue)}
               value={String(field.value ?? '')}
               maxLength={maxLength}
               className={cn(inputClassName, className, fieldState.invalid && 'mhn-input-invalid')}

@@ -1,15 +1,20 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { CheckCircle2 } from 'lucide-react';
 
 import { Button } from '@/components/common/Button';
-import { Input, Textarea, Dropdown } from '@/components/common/FormControls';
+import { Input } from '@/components/common/FormControls';
 import { Spinner } from '@/components/common/Spinner';
+import { FormInput, FormSelect, FormTextarea } from '@/components/form/fields';
+import { Form } from '@/components/ui/form';
 import { profileIntroFormSchema, type ProfileIntroFormValues } from '@my-hockey-network/validation';
 
-const POSITION_OPTIONS = ['Center', 'Left Wing', 'Right Wing', 'Defense', 'Goaltender'];
+const POSITION_OPTIONS = ['Center', 'Left Wing', 'Right Wing', 'Defense', 'Goaltender'].map(
+  (positionOption) => ({ value: positionOption, label: positionOption }),
+);
 
 export interface ProfileIntroSectionProps {
   bio: string;
@@ -51,44 +56,27 @@ export function ProfileIntroSection({
     form.reset({ bio, position, jerseyNumber });
   }, [bio, position, jerseyNumber]);
 
-  const errors = form.formState.errors;
-  const watchedValues = useWatch({ control: form.control });
-  const values: ProfileIntroFormValues = {
-    bio: watchedValues.bio ?? '',
-    position: watchedValues.position ?? '',
-    jerseyNumber: watchedValues.jerseyNumber ?? '',
-  };
-
   const handleSubmit = form.handleSubmit((data) => onSave(data));
 
   return (
-    <div className="mhn-about-intro-form">
-      {/* Bio */}
-      <div className="mhn-about-field-group">
-        <label className="mhn-about-field-label">Bio</label>
-        <div className="mhn-relative-container">
-          <Textarea
-            value={values.bio}
-            onChange={(e) => form.setValue('bio', e.target.value, { shouldValidate: form.formState.isSubmitted })}
-            className={`mhn-about-input-box mhn-about-textarea-box ${errors.bio ? 'mhn-edit-profile-input-error' : ''}`}
-            rows={3}
-            placeholder="Write something about yourself..."
-          />
-          {errors.bio && (
-            <div className="mhn-edit-profile-field-error">
-              <span>{errors.bio.message}</span>
-            </div>
-          )}
-        </div>
-      </div>
+    <Form methods={form} onSubmit={handleSubmit} className="mhn-about-intro-form">
+      <FormTextarea<ProfileIntroFormValues, 'bio'>
+        name="bio"
+        label="Bio"
+        rows={3}
+        placeholder="Write something about yourself..."
+        containerClassName="mhn-about-field-group"
+        textareaClassName="mhn-about-input-box mhn-about-textarea-box"
+      />
 
       {/* Primary Role (Read-Only / System Managed) */}
       <div className="mhn-about-field-group">
-        <label className="mhn-about-field-label">
+        <label className="mhn-about-field-label" htmlFor="profile-system-role">
           Role <span className="mhn-sub-label-light">(Managed by system)</span>
         </label>
         <div className="mhn-relative-container">
           <Input
+            id="profile-system-role"
             type="text"
             value={role}
             disabled
@@ -100,42 +88,34 @@ export function ProfileIntroSection({
 
       {/* Position (Only for Players) */}
       {isPlayer && (
-        <Dropdown
+        <FormSelect<ProfileIntroFormValues, 'position'>
+          name="position"
           label="Position"
-          value={POSITION_OPTIONS.includes(values.position) ? values.position : 'Center'}
           options={POSITION_OPTIONS}
-          onChange={(val) => form.setValue('position', val, { shouldValidate: form.formState.isSubmitted })}
-          placeholder="Select position"
+          containerClassName="mhn-about-field-group"
+          selectClassName="mhn-dropdown-select"
         />
       )}
 
       {/* Jersey Number (Only for Players) */}
       {isPlayer && (
-        <div className="mhn-about-field-group">
-          <label className="mhn-about-field-label">Jersey Number</label>
-          <div className="mhn-relative-container">
-            <Input
-              type="number"
-              value={values.jerseyNumber}
-              onChange={(e) => form.setValue('jerseyNumber', e.target.value, { shouldValidate: form.formState.isSubmitted })}
-              className={`mhn-about-input-box ${errors.jerseyNumber ? 'mhn-edit-profile-input-error' : ''}`}
-              placeholder="e.g. 97"
-            />
-            {errors.jerseyNumber && (
-              <div className="mhn-edit-profile-field-error">
-                <span>{errors.jerseyNumber.message}</span>
-              </div>
-            )}
-          </div>
-        </div>
+        <FormInput<ProfileIntroFormValues, 'jerseyNumber'>
+          name="jerseyNumber"
+          label="Jersey Number"
+          type="number"
+          placeholder="e.g. 97"
+          containerClassName="mhn-about-field-group"
+          inputClassName="mhn-about-input-box"
+          errorClassName="mhn-edit-profile-field-error"
+          disableAutoSanitize
+        />
       )}
 
       {/* Save & Feedback Row */}
       <div className="mhn-btn-loading-flex mhn-mt-12">
         <Button
-          type="button"
+          type="submit"
           className="mhn-about-btn-save mhn-btn-primary-compact"
-          onClick={handleSubmit}
           disabled={isSaving}
         >
           {isSaving && <Spinner size="sm" color="#FFFFFF" />}
@@ -150,10 +130,11 @@ export function ProfileIntroSection({
         </Button>
         {saveMessage && (
           <span className="mhn-success-text-sm">
-            ✅ {saveMessage}
+            <CheckCircle2 size={16} aria-hidden="true" />
+            {saveMessage}
           </span>
         )}
       </div>
-    </div>
+    </Form>
   );
 }

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useDebounce } from '@/hooks/use-debounce';
 import { MoreHorizontal, Pencil, Search } from 'lucide-react';
 import { FallbackImage } from '@/components/ui/fallback-image';
+import { NoDataFound } from '@/components/common/no-data-found';
 
 export interface ChatItem {
   id: string;
@@ -21,31 +22,9 @@ interface ChatSidebarProps {
   onSelectChat?: (id: string) => void;
 }
 
-const DEFAULT_CHATS: ChatItem[] = [
-  {
-    id: 'c1',
-    name: 'Hockey Club',
-    avatar: '/HockeyClub2.png',
-    isGroup: true
-  },
-  {
-    id: 'c2',
-    name: 'Steve',
-    avatar: '/steve.png',
-    lastMessage: 'You: hy ·'
-  },
-  {
-    id: 'c3',
-    name: 'David',
-    avatar: '/david.png',
-    lastMessage: 'Hy',
-    unreadCount: 1
-  }
-];
-
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({
-  chats = DEFAULT_CHATS,
-  selectedChatId = 'c1',
+  chats = [],
+  selectedChatId,
   onSelectChat
 }) => {
   const [activeCategory, setActiveCategory] = useState('all');
@@ -112,7 +91,12 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
       {/* Chat List Items */}
       <div className="mhn-chat-list">
-        {filteredChats.map((chat) => (
+        {filteredChats.length === 0 ? (
+          <NoDataFound
+            title="No Conversations"
+            description={searchQuery ? 'No conversations match your search.' : 'Your conversations will appear here.'}
+          />
+        ) : filteredChats.map((chat) => (
           <div
             key={chat.id}
             onClick={() => onSelectChat && onSelectChat(chat.id)}

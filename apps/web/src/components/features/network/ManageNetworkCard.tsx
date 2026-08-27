@@ -23,9 +23,9 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
   role,
   avatarUrl,
   bannerUrl = '/cover.png',
-  location = 'Austria, Europe',
-  teamName = 'HC Bregenzerwald',
-  teamLogo = '/HC.png',
+  location,
+  teamName,
+  teamLogo = '/userPlaceholder.png',
   followersCount,
   followingCount,
   onMenuItemClick
@@ -139,7 +139,6 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
               <Image src="/groups.png" alt="Groups" width={26} height={26} className='small-icon'/>
             </div>
             <span className="mhn-manage-menu-text">Groups</span>
-            <span className="mhn-manage-menu-badge">1</span>
           </Button>
 
           {/* Events */}
@@ -151,7 +150,6 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
               <Image src="/events.png" alt="Events" width={26} height={26} className='small-icon'/>
             </div>
             <span className="mhn-manage-menu-text">Events</span>
-            <span className="mhn-manage-menu-badge">1</span>
           </Button>
         </div>
       </div>

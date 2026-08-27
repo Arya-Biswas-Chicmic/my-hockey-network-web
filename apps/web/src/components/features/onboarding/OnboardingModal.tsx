@@ -16,6 +16,13 @@ interface OnboardingModalProps {
   onComplete?: (data: { selectedRoles: string[]; accountData?: { fullName: string; email: string; dob: string; parentEmail?: string }; onboardingResult?: OnboardingResponse | AuthMeResponse }) => void;
 }
 
+function getIllustrationSource(step: number, authMode: AuthModeEnum, loginStep: number): string {
+  if (step === 6) return '/empowering.png';
+  const isOtpStep = (authMode === AuthModeEnum.SIGNUP && step === 3)
+    || (authMode === AuthModeEnum.LOGIN && loginStep === 2);
+  return isOtpStep ? '/OTPbg.png' : '/Welcome.png';
+}
+
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = AuthModeEnum.LOGIN, onComplete }) => {
   const { setAuthSession, loadAuthMe, showToast } = useAuth();
   const [authMode, setAuthMode] = useState<AuthModeEnum>(String(initialMode) === 'signup' ? AuthModeEnum.SIGNUP : AuthModeEnum.LOGIN);
@@ -321,13 +328,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
     <div className="onboarding-modal">
       {step !== 4 && step !== 5 && (
         <OnboardingIllustration
-          imageSrc={
-            step === 6
-              ? '/empowering.png'
-              : (authMode === 'signup' && step === 3) || (authMode === 'login' && loginStep === 2)
-                ? '/OTPbg.png'
-                : '/Welcome.png'
-          }
+          imageSrc={getIllustrationSource(step, authMode, loginStep)}
         />
       )}
 

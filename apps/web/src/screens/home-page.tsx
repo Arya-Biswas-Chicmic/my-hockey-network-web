@@ -10,7 +10,7 @@ import { InviteGrowWidget } from '@/components/features/home/InviteGrowWidget';
 import { CreatePostModal } from '@/components/features/home/CreatePostModal';
 import { EmptyState } from '@/components/features/network/EmptyState';
 import { HomeSkeletonLoader, FeedPostSkeleton } from '@/components/features/home/HomeSkeletonLoader';
-import { getFeed, type PostItem } from '@my-hockey-network/core';
+import { getFeed } from '@my-hockey-network/core';
 import { Search } from 'lucide-react';
 import { QueryKeys, NavTabEnum, PostAudienceEnum } from '@my-hockey-network/contracts';
 import { useAuth } from '@/hooks/use-auth';
@@ -23,6 +23,7 @@ import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { useDebounce } from '@/hooks/use-debounce';
 import { extractErrorMessage, getApiErrorStatus, showSuccessToast, showErrorToast, showInfoToast } from '@/utils/toast';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, HELPER_MESSAGES } from '@my-hockey-network/constants';
+import { mapFeedPosts } from '@/components/features/home/map-feed-posts';
 
 
 interface PageProps {
@@ -78,47 +79,9 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       const itemsList = feedResValue.items;
 
       if (itemsList && itemsList.length > 0) {
-        const mappedPosts: FeedPostProps[] = itemsList.map((itemRaw: unknown, index: number) => {
-          const itemWrapper = itemRaw as { post?: PostItem } & PostItem;
-          const postObj: PostItem = itemWrapper.post || itemWrapper;
-          const authorProf: NonNullable<PostItem['author']> = postObj.authorProfile || postObj.author || { id: '', displayName: '' };
-          const authorId = postObj.authorProfileId || authorProf.id;
-
-          const authorProfId = authorProf.id || authorProf.profileId || postObj.authorProfileId;
-          const authorUserId = authorProf.userId || authorProf.id;
-          const activeMyProfileId = currentProfileId || user?.profile?.id || user?.id;
-          const activeMyUserId = user?.id;
-
-          const isSelfPost = postObj.feedReason === 'SELF' ||
-            (!!activeMyProfileId && (authorProfId === activeMyProfileId || authorProf.profileId === activeMyProfileId || postObj.authorProfileId === activeMyProfileId)) ||
-            (!!activeMyUserId && (authorUserId === activeMyUserId || authorProfId === activeMyUserId));
-
-          const roleSubtitle = authorProf.roleTag ||
-            (authorProf.teamName && authorProf.position ? `${authorProf.teamName} • ${authorProf.position}` : null) ||
-            authorProf.teamName ||
-            (authorProf.position ? `${authorProf.position}${authorProf.jerseyNumber ? ` • #${authorProf.jerseyNumber}` : ''}` : null) ||
-            authorProf.type ||
-            authorProf.primaryRole ||
-            'Official Team';
-
-          const realPostId = postObj.id || (postObj as unknown as { _id?: string; postId?: string })._id || (postObj as unknown as { _id?: string; postId?: string }).postId || `post-${authorId || 'unknown'}-${postObj.publishedAt || postObj.createdAt || index}`;
-
-          return {
-            id: realPostId,
-            authorId: authorId || authorProf.id || authorProf.displayName,
-            authorName: authorProf.displayName || '-',
-            authorRole: roleSubtitle,
-            authorTime: postObj.publishedAt ? new Date(postObj.publishedAt).toLocaleDateString() : 'Recently',
-            authorAvatar: authorProf.avatarUrl || '/userPlaceholder.png',
-            content: postObj.body || '',
-            postImage: postObj.media?.[0]?.url,
-            likesCount: postObj.likeCount ?? postObj.reactionsCount ?? 0,
-            commentsCount: postObj.commentCount ?? postObj.commentsCount ?? 0,
-            repostCount: postObj.repostCount ?? postObj.repostsCount ?? postObj.sharesCount ?? 0,
-            isFollowing: postObj.isFollowing ?? authorProf.isFollowing ?? false,
-            isSelf: isSelfPost,
-            userReaction: postObj.userReaction || postObj.post?.userReaction || null,
-          };
+        const mappedPosts = mapFeedPosts(itemsList, {
+          profileId: currentProfileId || user?.profile?.id || user?.id,
+          userId: user?.id,
         });
 
         setFeedPosts(mappedPosts);
@@ -297,10 +260,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         <aside className="mhn-layout-col-left lg:h-full lg:overflow-hidden">
           <ProfileSummaryCard
             coverUrl={resolveCoverUrl(user?.profile?.coverImageUrl || user?.profile?.coverUrl, "/cover.png")}
-            location={user?.profile?.city || "-"}
-            teamLogo="/HC.png"
-            followers="-"
-            following="-"
+            location={user?.profile?.city}
             onPostClick={() => {
               if (requirePermission('CREATE_POST')) {
                 setIsCreatePostOpen(true);

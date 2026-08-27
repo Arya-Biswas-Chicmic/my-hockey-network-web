@@ -1,6 +1,6 @@
 # Component catalog and reuse policy
 
-Last reviewed: 2026-08-26
+Last reviewed: 2026-08-27
 
 ## Rule
 
@@ -23,7 +23,11 @@ page → feature/container → feature component → existing platform primitive
 - `common/OtpCodeInput`: the accessible six-digit OTP input reused by email verification and
   guardian approval.
 - `common/Header`: reused across the authenticated web pages.
+- `core/theme-provider`: the only web theme owner. It persists `light`, `dark`, or `system`, resolves
+  system preference changes, and exposes the resolved palette to the common Header toggle.
 - `common/Spinner`, `Toast`, `PendingBanner`, `NoDataFound`, `ServerDown`: reusable feedback/state UI.
+- `ui/file-picker-button`: accessible reusable file selection through a native associated label and
+  input rather than `ref.current.click()` or input-event mutation.
 - `supervision/guardian-relationship-request-card`: reusable presentation for both child-facing
   guardian invitations and parent-facing guardian requests. It receives typed request data and
   callbacks; routes/hooks choose the endpoint direction.
@@ -58,6 +62,10 @@ profile editing, post creation, and comments. Formik has been fully removed. Val
 `packages/validation/src/forms.ts` and are shared with mobile where applicable. New substantial web
 forms must follow this pattern, composing the shared field adapters in
 `apps/web/src/components/form/fields`.
+
+`common/FormControls.Input` exposes `onValueChange(value, event)` for sanitized values. Consumers
+must update form state from that value; they must never mutate `event.target.value` or fabricate a
+synthetic change event.
 
 ## Required consolidation before new screen work
 

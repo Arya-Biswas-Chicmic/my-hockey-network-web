@@ -16,16 +16,8 @@ const DEFAULT_REFERENCE_DATA: ReferenceDataResponse = {
     { value: 'Defense', label: 'Defense' },
     { value: 'Goaltender', label: 'Goaltender' },
   ],
-  academies: [
-    { id: '1', name: 'HC Bloemendaal', logoUrl: '/HC.png', city: 'Bloemendaal, Netherlands' },
-    { id: '2', name: 'Toronto Hockey Academy', logoUrl: '/userPlaceholder.png', city: 'Toronto, Canada' },
-    { id: '3', name: 'Boston Elite Hockey', logoUrl: '/userPlaceholder.png', city: 'Boston, MA' },
-  ],
-  teams: [
-    { id: '101', name: 'HC Bloemendaal', logoUrl: '/HC.png' },
-    { id: '102', name: 'Toronto Red Wings', logoUrl: '/userPlaceholder.png' },
-    { id: '103', name: 'Boston Bruins Academy', logoUrl: '/userPlaceholder.png' },
-  ],
+  academies: [],
+  teams: [],
 };
 
 async function fetchReferenceData(): Promise<ReferenceDataResponse> {

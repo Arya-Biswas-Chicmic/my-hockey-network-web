@@ -5,9 +5,8 @@ import React, { useState } from 'react';
 import { Header } from '@/components/common/Header';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
-import { useDebounce } from '@/hooks/use-debounce';
-import { EventCard, EventCardProps } from '@/components/features/events/EventCard';
 import { CalendarView } from '@/components/features/events/CalendarView';
+import { NoDataFound } from '@/components/common/no-data-found';
 import { CalendarDays, ChevronDown, List, Search } from 'lucide-react';
 
 interface PageProps {
@@ -19,7 +18,6 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { permissions } = useFeedPermissions(onNavigate);
   const [activeNavTab, setActiveNavTab] = useState('events');
   const [searchQuery, setSearchQuery] = useState('');
-  const debouncedSearchQuery = useDebounce(searchQuery, 800);
   const [activeFilterPill, setActiveFilterPill] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
@@ -29,55 +27,6 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       onNavigate(tab);
     }
   };
-
-  // No backend events endpoint exists yet (API_ENDPOINTS has no EVENTS entry) — hardcoded pending
-  // that API, per project policy: use hardcoded data where no API exists yet, replace gradually as
-  // APIs land. Do not make this route public/ISR before it's connected to real data — see
-  // docs/IMPLEMENTATION_STATUS.md.
-  const eventsList: EventCardProps[] = [
-    {
-      id: 'e1',
-      title: '2026 Tim Hortons NHL Heritage Classic',
-      image: '/event1.png',
-      date: 'October 25, 2026',
-      location: 'Princess Auto Stadium – Winnipeg,...'
-    },
-    {
-      id: 'e2',
-      title: 'Power Skating Clinic',
-      image: '/event2.png',
-      date: 'Sun, may 25 • 2:00 PM',
-      location: 'Austria ,Europe'
-    },
-    {
-      id: 'e3',
-      title: 'Power Skating Clinic',
-      image: '/event3.png',
-      date: 'Sun, may 25 • 2:00 PM',
-      location: 'Austria ,Europe'
-    },
-    {
-      id: 'e4',
-      title: 'Power Skating Clinic',
-      image: '/event4.png',
-      date: 'Sun, may 25 • 2:00 PM',
-      location: 'Austria ,Europe'
-    },
-    {
-      id: 'e5',
-      title: 'Power Skating Clinic',
-      image: '/event5.png',
-      date: 'Sun, may 25 • 2:00 PM',
-      location: 'Austria European'
-    },
-    {
-      id: 'e6',
-      title: 'Power Skating Clinic',
-      image: '/event6.png',
-      date: 'Sun, may 25 • 2:00 PM',
-      location: 'Austria ,Europe'
-    }
-  ];
 
   const filterPills = [
     { id: 'today', label: 'Today' },
@@ -186,21 +135,12 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
         {/* Dynamic View: List vs Calendar */}
         {viewMode === 'list' ? (
-          <div className="mhn-events-cards-grid">
-            {eventsList
-              .filter((event) =>
-                !debouncedSearchQuery.trim() ||
-                event.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-                event.location.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
-              )
-              .map((event) => (
-                <EventCard 
-                  key={event.id} 
-                  {...event} 
-                  onCardClick={() => onNavigate && onNavigate('event-detail')}
-                />
-              ))}
-          </div>
+          <NoDataFound
+            title={searchQuery.trim() ? 'No matching events' : 'No events available'}
+            description={searchQuery.trim()
+              ? 'Try a different search after the events service is connected.'
+              : 'Tournaments, camps and meetups will appear here when event data is available.'}
+          />
         ) : (
           <CalendarView
             onEventClick={() => onNavigate && onNavigate('event-detail')}

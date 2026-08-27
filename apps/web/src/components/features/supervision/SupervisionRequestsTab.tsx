@@ -111,8 +111,8 @@ export function SupervisionRequestsTab({
               const teamLogo = rawTeamLogo ? resolveMediaUrl(rawTeamLogo, '/HC.png') : '/HC.png';
 
               const location = isApprovalItem
-                ? (req.requester?.location || req.minorCard?.location || req.minor?.city || 'Austria, Europe')
-                : (child.location || req.location || child.city || 'Austria, Europe');
+                ? (req.requester?.location || req.minorCard?.location || req.minor?.city)
+                : (child.location || req.location || child.city);
 
               const code = req.code || req.devCode || req.inviteCode;
 
@@ -141,10 +141,7 @@ export function SupervisionRequestsTab({
 
                   {isApprovalItem && req.action && (
                     <div className="mhn-req-action-badge">
-                      {req.action === 'POST_MEDIA' || req.action === 'CREATE_POST' ? '🏒 Post Approval' :
-                       req.action === 'COMMENT_ON_POSTS' ? '💬 Comment Approval' :
-                       req.action === 'REACT_TO_POSTS' ? '❤️ Reaction Approval' :
-                       `🛡️ ${String(req.action).replace(/_/g, ' ')}`}
+                      {`${String(req.action).replace(/_/g, ' ')} approval`}
                     </div>
                   )}
 

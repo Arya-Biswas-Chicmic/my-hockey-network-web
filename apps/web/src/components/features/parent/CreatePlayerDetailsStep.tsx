@@ -130,7 +130,7 @@ export const CreatePlayerDetailsStep: React.FC<CreatePlayerDetailsStepProps> = (
             type="email"
             className={`auth-input ${errors.email ? 'mhn-input-invalid' : ''}`}
             value={values.email}
-            onChange={(e) => setField('email', e.target.value)}
+            onValueChange={(value) => setField('email', value)}
             placeholder="e.g. admin@gmail.com"
           />
         </FormField>

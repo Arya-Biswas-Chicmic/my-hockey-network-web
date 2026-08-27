@@ -53,6 +53,25 @@ describe('React Hook Form content forms', () => {
     ));
   });
 
+  it('collects a user-entered location instead of inserting a fabricated place', async () => {
+    const onSubmit = vi.fn();
+    render(<CreatePostModal isOpen onClose={vi.fn()} onSubmit={onSubmit} />);
+
+    fireEvent.click(screen.getByTitle('Add location'));
+    fireEvent.change(screen.getByLabelText('Post location'), { target: { value: 'Community Rink' } });
+    fireEvent.change(screen.getByPlaceholderText('What do you want to talk about?'), {
+      target: { value: 'Practice update' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(
+      'Practice update',
+      undefined,
+      expect.objectContaining({ locationTag: 'Community Rink' }),
+      undefined,
+    ));
+  });
+
   it('submits and resets a valid comment', async () => {
     addComment.mockResolvedValue({
       comment: { id: 'comment-1', body: 'Nice play', createdAt: '2026-08-26T00:00:00.000Z' },

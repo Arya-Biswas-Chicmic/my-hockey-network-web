@@ -1,9 +1,10 @@
 'use client';
 
-import { useRef } from 'react';
+import { useId, useState } from 'react';
 import type { InputHTMLAttributes, ReactNode } from 'react';
 
-import { Button, type ButtonProps } from '@/components/ui/button';
+import { buttonVariants, type ButtonProps } from '@/components/ui/button';
+import { cn } from '@/utils/cn';
 
 export interface FilePickerButtonProps {
   accept?: InputHTMLAttributes<HTMLInputElement>['accept'];
@@ -24,35 +25,42 @@ export function FilePickerButton({
   buttonProps,
   onFilesSelected,
 }: Readonly<FilePickerButtonProps>) {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleOpenPicker = () => {
-    inputRef.current?.click();
-  };
+  const inputId = useId();
+  const [inputKey, setInputKey] = useState(0);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
+    const files = Array.from(event.currentTarget.files ?? []);
     if (files.length > 0) onFilesSelected(files);
-    event.target.value = '';
+    setInputKey((current) => current + 1);
   };
 
+  const { className, title, 'aria-label': ariaLabel } = buttonProps ?? {};
+
   return (
-    <>
-      <Button {...buttonProps} type="button" disabled={disabled} onClick={handleOpenPicker}>
+    <label
+      htmlFor={inputId}
+      title={title}
+      aria-label={ariaLabel}
+      aria-disabled={disabled || undefined}
+      className={cn(
+        buttonVariants({ variant: buttonProps?.variant, size: buttonProps?.size }),
+        buttonProps?.fullWidth && 'w-full',
+        className,
+        disabled && 'pointer-events-none opacity-50',
+      )}
+    >
         {children}
-      </Button>
       <input
-        ref={inputRef}
+        key={inputKey}
+        id={inputId}
         type="file"
         className="sr-only"
-        tabIndex={-1}
-        aria-hidden="true"
         accept={accept}
         multiple={multiple}
         capture={capture}
         disabled={disabled}
         onChange={handleFileChange}
       />
-    </>
+    </label>
   );
 }

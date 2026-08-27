@@ -39,7 +39,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
   const { user, loadAuthMe } = useAuth();
   const [activeNavTab, setActiveNavTab] = useState<NavTabEnum>(NavTabEnum.MY_NETWORK);
   const [currentView, setCurrentView] = useState<NetworkViewModeEnum>(NetworkViewModeEnum.NETWORK);
-  const [selectedGroupId, setSelectedGroupId] = useState('g1');
+  const [selectedGroupId, setSelectedGroupId] = useState<string>();
   const [activeFilterTab, setActiveFilterTab] = useState('Invitations');
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 800);
@@ -225,8 +225,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
               {currentView === NetworkViewModeEnum.GROUPS ? (
                 <ProfileSummaryCard 
                   coverUrl={resolveCoverUrl(user?.profile?.coverImageUrl || user?.profile?.coverUrl, "/cover.png")}
-                  location={user?.profile?.city || "-"}
-                  teamLogo="/HC.png"
+                  location={user?.profile?.city}
                   onPostClick={() => {
                     if (onNavigate) onNavigate('home');
                   }}
@@ -234,10 +233,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
               ) : (
                 <ManageNetworkCard 
                   bannerUrl={resolveCoverUrl(user?.profile?.coverImageUrl || user?.profile?.coverUrl, "/cover.png")}
-                  location={user?.profile?.city || "-"}
-                  teamLogo="/HC.png"
-                  followersCount="-"
-                  followingCount="-"
+                  location={user?.profile?.city}
                   onMenuItemClick={(item) => {
                     if (item === 'groups') {
                       setCurrentView(NetworkViewModeEnum.GROUPS);
@@ -266,7 +262,12 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
               {currentView === 'connections' ? (
                 <ConnectionsView onMessageClick={() => onNavigate && onNavigate('messaging')} />
               ) : currentView === 'groups' ? (
-                <GroupsView onViewGroup={() => {}} />
+                <GroupsView
+                  onViewGroup={(groupId) => {
+                    setSelectedGroupId(groupId);
+                    setCurrentView(NetworkViewModeEnum.GROUP_DETAIL);
+                  }}
+                />
               ) : (
                 <>
                   {/* Header Title Section */}

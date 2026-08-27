@@ -3,6 +3,7 @@ import { getStoredThemePreference, setStoredThemePreference, ThemePreference } f
 
 interface ThemeContextType {
   theme: ThemePreference;
+  resolvedTheme: 'light' | 'dark';
   setTheme: (theme: ThemePreference) => void;
 }
 
@@ -13,6 +14,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode; defaultTheme?: Theme
   defaultTheme,
 }) => {
   const [theme, setThemeState] = useState<ThemePreference>(() => defaultTheme || getStoredThemePreference());
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('dark');
 
   const setTheme = (newTheme: ThemePreference) => {
     setThemeState(newTheme);
@@ -20,13 +22,24 @@ export const ThemeProvider: React.FC<{ children: ReactNode; defaultTheme?: Theme
   };
 
   useEffect(() => {
-    if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute('data-theme', theme);
-    }
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const applyTheme = () => {
+      const nextResolvedTheme = theme === 'system'
+        ? (mediaQuery.matches ? 'dark' : 'light')
+        : theme;
+
+      setResolvedTheme(nextResolvedTheme);
+      document.documentElement.setAttribute('data-theme', nextResolvedTheme);
+      document.documentElement.style.colorScheme = nextResolvedTheme;
+    };
+
+    applyTheme();
+    mediaQuery.addEventListener('change', applyTheme);
+    return () => mediaQuery.removeEventListener('change', applyTheme);
   }, [theme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -33,41 +33,17 @@ function formatIsoDateString(year?: string, month?: string): string | null {
  * `ProfileCareerSection.tsx`) since that's presentation, not data.
  */
 export function useProfileCareer(targetProfileRes: unknown) {
-  const [careerEntries, setCareerEntries] = useState<CareerEntry[] | null>([
-    {
-      id: 't1',
-      groupId: null,
-      teamName: 'Boston Bruins',
-      teamLogoUrl: '/kcBlue.png',
-      position: 'Center',
-      location: 'Dagestan, Russia',
-      note: 'Good times',
-      startDate: '2024-01-02T00:00:00.000Z',
-      endDate: null,
-      verified: false,
-    },
-    {
-      id: 't2',
-      groupId: '44444444-4444-4444-8444-444444444410',
-      teamName: 'Carolina Hurricanes',
-      teamLogoUrl: '/HC.png',
-      position: 'Center',
-      location: 'Toronto, Canada',
-      note: 'Good times',
-      startDate: '2022-01-01T00:00:00.000Z',
-      endDate: '2024-01-01T00:00:00.000Z',
-      verified: true,
-    },
-  ]);
+  const [careerEntries, setCareerEntries] = useState<CareerEntry[] | null>([]);
   const [isDeletingTeamId, setIsDeletingTeamId] = useState<string | null>(null);
 
   // Load real profile data and career entries from targetProfileRes
   useEffect(() => {
-    const res = targetProfileRes as { profile?: { career?: CareerEntry[]; careerEntries?: CareerEntry[] } } | null | undefined;
-    const entries = res?.profile?.career || res?.profile?.careerEntries;
-    if (entries !== undefined && entries !== null && Array.isArray(entries)) {
-      setCareerEntries(entries);
-    }
+    const res = targetProfileRes as {
+      profile?: { career?: CareerEntry[] | null; careerEntries?: CareerEntry[] | null };
+    } | null | undefined;
+    if (!res?.profile) return;
+    const entries = res.profile.career ?? res.profile.careerEntries;
+    setCareerEntries(Array.isArray(entries) ? entries : entries === null ? null : []);
   }, [targetProfileRes]);
 
   const createTeamMutation = useMutation({
