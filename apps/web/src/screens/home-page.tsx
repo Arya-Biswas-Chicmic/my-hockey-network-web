@@ -111,9 +111,9 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
       const isPendingApproval = Boolean(
         res?.message === 'POST_PENDING_APPROVAL' ||
-          res?.pendingGuardianApproval ||
-          res?.data?.pendingGuardianApproval ||
-          res?.data?.post?.isDraft
+        res?.pendingGuardianApproval ||
+        res?.data?.pendingGuardianApproval ||
+        res?.data?.post?.isDraft
       );
 
       if (isPendingApproval) {

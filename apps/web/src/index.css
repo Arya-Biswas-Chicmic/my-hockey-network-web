@@ -14667,8 +14667,14 @@ img.secure {
 }
 
 .mhn-sidebar-nav-item-active {
-  color: var(--color-foreground);
+  color: #439CF7 !important;
   font-weight: 700;
+}
+
+.mhn-sidebar-nav-item-active svg,
+.mhn-sidebar-nav-item-active span {
+  color: #439CF7 !important;
+  fill: currentColor;
 }
 
 .mhn-sidebar-create-post {

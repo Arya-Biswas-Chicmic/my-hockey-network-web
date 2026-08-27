@@ -7,12 +7,14 @@ export interface PostMediaProps {
   images?: string[];
   postImage?: string;
   altText?: string;
+  eventDateTag?: string;
 }
 
 export const PostMedia: React.FC<PostMediaProps> = ({
   images,
   postImage,
   altText = 'Post attachment',
+  eventDateTag,
 }) => {
   const mediaList: string[] = images && images.length > 0 ? images : postImage ? [postImage] : [];
   const [activeIndex, setActiveIndex] = useState(0);
@@ -33,9 +35,9 @@ export const PostMedia: React.FC<PostMediaProps> = ({
   };
 
   return (
-    <div className="mhn-post-media-container relative group overflow-hidden rounded-xl bg-slate-900/60">
+    <div className="mhn-post-media-container relative group overflow-hidden rounded-xl bg-slate-900/60 border border-[#162742]">
       {isMultiple && (
-        <div className="mhn-media-badge absolute top-3 right-3 z-10 rounded-full bg-slate-950/70 px-2.5 py-0.5 text-xs font-semibold text-white tracking-wide backdrop-blur-md">
+        <div className="mhn-media-badge absolute top-3 right-3 z-10 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-xs font-semibold text-white tracking-wide border border-white/10">
           {activeIndex + 1}/{mediaList.length}
         </div>
       )}
@@ -46,14 +48,20 @@ export const PostMedia: React.FC<PostMediaProps> = ({
         width={800}
         height={450}
         hideOnError
-        className="mhn-post-media-img w-full object-cover rounded-xl"
+        className="mhn-post-media-img w-full aspect-[16/9] object-cover rounded-xl"
       />
+
+      {eventDateTag && (
+        <div className="absolute bottom-0 left-0 right-0 bg-[#071325]/90 backdrop-blur-md text-[#168BFF] font-semibold text-xs py-2.5 px-4 tracking-wider uppercase border-t border-[#162742] z-10">
+          {eventDateTag}
+        </div>
+      )}
 
       {isMultiple && (
         <>
           <Button
             onClick={handlePrev}
-            className="mhn-media-nav-prev absolute left-2 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-slate-950/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+            className="mhn-media-nav-prev absolute left-2 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
             aria-label="Previous image"
           >
             <ChevronLeft size={18} />
@@ -61,19 +69,19 @@ export const PostMedia: React.FC<PostMediaProps> = ({
 
           <Button
             onClick={handleNext}
-            className="mhn-media-nav-next absolute right-2 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-slate-950/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+            className="mhn-media-nav-next absolute right-2 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
             aria-label="Next image"
           >
             <ChevronRight size={18} />
           </Button>
 
-          <div className="mhn-media-dots absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex gap-1.5">
+          <div className="mhn-media-dots absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex gap-1.5 items-center">
             {mediaList.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveIndex(idx)}
-                className={`h-1.5 rounded-full transition-all ${
-                  idx === activeIndex ? 'w-4 bg-blue-500' : 'w-1.5 bg-white/50'
+                className={`rounded-full transition-all ${
+                  idx === activeIndex ? 'w-2 h-2 bg-white' : 'w-1.5 h-1.5 bg-white/40'
                 }`}
                 aria-label={`Go to image ${idx + 1}`}
               />
@@ -84,3 +92,4 @@ export const PostMedia: React.FC<PostMediaProps> = ({
     </div>
   );
 };
+

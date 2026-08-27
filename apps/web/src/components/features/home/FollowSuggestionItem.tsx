@@ -36,7 +36,7 @@ export const FollowSuggestionItem: React.FC<FollowSuggestionItemProps> = ({
       <button
         disabled={isFollowing || isLoading}
         onClick={() => onFollow(user)}
-        className={`shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${
+        className={`shrink-0 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
           isFollowing
             ? 'bg-[#0D1A30] text-white border border-[#152238] cursor-default shadow-sm'
             : 'bg-[#07101E] text-[#168BFF] border border-[#168BFF] hover:bg-[#168BFF]/10'

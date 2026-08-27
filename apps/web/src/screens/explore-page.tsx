@@ -15,6 +15,14 @@ import { FallbackImage } from '@/components/ui/fallback-image';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
 
+import { CategoryTabs, TabItem } from '@/components/features/home/HomeTabs';
+
+const EXPLORE_TABS: TabItem<'popular' | 'suggested' | 'verified'>[] = [
+  { key: 'popular', label: 'Popular' },
+  { key: 'suggested', label: 'Suggested' },
+  { key: 'verified', label: 'Verified Accounts' },
+];
+
 interface PageProps {
   onNavigate?: (screen: string) => void;
   onLogout?: () => void;
@@ -101,38 +109,11 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           </div>
 
           {/* Sub-Navigation Categories Bar */}
-          <div className="mhn-explore-tabs-bar flex items-center gap-8 border-b border-[#182740] pb-2">
-            <button
-              onClick={() => setActiveExploreTab('popular')}
-              className={`text-sm font-semibold relative pb-2 transition-colors ${
-                activeExploreTab === 'popular'
-                  ? 'text-white after:content-[""] after:absolute after:bottom-[-9px] after:left-0 after:right-0 after:h-[2px] after:bg-[#168BFF]'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Popular
-            </button>
-            <button
-              onClick={() => setActiveExploreTab('suggested')}
-              className={`text-sm font-semibold relative pb-2 transition-colors ${
-                activeExploreTab === 'suggested'
-                  ? 'text-white after:content-[""] after:absolute after:bottom-[-9px] after:left-0 after:right-0 after:h-[2px] after:bg-[#168BFF]'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Suggested
-            </button>
-            <button
-              onClick={() => setActiveExploreTab('verified')}
-              className={`text-sm font-semibold relative pb-2 transition-colors ${
-                activeExploreTab === 'verified'
-                  ? 'text-white after:content-[""] after:absolute after:bottom-[-9px] after:left-0 after:right-0 after:h-[2px] after:bg-[#168BFF]'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Verified Accounts
-            </button>
-          </div>
+          <CategoryTabs
+            tabs={EXPLORE_TABS}
+            activeTab={activeExploreTab}
+            onChange={setActiveExploreTab}
+          />
 
           {/* POST 1: KC Blueknocks */}
           <article className="mhn-explore-post-card bg-[#0A1220] border border-[#162238] rounded-2xl p-4 flex flex-col gap-3 shadow-lg">
@@ -159,7 +140,7 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               <div className="flex items-center gap-2">
                 <Button
                   onClick={() => setIsFollowingKc(!isFollowingKc)}
-                  className={`px-3.5 py-1 text-xs font-semibold rounded-xl transition-all ${
+                  className={`px-3.5 py-1 text-xs font-semibold rounded-lg transition-all ${
                     isFollowingKc
                       ? 'bg-[#15243B] text-slate-200 border border-[#1F3352]'
                       : 'bg-transparent text-[#168BFF] border border-[#168BFF] hover:bg-[#168BFF]/10'
@@ -377,7 +358,7 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
                   <button
                     onClick={() => toggleFollowUser(person.id)}
-                    className={`shrink-0 px-3.5 py-1 text-xs font-semibold rounded-xl transition-all ${
+                    className={`shrink-0 px-3.5 py-1 text-xs font-semibold rounded-lg transition-all ${
                       person.isFollowing
                         ? 'bg-[#15243B] text-slate-300 border border-[#1F3352]'
                         : 'bg-transparent text-[#168BFF] border border-[#168BFF] hover:bg-[#168BFF]/10'
