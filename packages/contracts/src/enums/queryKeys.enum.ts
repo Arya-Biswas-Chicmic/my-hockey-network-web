@@ -15,4 +15,6 @@ export enum QueryKeys {
   REFERENCE_DATA = 'reference:data',
   SETTINGS_BLOCKED_USERS = 'settings:blocked-users',
   SETTINGS_NOTIFICATIONS = 'settings:notifications',
+  ALERTS_LIST = 'alerts:list',
+  ALERTS_UNREAD_COUNT = 'alerts:unread-count',
 }

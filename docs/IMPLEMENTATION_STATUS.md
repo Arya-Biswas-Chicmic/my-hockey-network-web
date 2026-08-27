@@ -602,6 +602,59 @@ Last reviewed: 2026-08-27
   declarations, which is why they were included in the same safe-to-strip class as the visually
   re-verified ones, but that reasoning has not been independently re-confirmed by an actual
   screenshot on those specific screens.
+- Connected the Notifications screen to the real `/alerts` backend, on request. The service layer
+  (`packages/core/src/api/alertsApi.ts`) and its presentation component (`NotificationCard.tsx`)
+  already existed but were completely unwired — confirmed live via `curl` that `/v1/alerts` returns
+  `401` (exists, needs auth) while `/v1/events` and `/v1/messages` both `404` (genuinely don't exist
+  yet), which is why Notifications was the correct target here and Events/Messaging were not. Added
+  `hooks/use-notifications.ts` (`useAlertsQuery`, `useUnreadAlertCountQuery`,
+  `useMarkAlertReadMutation`, `useMarkAllAlertsReadMutation`) and wired `screens/notifications-page.tsx`
+  to it: loading skeletons, the existing honest empty state for a genuinely empty list, and real
+  mark-as-read/mark-all-as-read actions. Added a missing `.mhn-notification-item-unread` background
+  CSS rule the pre-existing `NotificationCard` component referenced but nothing had ever defined.
+  Extracted a small shared `utils/dateUtils.ts` (`formatRelativeTime`) out of a duplicate local copy
+  in `PostCommentSection.tsx` rather than writing a second one, added to the coverage `include` list
+  with new tests. Verified: typecheck, lint, component-reuse check, full test suite (203 tests), and
+  production build all pass. Not verified: the actual rendered list, since this session still has no
+  way to complete a real login (see the backend cookie blocker above) — same limitation as design QA.
+- Decomposed 4 of the 5 highest-priority large files against `docs/FRONTEND_DEVELOPMENT_GUIDELINES.md`'s
+  100–200-line preference, on request, re-prioritized by actual current line count rather than the
+  original (stale) list order — `FeedPostCard.tsx` and `profile-page.tsx` were the real offenders;
+  `supervision-page.tsx` was already down to 232 lines from an earlier pass and left alone as
+  comparatively low priority:
+  - **`FeedPostCard.tsx`** (645 → 183 lines): extracted `hooks/use-feed-post-card.ts` (all like/
+    repost/follow/edit/delete mutation state) and four presentational components —
+    `PostCardHeader`/`PostCardContent`/`PostCardActions`/`PostEditModal`/`PostDeleteModal`. Public
+    `FeedPostProps` unchanged, so its 3 existing consumers needed no changes.
+  - **`profile-page.tsx`** (579 → 310 lines): extracted a pure data-transformation hook
+    (`use-profile-view-model.ts`, no state/API calls — just the raw-profile-response → display-fields
+    derivation), plus `use-profile-about-save.ts` (Intro/Details/Edit-Profile save flows),
+    `use-profile-guardian-approval.ts`, and `use-profile-create-post.ts`.
+  - **`EditProfileModal.tsx`** (495 → 166 lines): extracted `hooks/use-edit-profile-form.ts` (RHF
+    setup, avatar crop/upload, submit) and three form-section components
+    (`EditProfileIdentitySection`/`EditProfileAthleticSection`/`EditProfileLocationBioSection`) plus a
+    generic `DiscardChangesDialog`. Confirmed `<Form methods={form}>` uses `FormProvider`, so the
+    extracted sections' `FormInput`/`FormSelect`/`FormTextarea` fields resolve RHF context without
+    threading `form` through props.
+  - **`Header.tsx`** (403 → 131 lines): extracted `hooks/use-header-family.ts` (active-user + family-
+    switcher data) and three components — `HeaderNavMenu` (also de-duplicated 5 near-identical
+    copy-pasted nav buttons into one data-driven loop), `HeaderFamilyMenu`, `HeaderProfileDropdown`.
+    Found and removed one genuinely dead function (`handleSwitchUser` — defined, never called, not
+    exported) during extraction, same as the earlier `userPosts` removal precedent.
+  Verified after each file: typecheck, lint (`--max-warnings=0`), `pnpm check:component-reuse`, full
+  test suite, and production build all pass. Not attempted: `supervision-page.tsx` (232 lines, already
+  near the guideline).
+- Investigated mobile item "connect remaining screens to shared services and TanStack Query" and
+  found the actual scope narrower and differently shaped than assumed: `Home/index.tsx` and
+  `Profile/index.tsx` are literal pre-feature placeholder screens (a "Hi" label and a demo icon;
+  a bare "Profile" heading) with no backend data to connect — building their real content is separate,
+  larger work, not a connection task. `Onboarding/index.tsx` is pure local-state role selection with
+  no backend call. `Login/index.tsx` and `Signup/index.tsx` already call the shared `mobileAuth`
+  service correctly (not disconnected), just imperatively via `useState`/`try-catch` rather than
+  `useMutation` — a real modernization, but converting core authentication screens with zero
+  simulator/device access to verify against (same Xcode blocker as the `ForgotPassword` migration
+  above) is a different risk tier than that one form was, so it was deliberately not attempted blind
+  this pass. Left as a corrected, scoped backlog item instead.
 
 ## Current quality gates
 
@@ -611,11 +664,11 @@ Last reviewed: 2026-08-27
 - Production web build must pass.
 - Web/native UI ownership and pnpm-only dependency management checks must pass.
 
-Latest measured enforced-code coverage: 93.96% statements, 88.28% branches, 98.07% functions, and
-94.46% lines (enforced boundary: `packages/api-client`, `auth`, `domain`, `validation` index files;
+Latest measured enforced-code coverage: 94.02% statements, 88.61% branches, 98.11% functions, and
+94.4% lines (enforced boundary: `packages/api-client`, `auth`, `domain`, `validation` index files;
 `packages/core/src/api/signUpRules.ts`; `apps/web/src/platform/auth-storage.ts`,
-`query/query-client.ts`, `utils/guardianUtils.ts`, `utils/mediaUtils.ts`, `utils/toast.ts`). The
-Vitest suite contains 196 tests across 31 test files, plus 6 Playwright smoke tests
+`query/query-client.ts`, `utils/guardianUtils.ts`, `utils/mediaUtils.ts`, `utils/toast.ts`,
+`utils/dateUtils.ts`). The Vitest suite contains 203 tests across 32 test files, plus 6 Playwright smoke tests
 (`apps/web/e2e/public.spec.ts`, run separately via `pnpm test:e2e`, not counted in the Vitest total).
 Web form validation, secure storage behavior, query/mutation hook behavior, route-guard
 fail-closed/redirect behavior, dialog/OTP-input keyboard and focus behavior, and route/form
@@ -641,10 +694,14 @@ end-to-end.
 - Consolidate the compatibility packages (`core`, `shared`, `types`, `constants`, `utils`,
   `design-system`) into their target owners per `NEXTJS_MIGRATION_PLAN.md`, incrementally and only
   after each package's import inventory and tests are verified.
-- Events, profile media/stats, messaging, and notifications currently use explicit empty states
-  where no production list endpoint is implemented. Connect those screens through the required
-  endpoint → service → TanStack hook → component hierarchy when APIs land; do not restore sample
-  production records. Do not make Events public/ISR until it is backed by real publishable data.
+- Events, profile media/stats, and messaging currently use explicit empty states where no production
+  list endpoint is implemented (`/v1/events` and `/v1/messages` both 404 on the live backend, confirmed
+  this pass; `/v1/conversations` returns 401, so a real endpoint likely exists there but has no
+  request/response shape documented or typed yet — reverse-engineering it blind was judged out of
+  scope for this pass). Connect those screens through the required endpoint → service → TanStack hook
+  → component hierarchy when APIs land or are properly typed; do not restore sample production
+  records. Do not make Events public/ISR until it is backed by real publishable data. Notifications is
+  no longer in this list — connected to the real `/alerts` endpoint this pass, see Completed.
 - Consolidate `apps/web/src/index.css`'s three separate `.mhn-parent-btn-secondary` rule blocks
   (currently defined with conflicting `height`/`border`/`font-weight` values across the file) into
   one, so the remaining 3 `!important` declarations that are today resolving that conflict can be
@@ -659,3 +716,15 @@ end-to-end.
   Run it once Xcode is configured, and check the failed-request error-message path specifically,
   since that's the one behavior difference between the old RTK error shape and the new `ApiError`
   one that static checks can't fully rule out.
+- Decompose `apps/web/src/screens/supervision-page.tsx` (232 lines) — the last of the original
+  five large-file targets. Low priority relative to the other four (already decomposed this pass):
+  it's only marginally over the 100–200-line guideline, not a real offender.
+- Convert `apps/mobile/src/screens/Login/index.tsx` and `Signup/index.tsx` from imperative
+  `mobileAuth` calls (`useState` + `try/catch`) to `useMutation`, matching the pattern already used by
+  the migrated `ForgotPassword` screen and the whole web app. Both screens already call the correct
+  shared service layer today — this is a state-management modernization, not a missing-connection
+  fix. Deliberately not attempted without simulator/device access to verify against: these are the
+  app's core sign-in/sign-up flows, a materially higher-risk surface to change blind than the
+  single-field `ForgotPassword` form was. `Home/index.tsx` and `Profile/index.tsx` are pre-feature
+  placeholder screens with no backend data at all (not a connection gap); building their real content
+  is separate, larger work and out of scope for a "connect to shared services" item.

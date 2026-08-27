@@ -12,6 +12,7 @@ const REQUEST_HEADERS = [
   'cookie',
   'if-match',
   'if-none-match',
+  'x-client-type',
   'x-csrf-token',
   'x-request-id',
 ] as const;

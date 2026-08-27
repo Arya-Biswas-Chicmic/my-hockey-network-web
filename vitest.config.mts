@@ -26,6 +26,7 @@ export default defineConfig({
         'apps/web/src/utils/guardianUtils.ts',
         'apps/web/src/utils/mediaUtils.ts',
         'apps/web/src/utils/toast.ts',
+        'apps/web/src/utils/dateUtils.ts',
       ],
       thresholds: { lines: 80, functions: 80, statements: 80, branches: 80 },
     },

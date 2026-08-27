@@ -5503,6 +5503,10 @@
   background-color: #f8fafc;
 }
 
+.mhn-notification-item-unread {
+  background-color: #f0f7ff;
+}
+
 .mhn-notification-avatar-box {
   position: relative;
   width: 48px;
