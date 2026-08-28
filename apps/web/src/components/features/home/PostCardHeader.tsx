@@ -46,6 +46,7 @@ export function PostCardHeader({
             src={authorAvatar}
             alt={authorName}
             fill
+            sizes="40px"
             className="mhn-author-avatar-img object-cover"
           />
         </div>
@@ -153,4 +154,3 @@ export function PostCardHeader({
     </div>
   );
 }
-

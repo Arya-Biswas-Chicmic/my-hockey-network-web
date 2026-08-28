@@ -138,7 +138,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         />
       )}
 
-      <main className="mhn-events-main-container max-w-[1240px] w-full my-6 mx-auto px-6 flex flex-col gap-6 box-border lg:my-0 lg:min-h-0 lg:flex-1 lg:py-6 lg:overflow-y-auto pb-16">
+      <main className="mhn-events-main-container mhn-page-container max-w-[1240px] flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-16">
         {/* Top Header Controls Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-slate-100">Events</h1>

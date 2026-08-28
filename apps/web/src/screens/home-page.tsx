@@ -22,6 +22,7 @@ import { extractErrorMessage, getApiErrorStatus, showSuccessToast, showErrorToas
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, HELPER_MESSAGES } from '@my-hockey-network/constants';
 import { useHomeFeed } from '@/hooks/useHomeFeed';
 import { useShellUiStore } from '@/stores/shell-ui-store';
+import { profileDemoData } from '@/demo-data/profile';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -52,6 +53,9 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     isFeedRefreshing,
     feedPosts,
     feedError,
+    hasNextPage,
+    isFetchingNextPage,
+    onLoadMore,
     handleFollowChange,
     handlePostDeleteSuccess,
     handlePostUpdateSuccess,
@@ -170,9 +174,9 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         />
       )}
 
-      <main className="mhn-home-main-layout lg:my-0 lg:min-h-0 lg:flex-1 lg:py-6">
+      <main className="mhn-home-main-layout lg:my-0 lg:min-h-0 lg:flex-1">
         {/* CENTER MAIN FEED COLUMN */}
-        <section className="mhn-layout-col-center lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
+        <section className="mhn-layout-col-center flex flex-col lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">
           <HomeTabs activeTab={activeFeedTab} onChange={setActiveFeedTab} />
 
           <Feed
@@ -181,6 +185,9 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             isLoading={isFeedRefreshing}
             error={feedError}
             searchQuery={searchQuery}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            onLoadMore={onLoadMore}
             onRetry={refreshFeed}
             onOpenCreatePost={handleOpenCreatePost}
             onNavigate={onNavigate}
@@ -195,7 +202,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         <RightSidebar>
           <SearchWidget value={searchQuery} onChange={setSearchQuery} />
 
-          <WhoToFollowWidget onViewAll={() => handleTabChange('network')} />
+          <WhoToFollowWidget fallbackSuggestions={profileDemoData.people} onViewAll={() => handleTabChange('network')} />
 
           <UpcomingEventsWidget
             onViewAll={() => handleTabChange('events')}

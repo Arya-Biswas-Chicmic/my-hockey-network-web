@@ -102,7 +102,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
 
   return (
     <div className="mhn-settings-page-root">
-      <main className="mhn-settings-main-container">
+      <main className="mhn-settings-main-container mhn-page-container">
         <div className="mhn-settings-top-bar">
           <h1 className="mhn-settings-title">Settings</h1>
           <div className="mhn-settings-search-wrapper">

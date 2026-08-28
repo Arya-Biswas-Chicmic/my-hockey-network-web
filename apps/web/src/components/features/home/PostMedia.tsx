@@ -35,7 +35,7 @@ export const PostMedia: React.FC<PostMediaProps> = ({
   };
 
   return (
-    <div className="mhn-post-media-container relative group overflow-hidden rounded-xl bg-slate-900/60 border border-[#162742]">
+    <div className="mhn-post-media-container relative group overflow-hidden bg-slate-900/60">
       {isMultiple && (
         <div className="mhn-media-badge absolute top-3 right-3 z-10 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-xs font-semibold text-white tracking-wide border border-white/10">
           {activeIndex + 1}/{mediaList.length}
@@ -48,7 +48,7 @@ export const PostMedia: React.FC<PostMediaProps> = ({
         width={800}
         height={450}
         hideOnError
-        className="mhn-post-media-img w-full aspect-[16/9] object-cover rounded-xl"
+        className="mhn-post-media-img w-full aspect-[16/9] object-cover"
       />
 
       {eventDateTag && (
@@ -94,4 +94,3 @@ export const PostMedia: React.FC<PostMediaProps> = ({
     </div>
   );
 };
-

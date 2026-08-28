@@ -53,3 +53,7 @@ export interface FetchFeedParams {
   sortBy?: 'RECENT' | 'POPULAR' | 'TRENDING';
   limit?: number;
 }
+
+export interface FetchFeedPageParams extends FetchFeedParams {
+  cursor?: string;
+}

@@ -3,9 +3,13 @@ import { globalQueryClient } from '@/query';
 import { feedQueryKey } from '@/hooks/use-feed-query';
 import { mapFeedPosts } from '@/components/features/home/map-feed-posts';
 import { FeedPostProps } from '@/components/features/home/FeedPostCard';
-import { FetchFeedParams } from '@/types/feed.types';
+import { FetchFeedParams, FetchFeedPageParams } from '@/types/feed.types';
+import type { InfinitePage } from '@/query/use-infinite-query';
 
-const FIGMA_MOCK_POSTS: FeedPostProps[] = [
+/** Demo fallback when the real feed has genuinely no posts on its first
+ * page — see `useHomeFeed`, which is the only place this is applied (only
+ * once, only when a resolved first page is empty), not this module. */
+export const FIGMA_MOCK_POSTS: FeedPostProps[] = [
   {
     id: 'figma-post-1',
     authorName: 'KC Blueknocks',
@@ -67,6 +71,32 @@ export class FeedService {
     }
 
     return FIGMA_MOCK_POSTS;
+  }
+
+  /**
+   * Cursor-paginated feed page for `useInfiniteListQuery` (see `useHomeFeed`
+   * — feedback 2026-08-28: "home page feed scroll is not working", i.e.
+   * nothing ever loaded past the first page). Mirrors `getUserPosts`'s
+   * `ProfilePostsTab` wiring. Errors propagate (not swallowed here) so
+   * `useHomeFeed` can surface the existing `ServerDown` state instead of
+   * silently returning demo posts on a real transport/server failure —
+   * matches docs/DEMO_DATA_POLICY.md: "A failed request remains an error;
+   * fallback is for absent/empty display data, not for concealing
+   * transport or server failures."
+   */
+  static async fetchFeedPage({
+    profileId,
+    query,
+    sortBy = 'RECENT',
+    cursor,
+    limit = 10,
+  }: FetchFeedPageParams): Promise<InfinitePage<FeedPostProps>> {
+    const normalizedQuery = query && query.trim().length >= 2 ? query.trim() : undefined;
+    const res = await getFeed({ query: normalizedQuery, sortBy, cursor, limit });
+    return {
+      items: mapFeedPosts(res.items, { profileId }),
+      nextCursor: res.nextCursor,
+    };
   }
 }
 

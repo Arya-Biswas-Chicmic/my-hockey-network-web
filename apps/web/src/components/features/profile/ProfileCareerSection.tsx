@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { BadgeCheck, Plus, Trash2 } from 'lucide-react';
+import { BadgeCheck, Pencil, Plus, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/common/Spinner';
@@ -176,7 +175,7 @@ export function ProfileCareerSection({
               disabled={isSavingTeam}
               className={`mhn-btn-team-save ${isSavingTeam ? 'disabled' : 'active'}`}
             >
-              {isSavingTeam && <Spinner size="sm" color="#FFFFFF" />}
+              {isSavingTeam && <Spinner size="sm" color="currentColor" />}
               <span>Save</span>
             </Button>
           </div>
@@ -221,7 +220,7 @@ export function ProfileCareerSection({
                       <h5 className="mhn-career-team-title">{team.teamName || 'Team Name'}</h5>
                       {team.verified && (
                         <span title="Verified Team on Platform" className="mhn-btn-loading-flex">
-                          <BadgeCheck size={16} fill="#0B66C2" aria-hidden="true" />
+                          <BadgeCheck size={16} className="fill-current text-primary" aria-hidden="true" />
                         </span>
                       )}
                     </div>
@@ -238,7 +237,7 @@ export function ProfileCareerSection({
                     title="Edit team details"
                     disabled={isDeletingTeamId === team.id}
                   >
-                    <Image src="/edit3.webp" alt="Edit" width={16} height={16} className="mhn-edit-icon-img" />
+                    <Pencil size={16} className="text-muted-foreground" aria-hidden="true" />
                   </Button>
                   <Button
                     type="button"
@@ -247,7 +246,7 @@ export function ProfileCareerSection({
                     title="Delete career entry"
                     disabled={isDeletingTeamId === team.id}
                   >
-                    <Trash2 size={16} color="#EF4444" aria-hidden="true" />
+                    <Trash2 size={16} className="text-destructive" aria-hidden="true" />
                   </Button>
                 </div>
               </div>

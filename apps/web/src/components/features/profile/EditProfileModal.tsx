@@ -1,15 +1,18 @@
+'use client';
+
+import type { AuthMeResponse } from '@my-hockey-network/contracts';
+import type { EditProfileFormValues } from '@my-hockey-network/validation';
+import { X } from 'lucide-react';
+
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
-import React from 'react';
 import { Spinner } from '@/components/common/Spinner';
-import type { AuthMeResponse } from '@my-hockey-network/contracts';
-import { X } from 'lucide-react';
-import { Form } from '@/components/ui/form';
-import { useEditProfileForm, type EditProfileFormData } from '@/hooks/use-edit-profile-form';
-import { EditProfileIdentitySection } from '@/components/features/profile/EditProfileIdentitySection';
-import { EditProfileAthleticSection } from '@/components/features/profile/EditProfileAthleticSection';
-import { EditProfileLocationBioSection } from '@/components/features/profile/EditProfileLocationBioSection';
 import { DiscardChangesDialog } from '@/components/features/profile/DiscardChangesDialog';
+import { FormInput, FormSelect, FormTextarea } from '@/components/form/fields';
+import { Form } from '@/components/ui/form';
+import { POSITION_OPTIONS, SHOOTS_OPTIONS } from '@/config/profile-options';
+import { useEditProfileForm, type EditProfileFormData } from '@/hooks/use-edit-profile-form';
+import { useReferenceData } from '@/hooks/use-reference-data';
 
 export type { EditProfileFormData };
 
@@ -20,31 +23,27 @@ interface EditProfileModalProps {
   profileData?: Partial<EditProfileFormData> | Record<string, unknown> | null;
 }
 
-/**
- * Full profile-editing dialog: read-only account badges, avatar/identity,
- * (for players) athletic details, location/bio, and a discard-changes
- * guard. All form/upload/submit logic lives in `useEditProfileForm`; this
- * component owns layout only.
- */
+const fieldClassName = 'h-11 w-full rounded-lg border border-auth-stroke bg-background px-3 text-sm text-foreground outline-none focus:border-primary';
+const fieldContainerClassName = 'space-y-1.5';
+
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   isOpen,
   onClose,
   onSave,
   profileData,
 }) => {
+  const profileRecord = (profileData || {}) as Record<string, unknown>;
+  const heightDisplay = String(profileRecord.height || '—');
+  const weightDisplay = String(profileRecord.weight || '—');
+  const { positions } = useReferenceData();
   const {
     form,
-    formData,
     submitProfile,
-    cropModal,
-    userEmail,
     userPrimaryRole,
     isPlayer,
     isSubmitting,
     isFormDirty,
     isSaveDisabled,
-    handleAvatarFileChange,
-    handleRemoveAvatar,
     handleAttemptClose,
     showDiscardConfirm,
     setShowDiscardConfirm,
@@ -55,110 +54,41 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="mhn-modal-overlay"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) handleAttemptClose();
-      }}
-    >
-      <div className="mhn-edit-profile-dialog-card">
-        <div className="mhn-edit-profile-header">
-          <div>
-            <h2 className="mhn-edit-profile-title">Edit Profile</h2>
-            <p className="mhn-edit-profile-sub">
-              Update your personal details, player stats, and account preferences.
-            </p>
-          </div>
+    <div className="mhn-modal-overlay" onClick={(event) => event.target === event.currentTarget && handleAttemptClose()}>
+      <div role="dialog" aria-modal="true" aria-labelledby="edit-profile-title" className="flex max-h-[90vh] w-full max-w-[527px] flex-col overflow-hidden rounded-xl border border-auth-stroke bg-auth-field text-foreground shadow-2xl">
+        <header className="flex items-center justify-between border-b border-auth-stroke px-6 py-5">
+          <h2 id="edit-profile-title" className="text-xl font-bold">Edit Profile</h2>
+          <Button onClick={handleAttemptClose} className="grid size-8 place-items-center rounded-full border border-auth-stroke text-muted-foreground hover:bg-secondary hover:text-foreground" aria-label="Close edit profile"><X size={18} /></Button>
+        </header>
 
-          <Button onClick={handleAttemptClose} className="mhn-edit-profile-close-btn" aria-label="Close modal">
-            <X size={20} aria-hidden="true" />
-          </Button>
-        </div>
+        <Form methods={form} onSubmit={submitProfile} id="edit-profile-form" className="flex-1 space-y-5 overflow-y-auto px-6 py-5" noValidate>
+          {saveSuccessMsg ? <p role="status" className="rounded-lg border border-success-border bg-success-surface p-3 text-sm text-success-foreground">{saveSuccessMsg}</p> : null}
+          {submissionError ? <p role="alert" className="rounded-lg border border-destructive-border bg-destructive-surface p-3 text-sm text-destructive">{submissionError}</p> : null}
 
-        <Form methods={form} onSubmit={submitProfile} id="edit-profile-form" className="mhn-edit-profile-form-body" noValidate>
-          {saveSuccessMsg && (
-            <div className="mhn-resend-notice-card mhn-mb-20">
-              <span>✓</span>
-              <span>{saveSuccessMsg}</span>
-            </div>
-          )}
+          <FormInput<EditProfileFormValues, 'displayName'> name="displayName" label="Name" required maxLength={50} inputClassName={fieldClassName} containerClassName={fieldContainerClassName} errorClassName="text-xs text-destructive" isNameInput />
+          <FormTextarea<EditProfileFormValues, 'bio'> name="bio" label="Bio" rows={3} textareaClassName={`${fieldClassName} min-h-24 py-3`} containerClassName={fieldContainerClassName} errorClassName="text-xs text-destructive" />
 
-          {submissionError && (
-            <div className="mhn-edit-profile-field-error mhn-mb-20">{submissionError}</div>
-          )}
+          <div className={fieldContainerClassName}><label className="auth-label" htmlFor="profile-role">Role</label><Input id="profile-role" value={userPrimaryRole} readOnly disabled className={`${fieldClassName} cursor-not-allowed opacity-70`} /></div>
+          <FormInput<EditProfileFormValues, 'dateOfBirth'> name="dateOfBirth" label="Date of Birth" type="date" inputClassName={fieldClassName} containerClassName={fieldContainerClassName} errorClassName="text-xs text-destructive" />
 
-          <div className="mhn-edit-profile-system-banner">
-            <div>
-              <div className="mhn-system-field-header">
-                <label className="mhn-system-field-label">Email Address</label>
-                <span className="mhn-verified-badge-pill">✓ Verified</span>
-              </div>
-              <Input type="text" value={userEmail} disabled readOnly className="mhn-readonly-input-box" />
-            </div>
-
-            <div>
-              <div className="mhn-system-field-header">
-                <label className="mhn-system-field-label">Primary Account Role</label>
-              </div>
-              <div className="mhn-readonly-role-box">
-                <span className="mhn-blue-role-dot" />
-                <span>{userPrimaryRole}</span>
-                <span className="mhn-comment-time mhn-ml-auto">(Primary Role Locked)</span>
-              </div>
-            </div>
-          </div>
-
-          <EditProfileIdentitySection
-            avatarUrl={formData.avatarUrl}
-            onAvatarFileChange={handleAvatarFileChange}
-            onRemoveAvatar={handleRemoveAvatar}
-          />
-
-          {isPlayer && <EditProfileAthleticSection />}
-
-          <EditProfileLocationBioSection bioLength={(formData.bio ?? '').length} />
+          {isPlayer ? (
+            <>
+              <div className="grid grid-cols-2 gap-3"><div className={fieldContainerClassName}><label className="auth-label" htmlFor="profile-height">Height</label><Input id="profile-height" value={heightDisplay} readOnly disabled className={`${fieldClassName} cursor-not-allowed opacity-70`} /></div><div className={fieldContainerClassName}><label className="auth-label" htmlFor="profile-weight">Weight</label><Input id="profile-weight" value={weightDisplay} readOnly disabled className={`${fieldClassName} cursor-not-allowed opacity-70`} /></div></div>
+              <FormSelect<EditProfileFormValues, 'position'> name="position" label="Position" options={positions.length ? positions : [...POSITION_OPTIONS]} selectClassName={fieldClassName} containerClassName={fieldContainerClassName} errorClassName="text-xs text-destructive" />
+              <FormSelect<EditProfileFormValues, 'shootsCatches'> name="shootsCatches" label="Shoots / Catches" options={SHOOTS_OPTIONS} selectClassName={fieldClassName} containerClassName={fieldContainerClassName} errorClassName="text-xs text-destructive" />
+              <FormInput<EditProfileFormValues, 'jerseyNumber'> name="jerseyNumber" label="Jersey Number" type="number" min="0" max="99" inputClassName={fieldClassName} containerClassName={fieldContainerClassName} errorClassName="text-xs text-destructive" disableAutoSanitize />
+            </>
+          ) : null}
+          <FormInput<EditProfileFormValues, 'city'> name="city" label="City / Location" maxLength={50} inputClassName={fieldClassName} containerClassName={fieldContainerClassName} errorClassName="text-xs text-destructive" disableAutoSanitize />
         </Form>
 
-        <div className="mhn-edit-profile-footer">
-          <span className={`mhn-unsaved-text ${isFormDirty ? 'dirty' : 'clean'}`}>
-            {isFormDirty ? '● Unsaved changes' : 'No changes made'}
-          </span>
-
-          <div className="mhn-btn-loading-flex">
-            <Button type="button" onClick={handleAttemptClose} className="mhn-btn-profile-cancel">
-              Cancel
-            </Button>
-
-            <Button
-              type="submit"
-              form="edit-profile-form"
-              disabled={isSaveDisabled}
-              className={`mhn-btn-profile-save ${isSaveDisabled ? 'disabled' : 'active'}`}
-            >
-              {isSubmitting ? (
-                <>
-                  <Spinner size="sm" color="#FFFFFF" />
-                  <span>Saving...</span>
-                </>
-              ) : (
-                'Save Changes'
-              )}
-            </Button>
-          </div>
-        </div>
+        <footer className="flex items-center justify-between gap-3 border-t border-auth-stroke px-6 py-4">
+          <span className="text-xs text-muted-foreground">{isFormDirty ? 'Unsaved changes' : 'No changes made'}</span>
+          <div className="flex gap-2"><Button variant="solid-outline" onClick={handleAttemptClose} className="h-10 py-0">Cancel</Button><Button variant="solid" type="submit" form="edit-profile-form" disabled={isSaveDisabled} className="h-10 min-w-28 py-0">{isSubmitting ? <><Spinner size="sm" /><span>Saving…</span></> : 'Save Changes'}</Button></div>
+        </footer>
       </div>
 
-      {showDiscardConfirm && (
-        <DiscardChangesDialog
-          onKeepEditing={() => setShowDiscardConfirm(false)}
-          onDiscard={() => {
-            setShowDiscardConfirm(false);
-            onClose();
-          }}
-        />
-      )}
-
-      {cropModal}
+      {showDiscardConfirm ? <DiscardChangesDialog onKeepEditing={() => setShowDiscardConfirm(false)} onDiscard={() => { setShowDiscardConfirm(false); onClose(); }} /> : null}
     </div>
   );
 };

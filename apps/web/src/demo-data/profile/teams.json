@@ -1,0 +1,4 @@
+[
+  { "id": "demo-profile-team-1", "groupId": null, "teamName": "Carolina Hurricanes", "teamLogoUrl": "/demo/profile/team-hurricanes.webp", "position": "Left Wing", "location": "Raleigh, North Carolina", "note": "Focused on leadership, consistency, and helping the team compete every night.", "startDate": "2022-09-01T00:00:00.000Z", "endDate": null, "verified": true },
+  { "id": "demo-profile-team-2", "groupId": null, "teamName": "Washington Capitals", "teamLogoUrl": "/demo/profile/team-hurricanes-secondary.webp", "position": "Left Wing", "location": "Washington, DC", "note": "Team captain and long-time member of the organization.", "startDate": "2005-10-05T00:00:00.000Z", "endDate": "2022-06-30T00:00:00.000Z", "verified": true }
+]

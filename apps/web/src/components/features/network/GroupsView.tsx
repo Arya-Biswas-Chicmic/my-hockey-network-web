@@ -10,6 +10,7 @@ import { showErrorToast, showInfoToast, showSuccessToast } from '@/utils/toast';
 import { Search } from 'lucide-react';
 import { EmptyState } from '@/components/features/network/EmptyState';
 import { NetworkSkeletonGrid } from '@/components/features/network/NetworkSkeletonLoader';
+import { formatCompactNumber } from '@/helpers/formatters';
 
 interface GroupsViewProps {
   onViewGroup?: (groupId: string) => void;
@@ -82,7 +83,7 @@ export function GroupsView({ onViewGroup }: GroupsViewProps) {
               <div className="mhn-group-card-banner"><Image src="/cover.webp" alt="" fill className="mhn-group-banner-img" /></div>
               <div className="mhn-group-card-body">
                 <h3 className="mhn-group-title">{group.name}</h3>
-                <p className="mhn-group-members">{group.memberCount ?? 0} members</p>
+                <p className="mhn-group-members">{formatCompactNumber(group.memberCount ?? 0)} members</p>
                 <Button type="button" className="mhn-btn-view-group" onClick={() => void handleGroupAction(group)} disabled={joiningGroupId === group.id || (activeTab === 'your-groups' && !onViewGroup)}>
                   {joiningGroupId === group.id ? <><Spinner size="sm" /><span>Joining...</span></> : activeTab === 'your-groups' ? 'View Group' : 'Join Group'}
                 </Button>

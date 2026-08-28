@@ -14,50 +14,17 @@ interface UseProfileImageUploadsParams {
 }
 
 /**
- * Cover/avatar upload flow for the profile hero card: crop-on-upload
- * (`useImageCrop`), file-type/size validation, upload, and profile-record
- * update. Extracted from `screens/profile-page.tsx` so the screen owns
- * orchestration, not per-image-type upload plumbing.
+ * Avatar upload flow for the profile hero card's camera badge:
+ * crop-on-upload (`useImageCrop`), file-type/size validation, upload, and
+ * profile-record update. Extracted from `screens/profile-page.tsx` so the
+ * screen owns orchestration, not per-image-type upload plumbing. Cover
+ * photo used to go through here too; feedback 2026-08-29: "no cover photo
+ * required in user profile" retired that half — avatar-only now.
  */
 export function useProfileImageUploads({ setUserProfile, loadAuthMe }: UseProfileImageUploadsParams) {
   const { cropImage, cropModal } = useImageCrop();
 
-  const [isUploadingCover, setIsUploadingCover] = useState(false);
-  const [coverUploadMsg, setCoverUploadMsg] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-
-  const handleCoverFileChange = async (files: File[]) => {
-    const file = files[0];
-    if (!file) return;
-    const result = createFileSchema({ acceptedTypes: IMAGE_MIME_TYPES, maxBytes: 10 * 1024 * 1024 }).safeParse(file);
-    if (!result.success) {
-      showErrorToast(result.error.issues[0]?.message ?? ERROR_MESSAGES.FAILED_UPLOAD_COVER);
-      return;
-    }
-
-    const cropped = await cropImage(file, { shape: 'rect', aspectRatio: 3, title: 'Adjust cover photo' });
-    if (!cropped) return;
-
-    setIsUploadingCover(true);
-    setCoverUploadMsg(null);
-
-    try {
-      const uploadRes = await uploadMediaFile(cropped, 'COVER');
-      if (uploadRes?.storageKey) {
-        const updated = await updateAuthProfile({ coverImageKey: uploadRes.storageKey });
-        if (updated) {
-          setUserProfile(updated);
-        }
-        await loadAuthMe(true, true);
-        setCoverUploadMsg('Cover image updated successfully!');
-        setTimeout(() => setCoverUploadMsg(null), 3000);
-      }
-    } catch (err: unknown) {
-      showErrorToast(err, ERROR_MESSAGES.FAILED_UPLOAD_COVER);
-    } finally {
-      setIsUploadingCover(false);
-    }
-  };
 
   const handleAvatarFileChange = async (files: File[]) => {
     const file = files[0];
@@ -91,9 +58,6 @@ export function useProfileImageUploads({ setUserProfile, loadAuthMe }: UseProfil
 
   return {
     cropModal,
-    isUploadingCover,
-    coverUploadMsg,
-    handleCoverFileChange,
     isUploadingAvatar,
     handleAvatarFileChange,
   };

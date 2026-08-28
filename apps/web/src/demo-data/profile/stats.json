@@ -1,0 +1,8 @@
+{
+  "filters": { "seasons": ["2025-26", "2024-25", "2023-24"], "teams": ["Toronto Maple Leafs", "All Teams"], "competitionTypes": ["Regular Season", "Playoffs"] },
+  "summary": { "title": "Regular Season", "gamesPlayed": 42, "points": 58 },
+  "metrics": [
+    { "label": "Goals", "value": "24" }, { "label": "Assists", "value": "34" }, { "label": "Points", "value": "58" },
+    { "label": "+/-", "value": "+18" }, { "label": "Penalty Min", "value": "16" }, { "label": "Shots", "value": "146" }
+  ]
+}

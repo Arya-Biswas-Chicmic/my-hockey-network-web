@@ -14,6 +14,7 @@ import {
 import { LockKeyhole } from 'lucide-react';
 import { useState } from 'react';
 import { showInfoToast } from '@/utils/toast';
+import { formatCompactNumber } from '@/helpers/formatters';
 
 export interface PostCardActionsProps {
   postId: string;
@@ -82,7 +83,7 @@ export function PostCardActions({
                 <FeedLikeSparkIcon size={12} aria-hidden="true" />
               </span>
             )}
-            <span className="mhn-action-count font-medium">{likes}</span>
+            <span className="mhn-action-count font-medium">{formatCompactNumber(likes)}</span>
           </Button>
 
           <Button
@@ -98,7 +99,7 @@ export function PostCardActions({
             ) : (
               <FeedCommentIcon size={16} className="comment-count-icon text-slate-400" aria-hidden="true" />
             )}
-            <span className="mhn-action-count font-medium">{currentCommentsCount}</span>
+            <span className="mhn-action-count font-medium">{formatCompactNumber(currentCommentsCount)}</span>
           </Button>
 
           {!isSelf && (
@@ -125,7 +126,7 @@ export function PostCardActions({
                     aria-hidden="true"
                   />
                 )}
-                <span className="mhn-action-count font-medium">{reposts}</span>
+                <span className="mhn-action-count font-medium">{formatCompactNumber(reposts)}</span>
               </Button>
 
               {isRepostMenuOpen && (

@@ -192,7 +192,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
   return (
     <div className="mhn-network-page-root">
       {/* Main Container */}
-      <main className="mhn-network-main-layout">
+      <main className="mhn-network-main-layout mhn-page-container">
         {currentView === NetworkViewModeEnum.GROUP_DETAIL ? (
           <GroupDetailView 
             groupId={selectedGroupId}

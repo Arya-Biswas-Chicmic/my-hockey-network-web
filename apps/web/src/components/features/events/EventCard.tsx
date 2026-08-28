@@ -2,6 +2,7 @@ import React from 'react';
 import { Clock, MapPin, MoreHorizontal, Star, Users } from 'lucide-react';
 import { FallbackImage } from '@/components/ui/fallback-image';
 import { Button } from '@/components/common/Button';
+import { cn } from '@/utils/cn';
 
 export interface EventCardProps {
   id: string;
@@ -14,6 +15,7 @@ export interface EventCardProps {
   isInterested?: boolean;
   onToggleInterested?: (id: string) => void;
   onCardClick?: (id: string) => void;
+  compact?: boolean;
 }
 
 export const EventCard: React.FC<EventCardProps> = ({
@@ -27,18 +29,23 @@ export const EventCard: React.FC<EventCardProps> = ({
   isInterested = true,
   onToggleInterested,
   onCardClick,
+  compact = false,
 }) => {
   return (
-    <article className="mhn-event-card bg-[#0A1220] border border-[#162238] rounded-2xl overflow-hidden flex flex-col shadow-lg transition-all hover:border-[#1F3352]">
+    <article className={cn(
+      'mhn-event-card overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm transition-colors hover:border-border-strong',
+      compact ? 'grid grid-cols-[132px_1fr] max-[440px]:grid-cols-1' : 'flex flex-col',
+    )}>
       {/* Event Cover Box */}
       <div
-        className="relative w-full aspect-[16/9] bg-slate-900 cursor-pointer overflow-hidden"
+        className={cn('relative cursor-pointer overflow-hidden bg-secondary', compact ? 'h-full min-h-[132px]' : 'aspect-[16/9] w-full')}
         onClick={() => onCardClick?.(id)}
       >
         <FallbackImage
           src={image}
           alt={title}
           fill
+          sizes={compact ? '(max-width: 440px) 100vw, 132px' : '(max-width: 768px) 100vw, 470px'}
           fallbackSrc="/classic.webp"
           className="object-cover transition-transform duration-300 hover:scale-105"
         />
@@ -47,7 +54,7 @@ export const EventCard: React.FC<EventCardProps> = ({
           onClick={(e) => {
             e.stopPropagation();
           }}
-          className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/50 backdrop-blur-md text-slate-200 flex items-center justify-center hover:bg-black/70 transition-colors"
+          className="absolute right-3 top-3 flex size-7 items-center justify-center rounded-full bg-background/70 text-foreground backdrop-blur-md transition-colors hover:bg-background/90"
           aria-label="Event Options"
         >
           <MoreHorizontal size={16} />
@@ -55,30 +62,30 @@ export const EventCard: React.FC<EventCardProps> = ({
       </div>
 
       {/* Event Card Content */}
-      <div className="p-4 flex flex-col flex-1 gap-3">
+      <div className="flex flex-1 flex-col gap-3 p-4">
         <h3
-          className="text-sm font-bold text-slate-100 cursor-pointer hover:text-[#168BFF] transition-colors line-clamp-2"
+          className="line-clamp-2 cursor-pointer text-sm font-bold text-foreground transition-colors hover:text-primary"
           onClick={() => onCardClick?.(id)}
         >
           {title}
         </h3>
 
-        <div className="flex flex-col gap-1.5 text-xs text-slate-400">
+        <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
           {/* Date Info */}
           <div className="flex items-center gap-2">
-            <Clock size={14} className="text-slate-400 shrink-0" />
+            <Clock size={14} className="shrink-0" />
             <span className="truncate">{date}</span>
           </div>
 
           {/* Location Info */}
           <div className="flex items-center gap-2">
-            <MapPin size={14} className="text-slate-400 shrink-0" />
+            <MapPin size={14} className="shrink-0" />
             <span className="truncate">{location}</span>
           </div>
 
           {/* Attendees Stats Line */}
           <div className="flex items-center gap-2">
-            <Users size={14} className="text-slate-400 shrink-0" />
+            <Users size={14} className="shrink-0" />
             <span className="truncate">
               {interestedCount} Interested · {goingCount} Going
             </span>
@@ -92,10 +99,10 @@ export const EventCard: React.FC<EventCardProps> = ({
               e.stopPropagation();
               onToggleInterested?.(id);
             }}
-            className={`w-full h-9 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+            className={`flex h-9 w-full items-center justify-center gap-2 rounded-lg text-xs font-semibold transition-all ${
               isInterested
-                ? 'bg-[#168BFF] text-white hover:bg-[#147CE6] shadow-md shadow-[#168BFF]/20'
-                : 'bg-[#15243B] text-slate-300 border border-[#1F3352] hover:bg-[#1C304F]'
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                : 'border border-border bg-secondary text-secondary-foreground hover:bg-accent'
             }`}
           >
             <Star size={14} fill={isInterested ? 'currentColor' : 'none'} />
@@ -106,4 +113,3 @@ export const EventCard: React.FC<EventCardProps> = ({
     </article>
   );
 };
-

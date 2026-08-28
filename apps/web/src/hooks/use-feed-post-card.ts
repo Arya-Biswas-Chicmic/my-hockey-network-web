@@ -22,6 +22,7 @@ export interface UseFeedPostCardParams {
   commentsCount: number;
   isSelfRepost: boolean;
   userReaction: string | null;
+  demoMode?: boolean;
   requirePermission: (permission?: 'REACT_TO_POSTS' | 'SHARE_POSTS') => boolean;
   onFollowChange?: (authorKey: string, isFollowing: boolean) => void;
   onShareSuccess?: (message: string) => void;
@@ -48,6 +49,7 @@ export function useFeedPostCard({
   commentsCount,
   isSelfRepost,
   userReaction,
+  demoMode = false,
   requirePermission,
   onFollowChange,
   onShareSuccess,
@@ -130,6 +132,14 @@ export function useFeedPostCard({
     if (isDeleting) return;
     setIsDeleting(true);
 
+    if (demoMode) {
+      setIsDeleteModalOpen(false);
+      onDeleteSuccess?.(id, SUCCESS_MESSAGES.POST_DELETED);
+      setIsDeleted(true);
+      setIsDeleting(false);
+      return;
+    }
+
     try {
       await deletePostMutation.mutateAsync({ postId: id });
       setIsDeleteModalOpen(false);
@@ -160,6 +170,15 @@ export function useFeedPostCard({
   const handleSaveEdit = async () => {
     if (isUpdating || !editContentInput.trim()) return;
     setIsUpdating(true);
+
+    if (demoMode) {
+      const updatedContent = editContentInput.trim();
+      setPostContent(updatedContent);
+      setIsEditModalOpen(false);
+      onUpdateSuccess?.(id, updatedContent);
+      setIsUpdating(false);
+      return;
+    }
 
     try {
       await updatePostMutation.mutateAsync({ postId: id, dto: { body: editContentInput.trim() } });
@@ -192,6 +211,11 @@ export function useFeedPostCard({
     } else {
       setLikes((prev) => prev + 1);
       setIsLiked(true);
+    }
+
+    if (demoMode) {
+      setIsLiking(false);
+      return;
     }
 
     try {
@@ -230,6 +254,13 @@ export function useFeedPostCard({
     if (!requirePermission('SHARE_POSTS')) return;
     if (isSharing) return;
     setIsSharing(true);
+
+    if (demoMode) {
+      setReposts((previous) => hasReposted ? Math.max(0, previous - 1) : previous + 1);
+      setHasReposted((previous) => !previous);
+      setIsSharing(false);
+      return;
+    }
 
     try {
       if (hasReposted) {
@@ -309,6 +340,14 @@ export function useFeedPostCard({
     if (isSharing || !quoteCommentaryInput.trim()) return;
     setIsSharing(true);
 
+    if (demoMode) {
+      setReposts((previous) => previous + 1);
+      setHasReposted(true);
+      setIsQuoteModalOpen(false);
+      setIsSharing(false);
+      return;
+    }
+
     try {
       const res = await repostPost(id, { commentary: quoteCommentaryInput.trim() });
       const createdRepostId = res.post?.id || res.data?.post?.id || res.data?.id;
@@ -343,6 +382,13 @@ export function useFeedPostCard({
 
     const prevFollowing = isFollowing;
     const targetKey = authorId || authorName;
+
+    if (demoMode) {
+      setIsFollowing(!prevFollowing);
+      onFollowChange?.(targetKey, !prevFollowing);
+      setIsFollowingLoading(false);
+      return;
+    }
 
     try {
       if (prevFollowing) {

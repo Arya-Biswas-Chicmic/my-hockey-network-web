@@ -22,14 +22,20 @@
   --color-card-foreground: #0f172a;
   --color-popover: #ffffff;
   --color-popover-foreground: #0f172a;
-  --color-primary: #1860c3;
+  /* feedback 2026-08-28: "buttons are using this #0B66C2 color" — this was
+     already `--color-auth-action`'s value (used across the auth flow); the
+     shared `Button` component's `solid` variant and every `bg-primary`/
+     `text-primary` utility instead read this token, which held a different
+     blue (#1860c3). Aligning the two stops the two families of buttons
+     from visibly clashing on the same screen. */
+  --color-primary: #0b66c2;
   --color-primary-foreground: #ffffff;
   --color-secondary: #f1f5f9;
   --color-secondary-foreground: #0f172a;
   --color-muted: #f1f5f9;
   --color-muted-foreground: #64748b;
   --color-accent: #eff6ff;
-  --color-accent-foreground: #1860c3;
+  --color-accent-foreground: #0b66c2;
   --color-destructive: #dc2626;
   --color-destructive-foreground: #ffffff;
   /* Success feedback (resend confirmations, positive inline notices). Added
@@ -41,7 +47,7 @@
   --color-success-border: #86efac;
   --color-border: #e2e8f0;
   --color-input: #e2e8f0;
-  --color-ring: #1860c3;
+  --color-ring: #0b66c2;
   /* Remaining slate ramp used throughout the app. Named by role so the dark
      overrides below can invert them coherently instead of each call site
      picking a literal shade. */
@@ -70,11 +76,16 @@
   /* Hover and pressed states for solid primary controls. Before these existed,
      button hovers used seven near-identical dark blues (#09519b, #1452a8,
      #1558a6, #0d4fa8, #0f4c9c, #0f4288, #073f78) for the same semantic state. */
-  --color-primary-hover: #1656b8;
-  --color-primary-active: #09519b;
+  --color-primary-hover: color-mix(in srgb, var(--color-primary) 85%, black);
+  --color-primary-active: color-mix(in srgb, var(--color-primary) 70%, black);
   /* Destructive hover, for the confirm/retry buttons that had their own #b91c1c. */
   --color-destructive-hover: #b91c1c;
-  --radius: 0.75rem;
+  /* feedback 2026-08-28: "each component... sharing 8px radius... make this
+     consistent". This token isn't wired into Tailwind's `rounded-*` scale
+     (no `--radius-lg`/`-sm`/etc. mapping exists), so `rounded-lg` already
+     resolves to Tailwind's own 0.5rem/8px default — set to match so this
+     variable documents the real value instead of a stale, unused 12px. */
+  --radius: 0.5rem;
 }
 
 @keyframes mhn-spin {
@@ -123,7 +134,8 @@
   width: 100%;
   max-width: 1040px;
   background-color: var(--color-background);
-  border-radius: 28px;
+  border-radius: 8px;
+
   padding: 1.25rem;
   box-shadow: none;
   border: none;
@@ -328,7 +340,7 @@
 .btn-submit {
   width: 100%;
   height: 50px;
-  background-color: #1d61d1;
+  background-color: var(--color-primary);
   color: var(--color-background);
   font-weight: 600;
   font-size: 16px;
@@ -551,7 +563,8 @@
   width: 100%;
   max-width: 1040px;
   background-color: var(--color-background);
-  border-radius: 28px;
+  border-radius: 8px;
+
   padding: 1.25rem;
   box-shadow: none;
   border: none;
@@ -724,7 +737,8 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 16px;
+  border-radius: 8px;
+
   padding: 14px 18px;
   display: flex;
   align-items: center;
@@ -868,7 +882,8 @@
   height: 50px;
   padding: 0 1rem;
   border: 1px solid #D9D9D9;
-  border-radius: 10px;
+  border-radius: 8px;
+
   font-size: 15px;
   color: #333333;
   background-color: var(--color-background);
@@ -902,7 +917,8 @@
   color: var(--color-background);
   font-weight: 600;
   font-size: 18px;
-  border-radius: 10px;
+  border-radius: 8px;
+
   border: none;
   cursor: pointer;
   transition: all 0.15s ease-in-out;
@@ -927,7 +943,8 @@
   color: #333333;
   font-weight: 600;
   font-size: 16px;
-  border-radius: 10px;
+  border-radius: 8px;
+
   border: 1px solid #E0E0E0;
   cursor: pointer;
   transition: all 0.15s ease-in-out;
@@ -983,7 +1000,8 @@
   gap: 8px;
   background: rgba(0, 0, 0, 0.75);
   padding: 6px 12px;
-  border-radius: 20px;
+  border-radius: 8px;
+
   backdrop-filter: blur(8px);
 }
 
@@ -992,7 +1010,8 @@
   color: var(--color-background);
   border: none;
   padding: 4px 12px;
-  border-radius: 12px;
+  border-radius: 8px;
+
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -1011,7 +1030,8 @@
   width: 100%;
   max-width: 820px;
   background-color: var(--color-background);
-  border-radius: 28px;
+  border-radius: 8px;
+
   padding: 2.5rem 2rem;
   box-shadow: none;
   border: none;
@@ -1115,7 +1135,8 @@
   color: var(--color-background);
   font-weight: 600;
   font-size: 18px;
-  border-radius: 10px;
+  border-radius: 8px;
+
   border: none;
   cursor: pointer;
   transition: all 0.15s ease-in-out;
@@ -1152,7 +1173,8 @@
   flex: 1;
   background-color: var(--color-background);
   border: 1px solid #E0E0E0;
-  border-radius: 14px;
+  border-radius: 8px;
+
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
@@ -1414,7 +1436,8 @@
   right: 0;
   width: 270px;
   background-color: var(--color-popover);
-  border-radius: 16px;
+  border-radius: 8px;
+
   border: 1px solid var(--color-border);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
   padding: 12px;
@@ -1431,7 +1454,8 @@
   justify-content: space-between;
   /* Figma (1418:8871): px-12 py-9, not py-10. */
   padding: 9px 12px;
-  border-radius: 10px;
+  border-radius: 8px;
+
   border: none;
   background: transparent;
   color: var(--color-popover-foreground);
@@ -1498,7 +1522,8 @@
 .mhn-dropdown-family-box {
   background-color: var(--color-accent);
   border: 1px solid color-mix(in srgb, var(--color-primary) 12%, var(--color-border));
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
@@ -1695,21 +1720,40 @@
 /* --- 3. Main Content Grid Layout (left nav column moved to .mhn-sidebar,
    the app shell's own fixed column — see the sidebar-nav section below) --- */
 .mhn-home-main-layout {
-  max-width: 1180px;
-  width: 100%;
-  margin: 24px auto;
-  /* Figma (1398:3904, "Home-For You"): sidebar 300 + gap 48 + feed 470 +
-     gap 48 + right column 300 = 1166, the exact width of its 3-column
-     wrapper — both gaps are 48px (feedback 2026-08-28: "exactly match the
-     spacing between 3 components"). At this component's own max-width
-     (1180) inside `.mhn-app-content` (1200 wide once `.mhn-app-shell` hits
-     its 1440px cap), the auto left/right margin from centering is 10px
-     each side — 38px of left padding (not 24) on top of that 10px
-     auto-margin reaches the full 48px gap to the sidebar. */
-  padding: 0 24px 0 38px;
+  /* Shared Home/Profile desktop composition from Figma: ~520px content,
+     64px gutter, 300px discovery rail. The outer width includes the
+     existing 24px horizontal insets on both sides: 24 + 520 + 64 + 300 + 24 = 932. */
+  max-width: 932px;
+  /* `width: 100%` here would resolve against the container's full width
+     with no allowance for the fixed 48px `margin-left` below — percentage
+     widths ignore an element's own margins, so `48px + 100%` would
+     overflow the container by exactly 48px once the container drops
+     below 932+48=980px. `calc(100% - 48px)` bakes the gutter into the
+     width itself instead. */
+  width: calc(100% - 48px);
+  /* Fixed `margin-left: 48px` + no room left inside `.mhn-app-shell` for
+     an `auto` right margin to distribute (see that class's comment: the
+     shell is sized via `width: fit-content` to exactly sidebar + this
+     48px gutter + this grid, so there's nothing leftover in between) is
+     what keeps region 2 (sidebar-to-card) small and constant while
+     region 1 (before the sidebar) and region 3 (after the card, i.e. the
+     shell's own outer margin on each side) end up equal automatically —
+     feedback 2026-08-30, screenshot with 1/2/3 boxes: "keep spacing 1
+     and 3 equal and reduce spacing from 2". Plain `margin: 0 auto` (no
+     fixed gutter) was tried in between and got the *outer* shell margins
+     equal but left region 2 itself large and unequal to region 3 (see
+     `.mhn-app-shell`'s comment for the full back-and-forth). */
+  margin: 0 auto 0 48px;
+  /* Figma (1398:3904, "Home-For You") uses the same content and discovery
+     tracks as Profile. Keep this one rule authoritative for both routes.
+     Was `24px 24px 24px 38px` (asymmetric, left carrying the nav gutter);
+     that gutter now lives in the margin above — feedback 2026-08-28:
+     "maintain equal left and right padding" (Figma node 1983:16793 uses
+     the same 24px inset on every button/card edge). */
+  padding: 50px 24px 24px 24px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 48px;
+  grid-template-columns: minmax(0, 520px) minmax(0, 300px);
+  gap: 64px;
   align-items: start;
   box-sizing: border-box;
 }
@@ -1722,13 +1766,38 @@
   min-width: 0;
 }
 
+/* Shared page-shell spacing — feedback 2026-08-29: "I Like the padding you
+   did in the [Home] page but other tabs didn't have same padding... this
+   will be our standard base area". Every other route (Events, Groups,
+   Teams, Notifications, Saved, Explore, ...) had its own hand-copied
+   Tailwind width/margin/padding string instead of sharing one recipe. This
+   class is the same mechanics `.mhn-home-main-layout` uses — fixed 48px
+   nav gutter via `calc()`'d width (feedback 2026-08-30: "keep spacing 1
+   and 3 equal and reduce spacing from 2" — see the comment on
+   `.mhn-app-shell` for why a fixed gutter + `width: fit-content` on the
+   shell is what makes that hold, and the one-page-content-width-varies
+   tradeoff that comes with it), 50/24/24/24 padding, same mobile
+   collapse — with no `display`/grid opinion; pair it with whatever
+   internal layout (flex column, grid, ...) the page needs, and set only
+   `max-width` per page for its own content-width choice. */
+.mhn-page-container {
+  width: calc(100% - 48px);
+  margin: 0 auto 0 48px;
+  padding: 50px 24px 24px 24px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .mhn-page-container {
+    width: 100%;
+    margin: 16px auto;
+    padding: 0 16px;
+  }
+}
+
 @media (max-width: 1120px) {
   .mhn-home-main-layout {
     grid-template-columns: 1fr;
-  }
-
-  .mhn-layout-col-right {
-    display: none;
   }
 }
 
@@ -1749,7 +1818,8 @@
 
 .mhn-profile-summary-card {
   background-color: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   border: 1px solid var(--color-border);
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
@@ -1904,11 +1974,12 @@
 .mhn-btn-post {
   width: 100%;
   height: 44px;
-  background-color: #1d61d8;
+  background-color: var(--color-primary);
   color: var(--color-background);
   font-size: 15px;
   font-weight: 700;
-  border-radius: 24px;
+  border-radius: 8px;
+
   border: none;
   cursor: pointer;
   transition: all 0.15s ease-in-out;
@@ -1941,7 +2012,8 @@
 
 .mhn-create-post-modal {
   background: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   width: 100%;
   max-width: 520px;
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.15);
@@ -2071,7 +2143,8 @@
   margin-top: 4px;
   background: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   padding: 6px;
   z-index: 10;
@@ -2161,7 +2234,8 @@
 .mhn-audience-footer-btn {
   width: 100%;
   padding: 12px;
-  border-radius: 10px;
+  border-radius: 8px;
+
   border: none;
   background-color: #0091ff;
   color: var(--color-background);
@@ -2200,7 +2274,8 @@
   width: 100%;
   min-height: 80px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 12px 14px;
   font-size: 13px;
   color: var(--color-foreground);
@@ -2249,7 +2324,7 @@
   padding: 10px 24px;
   border-radius: 8px;
   border: none;
-  background: #0091ff;
+  background: var(--color-primary);
   color: var(--color-background);
   font-size: 13px;
   font-weight: 600;
@@ -2299,7 +2374,8 @@
   position: relative;
   margin-top: 8px;
   margin-bottom: 12px;
-  border-radius: 12px;
+  border-radius: 8px;
+
   overflow: hidden;
   max-height: 240px;
 }
@@ -2308,7 +2384,8 @@
   width: 100%;
   max-height: 240px;
   object-fit: cover;
-  border-radius: 12px;
+  border-radius: 8px;
+
 }
 
 .mhn-modal-remove-img-btn {
@@ -2388,7 +2465,8 @@
 .mhn-modal-submit-btn {
   width: 100%;
   height: 44px;
-  border-radius: 12px;
+  border-radius: 8px;
+
   border: none;
   font-size: 15px;
   font-weight: 700;
@@ -2437,7 +2515,7 @@
 
 .mhn-feed-search-input {
   width: 100%;
-  height: 38px;
+  height: 40px;
   padding: 0 14px 0 40px;
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
@@ -2672,14 +2750,14 @@
 }
 
 .mhn-post-content {
-  padding: 0 20px 14px 20px;
+  padding: 0 0 14px;
 }
 
 .mhn-post-text {
   font-size: 14px;
   color: #000000;
   line-height: 20px;
-  margin: 0;
+  margin: 0 20px;
   font-weight: 600;
 }
 
@@ -2690,7 +2768,7 @@
   font-size: 14px;
   cursor: pointer;
   padding: 0;
-  margin-top: 4px;
+  margin: 4px 20px 0;
 }
 
 .mhn-post-more-btn:hover {
@@ -2848,8 +2926,21 @@
 .mhn-layout-col-right {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 22px;
   width: 100%;
+  height: auto;
+  align-self: start;
+  justify-content: flex-start;
+  overflow: visible;
+}
+
+/* This must follow the base right-column declaration above. The previous
+   breakpoint lived earlier in the stylesheet, so the later `display:flex`
+   won the cascade and kept the 300px rail visible on tablet/mobile. */
+@media (max-width: 1120px) {
+  .mhn-layout-col-right {
+    display: none;
+  }
 }
 
 /* Search Bar Widget */
@@ -2897,7 +2988,8 @@
 /* Shared Sidebar Card Styling */
 .mhn-sidebar-card {
   background-color: var(--color-background);
-  border-radius: 6px;
+  border-radius: 8px;
+
   border: 1px solid #8C8C8C33;
   padding: 18px 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
@@ -2942,7 +3034,8 @@
 
 .mhn-match-card-item {
   border: 1px solid var(--color-secondary);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 12px 14px;
   background-color: var(--color-background);
   display: flex;
@@ -3008,7 +3101,8 @@
 
 .mhn-event-card-item {
   border: 1px solid var(--color-secondary);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 12px 14px;
   background-color: var(--color-background);
   display: flex;
@@ -3019,7 +3113,8 @@
 .mhn-event-date-box {
   width: 54px;
   height: 58px;
-  border-radius: 10px;
+  border-radius: 8px;
+
   background-color: #102a4e;
   color: var(--color-background);
   display: flex;
@@ -3069,7 +3164,8 @@
 .mhn-invite-grow-card {
   background: var(--color-accent-surface);
   border: 1px solid #d0e2ff;
-  border-radius: 16px;
+  border-radius: 8px;
+
   padding: 20px;
   display: flex;
   align-items: center;
@@ -3109,7 +3205,8 @@
   color: var(--color-background);
   font-size: 14px;
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: 8px;
+
   border: none;
   cursor: pointer;
   display: flex;
@@ -3186,22 +3283,21 @@
   flex-direction: column;
 }
 
+/* Width/margin/padding now come from `.mhn-page-container` (feedback
+   2026-08-29: "make sure each tab shares same padding") — this rule keeps
+   only what's specific to this page: its content-width choice and its
+   internal grid. */
 .mhn-network-main-layout {
   max-width: 1380px;
-  width: 100%;
-  margin: 24px auto;
-  padding: 0 24px;
   display: grid;
   grid-template-columns: 270px 1fr;
   gap: 24px;
   align-items: start;
-  box-sizing: border-box;
 }
 
 @media (max-width: 900px) {
   .mhn-network-main-layout {
     grid-template-columns: 1fr;
-    padding: 0 16px;
   }
 }
 
@@ -3492,7 +3588,8 @@
   padding: 0 16px 0 42px;
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: 8px;
+
   font-size: 14px;
   color: var(--color-foreground);
   outline: none;
@@ -3555,7 +3652,8 @@
 .mhn-group-card {
   background: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -3632,7 +3730,8 @@
   color: var(--color-auth-action);
   font-size: 13px;
   font-weight: 600;
-  border-radius: 20px;
+  border-radius: 8px;
+
   cursor: pointer;
   transition: all 0.15s ease;
   display: flex;
@@ -3666,7 +3765,8 @@
 .mhn-group-member-card {
   background: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 16px;
+  border-radius: 8px;
+
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -3733,7 +3833,8 @@
   color: var(--color-background);
   font-size: 14px;
   font-weight: 700;
-  border-radius: 24px;
+  border-radius: 8px;
+
   border: none;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -3758,7 +3859,8 @@
 .mhn-group-hero-card {
   background: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 16px;
+  border-radius: 8px;
+
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
 }
@@ -3814,7 +3916,8 @@
   color: var(--color-neutral-700);
   font-size: 13px;
   font-weight: 600;
-  border-radius: 18px;
+  border-radius: 8px;
+
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -3835,7 +3938,8 @@
   color: var(--color-background);
   font-size: 13px;
   font-weight: 600;
-  border-radius: 18px;
+  border-radius: 8px;
+
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -3883,7 +3987,8 @@
   right: 0;
   height: 2px;
   background-color: var(--color-auth-action);
-  border-radius: 2px;
+  border-radius: 8px;
+
 }
 
 .mhn-group-content-columns {
@@ -3908,7 +4013,8 @@
 .mhn-group-widget-box {
   background: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 14px 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
@@ -4011,7 +4117,8 @@
   color: var(--color-auth-action);
   font-size: 12px;
   font-weight: 600;
-  border-radius: 14px;
+  border-radius: 8px;
+
   margin-top: 4px;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -4250,7 +4357,8 @@
 .mhn-suggested-card,
 .mhn-pending-request-card {
   background-color: var(--color-background);
-  border-radius: 4px;
+  border-radius: 8px;
+
   border: 1px solid #8C8C8C33;
   padding: 20px 14px;
   display: flex;
@@ -4370,7 +4478,8 @@
   background-color: var(--color-background);
   color: var(--color-primary);
   border: 1px solid var(--color-primary);
-  border-radius: 6px;
+  border-radius: 8px;
+
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -4455,11 +4564,13 @@
   flex-direction: column;
 }
 
+/* Was `max-width: 1380px; width: 100%; margin: 24px auto; padding: 0 24px;`
+   here — a leftover from before this route adopted `.mhn-page-container` +
+   its own `max-w-[1240px]` Tailwind utility in the JSX; same specificity,
+   later in the cascade, so it was silently winning over both (feedback
+   2026-08-29: "make sure each tab shares same padding"). Nothing else
+   needs the class now that the JSX carries the sizing directly. */
 .mhn-events-main-container {
-  max-width: 1380px;
-  width: 100%;
-  margin: 24px auto;
-  padding: 0 24px;
   box-sizing: border-box;
 }
 
@@ -4556,7 +4667,8 @@
   height: 32px;
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: 8px;
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4573,7 +4685,8 @@
 .mhn-calendar-grid-card {
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   overflow: hidden;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
 }
@@ -4682,7 +4795,8 @@
 .mhn-sidebar-event-card {
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   cursor: pointer;
@@ -4900,7 +5014,8 @@
 
 .mhn-event-grid-card {
   background-color: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   border: 1px solid #eaeef4;
   overflow: hidden;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
@@ -4993,30 +5108,29 @@
   flex-direction: column;
 }
 
+/* Width/margin/padding now come from `.mhn-page-container` (feedback
+   2026-08-29: "make sure each tab shares same padding") — this rule keeps
+   only what's specific to this page: its content-width choice and its
+   internal grid. */
 .mhn-messaging-main-container {
   max-width: 1380px;
-  width: 100%;
-  margin: 24px auto;
-  padding: 0 24px;
   display: grid;
   grid-template-columns: 340px 1fr;
   gap: 24px;
   align-items: start;
-  box-sizing: border-box;
 }
 
 @media (max-width: 900px) {
   .mhn-messaging-main-container {
     grid-template-columns: 1fr;
-    padding: 0 16px;
-    margin: 16px auto;
   }
 }
 
 /* Chats Sidebar Card */
 .mhn-chat-sidebar-card {
   background-color: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   border: 1px solid #eaeef4;
   padding: 18px 16px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
@@ -5151,7 +5265,8 @@
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: 8px;
+
   cursor: pointer;
   transition: background-color 0.15s ease;
   position: relative;
@@ -5214,7 +5329,8 @@
 /* Conversation Window Card */
 .mhn-chat-conversation-card {
   background-color: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   border: 1px solid #eaeef4;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
   display: flex;
@@ -5582,11 +5698,11 @@
   flex-direction: column;
 }
 
+/* Was `max-width: 1380px... margin: 0 auto; padding: 0;` here — same
+   leftover-legacy-rule issue as `.mhn-events-main-container` above
+   (feedback 2026-08-29: "make sure each tab shares same padding"); sizing
+   now lives on `.mhn-page-container` + the JSX's own `max-w-[1240px]`. */
 .mhn-notifications-main-container {
-  max-width: 1240px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 0;
   box-sizing: border-box;
 }
 
@@ -5601,7 +5717,8 @@
   width: 100%;
   max-width: 720px;
   background-color: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   border: 1px solid #eaeef4;
   padding: 24px 28px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
@@ -5685,7 +5802,8 @@
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
-  border-radius: 12px;
+  border-radius: 8px;
+
   cursor: pointer;
   transition: background-color 0.15s ease;
   position: relative;
@@ -5760,7 +5878,7 @@
    ========================================================================== */
 
 .mhn-profile-page-root {
-  min-height: 100vh;
+  min-height: 100%;
   width: 100%;
   background-color: #f3f5f8;
   color: var(--color-foreground-strong);
@@ -5791,7 +5909,8 @@
 .mhn-profile-hero-card {
   width: 100%;
   background-color: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   border: 1px solid #eaeef4;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
   overflow: hidden;
@@ -5828,28 +5947,30 @@
   background-color: var(--color-surface-subtle);
 }
 
-.mhn-profile-header-content {
-  padding: 0 28px 20px 28px;
+/* Figma (1642:9236, "new profile screen" pass 2026-08-28): the identity
+   row no longer overlaps the cover banner — avatar sits inline at 102px,
+   with a plain 32px top / 22px side padding. */
+.mhn-profile-identity-row {
+  padding: 32px 22px 16px 22px;
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   gap: 24px;
   position: relative;
+  box-sizing: border-box;
 }
 
 @media (max-width: 768px) {
-  .mhn-profile-header-content {
+  .mhn-profile-identity-row {
     flex-direction: column;
+    align-items: flex-start;
     gap: 12px;
   }
 }
 
 .mhn-profile-avatar-outer {
   position: relative;
-  margin-top: -76px;
-  margin-bottom: 0;
   flex-shrink: 0;
-  z-index: 2;
 }
 
 .mhn-avatar-edit-badge {
@@ -5885,16 +6006,15 @@
 
 .mhn-profile-avatar-inner {
   position: relative;
-  width: 156px;
-  height: 156px;
+  width: 102px;
+  height: 102px;
   border-radius: 50%;
-  border: 4px solid var(--color-primary);
+  border: 1px solid var(--color-border);
   background-color: var(--color-background);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
 }
 
 .mhn-profile-hero-avatar-img {
@@ -5903,46 +6023,34 @@
   object-fit: cover;
 }
 
-.mhn-profile-meta-and-actions {
+.mhn-profile-identity-text {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
   flex: 1;
-  margin-top: 10px;
-  width: 100%;
-  min-width: 0;
-}
-
-.mhn-profile-top-info-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
   width: 100%;
   min-width: 0;
 }
 
 .mhn-profile-hero-name {
-  font-size: 24px;
-  font-weight: 800;
+  font-size: 20px;
+  font-weight: 700;
   color: var(--color-foreground);
   margin: 0;
-  line-height: 1.2;
+  line-height: 1.3;
+  letter-spacing: 0.07px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
   min-width: 0;
-  flex: 1;
 }
 
 .mhn-profile-hero-stats {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
   font-size: 14px;
-  color: var(--color-foreground-muted);
-  margin-top: 2px;
 }
 
 .mhn-profile-hero-stats strong {
@@ -5950,11 +6058,16 @@
   font-weight: 700;
 }
 
+.mhn-profile-hero-stats span {
+  color: color-mix(in srgb, var(--color-foreground) 70%, transparent);
+  font-weight: 500;
+}
+
 .mhn-profile-hero-role {
   font-size: 14px;
-  font-weight: 600;
-  color: var(--color-foreground);
-  margin: 2px 0 0 0;
+  font-weight: 400;
+  color: color-mix(in srgb, var(--color-foreground) 90%, transparent);
+  margin: 0;
   word-break: break-word;
   overflow-wrap: anywhere;
   max-width: 100%;
@@ -5964,44 +6077,97 @@
   font-size: 14px;
   color: var(--color-foreground-muted);
   font-weight: 400;
-  margin-top: 2px;
+  margin: 0 22px 8px;
   display: block;
   text-align: left;
   word-break: break-word;
   overflow-wrap: anywhere;
-  max-width: 100%;
 }
 
-.mhn-profile-action-buttons {
+/* AGE / DOB / HEIGHT / WEIGHT / POSITION / SHOOTS — Figma: 3-col × 2-row
+   grid, 6px gaps, each cell a dark pill; feedback 2026-08-28 attached the
+   full Post/Media/Stats/Events/Career screens and asked to match exactly. */
+.mhn-profile-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  height: 118px;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.mhn-profile-stat-cell {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+  justify-content: center;
+  gap: 8px;
+  background-color: #070e1b;
+  border: 1px solid #1b2330;
+  border-radius: 8px;
+
+  padding: 12px 11px;
+  box-sizing: border-box;
+}
+
+.mhn-profile-stat-label {
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 15px;
+}
+
+.mhn-profile-stat-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 15px;
+  text-align: center;
+}
+
+.mhn-profile-action-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding: 24px;
+  box-sizing: border-box;
 }
 
 .mhn-btn-share-profile {
-  height: 38px;
-  padding: 0 18px;
-  background-color: var(--color-background);
-  color: var(--color-auth-action);
-  border: 1.5px solid var(--color-auth-action);
+  flex: 1;
+  height: auto;
+  padding: 8px 12px;
+  background-color: transparent;
+  color: #439cf7;
+  border: 1px solid #439cf7;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease;
 }
 
-.share-profile-text {
-  color: var(--color-auth-action);
-  font-size: 14px;
-  font-weight: 600;
+.mhn-btn-share-profile:hover {
+  background-color: color-mix(in srgb, #439cf7 12%, transparent);
 }
 
-.edit-profile-text {
-  color: var(--color-background);
+.mhn-btn-edit-profile {
+  flex: 1;
+  height: auto;
+  padding: 8px 12px;
+  background-color: #439cf7;
+  color: #fdfdfd;
+  border: none;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.mhn-btn-edit-profile:hover {
+  background-color: color-mix(in srgb, #439cf7 85%, black);
 }
 
 .edit2-icon {
@@ -6009,49 +6175,30 @@
   width: 32px;
 }
 
-.mhn-btn-share-profile:hover {
-  background-color: var(--color-accent-surface);
-}
-
-.mhn-btn-edit-profile {
-  height: 38px;
-  padding: 0 18px;
-  background-color: var(--color-auth-action);
-  color: var(--color-background);
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-  box-shadow: 0 2px 6px rgba(11, 102, 194, 0.2);
-}
-
-.mhn-btn-edit-profile:hover {
-  background-color: var(--color-primary-hover);
-}
-
-/* Profile Content Navigation Tabs Bar */
+/* Profile Content Navigation Tabs Bar — Figma: equal-width tabs, active tab
+   gets a 3px white underline, inactive text is #8e8e8e. */
 .mhn-profile-tabs-bar {
   display: flex;
-  align-items: center;
-  border-top: 1px solid var(--color-secondary);
-  padding: 0 28px;
-  background-color: var(--color-background);
+  align-items: stretch;
+  gap: 4px;
+  height: 45px;
+  border-top: 1px solid #1b2330;
+  justify-content: center;
 }
 
 .mhn-profile-tab-btn {
   position: relative;
   flex: 1;
-  padding: 14px 0;
+  padding: 0 20px;
   background: transparent;
   border: none;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-muted-foreground);
+  border-bottom: 2px solid transparent;
+  font-size: 16px;
+  font-weight: 500;
+  color: #8e8e8e;
   cursor: pointer;
   text-align: center;
-  transition: color 0.15s ease;
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
 
 .mhn-profile-tab-btn:hover {
@@ -6060,24 +6207,16 @@
 
 .mhn-profile-tab-active {
   color: var(--color-foreground);
-  font-weight: 700;
-}
-
-.mhn-profile-tab-indicator {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background-color: var(--color-foreground);
-  border-radius: 3px 3px 0 0;
+  font-weight: 500;
+  border-bottom: 3px solid var(--color-foreground);
 }
 
 /* Tab Content Card */
 .mhn-profile-tab-content-card {
   width: 100%;
   background-color: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   border: 1px solid #eaeef4;
   padding: 48px 24px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
@@ -6233,7 +6372,8 @@
 .mhn-about-input-box {
   width: 100%;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 12px 16px;
   font-size: 14px;
   color: var(--color-foreground);
@@ -6278,7 +6418,8 @@
 .mhn-about-select-box {
   width: 100%;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 12px 42px 12px 16px;
   font-size: 14px;
   color: var(--color-foreground);
@@ -6409,7 +6550,8 @@
 .otp-digit-input {
   width: 48px;
   height: 56px;
-  border-radius: 12px;
+  border-radius: 8px;
+
   border: 1px solid #e5e7eb;
   text-align: center;
   font-size: 20px;
@@ -6494,7 +6636,8 @@
 .mhn-profile-tab-content-card-full {
   width: 100%;
   background-color: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   border: 1px solid #eaeef4;
   padding: 24px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
@@ -6546,7 +6689,8 @@
 .mhn-stats-select {
   height: 40px;
   padding: 0 36px 0 16px;
-  border-radius: 10px;
+  border-radius: 8px;
+
   border: 1px solid var(--color-border);
   background-color: var(--color-background);
   color: var(--color-foreground);
@@ -6573,7 +6717,8 @@
   padding: 16px 22px;
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
@@ -6634,7 +6779,8 @@
 .mhn-percentile-card {
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 18px 20px;
   display: flex;
   flex-direction: column;
@@ -6713,7 +6859,8 @@
 .mhn-stats-section-card {
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 20px 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   position: relative;
@@ -6874,7 +7021,8 @@
   background-color: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(4px);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: 8px;
+
   padding: 16px 12px;
   display: flex;
   flex-direction: column;
@@ -7021,7 +7169,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-radius: 12px;
+  border-radius: 8px;
+
   border: 1px solid var(--color-secondary);
   background-color: var(--color-background);
   transition: background-color 0.15s ease;
@@ -7087,7 +7236,8 @@
 .mhn-posts-container-card {
   width: 100%;
   background-color: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   border: 1px solid #eaeef4;
   padding: 24px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
@@ -7114,7 +7264,8 @@
   background-color: var(--color-background);
   color: var(--color-auth-action);
   border: 1px solid var(--color-auth-action);
-  border-radius: 6px;
+  border-radius: 8px;
+
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -7143,7 +7294,8 @@
 .mhn-post-figma-card {
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -7285,26 +7437,16 @@
   transform: translateY(-50%) scale(1.05);
 }
 
-/* Bottom Show All Section */
-.mhn-posts-show-all-divider {
-  margin-top: 24px;
-  border-top: 1px solid var(--color-secondary);
-  padding-top: 16px;
-  text-align: center;
-}
-
-.mhn-btn-show-all {
-  background: transparent;
-  border: none;
-  color: var(--color-foreground-subtle);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: color 0.15s ease;
-}
-
-.mhn-btn-show-all:hover {
-  color: var(--color-foreground);
+/* On-scroll pagination sentinel — see `use-infinite-scroll-sentinel.ts`.
+   Replaces a static, non-functional "Show All" button that used to sit
+   here (feedback 2026-08-28: "make sure where we will have list we have to
+   add pagination and on scroll fetch"). */
+.mhn-posts-load-more-sentinel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  margin-top: 16px;
 }
 
 /* ==========================================================================
@@ -7321,19 +7463,10 @@
   flex-direction: column;
 }
 
+/* Width/margin/padding now come from `.mhn-page-container` (feedback
+   2026-08-29: "make sure each tab shares same padding"). */
 .mhn-event-detail-main {
   max-width: 960px;
-  width: 100%;
-  margin: 24px auto;
-  padding: 0 24px;
-  box-sizing: border-box;
-}
-
-@media (max-width: 768px) {
-  .mhn-event-detail-main {
-    padding: 0 16px;
-    margin: 16px auto;
-  }
 }
 
 /* Title Bar */
@@ -7547,7 +7680,8 @@
 .mhn-location-date-card {
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -7667,7 +7801,8 @@
   align-items: center;
   gap: 12px;
   padding: 12px 18px;
-  border-radius: 10px;
+  border-radius: 8px;
+
   background-color: var(--color-background);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--color-border);
@@ -7735,7 +7870,8 @@
   font-size: 12px;
   font-weight: 600;
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: 8px;
+
   border: none;
   cursor: pointer;
   white-space: nowrap;
@@ -8054,7 +8190,8 @@
 .mhn-empty-state-card {
   background-color: var(--color-background);
   border: 1px dashed var(--color-border-strong);
-  border-radius: 16px;
+  border-radius: 8px;
+
   padding: 36px 24px;
   display: flex;
   flex-direction: column;
@@ -8135,10 +8272,10 @@
   width: 100%;
 }
 
+/* Width/margin/padding now come from `.mhn-page-container` (feedback
+   2026-08-29: "make sure each tab shares same padding"). */
 .mhn-settings-main-container {
   max-width: 1120px;
-  margin: 0 auto;
-  padding: 24px 16px 40px 16px;
 }
 
 .mhn-settings-top-bar {
@@ -8187,7 +8324,8 @@
   display: flex;
   gap: 24px;
   background-color: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   border: 1px solid var(--color-border);
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
@@ -8248,7 +8386,8 @@
   justify-content: space-between;
   padding: 16px 20px;
   background-color: var(--color-surface-subtle);
-  border-radius: 12px;
+  border-radius: 8px;
+
   border: 1px solid var(--color-secondary);
 }
 
@@ -8376,7 +8515,8 @@
 .mhn-blocked-user-card {
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 20px 16px 16px 16px;
   display: flex;
   flex-direction: column;
@@ -8475,10 +8615,10 @@
   width: 100%;
 }
 
+/* Width/margin/padding now come from `.mhn-page-container` (feedback
+   2026-08-29: "make sure each tab shares same padding"). */
 .mhn-supervision-main-container {
   max-width: 1160px;
-  margin: 0 auto;
-  padding: 24px 16px 40px 16px;
 }
 
 .mhn-supervision-card-wrapper {
@@ -8497,7 +8637,8 @@
   flex-shrink: 0;
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 20px 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   display: flex;
@@ -8588,7 +8729,8 @@
   flex: 1;
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   display: flex;
@@ -8650,7 +8792,8 @@
 
 .mhn-supervision-accordion {
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   overflow: hidden;
   background-color: var(--color-background);
   transition: border-color 0.15s ease;
@@ -8806,7 +8949,8 @@
   padding: 24px;
   background-color: var(--color-background);
   border: 1.5px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: 8px;
+
   cursor: pointer;
   transition: all 0.2s ease-in-out;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
@@ -8928,7 +9072,8 @@
   align-items: center;
   gap: 16px;
   padding: 18px 20px;
-  border-radius: 12px;
+  border-radius: 8px;
+
   border: 1px solid var(--color-border);
   background-color: var(--color-background);
   cursor: pointer;
@@ -9064,7 +9209,8 @@
 .mhn-btn-solid-blue {
   width: 100%;
   height: 44px;
-  border-radius: 10px;
+  border-radius: 8px;
+
   border: none;
   background-color: var(--color-primary);
   color: var(--color-background);
@@ -9081,7 +9227,8 @@
 .mhn-btn-outline {
   width: 100%;
   height: 44px;
-  border-radius: 10px;
+  border-radius: 8px;
+
   border: 1px solid var(--color-border-strong);
   background-color: var(--color-background);
   color: var(--color-foreground-muted);
@@ -9196,7 +9343,8 @@
   align-items: flex-start;
   gap: 12px;
   padding: 14px 16px;
-  border-radius: 10px;
+  border-radius: 8px;
+
   border: 1px solid var(--color-border);
   background-color: var(--color-background);
   cursor: pointer;
@@ -9266,7 +9414,8 @@
 .mhn-supervision-req-card {
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 20px 16px;
   display: flex;
   flex-direction: column;
@@ -9466,7 +9615,8 @@
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  border-radius: 20px;
+  border-radius: 8px;
+
   border: 1px solid var(--color-border);
   background-color: var(--color-background);
   font-size: 13px;
@@ -9477,7 +9627,8 @@
 
 .mhn-logs-table-container {
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   overflow: hidden;
   background-color: var(--color-background);
 }
@@ -9562,7 +9713,8 @@
 
 .mhn-page-btn {
   padding: 6px 14px;
-  border-radius: 6px;
+  border-radius: 8px;
+
   border: 1px solid var(--color-border);
   background-color: var(--color-background);
   color: var(--color-foreground-muted);
@@ -9833,7 +9985,8 @@
   color: var(--color-muted-foreground);
   font-size: 13px;
   background-color: var(--color-surface-subtle);
-  border-radius: 12px;
+  border-radius: 8px;
+
   border: 1px dashed var(--color-border);
 }
 
@@ -9844,7 +9997,8 @@
   color: #0091FF;
   background-color: var(--color-info-surface);
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
+
   cursor: pointer;
 }
 
@@ -9923,7 +10077,8 @@
 .mhn-supervision-code-card {
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
@@ -10005,7 +10160,8 @@
 
 .mhn-modal-card {
   background-color: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 440px;
@@ -10081,7 +10237,8 @@
   letter-spacing: 0.35em;
   text-align: center;
   border: 2px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: 8px;
+
   color: var(--color-foreground);
   background-color: var(--color-surface-subtle);
   outline: none;
@@ -10115,7 +10272,8 @@
   padding: 10px 18px;
   background-color: var(--color-secondary);
   color: var(--color-foreground-muted);
-  border-radius: 10px;
+  border-radius: 8px;
+
   border: none;
   font-weight: 600;
   font-size: 14px;
@@ -10131,7 +10289,8 @@
   padding: 10px 20px;
   background-color: var(--color-auth-action);
   color: var(--color-background);
-  border-radius: 10px;
+  border-radius: 8px;
+
   border: none;
   font-weight: 700;
   font-size: 14px;
@@ -10280,7 +10439,8 @@
   width: 100%;
   max-width: 1040px;
   background-color: var(--color-background);
-  border-radius: 28px;
+  border-radius: 8px;
+
   overflow: hidden;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   display: flex;
@@ -10330,7 +10490,8 @@
 
 .mhn-parent-hero-feature-card {
   background-color: rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 14px 16px;
   margin-bottom: 14px;
   display: flex;
@@ -10505,7 +10666,8 @@ img.secure {
 .mhn-parent-visibility-card {
   width: 100%;
   padding: 11px 14px;
-  border-radius: 12px;
+  border-radius: 8px;
+
   border: 1.5px solid var(--color-border);
   background-color: var(--color-background);
   display: flex;
@@ -10723,7 +10885,8 @@ img.secure {
 
 .mhn-parent-visibility-card {
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: 8px;
+
   padding: 12px 14px;
   background-color: var(--color-background);
   display: flex;
@@ -10883,7 +11046,8 @@ img.secure {
 /* Delete Career Modal Centralized Styles */
 .mhn-delete-modal-card {
   background-color: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   width: 100%;
   max-width: 420px;
   padding: 24px;
@@ -11170,7 +11334,8 @@ img.secure {
   justify-content: center;
   padding: 48px 24px;
   background-color: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   border: 1px solid var(--color-border);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   text-align: center;
@@ -11233,7 +11398,8 @@ img.secure {
   justify-content: center;
   padding: 48px 24px;
   background-color: var(--color-destructive-surface);
-  border-radius: 16px;
+  border-radius: 8px;
+
   border: 1px solid var(--color-destructive-border);
   text-align: center;
   max-width: 540px;
@@ -11325,7 +11491,8 @@ img.secure {
 
 .mhn-server-down-modal {
   background-color: var(--color-background);
-  border-radius: 24px;
+  border-radius: 8px;
+
   padding: 44px 36px;
   max-width: 520px;
   width: 100%;
@@ -11389,7 +11556,8 @@ img.secure {
   font-weight: 700;
   font-size: 15px;
   padding: 14px 36px;
-  border-radius: 12px;
+  border-radius: 8px;
+
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -11988,7 +12156,8 @@ img.secure {
   min-width: 148px;
   background-color: #0a1a31;
   border: 1px solid #1d2432;
-  border-radius: 10px;
+  border-radius: 8px;
+
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
@@ -12022,7 +12191,8 @@ img.secure {
   width: 100%;
   max-width: 520px;
   background-color: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   padding: 24px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
 }
@@ -12052,7 +12222,8 @@ img.secure {
 .mhn-edit-post-textarea {
   width: 100%;
   padding: 12px;
-  border-radius: 10px;
+  border-radius: 8px;
+
   border: 1px solid var(--color-border-strong);
   font-size: 14px;
   resize: vertical;
@@ -12115,7 +12286,8 @@ img.secure {
 .mhn-empty-state-card {
   background-color: var(--color-background);
   border: 1px dashed var(--color-border-strong);
-  border-radius: 16px;
+  border-radius: 8px;
+
   padding: 32px 24px;
   display: flex;
   flex-direction: column;
@@ -12329,7 +12501,8 @@ img.secure {
 .mhn-connection-member-card {
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 20px 16px;
   display: flex;
   flex-direction: column;
@@ -12866,7 +13039,8 @@ img.secure {
 /* Edit Profile Modal Centralized Styles */
 .mhn-edit-profile-dialog-card {
   background-color: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   width: 100%;
   max-width: 740px;
   max-height: 90vh;
@@ -12919,7 +13093,8 @@ img.secure {
 
 .mhn-edit-profile-system-banner {
   background-color: var(--color-secondary);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 16px;
   margin-bottom: 24px;
   display: grid;
@@ -13138,7 +13313,8 @@ img.secure {
 
 .mhn-discard-modal-card {
   background-color: var(--color-background);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 24px;
   max-width: 400px;
   width: 100%;
@@ -13162,7 +13338,8 @@ img.secure {
 .mhn-btn-keep-editing {
   background-color: var(--color-secondary);
   border: 1px solid var(--color-border-strong);
-  border-radius: 6px;
+  border-radius: 8px;
+
   padding: 8px 16px;
   font-size: 14px;
   font-weight: 600;
@@ -13173,7 +13350,8 @@ img.secure {
 .mhn-btn-discard-confirm {
   background-color: var(--color-destructive);
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
+
   padding: 8px 16px;
   font-size: 14px;
   font-weight: 600;
@@ -13376,10 +13554,10 @@ img.secure {
   background-color: var(--color-surface-subtle);
 }
 
+/* Width/margin/padding now come from `.mhn-page-container` (feedback
+   2026-08-29: "make sure each tab shares same padding"). */
 .mhn-help-main-layout {
   max-width: 1080px;
-  margin: 0 auto;
-  padding: 32px 16px 64px;
 }
 
 .mhn-help-hero-banner {
@@ -13437,7 +13615,8 @@ img.secure {
 .mhn-help-search-input {
   width: 100%;
   height: 52px;
-  border-radius: 12px;
+  border-radius: 8px;
+
   border: 1.5px solid var(--color-border-strong);
   padding-left: 50px;
   padding-right: 20px;
@@ -13478,7 +13657,8 @@ img.secure {
 
 .mhn-help-section-card {
   background-color: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   border: 1px solid var(--color-border);
   padding: 32px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
@@ -13486,7 +13666,8 @@ img.secure {
 }
 
 .mhn-faq-card-item {
-  border-radius: 12px;
+  border-radius: 8px;
+
   overflow: hidden;
   transition: all 0.2s ease;
 }
@@ -13547,7 +13728,8 @@ img.secure {
 
 .mhn-ticket-file-dropzone {
   border: 1.5px dashed var(--color-border-strong);
-  border-radius: 10px;
+  border-radius: 8px;
+
   padding: 20px;
   text-align: center;
   cursor: pointer;
@@ -13579,7 +13761,8 @@ img.secure {
 
 .mhn-support-contact-card {
   background-color: var(--color-background);
-  border-radius: 14px;
+  border-radius: 8px;
+
   border: 1px solid var(--color-border);
   padding: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
@@ -13798,7 +13981,8 @@ img.secure {
 .mhn-add-team-card-form {
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
+
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -13850,7 +14034,8 @@ img.secure {
   padding: 24px;
   text-align: center;
   background-color: var(--color-surface-subtle);
-  border-radius: 10px;
+  border-radius: 8px;
+
   color: var(--color-muted-foreground);
   font-size: 14px;
 }
@@ -13859,7 +14044,8 @@ img.secure {
   padding: 32px 16px;
   text-align: center;
   background-color: var(--color-surface-subtle);
-  border-radius: 10px;
+  border-radius: 8px;
+
   border: 1px dashed var(--color-border-strong);
 }
 
@@ -13877,7 +14063,8 @@ img.secure {
 .mhn-career-item-card {
   background-color: var(--color-background);
   border: 1px solid var(--color-secondary);
-  border-radius: 10px;
+  border-radius: 8px;
+
   padding: 16px;
   display: flex;
   align-items: flex-start;
@@ -13994,7 +14181,8 @@ img.secure {
   align-items: center;
   text-align: center;
   padding: 24px 20px 20px;
-  border-radius: 16px;
+  border-radius: 8px;
+
   background: var(--color-background);
   border: 1px solid var(--color-border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
@@ -14098,7 +14286,8 @@ img.secure {
 .mhn-req-subject-preview-box {
   width: 100%;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: 8px;
+
   background-color: var(--color-surface-subtle);
   border: 1px solid var(--color-border);
   margin-bottom: 14px;
@@ -14181,13 +14370,21 @@ img.secure {
 
 .mhn-crop-modal-card {
   background-color: var(--color-background);
-  border-radius: 16px;
+  border-radius: 8px;
+
   padding: 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  max-width: 92vw;
+  /* Was `max-width: 92vw` — at any real viewport that's far past the
+     320px crop viewport's own needs and overrides `.mhn-modal-card`'s
+     440px cap (same specificity, later in the cascade), so this one
+     shared crop dialog rendered nearly full-screen everywhere it's used
+     (avatar and cover, hero card and Edit Profile alike) — feedback
+     2026-08-28: "this popup should be small like we have profile popup".
+     `min()` still keeps it from overflowing a narrow mobile viewport. */
+  max-width: min(92vw, 400px);
 }
 
 .mhn-crop-modal-title {
@@ -14242,9 +14439,30 @@ img.secure {
 
 .mhn-crop-modal-actions {
   display: flex;
+  flex-direction: column;
   gap: 12px;
   width: 100%;
-  justify-content: flex-end;
+}
+
+/* Figma (2203:43222) "Back" button, reused as this modal's Cancel — feedback
+   2026-08-29: full-width, outline in the bright auth blue, 8px radius,
+   18px/28px label. `variant="outline"` on this `Button` has no styling of
+   its own to fight (`.mhn-ui-button--outline` isn't defined anywhere), so
+   this is the only rule doing the work. */
+.mhn-crop-modal-back-btn {
+  width: 100%;
+  border: 1px solid var(--color-auth-action-bright);
+  border-radius: 8px;
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--color-auth-action-bright);
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 400;
+}
+
+.mhn-crop-modal-back-btn:hover {
+  background: color-mix(in srgb, var(--color-auth-action-bright) 10%, transparent);
 }
 
 .mhn-spin-auto {
@@ -14266,7 +14484,7 @@ img.secure {
   --color-card-foreground: #f4f7fb;
   --color-popover: #0b1a31;
   --color-popover-foreground: #f4f7fb;
-  --color-primary: #168bff;
+  --color-primary: #0b66c2;
   --color-primary-foreground: #ffffff;
   --color-secondary: #0d1d35;
   --color-secondary-foreground: #dce7f5;
@@ -14276,7 +14494,7 @@ img.secure {
   --color-accent-foreground: #69b4ff;
   --color-border: #18304e;
   --color-input: #18304e;
-  --color-ring: #168bff;
+  --color-ring: #0b66c2;
   --color-auth-surface: #010a1b;
   --color-auth-field: #0a0e1c;
   --color-auth-stroke: #1b2330;
@@ -14285,8 +14503,8 @@ img.secure {
   --color-auth-action: #0b66c2;
   --color-auth-action-bright: #439cf7;
   --color-auth-selected: #0a172d;
-  --color-primary-hover: #3aa0ff;
-  --color-primary-active: #1d7fd8;
+  --color-primary-hover: color-mix(in srgb, var(--color-primary) 80%, white);
+  --color-primary-active: color-mix(in srgb, var(--color-primary) 65%, white);
   --color-destructive-hover: #fca5a5;
   /* Success feedback, dark. The surface is derived by the consuming rule via
      color-mix against --color-secondary, so only the ink/edge values move here. */
@@ -14744,17 +14962,17 @@ img.secure {
   --color-card-foreground: #0f172a;
   --color-popover: #ffffff;
   --color-popover-foreground: #0f172a;
-  --color-primary: #1860c3;
+  --color-primary: #0b66c2;
   --color-primary-foreground: #ffffff;
   --color-secondary: #f1f5f9;
   --color-secondary-foreground: #0f172a;
   --color-muted: #f1f5f9;
   --color-muted-foreground: #64748b;
   --color-accent: #eff6ff;
-  --color-accent-foreground: #1860c3;
+  --color-accent-foreground: #0b66c2;
   --color-border: #e2e8f0;
   --color-input: #e2e8f0;
-  --color-ring: #1860c3;
+  --color-ring: #0b66c2;
 }
 
 .mhn-app-shell {
@@ -14770,20 +14988,43 @@ img.secure {
    gap between the sidebar and the feed grew (screenshot 2026-08-27). Figma
    doesn't dock the nav to the edge either — its whole 3-column block (nav
    + feed + right) sits inset with equal left/right margins in the full
-   frame (nav starts at x=137 of a 1440-wide frame, not x=0). Capping and
-   centering the *whole shell* — sidebar included — reproduces that: the
-   gap between the sidebar and the feed stays constant (from
-   `.mhn-home-main-layout`'s own small residual auto-margin) and any extra
-   width on a big monitor goes to equal outer margins on both sides instead.
-   No breakpoint needed — `max-width` is simply inert below 1440px, so this
-   doesn't change anything on a MacBook 14" (~1440-1512px) or smaller. */
+   frame (nav starts at x=137 of a 1440-wide frame, not x=0).
+
+   Two different approaches were tried here and both had a real problem:
+   - A *fixed* `max-width` + `flex: 1` content column (each page centering
+     its own content inside that stable-width column via `margin: auto`)
+     kept the sidebar's on-screen position identical across every route,
+     but left a small gap before the sidebar and a much bigger one after
+     the content — the two "equal margins" were actually the *outer* shell
+     margins, not the visible gap right next to the sidebar vs. the one
+     after the card (feedback 2026-08-30, screenshot with 1/2/3 boxes:
+     region 1 — before the sidebar — needed to grow to match region 3 —
+     after the content — while region 2 — sidebar-to-card — needed to
+     shrink back down).
+   - `width: fit-content` (sizing the shell to exactly sidebar + a small
+     fixed gutter + that page's own content, then centering *that*) is
+     what actually produces region 1 == region 3 with a small region 2:
+     with no slack left inside the shell, the fixed gutter next to the
+     sidebar stays small and the *only* leftover space is the outer
+     margin, split evenly by `margin: auto`. Its known tradeoff: different
+     pages want different content widths (Home ~932px vs. Messaging
+     1380px), so the shell's fit-content size — and the sidebar's
+     resulting on-screen position — does vary by a few hundred px between
+     very differently-sized pages (feedback 2026-08-29 caught this
+     specifically navigating Home → Messaging). Between routes that share
+     roughly the same content width (Home/Profile, or the
+     `.mhn-page-container` group at 1080–1240px) the shift is small to
+     none; it's most visible against Messaging/My Network's wider
+     two-pane layouts specifically. */
 .mhn-app-shell {
+  width: fit-content;
   max-width: 1440px;
   margin: 0 auto;
 }
 
 .mhn-app-content {
-  flex: 1;
+  flex: 0 1 auto;
+  width: fit-content;
   min-width: 0;
 }
 
@@ -14824,8 +15065,8 @@ img.secure {
 }
 
 .mhn-sidebar-logo-img {
-  height: auto;
-  max-width: 140px;
+  width: 140px;
+  height: 38px;
 }
 
 .mhn-sidebar-nav {
@@ -14946,7 +15187,8 @@ img.secure {
   right: auto;
   width: 240px;
   padding: 14px;
-  border-radius: 18px;
+  border-radius: 8px;
+
   background: var(--color-popover);
   border-color: color-mix(in srgb, var(--color-border) 86%, transparent);
   box-shadow: 0 18px 48px rgb(0 0 0 / 22%);
@@ -15035,6 +15277,11 @@ img.secure {
   gap: 14px;
 }
 
+.mhn-who-to-follow-card,
+.mhn-who-to-follow-card .mhn-who-to-follow-list {
+  gap: 19px;
+}
+
 .mhn-who-to-follow-row {
   display: flex;
   align-items: center;
@@ -15065,7 +15312,8 @@ img.secure {
 .mhn-who-to-follow-btn {
   flex-shrink: 0;
   padding: 6px 14px;
-  border-radius: 6px;
+  border-radius: 8px;
+
   border: 1px solid var(--color-primary);
   background: transparent;
   color: var(--color-primary);
@@ -15252,7 +15500,8 @@ img.secure {
   min-height: 80px;
   padding: 16px;
   border: 1px solid var(--color-auth-stroke);
-  border-radius: 4px;
+  border-radius: 8px;
+
   background: transparent;
   color: var(--color-foreground);
   text-align: left;
@@ -15329,7 +15578,8 @@ img.secure {
   width: 48px;
   height: 56px;
   border: 2px solid var(--color-auth-stroke);
-  border-radius: 12px;
+  border-radius: 8px;
+
   background: var(--color-auth-field);
   color: var(--color-foreground);
 }
@@ -15413,7 +15663,8 @@ img.secure {
   margin: 32px 0;
   padding: 16px;
   border: 1px solid var(--color-auth-stroke);
-  border-radius: 14px;
+  border-radius: 8px;
+
   background: transparent;
   color: var(--color-foreground);
   font-size: 12px;
@@ -15794,11 +16045,13 @@ img.secure {
 
   .illustration-panel {
     height: 190px;
-    border-radius: 16px;
+    border-radius: 8px;
+
   }
 
   .illustration-img {
-    border-radius: 16px;
+    border-radius: 8px;
+
   }
 
   .onboarding-title,

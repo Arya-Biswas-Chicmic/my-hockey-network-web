@@ -2,6 +2,16 @@ import { resolveMediaUrl, resolveCoverUrl } from '@/utils/mediaUtils';
 import type { CareerEntry } from '@my-hockey-network/core';
 import type { AuthMeResponse } from '@my-hockey-network/contracts';
 
+export function calculateAge(dateOfBirth: string, today = new Date()): number | null {
+  const dobDate = new Date(dateOfBirth);
+  if (!dateOfBirth || Number.isNaN(dobDate.getTime())) return null;
+  let years = today.getFullYear() - dobDate.getFullYear();
+  const hasHadBirthday = today.getMonth() > dobDate.getMonth()
+    || (today.getMonth() === dobDate.getMonth() && today.getDate() >= dobDate.getDate());
+  if (!hasHadBirthday) years -= 1;
+  return years;
+}
+
 /**
  * Pure data-transformation layer for the Profile screen: normalizes the raw
  * `/profiles/:id` response (or the authenticated user's own profile, when
@@ -15,29 +25,36 @@ export function useProfileViewModel(
   user: AuthMeResponse | null | undefined,
   isOwnProfile: boolean,
   careerEntries: CareerEntry[] | null,
+  fallbackProfile: Record<string, unknown>,
 ) {
   const targetResObj = (targetProfileRes || {}) as Record<string, unknown>;
   const targetDataObj = (targetResObj.data || {}) as Record<string, unknown>;
   const rawTargetProfile = (targetResObj.profile || targetDataObj.profile || targetProfileRes) as Record<string, unknown> | null;
   const activeProfile = rawTargetProfile?.id || rawTargetProfile?.profileId || rawTargetProfile?.displayName ? rawTargetProfile : (isOwnProfile ? user?.profile : null);
   const rawProf = (activeProfile || {}) as Record<string, unknown>;
+  const valueFor = (...keys: string[]): unknown => {
+    for (const source of [rawProf, fallbackProfile]) {
+      for (const key of keys) {
+        const value = source[key];
+        if (value !== null && value !== undefined && value !== '') return value;
+      }
+    }
+    return undefined;
+  };
+  const resolvedProfile = { ...fallbackProfile, ...rawProf };
 
-  const liveName = String(rawProf.displayName || rawProf.name || 'Player');
-  const rawAvatar = rawProf.avatarUrl as string | undefined;
+  const liveName = String(valueFor('displayName', 'name') || 'Player');
+  const rawAvatar = valueFor('avatarUrl') as string | undefined;
   const liveAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.webp');
   const rawCover =
-    (rawProf.coverImageUrl as string | undefined) ||
-    (rawProf.coverUrl as string | undefined) ||
-    (rawProf.coverImageKey as string | undefined);
+    (valueFor('coverImageUrl', 'coverUrl', 'coverImageKey') as string | undefined);
   const liveCoverImage = resolveCoverUrl(rawCover, '/cover.webp');
   const rawRole =
-    rawProf.primaryRole ||
-    rawProf.profileType ||
-    rawProf.type ||
+    valueFor('primaryRole', 'profileType', 'type') ||
     (isOwnProfile ? user?.primaryRole : null) ||
-    rawProf.roleTag ||
+    valueFor('roleTag') ||
     'PLAYER';
-  const liveRole = String(rawProf.roleTag || rawRole);
+  const liveRole = String(valueFor('roleTag') || rawRole);
   const liveRoleUpper = String(rawRole).toUpperCase();
   const isPlayer = liveRoleUpper === 'PLAYER' || liveRoleUpper.includes('PLAYER') || liveRoleUpper.includes('CENTER') || liveRoleUpper.includes('WING') || liveRoleUpper.includes('DEFENSE') || liveRoleUpper.includes('GOALTENDER');
   const isCoach = liveRoleUpper === 'COACH' || liveRoleUpper.includes('COACH');
@@ -45,17 +62,33 @@ export function useProfileViewModel(
   const canHaveCareer = isPlayer || isCoach || (!isParent && liveRoleUpper !== 'PARENT');
 
   // Live profile field fallbacks
-  const liveBio = String(rawProf.bio || '');
-  const livePosition = String(rawProf.position || 'Center');
-  const liveJersey = rawProf.jerseyNumber !== null && rawProf.jerseyNumber !== undefined ? String(rawProf.jerseyNumber) : '';
-  const liveCity = String(rawProf.city || rawProf.location || '');
+  const liveBio = String(valueFor('bio') || '');
+  const livePosition = String(valueFor('position') || 'Center');
+  const jerseyNumber = valueFor('jerseyNumber');
+  const liveJersey = jerseyNumber !== null && jerseyNumber !== undefined ? String(jerseyNumber) : '';
+  const liveCity = String(valueFor('city', 'location') || '');
   const rawDob =
-    rawProf.dateOfBirth ||
-    rawProf.dob ||
-    rawProf.date_of_birth ||
+    valueFor('dateOfBirth', 'dob', 'date_of_birth') ||
     (isOwnProfile ? user?.profile?.dateOfBirth : null);
   const liveDob = rawDob ? (String(rawDob).includes('T') ? String(rawDob).split('T')[0] : String(rawDob)) : '';
-  const liveGender = String(rawProf.genderCategory || rawProf.gender || 'Male');
+  const liveGender = String(valueFor('genderCategory', 'gender') || 'Male');
+
+  // `ProfileReadResponse.profile.age` is computed server-side when present;
+  // otherwise derive it client-side from DOB rather than showing nothing.
+  const rawAge = valueFor('age');
+  const liveAge = typeof rawAge === 'number' ? rawAge : calculateAge(liveDob);
+
+  // `shootsCatches` only exists on the authenticated user's own
+  // `AuthMeResponse.profile` shape today — `ProfileReadResponse` (returned
+  // by `getProfile` for viewing someone else) has no such field, so this is
+  // honestly `null` rather than guessed when viewing another profile.
+  const liveShoots = isOwnProfile
+    ? (valueFor('shootsCatches') as string | undefined) || (user?.profile?.shootsCatches as string | undefined) || null
+    : (valueFor('shootsCatches') as string | undefined) || null;
+  const liveHeight = String(valueFor('height') || '—');
+  const liveWeight = String(valueFor('weight') || '—');
+  const followers = Number(valueFor('followers') || 0);
+  const following = Number(valueFor('following') || 0);
 
   const roleSubtitle = (() => {
     const targetProf = targetProfileRes as { profile?: { career?: { teamName?: string }[]; careerEntries?: { teamName?: string }[]; teamName?: string } } | null;
@@ -66,7 +99,8 @@ export function useProfileViewModel(
         targetProf?.profile?.teamName ||
         user?.profile?.career?.[0]?.teamName ||
         user?.profile?.careerEntries?.[0]?.teamName ||
-        user?.profile?.teamName || null);
+        user?.profile?.teamName ||
+        valueFor('teamName') || null);
     if (isParent) return liveRole;
     const teamString = primaryTeam ? ` • @${primaryTeam}` : '';
     if (isPlayer) {
@@ -85,7 +119,7 @@ export function useProfileViewModel(
   })();
 
   return {
-    activeProfile,
+    activeProfile: resolvedProfile,
     liveName,
     liveAvatar,
     liveCoverImage,
@@ -100,6 +134,12 @@ export function useProfileViewModel(
     liveCity,
     liveDob,
     liveGender,
+    liveAge,
+    liveShoots,
+    liveHeight,
+    liveWeight,
+    followers,
+    following,
     roleSubtitle,
   };
 }

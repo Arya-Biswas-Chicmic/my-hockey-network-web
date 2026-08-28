@@ -39,6 +39,11 @@ page → feature/container → feature component → existing platform primitive
 - `GuardianApprovalModal` and `RequestSentCard`: reused in onboarding and dedicated auth pages.
 - Feature components exist for events, feed/posts, messaging, network/groups, notifications, profile,
   and onboarding. Search the appropriate feature folder before adding another card/modal/view.
+- Profile specifically reuses `RightSidebar` + `SearchWidget` + `WhoToFollowWidget`, `FeedPostCard`,
+  the compact typed variant of `EventCard`, the atomic RHF field adapters, and
+  `ProfileCareerSection`. Temporary API-gap fixtures are centralized under
+  `apps/web/src/demo-data/profile/*.json`; feature components must never grow their own inline dummy
+  arrays. Remove the relevant fixture as soon as its real query is wired.
 - `features/onboarding/OnboardingModal` owns the responsive Figma auth/onboarding shell and selects
   the appropriate shared illustration and feature step. Auth forms remain under `features/auth`;
   role presentation remains under `features/onboarding`; parent-specific compositions remain under

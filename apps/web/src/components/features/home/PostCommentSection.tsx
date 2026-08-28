@@ -15,6 +15,7 @@ import { commentFormSchema, type CommentFormValues } from '@my-hockey-network/va
 import { QueryKeys } from '@my-hockey-network/contracts';
 import { Form } from '@/components/ui/form';
 import { FallbackImage } from '@/components/ui/fallback-image';
+import { formatCompactNumber } from '@/helpers/formatters';
 
 export type CommentItem = PostCommentItem;
 
@@ -189,7 +190,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
                         }`}
                       >
                         <Heart size={11} className={likeInfo.isLiked ? 'fill-rose-500 text-rose-500' : ''} />
-                        <span>{likeInfo.count > 0 ? likeInfo.count : 'Like'}</span>
+                        <span>{likeInfo.count > 0 ? formatCompactNumber(likeInfo.count) : 'Like'}</span>
                       </Button>
 
                       <Button

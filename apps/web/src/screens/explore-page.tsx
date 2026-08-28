@@ -84,7 +84,7 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         />
       )}
 
-      <main className="mhn-explore-main-container max-w-[1180px] w-full my-6 mx-auto px-6 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 items-start box-border lg:my-0 lg:min-h-0 lg:flex-1 lg:py-6">
+      <main className="mhn-explore-main-container mhn-page-container max-w-[1180px] grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 items-start lg:min-h-0 lg:flex-1">
         {/* CENTER FEED COLUMN */}
         <section className="mhn-explore-center-col flex flex-col gap-5 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-2 pb-16">
           {/* Search Bar Input Widget */}

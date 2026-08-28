@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { QueryKeys } from '@my-hockey-network/contracts';
 import { FeedPostProps } from '@/components/features/home/FeedPostCard';
-import { FeedService } from '@/services/feed.service';
+import { FeedService, FIGMA_MOCK_POSTS } from '@/services/feed.service';
+import { useInfiniteListQuery } from '@/query/use-infinite-query';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useAuth } from '@/hooks/use-auth';
 import { getApiErrorStatus, extractErrorMessage } from '@/utils/toast';
@@ -13,128 +15,108 @@ export interface FeedErrorState {
   statusCode?: number;
 }
 
+/**
+ * Home feed: cursor-paginated via `useInfiniteListQuery` (feedback
+ * 2026-08-28: "home page feed scroll is not working" — the feed only ever
+ * showed its first page; `Feed`'s sentinel now calls `fetchNextPage` the
+ * same way `ProfilePostsTab` already does for `getUserPosts`).
+ */
 export function useHomeFeed() {
   const { user, loadAuthMe } = useAuth();
   const [activeFeedTab, setActiveFeedTab] = useState<HomeFeedTab>(HomeFeedTab.FOR_YOU);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, SEARCH_DEBOUNCE_MS);
   const [sortBy, setSortBy] = useState<'RECENT' | 'POPULAR' | 'TRENDING'>('RECENT');
-  
-  const [isPageLoading, setIsPageLoading] = useState<boolean>(true);
-  const [isFeedRefreshing, setIsFeedRefreshing] = useState<boolean>(false);
-  const [feedPosts, setFeedPosts] = useState<FeedPostProps[]>([]);
-  const [feedError, setFeedError] = useState<FeedErrorState | null>(null);
 
-  const hasLoadedFeedRef = useRef<boolean>(false);
-
-  const fetchFeedPosts = useCallback(
-    async (
-      currentProfileId?: string,
-      queryTerm?: string,
-      sortTerm: 'RECENT' | 'POPULAR' | 'TRENDING' = 'RECENT',
-      silent: boolean = false
-    ) => {
-      if (!silent) {
-        setIsFeedRefreshing(true);
-      }
-      try {
-        const q = queryTerm !== undefined ? queryTerm : searchQuery;
-        const s = sortTerm !== undefined ? sortTerm : sortBy;
-        const targetProfileId = currentProfileId || user?.profile?.id || user?.id;
-
-        const posts = await FeedService.fetchFeed({
-          profileId: targetProfileId,
-          query: q,
-          sortBy: s,
-        });
-
-        setFeedPosts(posts);
-        setFeedError(null);
-      } catch (err: unknown) {
-        if (!silent) {
-          setFeedPosts([]);
-          setFeedError({
-            isServerError: true,
-            statusCode: getApiErrorStatus(err) || 502,
-            message: extractErrorMessage(
-              err,
-              'Something went wrong while connecting to the server. Please try again.'
-            ),
-          });
-        }
-      } finally {
-        if (!silent) {
-          setIsFeedRefreshing(false);
-        }
-      }
-    },
-    [searchQuery, sortBy, user]
-  );
-
+  // Resolve the signed-in profile once before the first feed fetch — mirrors
+  // the previous ref-guarded effect, just without owning the fetch itself.
+  const [isAuthResolved, setIsAuthResolved] = useState(false);
   useEffect(() => {
-    if (hasLoadedFeedRef.current) return;
-    hasLoadedFeedRef.current = true;
-
-    async function loadInitialData() {
-      setIsPageLoading(true);
-      try {
-        let currentUser = user;
-        if (!currentUser) {
-          currentUser = await loadAuthMe();
+    let cancelled = false;
+    (async () => {
+      if (!user) {
+        try {
+          await loadAuthMe();
+        } catch (err: unknown) {
+          console.warn('Home Feed auth resolve error:', extractErrorMessage(err));
         }
-        const profileId = currentUser?.profile?.id || currentUser?.id;
-        await fetchFeedPosts(profileId, searchQuery, sortBy);
-      } catch (err: unknown) {
-        console.warn('Home Feed initial load error:', extractErrorMessage(err));
-      } finally {
-        setIsPageLoading(false);
       }
-    }
-
-    loadInitialData();
-  }, [user, loadAuthMe, fetchFeedPosts, searchQuery, sortBy]);
-
-  useEffect(() => {
-    if (!hasLoadedFeedRef.current) return;
-    const profileId = user?.profile?.id || user?.id;
-    fetchFeedPosts(profileId, debouncedSearchQuery, sortBy);
-  }, [debouncedSearchQuery, sortBy, user, fetchFeedPosts]);
-
-  const handleFollowChange = useCallback((targetAuthorKey: string, targetFollowingState: boolean) => {
-    setFeedPosts((prevPosts) =>
-      prevPosts.map((post) => {
-        if ((post.authorId && post.authorId === targetAuthorKey) || post.authorName === targetAuthorKey) {
-          return { ...post, isFollowing: targetFollowingState };
-        }
-        return post;
-      })
-    );
+      if (!cancelled) setIsAuthResolved(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const handlePostDeleteSuccess = useCallback(
-    (deletedId: string) => {
-      setFeedPosts((prev) => prev.filter((p) => p.id !== deletedId));
-      const profileId = user?.profile?.id || user?.id;
-      fetchFeedPosts(profileId, searchQuery, sortBy, true);
-    },
-    [user, searchQuery, sortBy, fetchFeedPosts]
+  const profileId = user?.profile?.id || user?.id;
+
+  const queryKey = useMemo(
+    () => [QueryKeys.FEED_POSTS, profileId ?? 'anon', debouncedSearchQuery, sortBy].join(':'),
+    [profileId, debouncedSearchQuery, sortBy],
   );
 
-  const handlePostUpdateSuccess = useCallback((updatedId: string, newContent: string) => {
-    setFeedPosts((prevPosts) =>
-      prevPosts.map((item) => (item.id === updatedId ? { ...item, content: newContent } : item))
-    );
-  }, []);
+  const feedQuery = useInfiniteListQuery<FeedPostProps>(
+    isAuthResolved ? queryKey : null,
+    isAuthResolved
+      ? (cursor) =>
+          FeedService.fetchFeedPage({
+            profileId,
+            query: debouncedSearchQuery,
+            sortBy,
+            cursor,
+            limit: 10,
+          })
+      : null,
+    { staleTime: 5 * 60 * 1000 },
+  );
 
-  const handleRepostComplete = useCallback(() => {
-    const profileId = user?.profile?.id || user?.id;
-    fetchFeedPosts(profileId, searchQuery, sortBy, true);
-  }, [user, searchQuery, sortBy, fetchFeedPosts]);
+  const feedError: FeedErrorState | null = feedQuery.error
+    ? {
+        isServerError: true,
+        statusCode: getApiErrorStatus(feedQuery.error) || 502,
+        message: extractErrorMessage(
+          feedQuery.error,
+          'Something went wrong while connecting to the server. Please try again.',
+        ),
+      }
+    : null;
 
-  const refreshFeed = useCallback(async () => {
-    const profileId = user?.profile?.id || user?.id;
-    await fetchFeedPosts(profileId, searchQuery, sortBy);
-  }, [user, searchQuery, sortBy, fetchFeedPosts]);
+  // Demo fallback only once the first page has genuinely resolved empty —
+  // never while still loading (that flashed demo content before real posts
+  // arrived, per this session's Profile Posts review finding) and never on
+  // a real fetch error (that's `feedError`'s job, not a fallback's).
+  const feedPosts =
+    !feedQuery.isLoading && !feedError && feedQuery.items.length === 0
+      ? FIGMA_MOCK_POSTS
+      : feedQuery.items;
+
+  const handleFollowChange = (targetAuthorKey: string, targetFollowingState: boolean) => {
+    // Cache-level optimistic update isn't wired for the infinite query yet;
+    // FeedPostCard already reflects the new follow state locally via its
+    // own mutation state, so this is a no-op placeholder kept for prop
+    // compatibility with existing call sites.
+    void targetAuthorKey;
+    void targetFollowingState;
+  };
+
+  const handlePostDeleteSuccess = (_deletedId: string) => {
+    void _deletedId;
+    void feedQuery.refetch();
+  };
+
+  const handlePostUpdateSuccess = (_updatedId: string, _newContent: string) => {
+    void _updatedId;
+    void _newContent;
+    void feedQuery.refetch();
+  };
+
+  const handleRepostComplete = () => {
+    void feedQuery.refetch();
+  };
+
+  const refreshFeed = async () => {
+    await feedQuery.refetch();
+  };
 
   return {
     activeFeedTab,
@@ -144,10 +126,13 @@ export function useHomeFeed() {
     debouncedSearchQuery,
     sortBy,
     setSortBy,
-    isPageLoading,
-    isFeedRefreshing,
+    isPageLoading: !isAuthResolved || (feedQuery.isLoading && feedQuery.items.length === 0),
+    isFeedRefreshing: feedQuery.isLoading,
     feedPosts,
     feedError,
+    hasNextPage: feedQuery.hasNextPage,
+    isFetchingNextPage: feedQuery.isFetchingNextPage,
+    onLoadMore: feedQuery.fetchNextPage,
     handleFollowChange,
     handlePostDeleteSuccess,
     handlePostUpdateSuccess,

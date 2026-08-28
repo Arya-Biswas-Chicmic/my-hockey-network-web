@@ -75,7 +75,7 @@ export const WidgetSkeleton: React.FC = () => {
 };
 
 // Home is a 2-column layout (`.mhn-home-main-layout { grid-template-columns:
-// 1fr 340px }`, see `index.css`) since the left nav column moved into the
+// 470px 300px }`, see `index.css`) since the left nav column moved into the
 // app shell's own `Sidebar.tsx` — this used to also render a
 // `.mhn-layout-col-left`/`ProfileSummarySkeleton` third column left over
 // from that older 3-column design, which no longer has a matching grid

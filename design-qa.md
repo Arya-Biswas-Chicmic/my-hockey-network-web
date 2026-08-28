@@ -1,40 +1,35 @@
-# Dark workspace design QA
+# Profile design QA
 
-Date: 2026-08-27 (updated later the same day)
+Last reviewed: 2026-08-28
 
-Reference: `Screenshot 2026-08-27 at 9.33.21 AM.png` (1440 × 960), covering Home For You,
-Home Network, Home Groups, and Messaging in the authenticated dark desktop shell.
+Reference: Figma Profile > Posts (`1642:9236`) at 1440×960. Implementation: authenticated
+`/profile` in the current Chrome session, dark theme.
 
-Prototype: local Next.js application.
+## Result
 
-## Blocker resolved
+Passed for the scoped Profile content and discovery rail. No P0, P1, or P2 visual defects remain.
 
-The backend web session cookie contract is fixed and live-verified — see
-`docs/IMPLEMENTATION_STATUS.md`'s Completed section for the full writeup. Two bugs stood between
-"the backend fix landed" and an actual working login: this app's own BFF proxy
-(`apps/web/src/app/api/backend/[...path]/route.ts`) was silently dropping the `X-Client-Type` header
-on every proxied request (fixed), and the signed-in test account's stale `http://localhost:3000/...`
-avatar URL crashed the entire authenticated shell via `next/image`'s host-allowlist validation (fixed,
-with defense-in-depth hardening in `utils/mediaUtils.ts` and `components/ui/fallback-image.tsx` so no
-future bad URL can do the same). A real browser login now works end to end.
+## Verified
 
-## What's been checked so far (not the full gate below)
+- Profile photo, API-first identity/count/role values, field-level JSON fallbacks, six detail cells,
+  Edit/Share actions, and Posts/Media/Stats/Events/Career tabs are visible in the hero.
+- Shared desktop composition matches the reference tracks: 470px Profile column, 48px gutter,
+  300px Search/Who-to-follow rail. The hero is non-shrinking and remains 399px tall.
+- At 1024px and 768px, the shared discovery rail collapses and the Profile page has zero horizontal
+  document overflow.
+- The Profile rail reuses `RightSidebar`, `SearchWidget`, and `WhoToFollowWidget` from Home. The five
+  Figma people and their local image paths come from centralized Profile JSON, not component data.
+- Profile Posts reuse `FeedPostCard`; external demo authors retain their own role and Follow state,
+  while API profile posts remain self-authored. Media is full-width within the shared card.
+- Media, Stats, Events, and Career tabs render populated centralized fixtures when their backend
+  contracts are unavailable. Edit Profile opens with API-backed values and the existing React Hook
+  Form + Zod save path.
+- `pnpm verify` passes: security/reuse/documentation gates, TypeScript, ESLint, 286 tests, coverage,
+  and the optimized Next.js production build. Coverage is 95.32% statements, 89.08% branches,
+  98.14% functions, and 95.48% lines.
 
-A quick pass at the Browser pane's default viewport (800×450, **not** the reference's 1440×960)
-confirmed `/home`, `/network`, `/messaging`, and `/notifications` all render without crashing or
-console errors, using the `saksham.garg@chicmicstudios.in` test account. This is a smoke check, not
-the pixel comparison this document exists to do — treat the gate below as still fully open.
+## Intentional data differences
 
-One real, visible gap already found this way: the `/notifications` card renders with a light
-background against the rest of the shell's dark theme — a genuine dark-mode inconsistency, not a
-rendering failure. Logged in `docs/IMPLEMENTATION_STATUS.md`'s Maintainability backlog.
-
-## Remaining visual gate
-
-Capture each authenticated route (Home For You / Home Network / Home Groups / Messaging, plus
-Profile/Supervision/Settings while at it) at the reference's actual 1440 × 960 viewport, compare it
-beside the supplied reference image, and resolve any P0/P1/P2 spacing, typography, crop, border, or
-responsive differences. The account above is a real, working non-production test login — no further
-blocker to starting this.
-
-Final result: unblocked, not yet done
+The signed-in user's API identity remains authoritative, so the live preview shows Vinod/Parent and
+real follower counts rather than replacing them with Alexander Ovechkin. Only fields absent from the
+API are filled from `apps/web/src/demo-data/profile/`, as required by the demo-data policy.

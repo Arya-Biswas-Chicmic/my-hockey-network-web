@@ -129,7 +129,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
           aria-label="User Profile Menu"
         >
           <div className="mhn-sidebar-user-avatar">
-            <FallbackImage src={activeUser.avatar} alt={activeUser.name} fill className="mhn-avatar-img" />
+            <FallbackImage src={activeUser.avatar} alt={activeUser.name} fill sizes="36px" className="mhn-avatar-img" />
           </div>
           <span className="mhn-sidebar-user-name">{activeUser.name}</span>
           <SidebarMoreIcon className="mhn-user-chevron" size={16} aria-hidden={true} />

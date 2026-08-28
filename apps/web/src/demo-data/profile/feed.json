@@ -1,0 +1,26 @@
+[
+  {
+    "id": "demo-profile-feed-1",
+    "body": "First tournament of the season! Let’s go!",
+    "audience": "PUBLIC",
+    "createdAt": "2026-08-26T18:30:00.000Z",
+    "media": [{ "id": "demo-profile-feed-media-1", "url": "/demo/profile/feed-skater.webp" }],
+    "authorProfile": { "id": "demo-team-kc-blueknocks", "displayName": "KC Blueknocks", "avatarUrl": "/kcBlue.webp", "primaryRole": "TEAM", "roleTag": "Official Team", "teamName": "KC Blueknocks" },
+    "likeCount": 12400,
+    "commentCount": 328,
+    "repostCount": 184,
+    "userReaction": null
+  },
+  {
+    "id": "demo-profile-feed-2",
+    "body": "Focused on the next challenge. Great work from everyone at training today.",
+    "audience": "PUBLIC",
+    "createdAt": "2026-08-22T14:10:00.000Z",
+    "media": [{ "id": "demo-profile-feed-media-2", "url": "/demo/profile/feed-faceoff.webp" }],
+    "authorProfile": { "id": "demo-profile-alexander-ovechkin", "displayName": "Alexander Ovechkin", "avatarUrl": "/demo/profile/avatar.webp", "primaryRole": "PLAYER", "position": "LW", "jerseyNumber": 7, "teamName": "HC Bloemendaal" },
+    "likeCount": 8900,
+    "commentCount": 214,
+    "repostCount": 96,
+    "userReaction": null
+  }
+]

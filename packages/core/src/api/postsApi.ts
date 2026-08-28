@@ -158,11 +158,27 @@ export async function getFeed(
   }
 }
 
+export interface GetUserPostsParams {
+  cursor?: string;
+  limit?: number;
+}
+
 /**
  * Fetch Posts authored by a specific user profile (GET /v1/posts?authorProfileId=...)
+ *
+ * Accepts either the old `(authorProfileId, limit, clientType)` positional
+ * form or `(authorProfileId, { cursor, limit }, clientType)` — the object
+ * form is what `ProfilePostsTab`'s infinite scroll uses, mirroring how
+ * `getFeed` already accepts `{ cursor, limit }`.
  */
-export async function getUserPosts(authorProfileId: string, limit = 20, clientType: 'web' | 'mobile' = 'web'): Promise<FeedResponse> {
-  const query = new URLSearchParams({ authorProfileId, limit: String(limit) });
+export async function getUserPosts(
+  authorProfileId: string,
+  limitOrParams: number | GetUserPostsParams = 20,
+  clientType: 'web' | 'mobile' = 'web',
+): Promise<FeedResponse> {
+  const opts: GetUserPostsParams = typeof limitOrParams === 'number' ? { limit: limitOrParams } : limitOrParams;
+  const query = new URLSearchParams({ authorProfileId, limit: String(opts.limit ?? 20) });
+  if (opts.cursor) query.set('cursor', opts.cursor);
   const response = await apiFetch<FeedApiResponse>(`${API_ENDPOINTS.POSTS.BASE}?${query.toString()}`, { method: 'GET' }, clientType);
   return normalizeFeedResponse(response);
 }

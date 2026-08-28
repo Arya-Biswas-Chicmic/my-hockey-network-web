@@ -4,6 +4,52 @@ Last reviewed: 2026-08-28
 
 ## Completed
 
+- Rebuilt Profile against the six supplied Figma nodes (`1642:9236`, `1725:17554`, `1725:20538`,
+  `2004:20941`, `1733:22397`, and `2176:12730`) after re-reading the current branch and correcting
+  the incomplete first pass:
+  - The authenticated page now uses the exact shared Home `mhn-home-main-layout`, `RightSidebar`,
+    `SearchWidget`, and `WhoToFollowWidget`. The one authoritative desktop grid is 470px content,
+    48px gutter, and 300px discovery rail; Home and Profile therefore cannot drift into separate
+    right-panel widths or spacing. The existing Home breakpoint and center-only scrolling behavior
+    apply unchanged.
+  - Fixed the live regression shown in the 2026-08-28 Profile screenshot: the hero was present in
+    the DOM but flexbox shrank its outer card to roughly 2px inside the fixed-height scrolling
+    column, and `overflow-hidden` clipped the photo, identity data, actions, and tabs. The hero is
+    now a non-shrinking 399px section at the desktop reference viewport. The Search and Who-to-follow
+    rail uses the same shared components as Home and measures 300px instead of the prior oversized
+    Profile-specific track. Also corrected the stylesheet cascade so this discovery rail is hidden
+    at the shared `<=1120px` breakpoint as designed; tablet/mobile have no horizontal overflow.
+  - `ProfileHeroCard` no longer renders the old cover-banner layout. It uses the Figma 102px avatar,
+    real name/count/role values, the 3×2 Age/DOB/Height/Weight/Position/Shoots grid, correct
+    Edit-then-Share action order, and Posts/Media/Stats/Events/Career tabs. Missing identity fields,
+    including unsupported Height/Weight, resolve from `profiledata.json` rather than inline values.
+  - Posts reuse `FeedPostCard`, no longer add the obsolete Posts/Create Post header, and page through
+    `getUserPosts({cursor, limit})` using the shared TanStack `useInfiniteListQuery` facade plus an
+    IntersectionObserver sentinel. The callback is stable across renders to avoid reconnecting the
+    observer unnecessarily.
+  - Demo team posts preserve their JSON author role and render the external-author Follow control;
+    they no longer inherit the signed-in profile's role/jersey. Post media now uses the shared
+    full-width card treatment from the Figma feed instead of accumulating nested component padding.
+  - The complete Profile fallback set now lives in `apps/web/src/demo-data/profile/`: profiledata,
+    feed, media, stats, events, teams, and people-you-may-know. Its WebP assets were exported from the
+    supplied Figma screens into `apps/web/public/demo/profile/`; JSON contains every static display
+    record and root-relative asset path. API-backed sections remain API-first and use fixtures only
+    for empty/missing display data; demo mutations stay local and cannot hit backend endpoints.
+  - Events reuse the existing `EventCard`; its new typed `compact` variant and all colors use the
+    semantic theme palette instead of raw hex values. Career reuses
+    `ProfileCareerSection`/`use-profile-career`; empty API career lists use `teams.json`, and editing
+    or deleting those demo entries is local while real entries retain normal service mutations.
+  - Edit Profile now matches the actual `2176:12730` full-field modal (not the earlier, incorrect
+    pencil-accordion interpretation). It retains the existing React Hook Form + Zod save path,
+    atomic field-level helper errors, avatar crop/upload, cover crop/upload, disabled unsupported
+    Height/Weight fields, and one Cancel/Save footer.
+  - Added deterministic tests for date/count presentation, birthday-boundary age calculation, and
+    centralized profile demo-data integrity. Full `pnpm verify` passes: documentation/security/
+    component-reuse gates, TypeScript, ESLint, 286 tests across 41 files, 95.32% statements / 89.08%
+    branches / 98.14% functions / 95.48% lines, and the production Next.js build. Live
+    authenticated browser QA passed with the existing local session: the profile hero, shared right
+    rail, every Profile tab, and the Edit Profile form were exercised in the running app.
+
 - Hoisted the sidebar into `(authenticated)/layout.tsx` so it never unmounts on navigation
   (feedback 2026-08-28: "I don't want mount and remount why we need to do just to show selected
   tab" — a follow-up to the earlier shimmer-only fix, which had explicitly flagged this as the

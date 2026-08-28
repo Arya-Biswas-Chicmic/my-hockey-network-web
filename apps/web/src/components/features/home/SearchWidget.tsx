@@ -17,8 +17,8 @@ export const SearchWidget: React.FC<SearchWidgetProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`mhn-feed-search-wrapper relative flex items-center mb-4 ${className}`}>
-      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} aria-hidden="true" />
+    <div className={`mhn-feed-search-wrapper ${className}`}>
+      <Search className="mhn-feed-search-icon text-muted-foreground" size={16} aria-hidden="true" />
       <Input
         type="text"
         value={value}
@@ -26,12 +26,12 @@ export const SearchWidget: React.FC<SearchWidgetProps> = ({
         onValueChange={(nextValue) => onChange(nextValue)}
         placeholder={placeholder}
         aria-label="Search"
-        className="w-full rounded-xl border border-slate-800/80 bg-slate-900/60 py-2.5 pl-10 pr-9 text-xs text-slate-100 placeholder-slate-400 outline-none transition-colors focus:border-slate-700 focus:bg-slate-900"
+        className="mhn-feed-search-input pr-9 text-foreground placeholder:text-muted-foreground"
       />
       {value && (
         <Button
           onClick={() => onChange('')}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           aria-label="Clear search"
         >
           <X size={14} />

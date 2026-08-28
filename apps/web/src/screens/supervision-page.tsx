@@ -83,7 +83,7 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
 
   return (
     <div className="mhn-supervision-page-root">
-      <main className="mhn-supervision-main-container">
+      <main className="mhn-supervision-main-container mhn-page-container">
         <div className="mhn-supervision-card-wrapper">
           <SupervisionSidebar
             wards={wards.wards}

@@ -1,0 +1,21 @@
+{
+  "id": "demo-profile-alex-ovechkin",
+  "displayName": "Alexander Ovechkin",
+  "avatarUrl": "/demo/profile/avatar.webp",
+  "coverImageUrl": null,
+  "primaryRole": "PLAYER",
+  "roleTag": "Player",
+  "position": "LW",
+  "jerseyNumber": 7,
+  "city": "Bloemendaal, Netherlands",
+  "dateOfBirth": "1995-04-10",
+  "age": 40,
+  "genderCategory": "Male",
+  "shootsCatches": "Right",
+  "height": "6' 2\"",
+  "weight": "236 lb",
+  "bio": "Professional hockey player and team captain.",
+  "followers": 1000000,
+  "following": 268,
+  "teamName": "HC Bloemendaal"
+}

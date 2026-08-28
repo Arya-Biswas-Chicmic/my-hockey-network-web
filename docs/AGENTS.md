@@ -23,6 +23,7 @@ Read these files before implementation:
 14. `docs/THIRD_PARTY_AND_DEPENDENCY_POLICY.md`
 15. `docs/ADMIN_PANEL_ALIGNMENT.md`
 16. `docs/MOBILE_SETUP.md` when mobile setup, navigation, runtime, or build behavior is relevant
+17. `docs/DEMO_DATA_POLICY.md` when a design requires temporary display fixtures or an API is missing
 
 Inspect the relevant existing code before editing. Search for an existing component, hook, API
 operation, contract, validation schema, state transition, token, and helper before creating one.
@@ -108,6 +109,8 @@ operation, contract, validation schema, state transition, token, and helper befo
   browser-facing API cookies or authorization headers outside what the proxy explicitly forwards.
 - Do not add credential-bearing logs, debug cURL output, obfuscated source, or unreviewed generated
   code. All normal npm workflows must retain the obfuscation/security prechecks.
+- Keep temporary display fixtures in the centralized typed `apps/web/src/demo-data/<feature>`
+  structure and follow `docs/DEMO_DATA_POLICY.md`; never scatter dummy arrays through components.
 
 ## Tests, documentation, and completion
 

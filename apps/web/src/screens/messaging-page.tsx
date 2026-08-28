@@ -172,7 +172,7 @@ export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
         )}
 
         {/* Main 2-Column Content Layout */}
-        <main className="mhn-messaging-main-container">
+        <main className="mhn-messaging-main-container mhn-page-container">
           {/* Left Column: Chats List Sidebar */}
           <aside className="mhn-messaging-sidebar-col">
             <ChatSidebar

@@ -16,6 +16,10 @@ Last reviewed: 2026-08-28
 - jsdom integration tests exercise React Hook Form auth, OTP, post, and comment submission plus
   authenticated/role route redirects. Platform/UI tests continue to grow screen-by-screen.
 - Query tests exercise TanStack Query caching, request deduplication, retries, and prefix invalidation.
+- Profile presentation tests cover birthday-boundary age calculation, Figma date/count formatting,
+  and the complete centralized demo-data contract (identity/feed/media/stats/events/teams/people).
+  Profile posts use the TanStack infinite-query facade and scroll sentinel; demo IDs are mutation-
+  isolated, while authenticated browser coverage still requires the gated test account.
 - API-client tests verify credentialed cookie requests, refresh serialization, and storage boundaries.
 - Production smoke tests cover application startup, root-to-sign-in redirect, public SEO output,
   login/session bootstrap, protected-route redirect, one critical authenticated shell route, and
@@ -68,7 +72,7 @@ The enforced minimum is 80% for statements, branches, functions, and lines. Cove
 written to `coverage/` and is not committed.
 
 Latest verified result (2026-08-28): 95.32% statements, 89.08% branches, 98.14% functions, and
-95.48% lines. All 241 tests passed.
+95.48% lines. All 286 tests across 41 files passed; the production Next.js build also passed.
 
 ## Commands
 

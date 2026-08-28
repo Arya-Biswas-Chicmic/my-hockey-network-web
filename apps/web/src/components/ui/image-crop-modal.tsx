@@ -224,11 +224,15 @@ export function ImageCropModal({
         </div>
 
         <div className="mhn-crop-modal-actions">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isExporting}>
-            Cancel
-          </Button>
           <Button type="button" variant="primary" onClick={handleApply} isLoading={isExporting} disabled={!imageEl}>
             Apply
+          </Button>
+          {/* Figma (2203:43222) "Back" button — reused here as Cancel per
+              feedback 2026-08-29: Figma's own crop screen has no way back,
+              but leaving the user with only Apply isn't friendly, so this
+              adds the same outline-blue control below it. */}
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isExporting} className="mhn-crop-modal-back-btn">
+            Cancel
           </Button>
         </div>
     </Modal>

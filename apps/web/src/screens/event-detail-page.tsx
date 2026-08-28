@@ -32,7 +32,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
   return (
     <div className="mhn-event-detail-root">
       {/* Main Centered Content */}
-      <main className="mhn-event-detail-main">
+      <main className="mhn-event-detail-main mhn-page-container">
         {/* Title Bar with Back Arrow */}
         <div className="mhn-event-title-bar">
           <Button

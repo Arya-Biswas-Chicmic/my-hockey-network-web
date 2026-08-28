@@ -28,6 +28,12 @@ export enum ProfileTabEnum {
   POSTS = 'posts',
   MEDIA = 'media',
   STATS = 'stats',
+  EVENTS = 'events',
+  CAREER = 'career',
+  /** @deprecated No longer a top-level tab in the current Figma (node
+   * 1642:9236 onward) — Intro/Details moved into the hero stat grid, Career
+   * became its own tab. Kept only so `ProfileAboutTab.tsx` (now unreferenced
+   * from the page, not deleted) still type-checks. */
   ABOUT = 'about',
   GUARDIAN_REQUESTS = 'guardian-requests',
 }

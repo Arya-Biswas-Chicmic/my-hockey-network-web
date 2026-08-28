@@ -1,0 +1,4 @@
+[
+  { "id": "profile-event-1", "title": "2026 Tim Hortons NHL Heritage Classic", "image": "/demo/profile/event-heritage.webp", "date": "Sunday, Oct 25 · 6:00 PM", "location": "Princess Auto Stadium, Winnipeg, MB", "interestedCount": "1.5k", "goingCount": "37" },
+  { "id": "profile-event-2", "title": "2026 NHL Global Series Finland", "image": "/demo/profile/event-global-series.webp", "date": "Friday, Nov 13 · 7:00 PM", "location": "Nokia Arena, Tampere, Finland", "interestedCount": "824", "goingCount": "29" }
+]

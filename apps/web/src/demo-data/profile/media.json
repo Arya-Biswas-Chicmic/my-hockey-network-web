@@ -1,0 +1,8 @@
+[
+  { "id": "profile-media-1", "src": "/demo/profile/media-1.webp", "alt": "Hockey player portrait in a red jersey" },
+  { "id": "profile-media-2", "src": "/demo/profile/media-2.webp", "alt": "Hockey player skating during a game" },
+  { "id": "profile-media-3", "src": "/demo/profile/media-3.webp", "alt": "Hockey team celebrating together on the ice" },
+  { "id": "profile-media-4", "src": "/demo/profile/media-4.webp", "alt": "Hockey player portrait in game uniform" },
+  { "id": "profile-media-5", "src": "/demo/profile/media-5.webp", "alt": "Player waiting beside the hockey bench" },
+  { "id": "profile-media-6", "src": "/demo/profile/media-6.webp", "alt": "Two hockey players celebrating after a play" }
+]

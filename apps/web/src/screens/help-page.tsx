@@ -193,7 +193,7 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
 
   return (
     <div className="mhn-help-page-container">
-      <main className="mhn-help-main-layout">
+      <main className="mhn-help-main-layout mhn-page-container">
         
         {/* ==================== HERO SEARCH SECTION ==================== */}
         <section className="mhn-help-hero-banner">

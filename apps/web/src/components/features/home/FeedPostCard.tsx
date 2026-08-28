@@ -27,6 +27,7 @@ export interface FeedPostProps {
   isFollowing?: boolean;
   isSelf?: boolean;
   userReaction?: string | null;
+  demoMode?: boolean;
 
   // Repost specific properties
   isRepost?: boolean;
@@ -70,6 +71,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   isSelf = false,
   isSelfRepost = false,
   userReaction = null,
+  demoMode = false,
   onFollowChange,
   onShareSuccess,
   onRepostComplete,
@@ -97,6 +99,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
     commentsCount,
     isSelfRepost,
     userReaction,
+    demoMode,
     requirePermission,
     onFollowChange,
     onShareSuccess,
@@ -138,16 +141,14 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         onReportClick={handleReport}
       />
 
-      <div className="px-4 pb-3">
-        <PostCardContent
-          content={card.postContent}
-          isExpanded={card.isExpanded}
-          onToggleExpand={() => card.setIsExpanded(!card.isExpanded)}
-          postImage={postImage}
-          images={images}
-          eventDateTag={eventDateTag}
-        />
-      </div>
+      <PostCardContent
+        content={card.postContent}
+        isExpanded={card.isExpanded}
+        onToggleExpand={() => card.setIsExpanded(!card.isExpanded)}
+        postImage={postImage}
+        images={images}
+        eventDateTag={eventDateTag}
+      />
 
       <PostCardActions
         postId={id}
@@ -162,6 +163,10 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         showComments={card.showComments}
         onToggleComments={() =>
           assertSupervisionPermission('comment_on_posts', () => {
+            if (demoMode) {
+              showInfoToast('Comments will be available when this preview is connected to the API.');
+              return;
+            }
             if (requirePermission()) {
               card.setShowComments((prev) => !prev);
             }

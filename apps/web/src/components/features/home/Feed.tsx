@@ -2,6 +2,8 @@ import React from 'react';
 import { FeedPostCard, FeedPostProps } from '@/components/features/home/FeedPostCard';
 import { FeedPostSkeleton } from '@/components/features/home/HomeSkeletonLoader';
 import { NoDataFound, ServerDown } from '@/components/common';
+import { Spinner } from '@/components/common/Spinner';
+import { useInfiniteScrollSentinel } from '@/hooks/use-infinite-scroll-sentinel';
 import { HomeFeedTab } from '@/types/home.types';
 import { FeedErrorState } from '@/hooks/useHomeFeed';
 
@@ -11,6 +13,9 @@ export interface FeedProps {
   isLoading: boolean;
   error: FeedErrorState | null;
   searchQuery?: string;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+  onLoadMore?: () => void;
   onRetry?: () => void;
   onOpenCreatePost?: () => void;
   onNavigate?: (screen: string) => void;
@@ -26,6 +31,9 @@ export const Feed: React.FC<FeedProps> = ({
   isLoading,
   error,
   searchQuery = '',
+  hasNextPage = false,
+  isFetchingNextPage = false,
+  onLoadMore,
   onRetry,
   onOpenCreatePost,
   onNavigate,
@@ -34,6 +42,12 @@ export const Feed: React.FC<FeedProps> = ({
   onUpdateSuccess,
   onRepostComplete,
 }) => {
+  const sentinelRef = useInfiniteScrollSentinel({
+    hasNextPage,
+    isFetchingNextPage,
+    onLoadMore: onLoadMore ?? (() => {}),
+  });
+
   if (activeTab !== HomeFeedTab.FOR_YOU) {
     return (
       <NoDataFound
@@ -95,6 +109,12 @@ export const Feed: React.FC<FeedProps> = ({
           onRepostComplete={onRepostComplete}
         />
       ))}
+
+      {hasNextPage ? (
+        <div ref={sentinelRef} className="flex min-h-12 items-center justify-center" aria-label="Loading more posts">
+          {isFetchingNextPage && <Spinner size="sm" />}
+        </div>
+      ) : null}
     </div>
   );
 };

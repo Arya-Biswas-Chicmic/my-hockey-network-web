@@ -1,16 +1,12 @@
+import { useState } from 'react';
 import { useWhoToFollow } from '@/hooks/use-who-to-follow';
 import { FollowSuggestionUser } from '@/types/home.types';
 
-const FALLBACK_SUGGESTIONS: FollowSuggestionUser[] = [
-  { id: 'suggest-1', name: 'Connor McDavid', avatar: '/player.webp' },
-  { id: 'suggest-2', name: 'Sidney Crosby', avatar: '/player.webp' },
-  { id: 'suggest-3', name: 'Alex Ovechkin', avatar: '/player.webp' },
-  { id: 'suggest-4', name: 'Nathan MacKinnon', avatar: '/player.webp' },
-  { id: 'suggest-5', name: 'Auston Matthews', avatar: '/player.webp' },
-];
-
-export function useFollowSuggestions() {
+export function useFollowSuggestions(fallbackSuggestions: FollowSuggestionUser[] = []) {
   const { people, isLoading, followedIds, followingId, handleFollow } = useWhoToFollow();
+  const [followedFallbackIds, setFollowedFallbackIds] = useState<Set<string>>(new Set());
+  const isUsingFallback = people.length === 0 && fallbackSuggestions.length > 0;
+  const visibleFollowedIds = isUsingFallback ? followedFallbackIds : followedIds;
 
   const suggestions: FollowSuggestionUser[] =
     people.length > 0
@@ -18,23 +14,24 @@ export function useFollowSuggestions() {
           id: person.id,
           name: person.name,
           avatar: person.avatar,
-          isFollowing: followedIds.has(person.id),
+          isFollowing: visibleFollowedIds.has(person.id),
         }))
-      : FALLBACK_SUGGESTIONS.map((person) => ({
+      : fallbackSuggestions.map((person) => ({
           ...person,
-          isFollowing: followedIds.has(person.id),
+          isFollowing: visibleFollowedIds.has(person.id),
         }));
 
   return {
     suggestions,
-    isLoading,
-    followedIds,
+    isLoading: isLoading && !isUsingFallback,
+    followedIds: visibleFollowedIds,
     followingId,
-    handleFollow: (user: FollowSuggestionUser) =>
-      handleFollow({
-        id: user.id,
-        name: user.name,
-        avatar: user.avatar,
-      }),
+    handleFollow: (user: FollowSuggestionUser) => {
+      if (isUsingFallback) {
+        setFollowedFallbackIds((current) => new Set(current).add(user.id));
+        return;
+      }
+      return handleFollow({ id: user.id, name: user.name, avatar: user.avatar });
+    },
   };
 }

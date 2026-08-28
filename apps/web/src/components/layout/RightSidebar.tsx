@@ -7,7 +7,7 @@ export interface RightSidebarProps {
 
 export const RightSidebar: React.FC<RightSidebarProps> = ({ children, className = '' }) => {
   return (
-    <aside className={`mhn-layout-col-right lg:h-full lg:overflow-hidden ${className}`}>
+    <aside className={`mhn-layout-col-right ${className}`}>
       {children}
     </aside>
   );

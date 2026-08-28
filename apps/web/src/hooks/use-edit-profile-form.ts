@@ -2,15 +2,13 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { uploadMediaFile } from '@my-hockey-network/core';
 import { resolveMediaUrl } from '@/utils/mediaUtils';
 import type { AuthMeResponse } from '@my-hockey-network/contracts';
 import { QueryKeys } from '@my-hockey-network/contracts';
-import { createFileSchema, editProfileFormSchema, IMAGE_MIME_TYPES, type EditProfileFormValues } from '@my-hockey-network/validation';
+import { editProfileFormSchema, type EditProfileFormValues } from '@my-hockey-network/validation';
 import { globalQueryClient } from '@/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
-import { useImageCrop } from '@/hooks/use-image-crop';
 
 export interface EditProfileFormData extends EditProfileFormValues {
   avatarKey?: string;
@@ -24,16 +22,20 @@ export interface UseEditProfileFormParams {
 }
 
 /**
- * All form/upload/submit logic for `EditProfileModal`: RHF setup, the
- * cropped-avatar upload flow, save/discard state, and re-syncing the form
- * whenever the modal (re)opens or the authenticated user changes. Extracted
- * from `EditProfileModal.tsx`, which now owns only layout.
+ * All form/submit logic for `EditProfileModal`: RHF setup, save/discard
+ * state, and re-syncing the form whenever the modal (re)opens or the
+ * authenticated user changes. Extracted from `EditProfileModal.tsx`, which
+ * now owns only layout. Avatar/cover photo are no longer edited from here —
+ * feedback 2026-08-28: "we are not giving option to change photo or cover
+ * photo so remove that from edit profile popup and user can update photo
+ * from profile icon and pencil or camera like in profile" — both now
+ * upload immediately from `ProfileHeroCard`'s camera badge via
+ * `useProfileImageUploads`, the same as it always did for the avatar —
+ * feedback 2026-08-29: "no cover photo required in user profile" retired
+ * the cover half of that flow entirely, avatar-only stays.
  */
 export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: UseEditProfileFormParams) {
   const { user } = useAuth();
-  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
-  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
-  const { cropImage, cropModal } = useImageCrop();
 
   const extractProfileValues = useCallback(
     (customObj?: Record<string, unknown> | AuthMeResponse | null): EditProfileFormData => {
@@ -76,13 +78,6 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
 
-  const revokeAvatarPreview = useCallback(() => {
-    if (avatarPreviewUrl) {
-      URL.revokeObjectURL(avatarPreviewUrl);
-      setAvatarPreviewUrl(null);
-    }
-  }, [avatarPreviewUrl]);
-
   const form = useForm<EditProfileFormValues>({
     resolver: zodResolver(editProfileFormSchema),
     mode: 'onChange',
@@ -92,21 +87,9 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
 
   const submitProfile = form.handleSubmit(async (values) => {
     setSubmissionError(null);
-    let uploadedAvatarKey: string | undefined;
-
-    if (selectedAvatarFile) {
-      try {
-        const uploadResponse = await uploadMediaFile(selectedAvatarFile, 'AVATAR');
-        uploadedAvatarKey = uploadResponse.storageKey;
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : 'Failed to upload photo to storage. Please try again.';
-        setSubmissionError(message);
-        return;
-      }
-    }
 
     try {
-      const apiResponse = await onSave?.({ ...values, avatarKey: uploadedAvatarKey });
+      const apiResponse = await onSave?.(values);
       let freshData: EditProfileFormData;
 
       if (apiResponse?.profile) {
@@ -120,8 +103,6 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
       void globalQueryClient.invalidateQueries({ queryKey: [QueryKeys.USER_PROFILE] });
       form.reset(freshData);
       setSaveSuccessMsg('Profile updated successfully!');
-      revokeAvatarPreview();
-      setSelectedAvatarFile(null);
       window.setTimeout(() => {
         setSaveSuccessMsg(null);
         onClose();
@@ -132,8 +113,6 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
     }
   });
 
-  useEffect(() => revokeAvatarPreview, [revokeAvatarPreview]);
-
   // Sync form data whenever modal opens or user object updates
   useEffect(() => {
     if (isOpen) {
@@ -142,46 +121,19 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
       setSubmissionError(null);
       setSaveSuccessMsg(null);
       setShowDiscardConfirm(false);
-      setSelectedAvatarFile(null);
-      revokeAvatarPreview();
     }
-  }, [form, isOpen, user, extractProfileValues, revokeAvatarPreview]);
+  }, [form, isOpen, user, extractProfileValues]);
 
   const userEmail = user?.email || '';
   const userPrimaryRole = user?.primaryRole || user?.profile?.type || 'PLAYER';
   const isPlayer = userPrimaryRole.toUpperCase() === 'PLAYER';
 
   const { errors, isSubmitting, isDirty } = form.formState;
-  const isFormDirty = isDirty || !!selectedAvatarFile;
+  const isFormDirty = isDirty;
 
   const handleChange = (field: keyof EditProfileFormValues, value: string) => {
     form.setValue(field, value, { shouldDirty: true, shouldValidate: true });
     setSubmissionError(null);
-  };
-
-  const handleAvatarFileChange = async (files: File[]) => {
-    const file = files[0];
-    if (!file) return;
-    const result = createFileSchema({ acceptedTypes: IMAGE_MIME_TYPES, maxBytes: 10 * 1024 * 1024 }).safeParse(file);
-    if (!result.success) {
-      setSubmissionError(result.error.issues[0]?.message ?? 'Select a JPG, PNG, or WebP photo up to 10 MB.');
-      return;
-    }
-
-    const cropped = await cropImage(file, { shape: 'circle', title: 'Adjust profile photo' });
-    if (!cropped) return;
-
-    setSelectedAvatarFile(cropped);
-    revokeAvatarPreview();
-    const previewUrl = URL.createObjectURL(cropped);
-    setAvatarPreviewUrl(previewUrl);
-    handleChange('avatarUrl', previewUrl);
-  };
-
-  const handleRemoveAvatar = () => {
-    revokeAvatarPreview();
-    setSelectedAvatarFile(null);
-    handleChange('avatarUrl', '/userPlaceholder.webp');
   };
 
   const handleAttemptClose = () => {
@@ -199,7 +151,6 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
     form,
     formData,
     submitProfile,
-    cropModal,
     userEmail,
     userPrimaryRole,
     isPlayer,
@@ -207,8 +158,6 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
     isFormDirty,
     isSaveDisabled,
     handleChange,
-    handleAvatarFileChange,
-    handleRemoveAvatar,
     handleAttemptClose,
     showDiscardConfirm,
     setShowDiscardConfirm,

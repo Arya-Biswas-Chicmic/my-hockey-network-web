@@ -1,0 +1,7 @@
+[
+  { "id": "demo-person-1", "name": "Connor McDavid", "avatar": "/demo/profile/person-1.webp" },
+  { "id": "demo-person-2", "name": "Sidney Crosby", "avatar": "/demo/profile/person-2.webp" },
+  { "id": "demo-person-3", "name": "Alex Ovechkin", "avatar": "/demo/profile/avatar.webp" },
+  { "id": "demo-person-4", "name": "Nathan MacKinnon", "avatar": "/demo/profile/person-3.webp" },
+  { "id": "demo-person-5", "name": "Auston Matthews", "avatar": "/demo/profile/person-4.webp" }
+]

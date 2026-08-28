@@ -16,7 +16,7 @@ import { paths } from '@/constants/paths';
 
 import { getUserPosts, getProfile, type CareerEntry, type PostItem } from '@my-hockey-network/core';
 import { QueryKeys } from '@my-hockey-network/contracts';
-import { useQuery } from '@/query';
+import { useQuery, useInfiniteListQuery } from '@/query';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { useProfileImageUploads } from '@/hooks/use-profile-image-uploads';
 import { useProfileCareer } from '@/hooks/use-profile-career';
@@ -28,8 +28,14 @@ import { ProfileHeroCard } from '@/components/features/profile/ProfileHeroCard';
 import { ProfilePostsTab } from '@/components/features/profile/ProfilePostsTab';
 import { ProfileMediaTab } from '@/components/features/profile/ProfileMediaTab';
 import { ProfileStatsTab } from '@/components/features/profile/ProfileStatsTab';
-import { ProfileAboutTab } from '@/components/features/profile/ProfileAboutTab';
+import { ProfileEventsTab } from '@/components/features/profile/ProfileEventsTab';
+import { ProfileCareerTab } from '@/components/features/profile/ProfileCareerTab';
 import { useShellUiStore } from '@/stores/shell-ui-store';
+import { RightSidebar } from '@/components/layout/RightSidebar';
+import { SearchWidget } from '@/components/features/home/SearchWidget';
+import { WhoToFollowWidget } from '@/components/features/home/WhoToFollowWidget';
+import { profileDemoData } from '@/demo-data/profile';
+import type { CareerFormValues } from '@my-hockey-network/validation';
 
 interface PageProps {
   onNavigate?: (screen: string, extraData?: Record<string, unknown>) => void;
@@ -39,18 +45,15 @@ interface PageProps {
 
 export const ProfilePage: React.FC<PageProps> = ({
   onNavigate,
-  onLogout,
-  initialProfileTab = ProfileTabEnum.ABOUT,
+  initialProfileTab = ProfileTabEnum.POSTS,
 }) => {
   const { user, setUserProfile, loadAuthMe } = useAuth();
   const searchParams = useSearchParams();
   const { permissions, requirePermission } = useFeedPermissions(onNavigate);
+  const profileScrollRef = useRef<HTMLElement>(null);
 
   const {
     cropModal,
-    isUploadingCover,
-    coverUploadMsg,
-    handleCoverFileChange,
     isUploadingAvatar,
     handleAvatarFileChange,
   } = useProfileImageUploads({ setUserProfile, loadAuthMe });
@@ -78,8 +81,13 @@ export const ProfilePage: React.FC<PageProps> = ({
   // editing needs a dedicated, backend-authorized endpoint and must not be inferred from role.
   const canEditProfile = isOwnProfile;
 
+  useEffect(() => {
+    profileScrollRef.current?.scrollTo({ top: 0 });
+  }, [effectiveProfileId]);
+
   const handleProfileTabChange = (tab: ProfileTabEnum) => {
     setActiveProfileTab(tab);
+    profileScrollRef.current?.scrollTo({ top: 0 });
     if (!onNavigate) return;
     if (tab === ProfileTabEnum.GUARDIAN_REQUESTS) {
       onNavigate(paths.profileGuardianRequests);
@@ -95,43 +103,66 @@ export const ProfilePage: React.FC<PageProps> = ({
   );
 
   const { careerEntries, isSavingTeam, isDeletingTeamId, saveTeam, deleteTeam } = useProfileCareer(targetProfileRes);
+  const [demoCareerEntries, setDemoCareerEntries] = useState<CareerEntry[]>(profileDemoData.teams);
   const [deletingEntryTarget, setDeletingEntryTarget] = useState<CareerEntry | null>(null);
 
   const {
     liveName,
     liveAvatar,
-    liveCoverImage,
     liveRole,
-    isPlayer,
-    canHaveCareer,
-    liveBio,
     livePosition,
     liveJersey,
     liveCity,
     liveDob,
-    liveGender,
+    liveAge,
+    liveShoots,
+    liveHeight,
+    liveWeight,
+    followers,
+    following,
     roleSubtitle,
     activeProfile,
-  } = useProfileViewModel(targetProfileRes, user, isOwnProfile, careerEntries);
+  } = useProfileViewModel(targetProfileRes, user, isOwnProfile, careerEntries, profileDemoData.profile);
+
+  const displayedCareerEntries = careerEntries === null
+    ? null
+    : careerEntries.length > 0 ? careerEntries : demoCareerEntries;
+
+  const handleCareerSave = async (values: CareerFormValues, editingTeamId: string | null) => {
+    if (!editingTeamId?.startsWith('demo-')) return saveTeam(values, editingTeamId);
+    setDemoCareerEntries((entries) => entries.map((entry) => entry.id === editingTeamId ? {
+      ...entry,
+      teamName: values.teamName,
+      position: values.position,
+      location: values.location,
+      note: values.note,
+      startDate: values.startYear ? `${values.startYear}-01-01T00:00:00.000Z` : null,
+      endDate: values.isCurrentPlaying || !values.endYear ? null : `${values.endYear}-12-31T00:00:00.000Z`,
+    } : entry));
+    return true;
+  };
 
   const about = useProfileAboutSave({ setUserProfile, loadAuthMe });
 
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [liveUserPosts, setLiveUserPosts] = useState<PostItem[]>([]);
+  const [peopleSearch, setPeopleSearch] = useState('');
 
-  const { data: postsRes } = useQuery(
+  // Cursor-paginated (`getUserPosts` accepts `{ cursor, limit }`, mirroring
+  // the home feed's `getFeed`) — `ProfilePostsTab` triggers `fetchNextPage`
+  // via an on-scroll sentinel (feedback 2026-08-28: "make sure where we
+  // will have list we have to add pagination and on scroll fetch"). Synced
+  // into the same `liveUserPosts` state the delete/update handlers already
+  // patch optimistically, rather than juggling two sources of truth.
+  const postsQuery = useInfiniteListQuery(
     effectiveProfileId ? `${QueryKeys.USER_POSTS}:${effectiveProfileId}` : null,
-    effectiveProfileId ? () => getUserPosts(effectiveProfileId) : null,
-    { staleTime: 0 }
+    effectiveProfileId ? (cursor) => getUserPosts(effectiveProfileId, { cursor, limit: 10 }) : null,
+    { staleTime: 0 },
   );
 
   useEffect(() => {
-    if (postsRes?.items && Array.isArray(postsRes.items)) {
-      setLiveUserPosts(postsRes.items);
-    } else {
-      setLiveUserPosts([]);
-    }
-  }, [postsRes]);
+    setLiveUserPosts(postsQuery.items.length > 0 ? postsQuery.items : profileDemoData.feed);
+  }, [postsQuery.items]);
 
   const createPost = useProfileCreatePost();
   const handleOpenCreatePost = () => {
@@ -170,33 +201,36 @@ export const ProfilePage: React.FC<PageProps> = ({
         />
       )}
 
-      {!user || (Boolean(effectiveProfileId) && (isProfileTargetLoading || (isProfileTargetFetching && !targetProfileRes))) ? (
-        <ProfileSkeletonLoader />
-      ) : (
-        <main className="mhn-profile-main-container">
-          <ProfileHeroCard
-            coverImage={liveCoverImage}
-            isUploadingCover={isUploadingCover}
-            coverUploadMsg={coverUploadMsg}
-            onCoverFileChange={handleCoverFileChange}
-            avatar={liveAvatar}
-            name={liveName}
-            isUploadingAvatar={isUploadingAvatar}
-            onAvatarFileChange={handleAvatarFileChange}
-            isOwnProfile={isOwnProfile}
-            canEditProfile={canEditProfile}
-            onEditProfileClick={() => setIsEditProfileOpen(true)}
-            onShareProfileClick={() => showSuccessToast(SUCCESS_MESSAGES.PROFILE_LINK_COPIED)}
-            followers={user?.counts?.followers ?? 0}
-            following={user?.counts?.following ?? 0}
-            roleSubtitle={roleSubtitle}
-            city={liveCity}
-            activeProfileTab={activeProfileTab}
-            onProfileTabChange={handleProfileTabChange}
-            canViewGuardianInvites={canViewGuardianInvites}
-          />
+      <main className="mhn-home-main-layout lg:my-0 lg:min-h-0 lg:flex-1">
+        <section ref={profileScrollRef} className="mhn-layout-col-center flex flex-col gap-4 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">
+          {!user || (Boolean(effectiveProfileId) && (isProfileTargetLoading || (isProfileTargetFetching && !targetProfileRes))) ? (
+            <ProfileSkeletonLoader />
+          ) : (
+            <>
+              <ProfileHeroCard
+                avatar={liveAvatar}
+                name={liveName}
+                isUploadingAvatar={isUploadingAvatar}
+                onAvatarFileChange={handleAvatarFileChange}
+                isOwnProfile={isOwnProfile}
+                canEditProfile={canEditProfile}
+                onEditProfileClick={() => setIsEditProfileOpen(true)}
+                onShareProfileClick={() => showSuccessToast(SUCCESS_MESSAGES.PROFILE_LINK_COPIED)}
+                followers={user?.counts?.followers ?? followers}
+                following={user?.counts?.following ?? following}
+                roleSubtitle={roleSubtitle}
+                age={liveAge}
+                dob={liveDob}
+                position={livePosition}
+                shoots={liveShoots}
+                height={liveHeight}
+                weight={liveWeight}
+                activeProfileTab={activeProfileTab}
+                onProfileTabChange={handleProfileTabChange}
+                canViewGuardianInvites={canViewGuardianInvites}
+              />
 
-          <div>
+              <div>
             {activeProfileTab === ProfileTabEnum.POSTS && (
               <ProfilePostsTab
                 posts={liveUserPosts}
@@ -205,9 +239,11 @@ export const ProfilePage: React.FC<PageProps> = ({
                 authorRole={liveRole}
                 jerseyText={liveJersey}
                 onNavigate={onNavigate}
-                onOpenCreatePost={handleOpenCreatePost}
                 onPostDeleted={(deletedId) => setLiveUserPosts((prev) => prev.filter((p) => p.id !== deletedId))}
                 onPostUpdated={(updatedId, newContent) => setLiveUserPosts((prev) => prev.map((item) => item.id === updatedId ? { ...item, body: newContent } : item))}
+                hasNextPage={postsQuery.hasNextPage}
+                isFetchingNextPage={postsQuery.isFetchingNextPage}
+                onLoadMore={postsQuery.fetchNextPage}
               />
             )}
 
@@ -215,34 +251,15 @@ export const ProfilePage: React.FC<PageProps> = ({
 
             {activeProfileTab === ProfileTabEnum.STATS && <ProfileStatsTab />}
 
-            {activeProfileTab === ProfileTabEnum.ABOUT && (
-              <ProfileAboutTab
-                canHaveCareer={canHaveCareer}
-                intro={{
-                  bio: liveBio,
-                  position: livePosition,
-                  jerseyNumber: liveJersey,
-                  role: liveRole,
-                  isPlayer,
-                  isSaving: about.isSavingIntro,
-                  saveMessage: about.introSaveMsg,
-                  onSave: about.handleSaveIntro,
-                }}
-                details={{
-                  city: liveCity,
-                  dateOfBirth: liveDob,
-                  genderCategory: liveGender,
-                  isSaving: about.isSavingDetails,
-                  saveMessage: about.detailsSaveMsg,
-                  onSave: about.handleSaveDetails,
-                }}
-                career={{
-                  entries: careerEntries,
-                  isSavingTeam,
-                  isDeletingTeamId,
-                  onSaveTeam: saveTeam,
-                  onRequestDelete: setDeletingEntryTarget,
-                }}
+            {activeProfileTab === ProfileTabEnum.EVENTS && <ProfileEventsTab />}
+
+            {activeProfileTab === ProfileTabEnum.CAREER && (
+              <ProfileCareerTab
+                careerEntries={displayedCareerEntries}
+                isSavingTeam={isSavingTeam}
+                isDeletingTeamId={isDeletingTeamId}
+                onSaveTeam={handleCareerSave}
+                onRequestDelete={setDeletingEntryTarget}
               />
             )}
 
@@ -254,9 +271,16 @@ export const ProfilePage: React.FC<PageProps> = ({
                 onApprove={guardianApproval.handleRequestApprove}
               />
             )}
-          </div>
-        </main>
-      )}
+              </div>
+            </>
+          )}
+        </section>
+
+        <RightSidebar>
+          <SearchWidget value={peopleSearch} onChange={setPeopleSearch} placeholder="Search" />
+          <WhoToFollowWidget fallbackSuggestions={profileDemoData.people} onViewAll={() => onNavigate?.('network')} />
+        </RightSidebar>
+      </main>
 
       <ApprovalCodeModal
         isOpen={guardianApproval.guardianApprovalModalConfig.isOpen}
@@ -296,7 +320,11 @@ export const ProfilePage: React.FC<PageProps> = ({
         isLoading={!!isDeletingTeamId}
         onConfirm={async () => {
           if (deletingEntryTarget) {
-            await deleteTeam(deletingEntryTarget.id);
+            if (deletingEntryTarget.id.startsWith('demo-')) {
+              setDemoCareerEntries((entries) => entries.filter((entry) => entry.id !== deletingEntryTarget.id));
+            } else {
+              await deleteTeam(deletingEntryTarget.id);
+            }
             setDeletingEntryTarget(null);
           }
         }}
