@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Sidebar } from '@/components/common/Sidebar';
+import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { NoDataFound } from '@/components/common/no-data-found';
 
 export interface ComingSoonPageProps {
@@ -17,7 +17,7 @@ export interface ComingSoonPageProps {
 export function ComingSoonPage({ activeTab, title, description, icon, onNavigate, onLogout }: Readonly<ComingSoonPageProps>) {
   return (
     <div className="mhn-app-shell">
-      <Sidebar activeTab={activeTab} onTabChange={onNavigate} onLogout={onLogout} />
+      <LeftSidebar activeTab={activeTab} onTabChange={onNavigate} onLogout={onLogout} />
       <div className="mhn-app-content mhn-coming-soon-content">
         <NoDataFound title={title} description={description} icon={icon} />
       </div>

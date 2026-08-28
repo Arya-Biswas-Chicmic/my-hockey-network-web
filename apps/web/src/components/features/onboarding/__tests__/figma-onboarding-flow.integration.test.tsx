@@ -46,22 +46,18 @@ describe('Figma onboarding interaction flow', () => {
   it('routes each add-player choice through its component event handler', () => {
     const onCreateNew = vi.fn();
     const onLinkExisting = vi.fn();
-    const onBack = vi.fn();
     render(
       <AddPlayerChoiceStep
         onCreateNew={onCreateNew}
         onLinkExisting={onLinkExisting}
-        onBack={onBack}
       />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: /create a new player profile/i }));
     fireEvent.click(screen.getByRole('button', { name: /link an existing player/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^back$/i }));
 
     expect(onCreateNew).toHaveBeenCalledOnce();
     expect(onLinkExisting).toHaveBeenCalledOnce();
-    expect(onBack).toHaveBeenCalledOnce();
   });
 
   it('reports visibility and supervision changes without mutating form data', () => {

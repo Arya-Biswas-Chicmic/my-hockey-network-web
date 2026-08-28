@@ -1,6 +1,6 @@
 # Third-party and dependency policy
 
-Last reviewed: 2026-08-26
+Last reviewed: 2026-08-28
 
 ## Purpose and status
 
@@ -24,6 +24,10 @@ single-app folder layout. Admin and User Panel remain separate projects.
 | Complex tables | TanStack Table | Use for sorting/filtering/pagination/selection, not layout-only tables |
 | Client state | Zustand | Add only when local, URL, form, server, or derived state is insufficient |
 | Icons | Lucide React | Brand artwork and genuine illustrations remain isolated project assets/components |
+| Theme switching | `next-themes` | Class-based (`attribute="class"`); wrapped by `core/theme-provider`, which is the only module features import `useTheme` from |
+| Dialog/drawer primitives | `@base-ui/react` | Backs `ui/dialog.tsx` and `ui/drawer.tsx`, ported from the Admin Panel; do not add a second dialog library |
+| Date parsing/arithmetic | `date-fns` | The single date library. Already used by `apps/web` and the Admin Panel at the same version; also a dependency of `packages/validation`, whose `src/date.ts` owns all date-of-birth parsing and age calculation. Do not add dayjs, moment, or Luxon alongside it |
+| Enter/exit animation utilities | `tw-animate-css` | Required by the `.cn-dialog-*` / `.cn-drawer-*` classes; imported at the top of `apps/web/src/index.css` |
 | Unit/integration tests | Vitest + React Testing Library + user-event | Test behavior and contracts rather than implementation details |
 | Browser smoke/e2e | Playwright | Production-mode critical journeys and route/SEO verification |
 
@@ -62,8 +66,9 @@ These are candidates, not pre-approved installations or vendor selections:
 - Performance: evaluate Lighthouse CI for representative public routes and regression budgets.
 - Localization: reuse an existing project solution or evaluate one Next-compatible i18n approach
   only when locale routing and translated SEO requirements are approved.
-- Dates: use platform `Intl` first; add one date utility only when timezone/calendar requirements
-  exceed it.
+- Dates: **decided — `date-fns`** (see the baseline table above). Use platform `Intl` for
+  formatting/display; use `packages/validation`'s `src/date.ts` helpers for date-of-birth parsing and
+  age calculation rather than hand-rolling either. A second date library is out of scope.
 - Media/CDN, maps, payments, email, search, CMS, feature flags, and consent management require a
   separate data-flow, security, privacy, cost, availability, and vendor-lock-in decision.
 

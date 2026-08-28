@@ -4,146 +4,325 @@ Last reviewed: 2026-08-28
 
 ## Completed
 
+- Follow-up fix to the Home feed tab bar's sticky-scroll pass, from a screenshot showing the
+  active-tab underline cutting through the first post's avatar once scrolled (feedback 2026-08-28):
+  1. **Underline overlapping the feed** — `HomeTabs.tsx` drew the active indicator as its own
+     absolutely-positioned `::after` (`bottom: -9px`), which doesn't contribute to its ancestor's
+     layout height — so it rendered outside `.mhn-feed-scope-tabs`'s own (sticky, opaque) box and
+     the scrolled feed painted over it. The codebase already had the correct, contained mechanism
+     for this sitting unused: `.mhn-feed-scope-tab-active { border-bottom-color: var(--color-primary) }`,
+     a real `border-bottom` that's part of the tab's own border-box. Switched `HomeTabs.tsx` to apply
+     that class instead of the ad-hoc pseudo-element. Verified live: the active tab's rendered height
+     (34px) now exactly matches `.mhn-feed-scope-tabs`'s own height — nothing extends past it.
+  2. **Tabs bunched left instead of spread** — after the previous pass removed `justify-between`
+     (reasoning it'd space tabs too far apart), direct feedback said the opposite: "For You" should
+     sit flush left, "Groups" flush right, "Network" between. Added `justify-content: space-between`
+     back to `.mhn-feed-scope-tabs` itself (previously only ever a per-instance Tailwind class).
+     Verified live: first tab starts at the row's left edge, last tab ends at its right edge.
+  3. **Sidebar profile name not left-aligned** — `.mhn-sidebar-user-name` had no explicit
+     `text-align`; the chip renders through `<Button>`, whose base classes include `justify-center`
+     (and native `<button>` centers text by default), so the name read as centered in its
+     flex-grown space instead of sitting flush after the avatar. Added `text-align: left`. Verified
+     live: name starts immediately at avatar-right-edge + the row's 10px gap.
+
+- Fixed four Home-page layout issues from a screenshot with numbered annotations (feedback
+  2026-08-28):
+  1. **Sidebar profile chip not full-width** — `.mhn-sidebar-user-chip` had no explicit `width`, so
+     the `<Button>` shrink-wrapped to its content instead of filling `.mhn-sidebar-footer`. Added
+     `width: 100%; box-sizing: border-box;`. Verified live: chip is now 208px, matching the sidebar's
+     240px minus its own 16px inner padding on each side (same box every nav item already sits in).
+  2. **Feed narrower than the "For You / Network / Groups" tab bar, needed the reverse** — `HomeTabs.tsx`'s
+     `CategoryTabs` defaulted its wrapper to `w-[80%] mx-auto`, so the tab row rendered at 80% width
+     centered while `<Feed>` below it spanned the full column. Removed the default (now `''`) and the
+     `justify-between` that was spreading tabs across that narrowed box — the component's own
+     `gap-24px` (`.mhn-feed-scope-tabs`) already sets tab spacing. Verified live: tab row is now
+     586px vs. the feed column's 590px (the 4px gap is `.mhn-layout-col-center`'s own `pr-1`
+     scrollbar gutter) — effectively equal, as required.
+  3. **Full-row horizontal line under the tabs, not in Figma** — same `CategoryTabs` wrapper also had
+     a literal `border-b border-[#182740]` in its Tailwind classes, contradicting `.mhn-feed-scope-tabs`'s
+     own CSS comment ("No full-row border — Figma only underlines the active tab itself"). Removed
+     it; the active-tab underline (a `::after` pseudo-element scoped to just that button) already
+     handled the real Figma treatment untouched. Verified live: `border-bottom-width: 0px`.
+  4. **Tab bar should stay fixed while the feed scrolls beneath it** — added
+     `position: sticky; top: 0; z-index: 5; background: var(--color-background);` to
+     `.mhn-feed-scope-tabs`, inside `.mhn-layout-col-center`'s own `overflow-y-auto`. Shared by
+     `CategoryTabs`, so Explore and Events (which reuse the same component in their own scrolling
+     columns) get the same sticky behavior for free. Verified live: scrolling the feed column 350px
+     left the tab bar's `top` at 24px, unmoved.
+- Removed a duplicate sidebar implementation, `components/common/Sidebar.tsx`, that 8 screens
+  (`messaging-page`, `help-page`, `profile-page`, `settings-page`, `event-detail-page`,
+  `supervision-page`, `my-network-page`, `ComingSoonPage`) rendered directly instead of going
+  through `components/layout/LeftSidebar.tsx` (feedback 2026-08-28: "why side panel icon is broken
+  if we are using same icon and sidepanel... make sure we are using same side bar"). The two had
+  drifted: the old one still pointed its logo `<Image>` at `/logo.png`, which doesn't exist in
+  `public/` and rendered as a browser broken-image icon on every page that used it; it also
+  hardcoded its own `NAV_ITEMS` list (no `additionalRoutes` support) and matched active state
+  against a caller-supplied `activeTab` string instead of the real URL. `LeftSidebar` already had
+  the same prop shape (`activeTab`, `onTabChange`, `onLogout`, `onCreatePostClick`) and derives the
+  active tab from `usePathname()` via the shared `NAVIGATION_ITEMS` config, so every call site was a
+  drop-in swap — no prop or behavior changes needed. Removed the export from
+  `components/common/index.ts` and deleted the file. Verified live across Home, Messaging, Profile,
+  and Settings: one consistent sidebar, correct logo, and the filled Figma icon swapping in only for
+  the actual active tab.
+- Fixed the branded loader's own broken logo — same root cause as above, `BrandLoader.tsx`'s
+  `<Image src="/logo.png">` pointed at a nonexistent asset; switched it to the same
+  `/dark/logo.webp` `LeftSidebar.tsx` uses. Also added a diagonal shine sweep across the logo
+  (`mix-blend-mode: overlay` so it only highlights the logo's own pixels, not the transparent space
+  around it) and changed the progress bar from an indeterminate 40%-wide back-and-forth sweep to an
+  eased progressive fill (0% → 92%, decelerating) so it reads as actually loading rather than
+  bouncing (feedback 2026-08-28: "remove this broken icon and add logo here and a shiny effect,
+  loading progress bar below and make it progressive").
 - Fixed the sidebar profile dropdown and the logout confirmation modal both rendering **behind**
-  the feed content, plus dropdown width and logout-row alignment (feedback 2026-08-28). Root cause
-  for the stacking bug: `.mhn-sidebar { position: sticky; top: 0; }` had no explicit `z-index` —
-  per the CSS spec, a `position: sticky` element still establishes its own local stacking context
-  even at `z-index: auto`, which traps all descendants (including `HeaderProfileDropdown`'s
-  `position: absolute` dropdown and `LogoutModal`'s `position: fixed; z-index: 9999` overlay,
-  neither rendered via a portal) at only "auto" priority against sibling `.mhn-app-content`. One
-  fix resolves both: added `z-index: 20;` to `.mhn-sidebar`. Also fixed
-  `.mhn-sidebar-footer .mhn-profile-dropdown` to `width: 240px; left: -16px;` so its outer edges
-  align exactly with the sidebar's own 240px width (the `-16px` compensates for the parent
-  `.mhn-sidebar-footer`'s inset inside the sidebar's 16px padding) — reverting an earlier pass's
-  literal-Figma 300px value per explicit feedback to match the sidebar's actual rendered width
-  instead. Fixed `.mhn-dropdown-logout-btn`'s own flex container (`gap: 12px; padding: 10px 12px;`
-  → `gap: 8px; padding: 9px 12px;`), which an earlier turn's alignment fix to
-  `.mhn-dropdown-item-left`/`.mhn-dropdown-item` had missed since the logout button uses a separate
-  container, not those classes. Verified live via `getBoundingClientRect`/`getComputedStyle` at
-  1440px width: dropdown rect `x:0, width:240` exactly matches sidebar `x:0, width:240`; dropdown
-  `z-index:1000` vs sidebar `z-index:20` now renders above `.mhn-app-content`; logout button rect
-  (`x:11, width:218`) now pixel-identical to the other menu items; logout modal confirmed rendering
-  above the feed via screenshot.
-- Fixed the Home page's 3-column layout spacing (left sidebar / feed / right column) to match
-  Figma exactly (feedback 2026-08-28: "exactly match the spacing between 3 components"). Figma
-  (`1398:3904`, "Home-For You") gives sidebar 300 + gap 48 + feed 470 + gap 48 + right column 300 =
-  1166, the exact width of its 3-column wrapper — both gaps are 48px. `.mhn-home-main-layout` had
-  `padding: 0 24px; gap: 32px;`, tuned by eye rather than measured. Changed to
-  `padding: 0 24px 0 38px; gap: 48px;` (the extra left padding accounts for this component's own
-  10px auto-centering margin inside `.mhn-app-content` at the 1440px desktop breakpoint). Verified
-  live at 1440px width: sidebar right edge (240) → feed left edge (288) = 48px; feed right edge
-  (1018) → right column left edge (1066) = 48px — both exact.
-- Found and fixed the actual onboarding-modal spacing bug after two earlier passes checking
-  card-internal spacing (title/subtitle/card-list/button gaps) came back pixel-perfect and missed
-  it: the gap **between** the illustration panel and the form panel itself was never checked.
-  Figma (e.g. `2203:32344`) has the illustration ending at x=716 and the form content starting at
-  x=853 in its 1440px reference frame — a 137px gap — but `.onboarding-modal`'s `gap:
-  clamp(28px, 5vw, 72px)` capped out at roughly half that on desktop. Changed to
-  `clamp(28px, 9.5vw, 137px)`; verified live at 1920px width — 136px measured (1px off from
-  clamp/vw rounding, imperceptible).
-- Added the missing "Back" button on the parent/guardian sub-flow's "How would you like to add
-  them?" step (`AddPlayerChoiceStep.tsx` / `ParentOnboardingStep.CHOOSE_METHOD`). Traced from
-  Figma (`2203:43222`) to confirm the button belongs there; every other step in that sub-flow
-  already had working `onBack` navigation (`CreatePlayerDetailsStep`, `CreatePlayerProtectStep`,
-  `LinkExistingPlayerStep`) using the already-correct `.mhn-parent-btn-secondary` style (confirmed
-  matching Figma's `#439cf7` border/text, 18px/28px exactly) — only this one step was missing the
-  prop entirely. Added `onBack` to its props, wired `ParentOnboardingModal.tsx` to route it to
-  `WHO_MANAGE`, updated the test that constructs the component. Verified live end-to-end: full
-  signup flow → Parent/Guardian role → Create Account → OTP (dev-prefilled) → "Who do you
-  manage?" → "Add a Player" → confirmed the Back button renders and correctly returns to "Who do
-  you manage?".
-- Started re-sourcing the app's icons from Figma properly, per feedback that the current icon set
-  is ad hoc raster files rather than traced design assets — **this is a large task, not finished
-  this pass**. Investigated the first target node (`1418:8806`) and found it isn't an icon sheet as
-  described — it's a 118-screen section covering the entire app ("Feedback Final"), confirmed via
-  `get_metadata`. Confirmed with the user this is genuinely the intended scope. Started with the
-  bounded, well-understood Login/onboarding section (`2203:29491`) instead: extracted the icon set
-  via `download_assets` (a single screen alone exceeded the 20-asset-per-call cap, confirming the
-  scale), built `apps/web/src/components/icons/LoginIcons.tsx` with `LoginCalendarIcon`,
-  `LoginShieldIcon`, `LoginEyeIcon`, `LoginChevronDownIcon` — traced from the real exported SVG path
-  data, using `currentColor` rather than Figma's per-instance hex so one component works in both
-  themes (see `docs/COMPONENT_CATALOG.md` → "Theme-variant icons" for why file-per-theme duplication
-  was rejected for these). Wired `LoginCalendarIcon` into `DatePickerButton.tsx`, replacing
-  lucide-react's generic `CalendarDays` with the exact traced glyph. Added `LoginIcons.tsx` to
-  `allowedCustomSvgFiles` in `scripts/check-component-reuse.mjs`. Verified via typecheck, lint,
-  component-reuse, all 212 tests, and a clean production build; live verification of the DOB
-  calendar icon specifically was blocked by this environment's auth/seed-data gaps (same
-  `/auth/me` 403s noted elsewhere in this doc), not by the component itself.
-  **Remaining, explicitly not done**: the light-theme counterpart screens for the Login flow;
-  `LoginShieldIcon`/`LoginEyeIcon`/`LoginChevronDownIcon` don't have confirmed current call sites
-  yet (extracted correctly, not wired in); the full 118-screen inventory and the old-icon removal
-  the user asked for. Continue screen-by-screen, verifying after each batch — do not attempt to
-  mass-convert the rest unverified in one pass.
-- Upgraded `dark/logo.webp` from a Figma source (file `cqlBXHZtqPkKcLRmR6a1B8`, node `1399:7885`,
-  the sidebar logo in the "Home-For You" frame). Investigated this node expecting it to be the
-  light-theme logo variant flagged as missing in the previous pass — it wasn't: pulling the actual
-  layer content (not the rendered thumbnail) showed identical art to what's already in
-  `dark/logo.webp`, just at much higher native resolution (1536×1024 vs the existing 483×129),
-  confirmed via matching transparent corners on both. The Figma source also included a faint
-  starfield/sparkle texture around the wordmark not present in the current asset, and needed
-  cropping to its true content bounds (the raw layer has a lot of surrounding canvas). Re-exported:
-  auto-cropped to content bounds (alpha-threshold bounding box, discarding the sparkle-only
-  margins), downsampled to a sane 4x retina resolution (644×172 — the source's native 1249×329
-  produced a 500KB lossless file for a small navbar asset, wasteful for something `next/image`
-  re-optimizes on delivery regardless), and re-encoded (initial lossy attempts at q90–95 showed
-  visible block artifacting on the fine text gradients even after downsampling to reasonable size;
-  settled on `-q 95 -sharp_yuv` after downsampling, which came out clean — 77 KB, verified
-  pixel-clean via decode-and-inspect, not just file size). No code changes needed — same filename,
-  same four call sites. Still waiting on an actual light-theme logo asset; this only improved the
-  existing dark one.
-- Fixed a duplicate created in the theme-image work below: `dark/onboarding-welcome.webp` and
-  `dark/onboarding-otp.webp` were byte-identical (confirmed via checksum). Collapsed to one file,
-  `dark/onboarding.webp`, and updated `getIllustrationSource` to reference it directly rather than
-  duplicating it under two step-specific names. Then audited every icon/logo reference in the web
-  app for real light/dark contrast problems (not assumed ones) — see
-  `docs/COMPONENT_CATALOG.md` → "Theme-variant images" for the full writeup. Found exactly one
-  genuine case: `logo.webp` is white-wordmark art for a dark surface, but `LeftSidebar.tsx` and
-  `Sidebar.tsx` render it inside `.mhn-sidebar`, whose background switches to light via
-  `var(--color-background)`. Moved the file to `apps/web/public/dark/logo.webp` (its correct
-  semantic home) and updated all four call sites (`Header.tsx`, `MobileNavigation.tsx`,
-  `LeftSidebar.tsx`, `Sidebar.tsx`) to the new path — `Header.tsx` is safe as-is since
-  `.mhn-header`'s background is a hardcoded dark gradient that never changes, but the other three
-  are flagged with a comment to swap to `themedImageSrc('logo', resolvedTheme)` once a light-theme
-  logo variant is supplied (pending — no such asset exists yet, so no functional change was made
-  to avoid a 404 in light theme). Checked ~15 other raster icons (`back`, `arrowBottom`, `edit2`,
-  `edit3`, `location2`, `notifications`, `home`, `groups`, `events`, `myNetwork`, `secure`,
-  `manage`, `CheckCircle`, etc.) individually against the actual CSS background of every surface
-  they render on, in both themes — none had a genuine problem: most carry their own colored badge
-  background (theme-agnostic by construction), and the rest sit on screens/components that are
-  hardcoded light-only and don't participate in dark theme at all yet (`event-detail-page.tsx`,
-  the `Dropdown` component, `ProfileHeroCard`) — a separate, larger gap than icon theming, not
-  fixed here. Verified via typecheck, lint, and all 212 tests.
-- Introduced a `light/`/`dark/` subfolder convention for genuinely theme-variant images (see
-  `docs/COMPONENT_CATALOG.md` → "Theme-variant images"), scoped to the only real case in the
-  codebase today: the onboarding illustration. Moved `Welcome.webp`/`OTPbg.webp` to
-  `apps/web/public/light/onboarding-{welcome,otp}.webp` and `IceHockeyDark.webp` to
-  `apps/web/public/dark/onboarding-{welcome,otp}.webp` (duplicated — dark mode has one shared
-  illustration across all steps, not per-step variants, so both dark filenames point at the same
-  art until a real per-step dark illustration exists). Added `themedImageSrc()` in
-  `apps/web/src/utils/themedImage.ts` so `OnboardingModal.tsx`'s `getIllustrationSource` resolves
-  the pair by theme instead of a hand-written ternary; fixed a stale `/Welcome.webp` default prop
-  in `OnboardingIllustration.tsx` left over from the move. Confirmed no other image in the web app
-  is theme-conditional (only this one call site), and that mobile's `IMAGES`/`DARK_IMAGES` object
-  scaffolding in `utils/images.tsx` isn't yet populated with any real theme-differentiated asset —
-  left mobile as-is rather than creating empty placeholder folders. Verified via typecheck, lint,
-  component-reuse, all 212 tests, a clean production build, and live browser checks confirming
-  both `/dark/onboarding-welcome.webp` and `/light/onboarding-welcome.webp` load and render
-  correctly when the theme is switched.
-- Consolidated static image assets to one location per app and standardized format (see
-  `docs/COMPONENT_CATALOG.md` → "Static asset location and format" for the policy). Web:
-  `apps/web/public/` is the sole location (83 PNGs converted to WebP q≈85, 13.6 MB → 1.7 MB;
-  every `next/image`/`FallbackImage`/CSS `url()` reference updated to the new `.webp` filenames;
-  verified via typecheck, lint, component-reuse, all 212 tests, a clean production build, and live
-  network checks confirming both `/_next/image` and direct static `.webp` requests return 200).
-  Mobile: `apps/mobile/assets/images/` similarly converted (10 files), with the 3 referencing
-  `require(...)` call sites updated (Metro requires a static string) and the 4
-  icon/splash/adaptive-icon PNGs at `apps/mobile/assets/` left untouched since Expo's
-  `app.config.ts` pipeline expects PNG there; verified via mobile typecheck and lint. Removed the
-  unused `apps/web/src/assets/` directory (pre-Next.js Vite leftovers — confirmed zero imports).
-  Considered and rejected moving images into `src/assets/` on either app (see the doc section for
-  why). A handful of assets had zero code references before this pass (24 web, 1 mobile,
-  including `Social Icons.png` and `GurdianApprovalRequest.png`) — converted for consistency but
-  left in place rather than deleted, since removal wasn't requested; flagged as prune candidates.
+  the feed content, plus dropdown width, on the post-merge codebase (feedback 2026-08-28: repeat of
+  an earlier-session fix that a `git merge` favoring the incoming branch had reverted). Root cause
+  unchanged from the original fix: `.mhn-sidebar { position: sticky; top: 0; }` needs an explicit
+  `z-index` since `position: sticky` establishes a local stacking context even at `z-index: auto`,
+  which otherwise traps `HeaderProfileDropdown`'s dropdown and `LogoutModal`'s `position: fixed`
+  overlay below `.mhn-app-content`. This turn's incoming merge already carried the `z-index: 20` fix
+  (independently present in the developer's own commit, word-for-word the same diagnosis), so only
+  `.mhn-sidebar-footer .mhn-profile-dropdown`'s width needed correcting again — it had reverted to
+  `min(320px, calc(100vw - 32px))` (320px on desktop); restored to `width: 240px; left: -16px;` to
+  match the sidebar's actual 240px width exactly.
+- Fixed the Home page's 3-column spacing (sidebar / feed / right column) again after the merge
+  reverted `.mhn-home-main-layout` to `padding: 0 24px; gap: 32px;` (its own separate history —
+  the incoming branch's own feedback trail, not this session's). Figma (`1398:3904`) still gives
+  both gaps as 48px; restored `padding: 0 24px 0 38px; gap: 48px;`. Verified live at 1440px: both
+  gaps exactly 48px.
+- Fixed "Change Email" on the OTP screen again after the merge reverted it to the old bug: dark
+  mode grouped `.btn-change-email` into the same muted-foreground rule as `.verify-email-subtitle`/
+  `.verify-email-footer`, rendering it gray instead of Figma's white/18px/28px spec. This codebase
+  has three separate `.btn-change-email` rule blocks scattered through `index.css` (a pre-existing
+  duplication pattern, not introduced this pass) that all had to be brought in line: the base rule,
+  a later "Figma onboarding flow" section's rule that was winning in light mode via source order,
+  and the dark-mode `:is(...)` grouping. Fixed all three to the exact Figma spec (light: `#6c6c6c`,
+  16px/1.4, 0.2px tracking; dark: `var(--color-foreground)`, 18px/28px) and added the `opacity: 0.85`
+  hover from the original fix. Verified live: dark mode now renders `rgb(244, 247, 251)` at 18px/28px.
+- Added a branded global loader, `apps/web/src/components/common/BrandLoader.tsx` — the MHN logo
+  centred with a pulsing glow and an indeterminate progress sweep — and split the app's loading
+  states into two clearly separated phases:
+  1. **Layout unknown → brand loader.** Before the `/auth/me` bootstrap resolves, the app does not
+     know whether the visitor is signed in, so no route-shaped skeleton would be honest. Both
+     `AuthenticatedGuard` and `GuestGuard` now render `<BrandLoader fullScreen />` while
+     `hasBootstrapped` is false, and a root `app/loading.tsx` does the same for the root transition
+     (safe to reintroduce at the root precisely because it is layout-agnostic — the previous root
+     loader was the *authenticated shell*, which is why it had to be removed).
+  2. **Layout known → route skeleton.** Once the group is known, the existing shimmering skeletons
+     take over: `FullAppSkeletonLoader` for authenticated routes, `AuthSkeletonLoader` for `(auth)`,
+     `PublicProfileSkeletonLoader` for `(public)`, plus the per-route `profile`/`network` overrides.
+  Colours are token-driven so it follows the theme, and a `prefers-reduced-motion` block drops the
+  animation while keeping the brand visible rather than removing the loading affordance entirely.
+  Covered by 5 new tests (live-region semantics, custom label, empty `alt` so the mark is not
+  announced twice, `fullScreen` opt-in, decorative track hidden) plus an updated guard test.
+
+- Fixed onboarding still showing the authenticated app skeleton after the `loading.tsx` split. The
+  route-group boundaries were correct, but the shimmer on `/onboarding` was not coming from
+  `loading.tsx` at all: `GuestGuard` renders its own fallback while the `/auth/me` bootstrap is in
+  flight, and it used `FullAppSkeletonLoader` — the sidebar+feed shell. Since that guard wraps every
+  guest route and the bootstrap runs on each load, it was the placeholder users actually saw. It now
+  renders `AuthSkeletonLoader`, matching `(auth)/loading.tsx`. Covered by a new regression test
+  asserting the guest fallback contains `.onboarding-screen` and **not** `.mhn-app-shell`/
+  `.mhn-sidebar`. The other three guards (`AuthenticatedGuard`, `ParentRoleGuard`,
+  `MinorPlayerGuard`) correctly keep the app-shell skeleton — they only ever wrap authenticated
+  routes, where that shell is what loads next.
+
+- Split the single root `app/loading.tsx` into per-route-group loading boundaries. It rendered
+  `FullAppSkeletonLoader` — the *authenticated* shell — at the app root, so it also covered `(auth)`
+  and `(public)`: a signed-out visitor loading `/onboarding` or an indexable `/players/[id]` briefly
+  saw a fake logged-in app (sidebar, feed, right rail) before the real centered page replaced it,
+  with a visible layout jump. Now `(authenticated)/loading.tsx` owns the app-shell skeleton, and two
+  new components cover the others — `AuthSkeletonLoader` (renders through the real
+  `.onboarding-screen`/`.onboarding-modal` classes) and `PublicProfileSkeletonLoader` (mirrors that
+  page's own cover/avatar/max-w-2xl shell). The root `loading.tsx` was deleted.
+  `FullAppSkeletonLoader` also picked its content skeleton by reading `usePathname()`, which forced
+  `'use client'` plus a hydration-mismatch workaround — and whose `/my-network` branch **never
+  matched**, since the real route is `/network`, so every network load silently fell back to the Home
+  skeleton. Those are now per-route `loading.tsx` files (`profile/`, `network/`) composing an
+  exported `AppShellSkeleton`; the component is a server component again with no pathname sniffing.
+- Fixed the profile dropdown being painted over by the feed. `.mhn-sidebar` is `position: sticky`,
+  which creates a stacking context whether or not a `z-index` is set — so the dropdown's own
+  `z-index: 1000` only ever competed *inside* the sidebar and the feed column rendered on top.
+  Giving `.mhn-sidebar` `z-index: 20` is what actually lifts it. Also reverted the `overflow-x:
+  hidden` added to `.mhn-home-main-layout` in the previous pass: it made the grid a clipping context,
+  which would cut off any popover anchored inside it. The `minmax(0, 1fr)` + `min-width: 0` fix is
+  what stops the horizontal overflow, and it does so without clipping.
+- Tokenized the remaining skeleton colors. `.mhn-skeleton-shimmer`/`.animate-pulse` built their
+  gradient from hardcoded light slate stops (`#f1f5f9`/`#e2e8f0`), so every shimmer flashed a light
+  gradient on the dark shell; it now uses `--color-secondary`/`--color-border`. Two stragglers
+  (`.mhn-profile-skeleton-avatar`'s `#FFF` border, `.mhn-perm-skeleton-header`'s `#FAFAFA`) went with
+  them.
+
+- Standardised button hover/press states across `index.css`, which were inconsistent in three
+  distinct ways:
+  - **Redundant press animations.** The `Button` primitive already applies `active:scale-[0.98]` to
+    every button, yet five CSS rules added their own `:active` transform at four different depths
+    (0.95, 0.96, 0.98, 0.99) — each fighting the global one. All five removed; the six `:active`
+    rules that change a press *colour* (a real effect the primitive does not provide) were kept.
+  - **Outlier hover effects.** Four buttons did something no other button did — `transform:
+    scale(1.05)` (`.mhn-chat-input-action-btn`), `text-decoration: underline` on a button
+    (`.mhn-post-more-btn`), and shadow blooms (`.mhn-btn-post`, `.btn-google`). Removed, so every
+    button hover is now a colour change only.
+  - **Thirteen different hover colours for one state.** 38 hover/active rules hardcoded their own
+    value, including seven near-identical dark blues (`#09519b`, `#1452a8`, `#1558a6`, `#0d4fa8`,
+    `#0f4c9c`, `#0f4288`, `#073f78`) all meaning "primary button hovered". Added
+    `--color-primary-hover`, `--color-primary-active`, and `--color-destructive-hover` (each with a
+    dark value) and routed every one through them. **Zero hardcoded colours remain in any button
+    hover/active rule.**
+- Fixed the Home shell overflowing horizontally, pushing the right sidebar off-screen.
+  `.mhn-home-main-layout` was `grid-template-columns: 1fr 340px` with no `min-width: 0` — a grid item
+  defaults to `min-width: auto` and refuses to shrink below its content, so a wide feed post forced
+  the whole grid wider than the viewport. Now `minmax(0, 1fr) 340px` plus `min-width: 0` on the
+  children and `overflow-x: hidden` on the shell, so wide content scrolls or wraps inside its own
+  card instead of widening the page. Same root cause as the add-player card overflow fixed earlier.
+
+- Consolidated the parent-flow primary/secondary buttons, which rendered inconsistently across the
+  add-player screens. `.mhn-parent-btn-primary` and `.mhn-parent-btn-secondary` were declared in
+  **five separate places** in `index.css` with conflicting heights (44/46/48px), font sizes
+  (14/15/18px), weights (400/600/700), and colors, resolved only by **four competing `!important`
+  blocks** — the long-standing backlog item about this class pair, now closed. All five are replaced
+  by one contiguous token-driven definition:
+  - Both buttons now share one geometry block (44px, 16px/600), so the pair reads as one control set
+    instead of two unrelated buttons. `.mhn-parent-success-actions` still raises them to 48px, which
+    is a deliberate per-screen override rather than a conflict.
+  - Primary is solid `--color-auth-action` with `--color-primary-hover` (a new token, with a dark
+    value) and a `--color-foreground-subtle` disabled state; secondary is its outlined counterpart in
+    `--color-auth-action-bright`, with hover and disabled states it previously lacked.
+  - **Zero `!important`** remains on either class, and the `:root.dark` override that existed purely
+    to out-`!important` the light rules was deleted — the tokens handle both themes.
+  - `.mhn-btn-modal-cancel`/`-submit` had been sharing the first of those five blocks; they now own
+    their own rules, so changing the parent buttons no longer silently restyles the delete-post,
+    delete-career, and supervision modals.
+  All four consuming screens (`WhoDoYouManageStep`, `CreatePlayerProtectStep`,
+  `PlayerDetailsFormFields`, `PlayerAddedSuccessStep`) use the same pair and now render identically.
+
+- Swept hardcoded colors out of `apps/web/src/index.css` and onto theme tokens: **1,029 literal hex
+  values across ~1,000 declarations replaced**, taking the file from 1,467 hex occurrences to 421
+  (of which 103 are the token *definitions* themselves, 17 are gradient/shadow stops deliberately
+  left alone, and 1 is a comment) — i.e. live rules went from ~1,370 hardcoded colors to 300.
+  Done in three verified passes:
+  1. The nine values that were byte-identical to an existing token's definition
+     (`#ffffff`→`--color-background`, `#0f172a`→`--color-foreground`, `#e2e8f0`→`--color-border`,
+     `#64748b`→`--color-muted-foreground`, `#f1f5f9`→`--color-secondary`, `#1860c3`→`--color-primary`,
+     `#0b66c2`→`--color-auth-action`, `#dc2626`→`--color-destructive`, `#eff6ff`→`--color-accent`) —
+     803 replacements.
+  2. The remaining slate ramp, which had no token, added as six role-named tokens with dark
+     overrides (`--color-surface-subtle`, `--color-border-strong`, `--color-foreground-muted`,
+     `--color-foreground-subtle`, `--color-foreground-strong`, `--color-neutral-700`) — 226
+     replacements.
+  3. The destructive-surface and accent/info tint families, likewise added as tokens
+     (`--color-destructive-surface{,-strong}`, `--color-destructive-border`,
+     `--color-destructive-bright`, `--color-accent-surface`, `--color-info-surface`) — 44
+     replacements.
+  Each pass was checked by resolving every changed line's tokens back to their light-mode literals
+  and diffing against the original: **0 semantic mismatches**, so light mode is provably unchanged
+  and the gain is entirely in dark mode. `@theme`/`:root`/`:root.dark` definition blocks were
+  excluded programmatically so no token was rewritten to reference itself.
+  Also closed a real gap found on the way: `--color-destructive` and `--color-destructive-foreground`
+  had **no dark override at all**, so every error message and destructive control (24 usages) kept
+  light mode's `#dc2626` against the dark navy shell. Dark now uses `#f87171`/`#450a0a`.
+  Gradients and box-shadows were skipped on purpose — their hex often encodes an alpha ramp or a
+  deliberate blend rather than a semantic color, and swapping those blind would change appearance.
+
+- Fixed the parent add-player choice card's description overflowing past the card edge. The cause was
+  not a missing width constraint: `.mhn-parent-choice-card` is a `common/Button`, and
+  `buttonVariants`' base classes include `whitespace-nowrap`, so the text could not wrap at all and
+  no `max-width`/`min-width: 0` could help. The card now sets `white-space: normal` (documented in
+  `docs/COMPONENT_CATALOG.md` as a trap for any future `Button`-backed content card). Alongside it:
+  `min-width: 0` on the flex row and its children (flex items default to `min-width: auto` and refuse
+  to shrink below their content), `overflow-wrap: anywhere` on the description so a long unbroken
+  string still breaks, and `flex-shrink: 0` on the 40px icon so the text column yields first. Also
+  removed the duplicate `.mhn-parent-flex-row-center-16` definition that was dropping the base rule's
+  `flex: 1`. Previously only the second card had a `w-full overflow-hidden text-ellipsis` Tailwind
+  patch, which truncated rather than wrapped and left the first card unconstrained; the fix is in CSS
+  so both cards and `SupervisionAddPlayerFlow`'s copy of the same card all benefit.
+
+- Removed the static color scheme from the parent add-player choice step
+  (`AddPlayerChoiceStep.tsx`) and the `.mhn-parent-*` classes behind it. The screen's styling was
+  spread across three separate, conflicting definitions of the same classes in `index.css` — the same
+  pathology already logged for `.mhn-parent-btn-secondary`. The last block (token-based) was winning
+  on cascade order, so every literal hex in the two earlier blocks was already dead code that only
+  made the file look like it set those colors:
+  - Deleted the dead hex declarations from both earlier blocks, keeping only the structural
+    properties (`cursor`, `display`, `align-items`, `justify-content`, `transition`) the token block
+    does not set. `.mhn-parent-choice-icon-box` (and its `.mhn-blue`/`.mhn-gray` modifiers) went with
+    them — it had no consumer anywhere in the codebase.
+  - Tokenized the *base* `.mhn-parent-card-title`, `-card-sub`, `-card-title-lg`, `-card-sub-sm`,
+    `-step-title`, and `-step-desc` rules to `--color-foreground`/`--color-muted-foreground`. These
+    are shared well beyond the parent flow, and the dark fix that existed was scoped under
+    `.mhn-parent-step-container` — so the help page and the profile career/identity sections, which
+    use the same classes outside that container, were still rendering light-mode navy text in dark
+    mode. Tokenizing the base rule fixes those too and made the four `:root.dark` overrides
+    redundant; they were removed rather than left as no-ops.
+  - Replaced the `.mhn-parent-chevron-blue`/`-gray` pair with a single state-driven
+    `.mhn-parent-chevron`. The old classes named a *color* to express selection state, forcing the
+    markup to know which literal color a selected card used; selection now drives the color through
+    the card's existing `.mhn-active` class. Updated both consumers — `AddPlayerChoiceStep` and
+    `SupervisionAddPlayerFlow`, which renders the same card.
+  `AddPlayerChoiceStep` itself was also de-duplicated: its two hand-copied card blocks became one
+  `ChoiceCard` sub-component driven by an options array, so the two cards cannot drift apart.
+
+- Extracted `VerifyEmailForm`'s inline resend cooldown into two reusable pieces —
+  `apps/web/src/hooks/use-countdown.ts` (`useCountdown`/`formatCountdown`) and
+  `apps/web/src/components/ui/resend-countdown.tsx` (`ResendCountdown`) — and fixed four defects
+  found while doing it:
+  - **The timer rebuilt itself on every tick.** The effect listed the current count in its
+    dependencies, so each decrement cleared the interval and started a new one (60 teardowns per
+    cooldown), re-anchoring each next tick to the moment the effect re-ran and letting the countdown
+    run slower than the wall clock. The interval is now created once per run.
+  - **A failed resend still imposed a full cooldown.** The old handler reset the counter immediately
+    after calling `onResendCode`, regardless of outcome, so a request that errored locked the user
+    out for 59 seconds with no new code coming. `OnboardingModal.handleResendCode` (which catches its
+    own errors, so awaiting it could not distinguish success) now returns a boolean, and the cooldown
+    restarts only on success.
+  - **The "code sent" notice outlived its window.** It persisted until the step changed; it is now
+    cleared when the cooldown reaches zero via `onCountdownComplete` → `onResendNoticeExpire`.
+  - **The notice card hardcoded greens** (`#F0FDF4`/`#86EFAC`/`#166534`, plus a `#22c55e` dark
+    block), so it read as off-theme against the dark shell. Added `--color-success`,
+    `--color-success-foreground`, `--color-success-surface`, and `--color-success-border` to
+    `index.css`'s `@theme` block with `:root.dark` overrides, alongside the existing
+    `--color-destructive`; the card now resolves entirely from tokens in both themes.
+  Also on the same screen: Confirm is disabled until all six digits are entered (it previously
+  submitted into a guaranteed validation failure), the resend notice carries `role="status"` and the
+  validation error `role="alert"` so both are announced, and the countdown is a `role="timer"`.
+  Covered by 24 new tests across `use-countdown.test.tsx`, `resend-countdown.test.tsx`, and
+  `verify-email-form.test.tsx`, including a regression guard asserting 30 seconds of timers consumes
+  exactly 30 counts.
+
+- Consolidated four divergent date-of-birth parsers/age calculators into one shared module,
+  `packages/validation/src/date.ts` (`parseDob`, `ageFromDate`, `isFutureDate`, `ageFromDob`), built
+  on `date-fns` (already a dependency of `apps/web` and the Admin Panel — no new library was added
+  to the approved baseline). `forms.ts`'s `ageFromDdMmYyyy` and `parseDisplayDate`/`ageAt`,
+  `profileValidation.ts`'s inline `new Date()` check, and `packages/core`'s `calculateAge` all now
+  route through it. Three real bugs fixed in the process:
+  - **Minimum-age gate off by up to a year.** `validateProfileField`'s DOB branch computed age as
+    `today.getFullYear() - dob.getFullYear()` with no birthday adjustment, so a child born
+    2021-12-01 validated as 5 years old for all of 2026 and passed the `age < 5` minimum-age check
+    while still 4. `date-fns`'s `differenceInYears` handles the boundary. This drove
+    `editProfileFormSchema` and `profilePersonalDetailsFormSchema`.
+  - **Unenforced date format.** The same branch used bare `new Date(trimmed)`, which accepted
+    anything the engine could coerce (`'2010'` → Jan 1 2010, US-order `'05/13/2010'`) and read
+    `YYYY-MM-DD` as UTC midnight, skewing the future/age comparisons west of UTC. Parsing is now
+    strict per format and rejects calendar overflow (`31/02/2010`) rather than rolling it forward.
+  - **Future dates read as age 0.** `differenceInYears` truncates toward zero, so a DOB under a year
+    in the future produces `0`, not a negative — meaning the pre-existing `age < 0` guards in
+    `parentOnboardingPlayerDetailsFormSchema` and `core`'s `calculateAge` never fired for it, and a
+    31/12/2026 birth date surfaced the misleading "Minimum age is 5 years" message. An explicit
+    `isFutureDate` check replaces every age-sign test, and `createAccountFormSchema` gained the
+    future-date rejection it never had.
+  Also fixed `createPostFormSchema`'s share/don't-share email lists splitting on `/[, \n;]+/`, which
+  left the `\r` on every entry of a CRLF-pasted list and reported each as an invalid address; the
+  pattern is now `/[,\s;]+/`. Covered by 29 new tests in
+  `packages/validation/src/__tests__/date.test.ts`. One deliberate behavior change:
+  `createAccountFormSchema` previously required strict two-digit `DD/MM/YYYY` and now also accepts
+  `D/M/YYYY`, matching what the parent "Add Player" form already accepted — the two forms
+  disagreeing on the same field shape was itself part of the inconsistency being removed.
+
+- Matched the first-load left sidebar and center feed skeleton motion to the calmer right-column
+  pulse in `apps/web/src/index.css`: the sidebar skeleton now uses `pulseGlow`, and center feed
+  skeleton items get the same targeted pulse override as the right rail instead of the faster
+  moving `shimmerWave`.
+- Refined the parent onboarding `PlayerAddedSuccessStep` UI with a token-based success badge,
+  balanced heading/body widths, a stable action stack, and mobile-safe sizing so the completion
+  screen sits cleanly inside the Figma onboarding shell.
 - Unified the signup parent-onboarding "Add Player" step and the Supervision "+ Add Player" flow
   onto one shared `PlayerDetailsFormFields` component (`apps/web/src/components/features/parent/`)
   built on the common `FormInput`/`FormDateInput`/`FormSelect` fields, replacing each flow's separate
@@ -1404,11 +1583,11 @@ Last reviewed: 2026-08-28
 - Production web build must pass.
 - Web/native UI ownership and pnpm-only dependency management checks must pass.
 
-Latest measured enforced-code coverage: 94.15% statements, 88.79% branches, 98.14% functions, and
-94.48% lines (enforced boundary: `packages/api-client`, `auth`, `domain`, `validation` index files;
+Latest measured enforced-code coverage: 95.32% statements, 89.08% branches, 98.14% functions, and
+95.48% lines (enforced boundary: `packages/api-client`, `auth`, `domain`, `validation` index files;
 `packages/core/src/api/signUpRules.ts`; `apps/web/src/platform/auth-storage.ts`,
 `query/query-client.ts`, `utils/guardianUtils.ts`, `utils/mediaUtils.ts`, `utils/toast.ts`,
-`utils/dateUtils.ts`). The Vitest suite contains 212 tests across 33 test files, plus 6 Playwright smoke tests
+`utils/dateUtils.ts`). The Vitest suite contains 241 tests across 34 test files, plus 6 Playwright smoke tests
 (`apps/web/e2e/public.spec.ts`, run separately via `pnpm test:e2e`, not counted in the Vitest total).
 Web form validation, secure storage behavior, query/mutation hook behavior, route-guard
 fail-closed/redirect behavior, dialog/OTP-input keyboard and focus behavior, and route/form
@@ -1417,6 +1596,13 @@ bundle commands pass. `pnpm verify` passes
 end-to-end.
 
 ## Maintainability backlog
+
+- Finish tokenizing the remaining ~300 literal colors in live `index.css` rules. What is left is a
+  long tail of one-off variants (each used 18 times or fewer — `#0091ff`, `#0c1014`, `#eaeef4`,
+  `#1d6ae5`, `#09519b`, `#424242`, ...) with no obvious shared semantic role, plus 17 gradient and
+  box-shadow stops that were deliberately excluded. These need a design decision about which are
+  genuinely distinct roles and which are accidental near-duplicates of tokens that already exist —
+  mechanical replacement is not safe for them the way it was for the 1,029 already done.
 
 - Migrate the remaining authenticated routes (Network, Events, Messaging, Notifications, Profile,
   Settings, Supervision) from the old top-nav `Header` to the new `Sidebar` component, and rebuild
@@ -1472,11 +1658,6 @@ end-to-end.
   → component hierarchy when APIs land or are properly typed; do not restore sample production
   records. Do not make Events public/ISR until it is backed by real publishable data. Notifications is
   no longer in this list — connected to the real `/alerts` endpoint this pass, see Completed.
-- Consolidate `apps/web/src/index.css`'s three separate `.mhn-parent-btn-secondary` rule blocks
-  (currently defined with conflicting `height`/`border`/`font-weight` values across the file) into
-  one, so the remaining 3 `!important` declarations that are today resolving that conflict can be
-  removed too. Left as-is this pass rather than guessed at, since picking the wrong one of the three
-  conflicting definitions would be a real visual regression with no automated way to catch it here.
 - Expand UI integration/e2e coverage as stable Figma screens are implemented.
 - Migrate Expo SDK 54 to a patched SDK in a dedicated native change, then re-run Android/iOS
   regression tests.

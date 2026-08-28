@@ -19,11 +19,11 @@ export const CategoryTabs = <T extends string = string>({
   tabs,
   activeTab,
   onChange,
-  className = 'w-[80%] mx-auto',
+  className = '',
 }: CategoryTabsProps<T>) => {
   return (
     <div
-      className={`mhn-feed-scope-tabs flex items-center justify-between border-b border-[#182740] pb-2 mb-6 ${className}`}
+      className={`mhn-feed-scope-tabs flex items-center ${className}`}
       role="tablist"
     >
       {tabs.map((tab) => {
@@ -34,10 +34,8 @@ export const CategoryTabs = <T extends string = string>({
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(tab.key)}
-            className={`mhn-feed-scope-tab relative text-sm font-semibold transition-colors outline-none pb-2 ${
-              isActive
-                ? 'text-white after:content-[""] after:absolute after:bottom-[-9px] after:left-0 after:right-0 after:h-[2px] after:bg-[#168BFF]'
-                : 'text-slate-400 hover:text-slate-200'
+            className={`mhn-feed-scope-tab text-sm font-semibold transition-colors outline-none ${
+              isActive ? 'mhn-feed-scope-tab-active text-white' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <span>{tab.label}</span>

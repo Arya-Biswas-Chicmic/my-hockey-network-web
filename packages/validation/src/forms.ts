@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { CreatePostAudienceEnum } from '@my-hockey-network/contracts';
 import { validateProfileField, validateCareerField } from './profileValidation';
+import { ageFromDate, isFutureDate, parseDob } from './date';
 
 import { emailSchema, nameSchema, sixDigitOtpSchema } from './base';
 
@@ -33,7 +34,7 @@ export const commentFormSchema = z.object({
 });
 
 const emailListSchema = z.string().superRefine((value, context) => {
-  const invalid = value.split(/[, \n;]+/).map((email) => email.trim()).filter(Boolean)
+  const invalid = value.split(/[,\s;]+/).map((email) => email.trim()).filter(Boolean)
     .filter((email) => !emailSchema.safeParse(email).success);
   if (invalid.length) context.addIssue({ code: 'custom', message: `Invalid email: ${invalid.join(', ')}` });
 });
@@ -121,28 +122,6 @@ export const linkPlayerFormSchema = z.object({
   email: requiredEmailSchema('Enter the player’s email address.'),
 });
 
-// DD/MM/YYYY-only age calculation matching packages/core's `calculateAge` for that one format —
-// duplicated rather than imported to avoid making `validation` (a leaf package other packages,
-// including `core`, may depend on) depend on `core` itself for one small pure function.
-function ageFromDdMmYyyy(value: string): number | null {
-  const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value.trim());
-  if (!match) return null;
-  const [, ddStr, mmStr, yyyyStr] = match;
-  const dd = Number(ddStr);
-  const mm = Number(mmStr);
-  const yyyy = Number(yyyyStr);
-  const currentYear = new Date().getFullYear();
-  if (mm < 1 || mm > 12 || dd < 1 || dd > 31 || yyyy < 1900 || yyyy > currentYear) return null;
-  const birthDate = new Date(yyyy, mm - 1, dd);
-  if (Number.isNaN(birthDate.getTime())) return null;
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const beforeBirthday = today.getMonth() < birthDate.getMonth() ||
-    (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate());
-  if (beforeBirthday) age -= 1;
-  return age;
-}
-
 // Shared "Player Details" form used both by signup's ParentOnboardingModal and by
 // Supervision's "+ Add Player" flow (`PlayerDetailsFormFields`) — including the 5–100 year
 // age check, which Supervision's form did not previously enforce (see git history for
@@ -163,8 +142,12 @@ export const parentOnboardingPlayerDetailsFormSchema = z.object({
     context.addIssue({ code: 'custom', path: ['dateOfBirth'], message: 'Please enter a valid Date of Birth (DD/MM/YYYY).' });
     return;
   }
-  const age = ageFromDdMmYyyy(values.dateOfBirth);
-  if (age === null || age < 0) {
+  // A future date parses fine but is never a valid birth date, so it is rejected as
+  // invalid here rather than falling through to the "minimum age is 5 years" message
+  // that a negative-or-zero age would otherwise produce.
+  const parsed = parseDob(values.dateOfBirth, 'DD/MM/YYYY');
+  const age = parsed ? ageFromDate(parsed) : null;
+  if (parsed === null || age === null || isFutureDate(parsed)) {
     context.addIssue({ code: 'custom', path: ['dateOfBirth'], message: 'Please enter a valid Date of Birth.' });
   } else if (age < 5) {
     context.addIssue({ code: 'custom', path: ['dateOfBirth'], message: 'Minimum age for player profile is 5 years.' });
@@ -179,38 +162,17 @@ export const supportTicketFormSchema = z.object({
   description: z.string().trim().min(1, 'Description is required.').min(20, 'Description must be at least 20 characters.'),
 });
 
-function parseDisplayDate(value: string): Date | null {
-  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
-  if (!match) return null;
-  const day = Number(match[1]);
-  const month = Number(match[2]);
-  const year = Number(match[3]);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
-    ? date
-    : null;
-}
-
-function ageAt(date: Date, now = new Date()): number {
-  let age = now.getUTCFullYear() - date.getUTCFullYear();
-  const beforeBirthday =
-    now.getUTCMonth() < date.getUTCMonth() ||
-    (now.getUTCMonth() === date.getUTCMonth() && now.getUTCDate() < date.getUTCDate());
-  if (beforeBirthday) age -= 1;
-  return age;
-}
-
 export function createAccountFormSchema(selectedRole: string) {
   return z.object({
     fullName: nameSchema(),
     email: requiredEmailSchema('Email Address is required.'),
     dob: z.string().min(1, 'Date of Birth is required.').superRefine((value, context) => {
-      const parsed = parseDisplayDate(value);
-      if (!parsed) {
+      const parsed = parseDob(value, 'DD/MM/YYYY');
+      if (!parsed || isFutureDate(parsed)) {
         context.addIssue({ code: 'custom', message: 'Please enter a valid date of birth (DD/MM/YYYY).' });
         return;
       }
-      const age = ageAt(parsed);
+      const age = ageFromDate(parsed);
       if (selectedRole.toUpperCase() === 'PARENT' && age < 18) {
         context.addIssue({ code: 'custom', message: 'Parent account holders must be at least 18 years old.' });
       } else if (age < 5) {

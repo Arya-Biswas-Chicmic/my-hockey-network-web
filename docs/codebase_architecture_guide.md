@@ -1,6 +1,6 @@
 # My Hockey Network frontend architecture
 
-Last reviewed: 2026-08-26
+Last reviewed: 2026-08-28
 
 The repository is a pnpm-workspaces monorepo. Web and mobile share contracts, business rules,
 validation, authentication use cases, API behavior, and design values. Their UI, navigation,
@@ -19,6 +19,7 @@ packages/
 ├── api-client/      Injected fetch client, refresh serialization and errors
 ├── auth/            OTP/onboarding/logout use cases
 ├── validation/      Shared Zod form schemas (React Hook Form + Zod is the only web form system)
+│                    plus `date.ts`, the single owner of DOB parsing/age rules (used by `core`)
 ├── design-tokens/   Colors, spacing and radii values
 ├── core/            Compatibility APIs and existing feature use cases (consolidating, see NEXTJS_MIGRATION_PLAN.md)
 ├── shared/          Existing convenience exports used by mobile UI (consolidating)

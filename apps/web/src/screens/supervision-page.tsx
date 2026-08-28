@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/common/Button';
-import { Sidebar } from '@/components/common/Sidebar';
+import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { ApprovalCodeModal } from '@/components/supervision/ApprovalCodeModal';
 import { ParentOnboardingModal } from '@/components/features/parent';
 import { useAuth } from '@/hooks/use-auth';
@@ -90,7 +90,7 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
 
   return (
     <div className="mhn-app-shell">
-      <Sidebar activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout} />
+      <LeftSidebar activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout} />
 
       <div className="mhn-app-content mhn-supervision-page-root">
       <main className="mhn-supervision-main-container">

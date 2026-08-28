@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sidebar } from '@/components/common/Sidebar';
+import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { ChatSidebar, ChatItem } from '@/components/features/messaging/ChatSidebar';
@@ -163,7 +163,7 @@ export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
 
   return (
     <div className="mhn-app-shell">
-      <Sidebar activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout} />
+      <LeftSidebar activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout} />
 
       <div className="mhn-app-content mhn-messaging-page-root">
         {/* Pending Guardian Notice Banner */}

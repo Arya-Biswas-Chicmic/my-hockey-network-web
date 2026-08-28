@@ -305,9 +305,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
     }
   };
 
-  const handleResendCode = async () => {
+  /**
+   * Returns whether a new code was actually sent, so `VerifyEmailForm` restarts
+   * its resend cooldown only on success rather than locking the user out after a
+   * failed request.
+   */
+  const handleResendCode = async (): Promise<boolean> => {
     const targetEmail = authMode === 'login' ? loginEmail : accountData.email;
-    if (!targetEmail) return;
+    if (!targetEmail) return false;
 
     setLoading(true);
     setErrorMessage(null);
@@ -323,10 +328,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
       const msg = `A new verification code was sent to ${targetEmail}`;
       setResendNotice(msg);
       showToast(msg, 'success');
+      return true;
     } catch (err: unknown) {
       const msg = extractErrorMessage(err, `Failed to send verification code to ${targetEmail}. Please try again.`);
       setErrorMessage(msg);
       showToast(msg, 'error');
+      return false;
     } finally {
       setLoading(false);
     }
@@ -338,7 +345,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
     <div className="onboarding-modal">
       {step !== 4 && step !== 5 && (
         <OnboardingIllustration
-          imageSrc={getIllustrationSource(step, authMode, loginStep, resolvedTheme)}
+          imageSrc={getIllustrationSource(step, authMode, loginStep, resolvedTheme === 'light' ? 'light' : 'dark')}
         />
       )}
 
@@ -377,6 +384,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
               loading={loading}
               errorMessage={errorMessage}
               resendNotice={resendNotice}
+              onResendNoticeExpire={() => setResendNotice(null)}
               prefillCode={devOtpCode}
             />
           )}
@@ -426,6 +434,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
               loading={loading}
               errorMessage={errorMessage}
               resendNotice={resendNotice}
+              onResendNoticeExpire={() => setResendNotice(null)}
               prefillCode={devOtpCode}
             />
           )}

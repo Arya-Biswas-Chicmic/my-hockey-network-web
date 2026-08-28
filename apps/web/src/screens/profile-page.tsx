@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Sidebar } from '@/components/common/Sidebar';
+import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { CreatePostModal } from '@/components/features/home/CreatePostModal';
 import { EditProfileModal, ProfileSkeletonLoader } from '@/components/features/profile';
@@ -150,7 +150,7 @@ export const ProfilePage: React.FC<PageProps> = ({
 
   return (
     <div className="mhn-app-shell">
-      <Sidebar
+      <LeftSidebar
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}

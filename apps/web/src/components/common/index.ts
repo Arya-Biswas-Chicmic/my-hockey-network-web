@@ -1,7 +1,6 @@
 export * from '@/components/common/Button';
 export * from '@/components/common/FormControls';
 export * from '@/components/common/Header';
-export * from '@/components/common/Sidebar';
 export * from '@/components/common/LogoutModal';
 export * from '@/components/common/PendingBanner';
 export * from '@/components/common/Spinner';

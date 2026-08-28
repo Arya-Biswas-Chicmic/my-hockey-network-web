@@ -1,20 +1,38 @@
 import { Button } from '@/components/common/Button';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Spinner } from '@/components/common/Spinner';
 import { verificationCodeFormSchema, type VerificationCodeFormValues } from '@my-hockey-network/validation';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { OtpCodeInput } from '@/components/common/OtpCodeInput';
 import { Form, FormField } from '@/components/ui/form';
+import { ResendCountdown, type ResendCountdownHandle } from '@/components/ui/resend-countdown';
+
+/** Seconds a user must wait between verification-code resend requests. */
+const RESEND_COOLDOWN_SECONDS = 59;
+
+/** Digits in a verification code; mirrors `verificationCodeFormSchema`. */
+const OTP_LENGTH = 6;
 
 interface VerifyEmailFormProps {
   email?: string;
   onConfirm?: (code: string) => void;
   onChangeEmail?: () => void;
-  onResendCode?: () => void;
+  /**
+   * Requests a new code. May be async, and may resolve `false` to report that no
+   * code was sent — the resend cooldown restarts only on success, so a failed
+   * request leaves the button pressable instead of locking the user out with no
+   * new code on the way.
+   */
+  onResendCode?: () => void | boolean | Promise<void | boolean>;
   loading?: boolean;
   errorMessage?: string | null;
   resendNotice?: string | null;
+  /**
+   * Clears `resendNotice`. Called when the cooldown ends, so the "a new code was
+   * sent" confirmation does not outlive the window it describes.
+   */
+  onResendNoticeExpire?: () => void;
   /**
    * OTP value returned directly by the backend while no email service is
    * wired up (see `OtpRequestResponse.devCode`/`code`). When present, the
@@ -32,9 +50,10 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
   loading = false,
   errorMessage = null,
   resendNotice = null,
+  onResendNoticeExpire,
   prefillCode = null,
 }) => {
-  const [resendCooldown, setResendCooldown] = useState<number>(59);
+  const resendRef = useRef<ResendCountdownHandle>(null);
   const form = useForm<VerificationCodeFormValues>({
     resolver: zodResolver(verificationCodeFormSchema),
     mode: 'onChange',
@@ -46,29 +65,19 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
     if (prefillCode) form.reset({ code: prefillCode });
   }, [prefillCode, form]);
 
-  useEffect(() => {
-    let timer: ReturnType<typeof setInterval> | undefined;
-    if (resendCooldown > 0) {
-      timer = setInterval(() => {
-        setResendCooldown((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [resendCooldown]);
-
-  const handleResendClick = () => {
-    if (resendCooldown > 0 || loading) return;
-    if (onResendCode) {
-      onResendCode();
-    }
-    setResendCooldown(59);
+  const handleResendClick = async () => {
+    if (loading || !onResendCode) return;
+    const sent = await onResendCode();
+    // A handler that reports nothing is treated as success, preserving the
+    // previous behavior for callers that do not signal an outcome.
+    if (sent !== false) resendRef.current?.restart();
   };
 
-  const activeError =
-    form.formState.errors.code?.message || errorMessage;
-
-  const formattedTimer = `00:${resendCooldown.toString().padStart(2, '0')}`;
-  const isLastTenSeconds = resendCooldown <= 10 && resendCooldown > 0;
+  const activeError = form.formState.errors.code?.message || errorMessage;
+  // `useWatch` rather than `form.watch()`: lint rejects the latter because React
+  // Compiler cannot memoize around it (see docs/COMPONENT_CATALOG.md).
+  const code = useWatch({ control: form.control, name: 'code' });
+  const isCodeComplete = (code ?? '').length === OTP_LENGTH;
 
   return (
     <div className="onboarding-form verify-email-form-container">
@@ -83,8 +92,8 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
       </div>
 
       {resendNotice && (
-        <div className="mhn-resend-notice-card">
-          ✓ {resendNotice}
+        <div className="mhn-resend-notice-card" role="status" aria-live="polite">
+          <span aria-hidden="true">✓ </span>{resendNotice}
         </div>
       )}
 
@@ -104,7 +113,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
 
         {/* Standardized Edit Profile Reference Validation Error Format */}
         {activeError && (
-          <div className="mhn-edit-profile-field-error mhn-error-center-margin">
+          <div className="mhn-edit-profile-field-error mhn-error-center-margin" role="alert">
             <span>{activeError}</span>
           </div>
         )}
@@ -112,7 +121,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
         <Button
           type="submit"
           className={`btn-submit btn-confirm-otp mhn-btn-confirm-margin ${loading ? 'mhn-loading' : ''}`}
-          disabled={loading}
+          disabled={loading || !isCodeComplete}
         >
           {loading ? (
             <span className="mhn-btn-loading-flex">
@@ -138,20 +147,13 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
       {/* Resend Code Footer */}
       <div className="auth-footer-text verify-email-footer mhn-mt-16">
         <span>Don’t Receive the code? </span>
-        {resendCooldown > 0 ? (
-          <span className={isLastTenSeconds ? 'mhn-timer-text-urgent' : 'mhn-timer-text'}>
-            Resend Code in {formattedTimer}
-          </span>
-        ) : (
-          <Button
-            type="button"
-            onClick={handleResendClick}
-            disabled={loading}
-            className="auth-primary-link btn-resend-code mhn-btn-resend-link"
-          >
-            Resend Code
-          </Button>
-        )}
+        <ResendCountdown
+          ref={resendRef}
+          seconds={RESEND_COOLDOWN_SECONDS}
+          onResend={handleResendClick}
+          disabled={loading}
+          onCountdownComplete={onResendNoticeExpire}
+        />
       </div>
     </div>
   );

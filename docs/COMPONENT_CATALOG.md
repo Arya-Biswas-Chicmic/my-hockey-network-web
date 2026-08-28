@@ -1,6 +1,6 @@
 # Component catalog and reuse policy
 
-Last reviewed: 2026-08-27
+Last reviewed: 2026-08-28
 
 ## Rule
 
@@ -23,8 +23,12 @@ page → feature/container → feature component → existing platform primitive
 - `common/OtpCodeInput`: the accessible six-digit OTP input reused by email verification and
   guardian approval.
 - `common/Header`: reused across the authenticated web pages.
-- `core/theme-provider`: the only web theme owner. It persists `light`, `dark`, or `system`, resolves
-  system preference changes, and exposes the resolved palette to the common Header toggle.
+- `core/theme-provider`: the only web theme owner. It wraps `next-themes` (`attribute="class"`,
+  `defaultTheme="dark"`, `enableSystem`) and re-exports `useTheme`, so consumers import the hook from
+  this module, never from `next-themes` directly. It persists `light`, `dark`, or `system`, resolves
+  system preference changes, mirrors state into cookies via `theme/theme-cookie.ts`, and exposes the
+  resolved palette to the common Header toggle. See "Theming and dark mode" below before touching
+  any dark-mode styling.
 - `common/Spinner`, `Toast`, `PendingBanner`, `NoDataFound`, `ServerDown`: reusable feedback/state UI.
 - `ui/file-picker-button`: accessible reusable file selection through a native associated label and
   input rather than `ref.current.click()` or input-event mutation.
@@ -299,7 +303,44 @@ e.g. crop-on-upload inside an edit-profile modal), `closeOnOverlayClick`/`closeO
 
 Adopted by `DeleteCareerModal.tsx` and `ImageCropModal.tsx`; migrate other existing
 `.mhn-modal-overlay` call sites onto `Modal` opportunistically as they're touched, rather than in one
-sweeping pass. Every new modal must be built on `Modal`, not a hand-rolled overlay div.
+sweeping pass.
+
+### `Dialog` / `Drawer` (preferred for new work)
+
+`apps/web/src/components/ui/dialog.tsx` and `drawer.tsx` are the newer compound primitives, built on
+`@base-ui/react` and ported from the Admin Panel. Prefer these for new modals; `Modal` above remains
+supported for the existing `.mhn-modal-*` call sites and is not being removed in a sweeping pass.
+
+- Compose with `Dialog` / `DialogTrigger` / `DialogContent` / `DialogHeader` / `DialogTitle` /
+  `DialogDescription` / `DialogBody` / `DialogFooter` / `DialogClose`.
+- `Dialog` takes `variant="dialog"` (centered, default) or `variant="drawer"` (swipeable side panel,
+  rendered through `drawer.tsx`). Pass the same `variant` to `DialogContent`.
+- Styling lives in the `@layer components` block at the end of `apps/web/src/index.css`
+  (`.cn-dialog-*`, `.cn-drawer-*`), written with this app's own semantic tokens. Do not copy the
+  Admin Panel's raw color values.
+- `DialogContent` defaults to `max-w-[calc(100%-2rem)]`, which is full-bleed on desktop. Confirmation
+  dialogs must pass an explicit width, e.g. `<DialogContent className="max-w-sm">` — see
+  `common/LogoutModal.tsx`.
+- The close button and footer buttons use `common/Button`. Use the token-backed variants (`solid`,
+  `solid-outline`, `solid-destructive`); see the Button variant warning below.
+
+Every new modal must be built on `Dialog` or `Modal`, never a hand-rolled overlay div.
+
+### `common/Button` sets `whitespace-nowrap`
+
+`buttonVariants`' base class list includes `whitespace-nowrap` (and `shrink-0`), which is right for
+an ordinary short button label but wrong for anything card-shaped that wraps onto multiple lines. A
+`Button` used as a content card must override it (`white-space: normal`), or its text will run past
+the element's edge no matter what width or `min-width: 0` constraints are applied around it — the
+text simply cannot break. `.mhn-parent-choice-card` does this; do the same for any new
+`Button`-backed card.
+
+### `common/Button` variant warning
+
+`common/Button`'s legacy variants `secondary`, `outline`, `danger`, `icon`, and `link` map to
+`.mhn-ui-button--*` CSS classes that **do not exist anywhere in `index.css`**. They render unstyled.
+Until that gap is closed, use the token-backed variants — `primary` (`.btn-continue`, which does
+exist), `solid`, `solid-outline`, or `solid-destructive` — for any button that must be visible.
 
 ## Feed/post query and mutation hooks
 
@@ -374,6 +415,84 @@ into one shared component: they have different field-naming conventions, differe
 strictness (only the `parent` one age-validates the child's DOB), and different external contracts
 (controlled-from-parent vs. self-contained). Unifying them is a legitimate follow-up but a distinct,
 larger change from converting each to RHF+Zod in place, which is what this pass did.
+
+## Loading skeletons and route boundaries
+
+Loading happens in two phases, and the distinction is what decides which component to use:
+
+1. **The layout is not yet known** — the `/auth/me` bootstrap is in flight, or the root transition is
+   resolving. Use `BrandLoader` (`common/BrandLoader.tsx`): the MHN mark, centred, theme-aware, with
+   a `prefers-reduced-motion` fallback. Pass `fullScreen` for a first paint. A route-shaped skeleton
+   here would guess at a layout that may not be the one that loads.
+2. **The layout is known** — use the route's skeleton, which shimmers the real thing.
+
+`app/loading.tsx` is the brand loader for exactly this reason: it is layout-agnostic, so unlike the
+route-shaped skeleton that used to live there it is safe at a level that also covers `(auth)` and
+`(public)`. Each route group then owns its own `loading.tsx` for phase 2.
+
+- `(authenticated)/loading.tsx` → `FullAppSkeletonLoader` (sidebar + Home content skeleton).
+- `(auth)/loading.tsx` → `AuthSkeletonLoader`, built on the real `.onboarding-screen`/
+  `.onboarding-modal` classes.
+- `(public)/loading.tsx` → `PublicProfileSkeletonLoader`, mirroring the public profile's own shell.
+- Per-route overrides (`profile/loading.tsx`, `network/loading.tsx`) compose the exported
+  `AppShellSkeleton` with their own content skeleton.
+
+The route guards render their own placeholder while the `/auth/me` bootstrap is in flight, and that
+is usually the one a user actually sees — `loading.tsx` alone is not the whole story. Keep the two in
+sync: `GuestGuard` uses `AuthSkeletonLoader` (it only wraps signed-out routes), while
+`AuthenticatedGuard`/`ParentRoleGuard`/`MinorPlayerGuard` use `FullAppSkeletonLoader`.
+
+Add a new route's skeleton as a `loading.tsx` beside its `page.tsx` — do **not** branch on
+`usePathname()` inside a shared skeleton. That is what the previous single root loader did; it
+required `'use client'` and a hydration-mismatch workaround, and one of its branches silently never
+matched the real route name.
+
+Skeleton fills use `.mhn-skeleton-shimmer`, whose gradient is token-driven and follows the theme.
+Never hardcode a skeleton colour.
+
+## Cooldown / countdown primitives
+
+`apps/web/src/hooks/use-countdown.ts` (`useCountdown`, `formatCountdown`) is the single countdown
+timer, and `apps/web/src/components/ui/resend-countdown.tsx` (`ResendCountdown`) is the cooldown-gated
+"resend" control built on it. Extracted from `VerifyEmailForm`'s inline `setInterval`; reuse these for
+any throttled-retry surface rather than re-implementing a timer in a component.
+
+- `useCountdown({ seconds, autoStart?, onComplete? })` → `{ remaining, isActive, restart, stop }`.
+  The interval is created once per run, not once per tick — the inline version it replaced listed the
+  current count in its effect dependencies, tearing the timer down and rebuilding it 60 times per
+  cooldown and letting the countdown drift slower than real time.
+- `ResendCountdown` renders a live `MM:SS` timer (`role="timer"`, using the existing
+  `.mhn-timer-text` / `.mhn-timer-text-urgent` classes) and swaps to a `common/Button` action when the
+  cooldown ends. It does **not** restart itself when the action fires: the owner calls `restart()`
+  through the forwarded `ResendCountdownHandle` only after the request actually succeeds, so a failed
+  resend leaves the button pressable instead of imposing a full cooldown for a code that never sent.
+  `onCountdownComplete` fires at zero — `VerifyEmailForm` uses it to clear its "code sent" notice so
+  the confirmation does not outlive the window it describes.
+
+Success feedback colors come from the `--color-success*` tokens in `index.css`'s `@theme` block
+(with dark overrides in `:root.dark`), added alongside `--color-destructive`. Do not hardcode greens
+at the call site.
+
+## Shared date-of-birth parsing and age rules
+
+`packages/validation/src/date.ts` is the single owner of date-of-birth parsing and age calculation
+across web and mobile. Use it instead of `new Date(value)` or hand-rolled year subtraction anywhere
+a DOB is validated:
+
+- `parseDob(value, format?)` — strict parse of `'DD/MM/YYYY'` (manual/masked text inputs) or
+  `'YYYY-MM-DD'` (native `<input type="date">`); auto-detects when `format` is omitted. Rejects
+  calendar overflow, US month-first ordering, pre-1900 years, and the loose strings `new Date()`
+  would otherwise coerce.
+- `ageFromDate(date, now?)` / `ageFromDob(value, format?, now?)` — whole years, adjusted for whether
+  this year's birthday has passed (`date-fns`'s `differenceInYears`).
+- `isFutureDate(date, now?)` — **use this to reject future dates.** `ageFromDate` truncates toward
+  zero, so a date under a year ahead returns `0`, not a negative; testing the age's sign silently
+  misses it.
+
+`validateProfileField`'s `dateOfBirth` branch and `packages/core`'s `calculateAge` both delegate
+here, so the signup, parent add-player, edit-profile, and Profile > Personal Details surfaces all
+apply identical rules. Age *limits* stay with each caller — they legitimately differ (parents 18+,
+players 5–100), and the differing strictness noted below is preserved intentionally.
 
 ## Profile/Supervision form Zod schemas
 

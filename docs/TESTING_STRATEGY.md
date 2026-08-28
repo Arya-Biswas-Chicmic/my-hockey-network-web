@@ -1,10 +1,12 @@
 # Testing and coverage strategy
 
-Last reviewed: 2026-08-27
+Last reviewed: 2026-08-28
 
 ## Test layers
 
-- Unit tests cover domain calculations, role authorization, and validation schemas.
+- Unit tests cover domain calculations, role authorization, and validation schemas, including the
+  shared date-of-birth parser/age rules in `packages/validation/src/date.ts` (format strictness,
+  birthday boundaries, leap days, and future-date rejection) under a frozen clock.
 - API-client tests cover headers, envelopes, network/JSON server failures, empty 204 responses, refresh
   serialization, retry, logout paths, and mutation 5xx localization (no global outage trigger).
 - Core posts-flow tests cover feed normalization, post-ID validation, update/delete/reaction paths, and
@@ -65,8 +67,8 @@ meaningless render-line coverage.
 The enforced minimum is 80% for statements, branches, functions, and lines. Coverage output is
 written to `coverage/` and is not committed.
 
-Latest verified result (2026-08-27): 93.96% statements, 88.28% branches, 98.07% functions, and
-94.46% lines. All 196 tests passed.
+Latest verified result (2026-08-28): 95.32% statements, 89.08% branches, 98.14% functions, and
+95.48% lines. All 241 tests passed.
 
 ## Commands
 

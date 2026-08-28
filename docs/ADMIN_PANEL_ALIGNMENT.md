@@ -1,12 +1,13 @@
 # Admin Panel alignment reference
 
-Last reviewed: 2026-08-26
+Last reviewed: 2026-08-28
 
 ## Purpose
 
-The Admin Panel at `/Volumes/Data/Projects/React/MHN/AdminPanel` is a separate web-only repository.
-It was reviewed to inform the User Panel's approved Next.js target. This document is a comparison,
-not permission to import Admin files or start the User Panel migration.
+The Admin Panel (checked out locally at `myhockeynetwork-adminpanel-frontend`, alongside this repo;
+an older revision of this document recorded a `/Volumes/Data/...` path that no longer applies) is a
+separate web-only repository. It was reviewed to inform the User Panel's approved Next.js target.
+This document is a comparison, not blanket permission to import Admin files.
 
 ## Verified patterns to align
 
@@ -34,6 +35,31 @@ not permission to import Admin files or start the User Panel migration.
 - Web shadcn/DOM presentation and mobile React Native presentation remain separate. Cross-platform
   reuse stays in contracts, domain logic, API behavior, auth use cases, validation, transformations,
   and design tokens.
+
+## Ported from Admin (and how it differs here)
+
+These Admin patterns have been ported into `apps/web`. Each was adapted, not copied verbatim —
+re-read this before "syncing" either side.
+
+| Ported | Admin | User Panel |
+| --- | --- | --- |
+| Theme switching | `next-themes`, `attribute="class"` | Same library and `attribute="class"`, but `defaultTheme="dark"` and no i18n |
+| Theme cookie sync | `theme/theme-cookie.ts` | Same approach; cookie keys are `mhn_theme_preference` / `mhn_resolved_theme` |
+| `Dialog` / `Drawer` | `@base-ui/react`, `cn-dialog-*` / `cn-drawer-*` classes | Same structure and class names; our own `@theme` tokens supply the colors |
+| Dialog close/footer buttons | Admin's `@base-ui`-based `Button` (`variant="ghost"`, `size="icon-sm"`) | Our existing `common/Button`; Admin's Button was **not** ported |
+| Dialog copy | `useTranslation()` | Hardcoded English; no i18n layer exists in `apps/web` |
+
+Traps hit during that port, worth remembering:
+
+- Admin's dark styling is Tailwind `dark:` utilities against `.dark`. This app's legacy dark rules
+  were `:root[data-theme='dark']` and had to be converted to `:root.dark`. Verify which selector a
+  stylesheet actually uses before assuming.
+- `.cn-dialog-*` depends on `tw-animate-css` (`animate-in`, `fade-out-0`, `zoom-in-95`). Porting the
+  CSS without adding that import fails the build with `Cannot apply unknown utility class`.
+- Admin's `cn-font-heading` class is referenced in its components but defined nowhere in its CSS. It
+  was dropped here rather than carried over as a no-op.
+- `DialogContent` is full-bleed by default (`max-w-[calc(100%-2rem)]`). Admin's call sites set their
+  own widths; ours must too.
 
 ## Admin documentation drift observed
 

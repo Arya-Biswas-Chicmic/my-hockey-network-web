@@ -1,57 +1,32 @@
 import { REGEX_PATTERNS } from '@my-hockey-network/constants';
+import { ageFromDate, isFutureDate, parseDob } from '@my-hockey-network/validation';
 import type { SignUpValidationResult } from './types';
 
 /**
- * Calculates precise age in years from a given Date of Birth (DOB)
- * Supports YYYY-MM-DD, DD/MM/YYYY formats or Date objects
+ * Calculates precise age in years from a given Date of Birth (DOB).
+ * Supports YYYY-MM-DD, DD/MM/YYYY formats or Date objects.
+ *
+ * Parsing and the year arithmetic are delegated to `@my-hockey-network/validation`'s
+ * shared `parseDob`/`ageFromDate` so this and the form schemas cannot drift apart —
+ * this function previously carried its own copy of both, one of four in the repo.
  */
 export function calculateAge(dobInput: string | Date | null | undefined): number | null {
   if (!dobInput) return null;
 
-  let birthDate: Date;
-  const currentYear = new Date().getFullYear();
-
-  if (dobInput instanceof Date) {
-    birthDate = dobInput;
-  } else if (typeof dobInput === 'string') {
-    const trimmed = dobInput.trim();
-    if (!trimmed) return null;
-
-    // Handle DD/MM/YYYY format
-    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
-      const [dd, mm, yyyy] = trimmed.split('/').map(Number);
-      if (mm < 1 || mm > 12 || dd < 1 || dd > 31 || yyyy < 1900 || yyyy > currentYear) {
-        return null;
-      }
-      birthDate = new Date(yyyy, mm - 1, dd);
-    } 
-    // Handle YYYY-MM-DD format
-    else if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(trimmed)) {
-      const [yyyy, mm, dd] = trimmed.split('-').map(Number);
-      if (mm < 1 || mm > 12 || dd < 1 || dd > 31 || yyyy < 1900 || yyyy > currentYear) {
-        return null;
-      }
-      birthDate = new Date(yyyy, mm - 1, dd);
-    } else {
-      return null;
-    }
-  } else {
+  const birthDate = dobInput instanceof Date ? dobInput : parseDob(dobInput);
+  if (birthDate === null || Number.isNaN(birthDate.getTime())) {
     return null;
   }
 
-  if (isNaN(birthDate.getTime())) {
+  // A future DOB is checked explicitly rather than via `age < 0`: the age
+  // calculation truncates toward zero, so a date a few months ahead would
+  // otherwise come back as a plausible-looking 0.
+  if (isFutureDate(birthDate)) {
     return null;
   }
 
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-
-  if (age < 0 || age > 120) {
+  const age = ageFromDate(birthDate);
+  if (age > 120) {
     return null;
   }
 

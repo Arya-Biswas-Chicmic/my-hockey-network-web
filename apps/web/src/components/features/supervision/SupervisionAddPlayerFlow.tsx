@@ -74,7 +74,7 @@ export function SupervisionAddPlayerFlow({
                 <div className="mhn-parent-card-sub">Set up a player profile for your child.</div>
               </div>
             </div>
-            <div className="mhn-parent-chevron-blue">›</div>
+            <div className="mhn-parent-chevron">›</div>
           </div>
 
           <div
@@ -88,7 +88,7 @@ export function SupervisionAddPlayerFlow({
                 <div className="mhn-parent-card-sub">Connect with a player who already has a MyHockey account.</div>
               </div>
             </div>
-            <div className="mhn-parent-chevron-gray">›</div>
+            <div className="mhn-parent-chevron">›</div>
           </div>
         </div>
       </div>

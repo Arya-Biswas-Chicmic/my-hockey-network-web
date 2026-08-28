@@ -1,7 +1,8 @@
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
 import React, { useState, useEffect } from 'react';
-import { Sidebar, NoDataFound, ServerDown } from '@/components/common';
+import { NoDataFound, ServerDown } from '@/components/common';
+import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { ManageNetworkCard } from '@/components/features/network/ManageNetworkCard';
 import { ProfileSummaryCard } from '@/components/features/home/ProfileSummaryCard';
 import { GroupsView } from '@/components/features/network/GroupsView';
@@ -204,7 +205,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
 
   return (
     <div className="mhn-app-shell">
-      <Sidebar
+      <LeftSidebar
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}

@@ -2,7 +2,7 @@ import { Button } from '@/components/common/Button';
 import Image from 'next/image';
 import { FallbackImage } from '@/components/ui/fallback-image';
 import React, { useState } from 'react';
-import { Sidebar } from '@/components/common/Sidebar';
+import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { Armchair, Ban, ChevronRight, CircleParking, Droplets, Smile, Toilet, Users } from 'lucide-react';
 
 interface EventDetailPageProps {
@@ -40,7 +40,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
 
   return (
     <div className="mhn-app-shell">
-      <Sidebar
+      <LeftSidebar
         activeTab={activeNavTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}

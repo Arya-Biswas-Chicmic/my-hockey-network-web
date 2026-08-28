@@ -151,7 +151,6 @@ export const ParentOnboardingModal: React.FC<ParentOnboardingModalProps> = ({
             <AddPlayerChoiceStep
               onCreateNew={() => setStep(ParentOnboardingStep.CREATE_STEP_1)}
               onLinkExisting={() => setStep(ParentOnboardingStep.LINK_EXISTING)}
-              onBack={() => setStep(ParentOnboardingStep.WHO_MANAGE)}
             />
           )}
 
