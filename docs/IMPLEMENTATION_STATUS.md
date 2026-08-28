@@ -1,6 +1,6 @@
 # Implementation status
 
-Last reviewed: 2026-08-28
+Last reviewed: 2026-08-30
 
 ## Completed
 
@@ -1716,6 +1716,131 @@ Last reviewed: 2026-08-28
     3 borders compute to `0px` and the scroll column still genuinely scrolls
     (`scrollHeight > clientHeight`, `overflow-y: auto` both confirmed via
     `getComputedStyle`) — the fix removed the line, not the scrolling.
+
+- Code-reviewed the user's own follow-on edits to the Profile rebuild (Agent
+  tool unavailable all session — every finder/verify pass done directly per
+  the code-review skill's own fallback instructions) and fixed the two
+  confirmed bugs: `profile-page.tsx`'s posts-fallback effect showed demo
+  posts during the *loading* state, not just a genuinely-empty response
+  (violated `docs/DEMO_DATA_POLICY.md`); `useProfileViewModel`'s
+  `followers`/`following` read from a field that exists on neither profile
+  DTO, so they silently always resolved to the demo fixture's 1,000,000/268
+  regardless of the real value.
+
+- Profile photo editing, three iterations converging on: avatar-only, edited
+  from the hero card's own camera badge, no cover photo at all.
+  - First added a cover-photo strip to `ProfileHeroCard` (misreading earlier
+    feedback) — feedback 2026-08-29 "no cover photo required in user
+    profile" reverted it back to avatar-only, and removed the now-dead
+    cover-upload code from `useProfileImageUploads`/`useEditProfileForm`
+    rather than leaving it unused.
+  - Removed the photo/cover section from `EditProfileModal` entirely — both
+    photos update immediately from the hero card, not staged inside the
+    edit form.
+  - Fixed the shared crop dialog (`ImageCropModal`/`.mhn-crop-modal-card`):
+    a stray `max-width: 92vw` was overriding `.mhn-modal-card`'s 440px cap,
+    so it rendered nearly full-screen everywhere it's used (avatar and,
+    when it still existed, cover). Capped at `min(92vw, 400px)`.
+  - Added a full-width "Cancel" button below Apply in the crop dialog,
+    styled from Figma node `2203:43222` ("Back" button: `#439CF7` outline,
+    8px radius, 18px/28px label) — matched the existing
+    `--color-auth-action-bright` token exactly.
+
+- Design-token consistency pass (feedback 2026-08-28/29): "each component...
+  sharing 8px radius... make this consistent", "buttons are using this
+  #0B66C2 color".
+  - `--color-primary` held three different blues depending on theme/file
+    (`#1860c3` light, `#168bff` dark, plus a duplicate light `:root` block)
+    while `--color-auth-action` was already the theme-stable `#0b66c2` used
+    across the auth flow. Aligned `--color-primary` (and its light/dark
+    duplicates, `--color-ring`, `--color-accent-foreground`) to `#0b66c2`,
+    and re-derived `--color-primary-hover`/`-active` via `color-mix()`
+    instead of hand-picked hex. Also fixed three buttons with their own
+    hardcoded off-brand blues bypassing the token (`.btn-submit`,
+    `.mhn-btn-post`, `.mhn-btn-custom-done`).
+  - Standardized 131 `border-radius` declarations to 8px across cards,
+    panels, buttons, modals, inputs, and dropdowns (structural chrome only,
+    per explicit scoping — avatars/dots/genuinely pill-shaped elements
+    excluded) — found via a full-file audit
+    (`awk`/`python3` selector-tracking script, not spot-checking) that
+    classified all ~365 non-circular `border-radius` rules in `index.css`.
+  - k/m/b number formatting (`formatCompactNumber` in
+    `apps/web/src/helpers/formatters.ts`) applied to follower/following
+    counts, feed like/comment/repost counts, comment likes, and group
+    member counts; `ProfileHeroCard`'s old `formatProfileCount` is now a
+    deprecated re-export of the shared helper.
+
+- Home feed pagination (feedback 2026-08-28/29: "home page feed scroll is
+  not working... why working in the profile feed and not home feed"):
+  `useHomeFeed` only ever fetched page 1 — `getFeed` already accepted a
+  `cursor` but nothing on the frontend used it. Rewired through
+  `useInfiniteListQuery` + `useInfiniteScrollSentinel`, the same pair
+  `ProfilePostsTab` already used. Also added a plain `scroll`-event
+  listener as a second, independent trigger alongside the
+  `IntersectionObserver` in `use-infinite-scroll-sentinel.ts` (found via
+  live debugging that `requestAnimationFrame`/`IntersectionObserver`
+  callbacks don't fire at all while this session's own browser pane is
+  backgrounded — the scroll listener doesn't depend on either). As a side
+  effect, `FeedService` no longer unconditionally prepends 2 demo posts
+  ahead of real ones; the demo fallback now only applies when a resolved
+  first page is genuinely empty, matching `docs/DEMO_DATA_POLICY.md`.
+
+- Shared page layout, rebuilt on CSS Grid after three narrower attempts each
+  broke something feedback caught (2026-08-28 through 2026-08-30 — full
+  history of what failed and why is in the `.mhn-app-shell` comment in
+  `index.css`, kept there so the next change doesn't silently re-try a
+  dead end):
+  1. `flex` shell + `flex: 1` content, each page self-centering via
+     `margin: auto` — sidebar position stayed constant across routes, but
+     the gap before the sidebar and the gap after the card were unequal
+     (only the *outer* shell margins were symmetric).
+  2. `width: fit-content` shell + a fixed 48px gutter — did get the two
+     visible gaps equal, but (a) pages with wider content resized the
+     whole shell and visibly shifted the sidebar navigating between routes
+     ("moving from home to messaging tab... left panel move to left"), and
+     (b) a percentage-width descendant doesn't feed its resolved size back
+     into an ancestor's `fit-content` calculation, so a page whose actual
+     rendered content was narrower than its own `max-width` (Groups' 4-card
+     grid, ~823px under a 932px cap) leaked the smaller number into the
+     shell and shifted the sidebar yet again, differently, per page. A
+     `vw`-based width formula fixed that specific case but still overflowed
+     ~74px at a 900px viewport — nested `fit-content` needed its own
+     workaround at every level.
+  3. **CSS Grid**, no `fit-content` anywhere: `.mhn-app-shell` is one grid,
+     `minmax(0,1fr) 240px 48px minmax(0,var(--page-max-width,932px))
+     minmax(0,1fr)`. The two outer `1fr` columns are equal by definition —
+     not something that depends on any content's actual size — so the two
+     visible gaps stay equal with no per-page workaround needed.
+     `--page-max-width` is set by the one new `PageShell` component
+     (`apps/web/src/components/layout/PageShell.tsx`, via
+     `useLayoutEffect` on `document.documentElement`) — the single place
+     every route configures its content width, replacing 14 pages' worth
+     of hand-copied `<main className="... max-w-[Npx] ...">` strings and,
+     on 2 pages, a leftover legacy CSS rule with its own conflicting
+     `max-width`/`margin` silently winning the cascade over the Tailwind
+     class in the JSX. All 14 authenticated routes (Home, Profile, Events,
+     Groups incl. its detail view, Teams, Notifications, Saved, Explore,
+     Messaging, Settings, Supervision, Help, Event Detail, My Network) now
+     render `<PageShell>` and default to Home's own 932px unless a route
+     genuinely needs more (Messaging's two-pane chat capped its content
+     from 1380px down to 932px to match everyone else instead, per
+     feedback — "if required make chat detail component width wise
+     smaller"). This also fixed the reload/tab-navigation sidebar flicker
+     reported once the migration was mid-way through — every route reading
+     the same default leaves nothing to fluctuate.
+  - Verified: `pnpm --filter @my-hockey-network/web typecheck`, `lint:check`,
+    `node scripts/check-component-reuse.mjs`, `pnpm test:run` (286/286).
+    Live-verified via `getBoundingClientRect` on Home/Settings/Messaging/
+    Groups/My Network at 2000px (sidebar position and both gaps identical
+    across all of them, 48px gutter, no `scrollWidth` overflow) and at
+    1200/900/700px (no overflow at any, including the exact width that
+    previously overflowed).
+
+- Explore/Home visual consistency and the "standard base area" direction
+  (feedback 2026-08-30): Explore's own content capped to 932px to match
+  Home exactly (was 1180px); still pending — reshaping Explore's actual
+  content (search bar at the top of the feed, "who to know" shifted up) to
+  visually mirror Home, not just share its width.
 
 ## Current quality gates
 

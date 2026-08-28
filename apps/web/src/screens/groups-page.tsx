@@ -6,6 +6,7 @@ import { FallbackImage } from '@/components/ui/fallback-image';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
 import { GroupDetailView } from '@/components/features/network/GroupDetailView';
+import { PageShell } from '@/components/layout/PageShell';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -113,14 +114,14 @@ export const GroupsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       )}
 
       {selectedGroupId ? (
-        <div className="max-w-[1240px] w-full my-6 mx-auto px-6 lg:my-0 lg:min-h-0 lg:flex-1 lg:py-6 lg:overflow-y-auto pb-16">
+        <PageShell className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-16">
           <GroupDetailView
             groupId={selectedGroupId}
             onBackToGroups={() => setSelectedGroupId(null)}
           />
-        </div>
+        </PageShell>
       ) : (
-        <main className="mhn-groups-main-container mhn-page-container max-w-[1240px] flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-16">
+        <PageShell className="mhn-groups-main-container flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-16">
           {/* Top Header Row with Title and Search Input */}
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-2xl font-bold text-slate-100">Groups</h1>
@@ -214,7 +215,7 @@ export const GroupsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               </article>
             ))}
           </div>
-        </main>
+        </PageShell>
       )}
     </>
   );

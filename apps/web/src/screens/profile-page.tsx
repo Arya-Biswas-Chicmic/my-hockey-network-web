@@ -31,6 +31,7 @@ import { ProfileStatsTab } from '@/components/features/profile/ProfileStatsTab';
 import { ProfileEventsTab } from '@/components/features/profile/ProfileEventsTab';
 import { ProfileCareerTab } from '@/components/features/profile/ProfileCareerTab';
 import { useShellUiStore } from '@/stores/shell-ui-store';
+import { PageShell } from '@/components/layout/PageShell';
 import { RightSidebar } from '@/components/layout/RightSidebar';
 import { SearchWidget } from '@/components/features/home/SearchWidget';
 import { WhoToFollowWidget } from '@/components/features/home/WhoToFollowWidget';
@@ -201,7 +202,7 @@ export const ProfilePage: React.FC<PageProps> = ({
         />
       )}
 
-      <main className="mhn-home-main-layout lg:my-0 lg:min-h-0 lg:flex-1">
+      <PageShell className="mhn-home-main-layout lg:my-0 lg:min-h-0 lg:flex-1">
         <section ref={profileScrollRef} className="mhn-layout-col-center flex flex-col gap-4 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">
           {!user || (Boolean(effectiveProfileId) && (isProfileTargetLoading || (isProfileTargetFetching && !targetProfileRes))) ? (
             <ProfileSkeletonLoader />
@@ -280,7 +281,7 @@ export const ProfilePage: React.FC<PageProps> = ({
           <SearchWidget value={peopleSearch} onChange={setPeopleSearch} placeholder="Search" />
           <WhoToFollowWidget fallbackSuggestions={profileDemoData.people} onViewAll={() => onNavigate?.('network')} />
         </RightSidebar>
-      </main>
+      </PageShell>
 
       <ApprovalCodeModal
         isOpen={guardianApproval.guardianApprovalModalConfig.isOpen}

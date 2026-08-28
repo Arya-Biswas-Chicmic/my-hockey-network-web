@@ -27,6 +27,7 @@ import {
 import { QueryKeys, NetworkViewModeEnum } from '@my-hockey-network/contracts';
 import { useQuery } from '@/query';
 import { Search } from 'lucide-react';
+import { PageShell } from '@/components/layout/PageShell';
 import { extractErrorMessage, getApiErrorStatus } from '@/utils/toast';
 
 
@@ -192,7 +193,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
   return (
     <div className="mhn-network-page-root">
       {/* Main Container */}
-      <main className="mhn-network-main-layout mhn-page-container">
+      <PageShell className="mhn-network-main-layout">
         {currentView === NetworkViewModeEnum.GROUP_DETAIL ? (
           <GroupDetailView 
             groupId={selectedGroupId}
@@ -357,7 +358,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
             </section>
           </>
         )}
-      </main>
+      </PageShell>
     </div>
   );
 };

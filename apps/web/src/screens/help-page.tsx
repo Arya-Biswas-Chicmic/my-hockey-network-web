@@ -10,6 +10,7 @@ import { ChevronDown, CircleHelp, Search } from 'lucide-react';
 import { Form } from '@/components/ui/form';
 import { FilePickerButton } from '@/components/ui/file-picker-button';
 import { FormInput, FormSelect, FormTextarea } from '@/components/form/fields';
+import { PageShell } from '@/components/layout/PageShell';
 
 interface HelpPageProps {
   onNavigate?: (screen: string, extraData?: Record<string, unknown>) => void;
@@ -193,7 +194,7 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
 
   return (
     <div className="mhn-help-page-container">
-      <main className="mhn-help-main-layout mhn-page-container">
+      <PageShell className="mhn-help-main-layout">
         
         {/* ==================== HERO SEARCH SECTION ==================== */}
         <section className="mhn-help-hero-banner">
@@ -417,7 +418,7 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
           </div>
         </section>
 
-      </main>
+      </PageShell>
     </div>
   );
 };

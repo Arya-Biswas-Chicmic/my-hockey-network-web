@@ -1719,37 +1719,17 @@
 
 /* --- 3. Main Content Grid Layout (left nav column moved to .mhn-sidebar,
    the app shell's own fixed column — see the sidebar-nav section below) --- */
+/* `.mhn-app-shell`'s grid (see index.css) already owns the content column's
+   *width* — its content track is `minmax(0, var(--page-max-width))`, set by
+   `PageShell` (`@/components/layout/PageShell`), which also guarantees
+   region 1 == region 3 and a constant 48px region 2 by construction (see
+   that class's comment for the three approaches that didn't). This class
+   only needs to fill the track it's handed and own its own padding + Home's
+   specific 2-column composition — no margin, no width tricks, no per-page
+   max-width here anymore. Home/Profile-specific: ~520px content, 64px
+   gutter, 300px discovery rail (Figma 1398:3904, "Home-For You"). */
 .mhn-home-main-layout {
-  /* Shared Home/Profile desktop composition from Figma: ~520px content,
-     64px gutter, 300px discovery rail. The outer width includes the
-     existing 24px horizontal insets on both sides: 24 + 520 + 64 + 300 + 24 = 932. */
-  max-width: 932px;
-  /* `width: 100%` here would resolve against the container's full width
-     with no allowance for the fixed 48px `margin-left` below — percentage
-     widths ignore an element's own margins, so `48px + 100%` would
-     overflow the container by exactly 48px once the container drops
-     below 932+48=980px. `calc(100% - 48px)` bakes the gutter into the
-     width itself instead. */
-  width: calc(100% - 48px);
-  /* Fixed `margin-left: 48px` + no room left inside `.mhn-app-shell` for
-     an `auto` right margin to distribute (see that class's comment: the
-     shell is sized via `width: fit-content` to exactly sidebar + this
-     48px gutter + this grid, so there's nothing leftover in between) is
-     what keeps region 2 (sidebar-to-card) small and constant while
-     region 1 (before the sidebar) and region 3 (after the card, i.e. the
-     shell's own outer margin on each side) end up equal automatically —
-     feedback 2026-08-30, screenshot with 1/2/3 boxes: "keep spacing 1
-     and 3 equal and reduce spacing from 2". Plain `margin: 0 auto` (no
-     fixed gutter) was tried in between and got the *outer* shell margins
-     equal but left region 2 itself large and unequal to region 3 (see
-     `.mhn-app-shell`'s comment for the full back-and-forth). */
-  margin: 0 auto 0 48px;
-  /* Figma (1398:3904, "Home-For You") uses the same content and discovery
-     tracks as Profile. Keep this one rule authoritative for both routes.
-     Was `24px 24px 24px 38px` (asymmetric, left carrying the nav gutter);
-     that gutter now lives in the margin above — feedback 2026-08-28:
-     "maintain equal left and right padding" (Figma node 1983:16793 uses
-     the same 24px inset on every button/card edge). */
+  width: 100%;
   padding: 50px 24px 24px 24px;
   display: grid;
   grid-template-columns: minmax(0, 520px) minmax(0, 300px);
@@ -1766,45 +1746,32 @@
   min-width: 0;
 }
 
-/* Shared page-shell spacing — feedback 2026-08-29: "I Like the padding you
-   did in the [Home] page but other tabs didn't have same padding... this
-   will be our standard base area". Every other route (Events, Groups,
-   Teams, Notifications, Saved, Explore, ...) had its own hand-copied
-   Tailwind width/margin/padding string instead of sharing one recipe. This
-   class is the same mechanics `.mhn-home-main-layout` uses — fixed 48px
-   nav gutter via `calc()`'d width (feedback 2026-08-30: "keep spacing 1
-   and 3 equal and reduce spacing from 2" — see the comment on
-   `.mhn-app-shell` for why a fixed gutter + `width: fit-content` on the
-   shell is what makes that hold, and the one-page-content-width-varies
-   tradeoff that comes with it), 50/24/24/24 padding, same mobile
-   collapse — with no `display`/grid opinion; pair it with whatever
-   internal layout (flex column, grid, ...) the page needs, and set only
-   `max-width` per page for its own content-width choice. */
-.mhn-page-container {
-  width: calc(100% - 48px);
-  margin: 0 auto 0 48px;
-  padding: 50px 24px 24px 24px;
-  box-sizing: border-box;
-}
-
-@media (max-width: 768px) {
-  .mhn-page-container {
-    width: 100%;
-    margin: 16px auto;
-    padding: 0 16px;
-  }
-}
-
 @media (max-width: 1120px) {
   .mhn-home-main-layout {
     grid-template-columns: 1fr;
   }
 }
 
+/* Shared page-shell spacing — feedback 2026-08-29: "I Like the padding you
+   did in the [Home] page but other tabs didn't have same padding... this
+   will be our standard base area". Every other route (Events, Groups,
+   Teams, Notifications, Saved, Explore, Messaging, Settings, Supervision,
+   Help, Event Detail, My Network, ...) had its own hand-copied Tailwind
+   width/margin/padding string instead of sharing one recipe. Rendered by
+   `PageShell`, not written per-page — same "fill the grid track, own the
+   padding" job as `.mhn-home-main-layout` above, just without an opinion on
+   internal layout (flex column, grid, ...), which each page still supplies
+   via `className`. */
+.mhn-page-container {
+  width: 100%;
+  padding: 50px 24px 24px 24px;
+  box-sizing: border-box;
+}
+
 @media (max-width: 768px) {
+  .mhn-page-container,
   .mhn-home-main-layout {
-    padding: 0 16px;
-    margin: 16px auto;
+    padding: 16px;
   }
 }
 
@@ -5112,8 +5079,19 @@
    2026-08-29: "make sure each tab shares same padding") — this rule keeps
    only what's specific to this page: its content-width choice and its
    internal grid. */
+/* Was `max-width: 1380px` — wider than Home's 932px content, which (via
+   `.mhn-app-shell`'s `width: fit-content`, see its comment) made the whole
+   shell size itself wider on this route and put the sidebar at a
+   different on-screen position than Home, with bigger left/right padding
+   to match. Matching Home's own content max-width here instead keeps the
+   sidebar and the padding pixel-identical to Home — feedback 2026-08-30:
+   "make sure you don't change the home page layout and... add same
+   padding when we click in message tab... make chat detail component
+   width wise smaller [if required] to have same padding". The
+   conversation pane shrinks from ~1016px to ~568px (932 - 340 chat list -
+   24 gap) as a result — still a normal chat-pane width, not cramped. */
 .mhn-messaging-main-container {
-  max-width: 1380px;
+  max-width: 932px;
   display: grid;
   grid-template-columns: 340px 1fr;
   gap: 24px;
@@ -7465,8 +7443,11 @@
 
 /* Width/margin/padding now come from `.mhn-page-container` (feedback
    2026-08-29: "make sure each tab shares same padding"). */
+/* max-w matches Home's 932px content width (feedback 2026-08-30: "same for
+   event, group, team, notification, saved") — keeps the sidebar and
+   left/right padding pixel-identical to Home. */
 .mhn-event-detail-main {
-  max-width: 960px;
+  max-width: 932px;
 }
 
 /* Title Bar */
@@ -14975,61 +14956,79 @@ img.secure {
   --color-ring: #0b66c2;
 }
 
+/* Three approaches were tried here before this one, each with a real
+   problem — keeping the history because the next change to this file
+   should not silently re-try one of these:
+   1. `flex` shell + `flex: 1` content, each page centering its own
+      content via `margin: auto` inside that stable-width column. Kept
+      the sidebar's on-screen position identical across every route, but
+      the "equal margins" were the *outer* shell margins, not the gap
+      right next to the sidebar vs. the gap after the card — region 1
+      (before the sidebar) stayed small while region 3 (after the card)
+      grew with the viewport (feedback 2026-08-30, screenshot with 1/2/3
+      boxes).
+   2. `width: fit-content` on the shell + a fixed 48px gutter on the
+      content, sized to exactly sidebar + gutter + that page's content
+      with no slack left over — this *did* get region 1 == region 3 with
+      a small region 2, but two different failure modes showed up: (a)
+      pages with a wider natural content width (Messaging, 1380px) sized
+      the whole shell wider and visibly shifted the sidebar sideways when
+      navigating from a narrower page (feedback 2026-08-29); (b) a
+      percentage-width descendant doesn't feed its resolved size back
+      into an ancestor's fit-content calculation, so on pages whose actual
+      rendered content was narrower than their own `max-width` cap (e.g.
+      Groups' 4-card grid, ~823px of real content under a 932px cap), the
+      *smaller* number leaked into the shell's width instead of the cap —
+      shifting the sidebar again, differently, per page (feedback
+      2026-08-30, testing Groups). A `vw`-based width sidestepped that
+      specific case but a even-narrower-viewport test still overflowed
+      (900px viewport, ~74px overflow) — `fit-content` nested this deep
+      is fundamentally fragile: every layer needs its own workaround.
+
+   CSS Grid instead: one grid, five columns, no `fit-content` anywhere.
+   `minmax(0, 1fr)` on both outer columns get *equal* widths by
+   definition — that's what `fr` distribution guarantees, not something
+   that depends on any content's actual size — so region 1 == region 3
+   always holds, with no per-page workaround needed. The content column
+   is `minmax(0, var(--page-max-width, 932px))`; `--page-max-width` is set
+   by `PageShell` (`@/components/layout/PageShell`) — the one place every
+   route configures its own content width (feedback 2026-08-30: "located
+   at one place and all are using that... single point to change"). The
+   sidebar's on-screen position still depends on which page's content
+   width is active (same tradeoff as approach 2, just without the bugs) —
+   it's mathematically what makes region 1 == region 3 possible at all
+   when different pages want different content widths; give every route
+   the same `maxWidth` if that variance also needs to go away. */
 .mhn-app-shell {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px 48px minmax(0, var(--page-max-width, 932px)) minmax(0, 1fr);
+  max-width: 1440px;
+  margin: 0 auto;
   min-height: 100dvh;
   background: var(--color-background);
 }
 
-/* On very wide screens (beyond a MacBook-14"-ish window) the sidebar was
-   pinned flush to the viewport's left edge while `.mhn-home-main-layout`'s
-   own `margin: 24px auto` centered *only the feed+right columns* within the
-   leftover space — the wider the screen, the bigger and more lopsided that
-   gap between the sidebar and the feed grew (screenshot 2026-08-27). Figma
-   doesn't dock the nav to the edge either — its whole 3-column block (nav
-   + feed + right) sits inset with equal left/right margins in the full
-   frame (nav starts at x=137 of a 1440-wide frame, not x=0).
-
-   Two different approaches were tried here and both had a real problem:
-   - A *fixed* `max-width` + `flex: 1` content column (each page centering
-     its own content inside that stable-width column via `margin: auto`)
-     kept the sidebar's on-screen position identical across every route,
-     but left a small gap before the sidebar and a much bigger one after
-     the content — the two "equal margins" were actually the *outer* shell
-     margins, not the visible gap right next to the sidebar vs. the one
-     after the card (feedback 2026-08-30, screenshot with 1/2/3 boxes:
-     region 1 — before the sidebar — needed to grow to match region 3 —
-     after the content — while region 2 — sidebar-to-card — needed to
-     shrink back down).
-   - `width: fit-content` (sizing the shell to exactly sidebar + a small
-     fixed gutter + that page's own content, then centering *that*) is
-     what actually produces region 1 == region 3 with a small region 2:
-     with no slack left inside the shell, the fixed gutter next to the
-     sidebar stays small and the *only* leftover space is the outer
-     margin, split evenly by `margin: auto`. Its known tradeoff: different
-     pages want different content widths (Home ~932px vs. Messaging
-     1380px), so the shell's fit-content size — and the sidebar's
-     resulting on-screen position — does vary by a few hundred px between
-     very differently-sized pages (feedback 2026-08-29 caught this
-     specifically navigating Home → Messaging). Between routes that share
-     roughly the same content width (Home/Profile, or the
-     `.mhn-page-container` group at 1080–1240px) the shift is small to
-     none; it's most visible against Messaging/My Network's wider
-     two-pane layouts specifically. */
-.mhn-app-shell {
-  width: fit-content;
-  max-width: 1440px;
-  margin: 0 auto;
-}
-
 .mhn-app-content {
-  flex: 0 1 auto;
-  width: fit-content;
+  grid-column: 4;
   min-width: 0;
 }
 
+@media (max-width: 768px) {
+  .mhn-app-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* `.mhn-sidebar` is `display: none` at this width already (see below) so
+     its own `grid-column: 2` is moot, but `.mhn-app-content`'s `grid-column:
+     4` would otherwise resolve against an implicit track past the single
+     explicit column above, pushing it off to the right. */
+  .mhn-app-content {
+    grid-column: 1;
+  }
+}
+
 .mhn-sidebar {
-  flex-shrink: 0;
+  grid-column: 2;
   width: 240px;
   min-height: 100dvh;
   position: sticky;
@@ -15040,7 +15039,10 @@ img.secure {
      sidebar itself above the content column is what actually lets the dropdown
      escape, since it is anchored to `.mhn-sidebar-footer` inside here. */
   z-index: 20;
-  align-self: flex-start;
+  /* `start`, not `flex-start` — this is a grid item now (see
+     `.mhn-app-shell`), and `flex-start` isn't a valid grid alignment
+     keyword. */
+  align-self: start;
   display: flex;
   flex-direction: column;
   background: var(--color-background);

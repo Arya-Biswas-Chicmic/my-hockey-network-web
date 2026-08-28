@@ -12,6 +12,7 @@ import { NetworkSkeletonCard } from '@/components/features/network/NetworkSkelet
 import { useAuth } from '@/hooks/use-auth';
 import { useDebounce } from '@/hooks/use-debounce';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
+import { PageShell } from '@/components/layout/PageShell';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
 import { SettingsSubTabEnum } from '@my-hockey-network/contracts';
 import {
@@ -102,7 +103,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
 
   return (
     <div className="mhn-settings-page-root">
-      <main className="mhn-settings-main-container mhn-page-container">
+      <PageShell className="mhn-settings-main-container">
         <div className="mhn-settings-top-bar">
           <h1 className="mhn-settings-title">Settings</h1>
           <div className="mhn-settings-search-wrapper">
@@ -281,7 +282,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
             )}
           </section>
         </div>
-      </main>
+      </PageShell>
     </div>
   );
 };

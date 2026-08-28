@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { FallbackImage } from '@/components/ui/fallback-image';
 import React, { useState } from 'react';
 import { Armchair, Ban, ChevronRight, CircleParking, Droplets, Smile, Toilet, Users } from 'lucide-react';
+import { PageShell } from '@/components/layout/PageShell';
 
 interface EventDetailPageProps {
   onNavigate?: (screen: string) => void;
@@ -32,7 +33,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
   return (
     <div className="mhn-event-detail-root">
       {/* Main Centered Content */}
-      <main className="mhn-event-detail-main mhn-page-container">
+      <PageShell className="mhn-event-detail-main">
         {/* Title Bar with Back Arrow */}
         <div className="mhn-event-title-bar">
           <Button
@@ -187,7 +188,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
             </div>
           </div>
         </div>
-      </main>
+      </PageShell>
     </div>
   );
 };

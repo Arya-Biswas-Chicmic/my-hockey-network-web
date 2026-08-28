@@ -6,6 +6,7 @@ import { FallbackImage } from '@/components/ui/fallback-image';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
 import { showSuccessToast } from '@/utils/toast';
+import { PageShell } from '@/components/layout/PageShell';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -125,7 +126,7 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         />
       )}
 
-      <main className="mhn-teams-main-container mhn-page-container max-w-[1240px] flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-16">
+      <PageShell className="mhn-teams-main-container flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-16">
         {/* Top Header Row */}
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-slate-100">Teams</h1>
@@ -220,7 +221,7 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             </div>
           ))}
         </div>
-      </main>
+      </PageShell>
 
       {/* Create Team Modal */}
       {isCreateModalOpen && (

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { isEmailValid } from '@my-hockey-network/validation';
 import { PendingBanner } from '@/components/common';
+import { PageShell } from '@/components/layout/PageShell';
 import { RightSidebar } from '@/components/layout/RightSidebar';
 import {
   HomeTabs,
@@ -174,7 +175,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         />
       )}
 
-      <main className="mhn-home-main-layout lg:my-0 lg:min-h-0 lg:flex-1">
+      <PageShell className="mhn-home-main-layout lg:my-0 lg:min-h-0 lg:flex-1">
         {/* CENTER MAIN FEED COLUMN */}
         <section className="mhn-layout-col-center flex flex-col lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">
           <HomeTabs activeTab={activeFeedTab} onChange={setActiveFeedTab} />
@@ -214,7 +215,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             illustrationUrl="/player.webp"
           />
         </RightSidebar>
-      </main>
+      </PageShell>
 
       {isCreatePostOpen && (
         <CreatePostModal

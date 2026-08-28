@@ -19,6 +19,7 @@ import { SupervisionAddPlayerFlow } from '@/components/features/supervision/Supe
 import { SupervisionPermissionsTab } from '@/components/features/supervision/SupervisionPermissionsTab';
 import { SupervisionRequestsTab } from '@/components/features/supervision/SupervisionRequestsTab';
 import { SupervisionLogsTab } from '@/components/features/supervision/SupervisionLogsTab';
+import { PageShell } from '@/components/layout/PageShell';
 
 interface SupervisionPageProps {
   onNavigate?: (screen: string, extraData?: Record<string, unknown>) => void;
@@ -83,7 +84,7 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
 
   return (
     <div className="mhn-supervision-page-root">
-      <main className="mhn-supervision-main-container mhn-page-container">
+      <PageShell className="mhn-supervision-main-container">
         <div className="mhn-supervision-card-wrapper">
           <SupervisionSidebar
             wards={wards.wards}
@@ -189,7 +190,7 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
             )}
           </section>
         </div>
-      </main>
+      </PageShell>
 
       <ApprovalCodeModal
         isOpen={approvalModalConfig.isOpen}

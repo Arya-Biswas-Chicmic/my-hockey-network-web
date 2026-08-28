@@ -3,6 +3,7 @@ import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { ChatSidebar, ChatItem } from '@/components/features/messaging/ChatSidebar';
 import { ChatConversation, MessageItem } from '@/components/features/messaging/ChatConversation';
+import { PageShell } from '@/components/layout/PageShell';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -172,7 +173,7 @@ export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
         )}
 
         {/* Main 2-Column Content Layout */}
-        <main className="mhn-messaging-main-container mhn-page-container">
+        <PageShell className="mhn-messaging-main-container">
           {/* Left Column: Chats List Sidebar */}
           <aside className="mhn-messaging-sidebar-col">
             <ChatSidebar
@@ -193,7 +194,7 @@ export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
               onSendMessage={handleSendMessage}
             />
           </section>
-        </main>
+        </PageShell>
     </div>
   );
 };

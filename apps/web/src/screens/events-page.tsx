@@ -14,6 +14,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
 
 import { CategoryTabs, TabItem } from '@/components/features/home/HomeTabs';
+import { PageShell } from '@/components/layout/PageShell';
 
 const EVENTS_TOP_TABS: TabItem<'personal' | 'network' | 'explore'>[] = [
   { key: 'personal', label: 'Personal' },
@@ -138,7 +139,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         />
       )}
 
-      <main className="mhn-events-main-container mhn-page-container max-w-[1240px] flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-16">
+      <PageShell className="mhn-events-main-container flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-16">
         {/* Top Header Controls Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-slate-100">Events</h1>
@@ -251,7 +252,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             />
           ))}
         </div>
-      </main>
+      </PageShell>
     </>
   );
 };

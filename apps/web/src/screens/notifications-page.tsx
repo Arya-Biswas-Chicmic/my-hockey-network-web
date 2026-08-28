@@ -6,6 +6,7 @@ import { NotificationCard } from '@/components/features/notifications/Notificati
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
 import { showSuccessToast, showInfoToast } from '@/utils/toast';
+import { PageShell } from '@/components/layout/PageShell';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -126,7 +127,7 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
         />
       )}
 
-      <main className="mhn-notifications-main-container mhn-page-container max-w-[1240px] flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-16">
+      <PageShell className="mhn-notifications-main-container flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-16">
         {/* Top Header Bar */}
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-slate-100">Notifications</h1>
@@ -195,7 +196,7 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
             />
           ))}
         </div>
-      </main>
+      </PageShell>
     </>
   );
 };

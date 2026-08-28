@@ -15,6 +15,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
 
 import { CategoryTabs, TabItem } from '@/components/features/home/HomeTabs';
+import { PageShell } from '@/components/layout/PageShell';
 
 const EXPLORE_TABS: TabItem<'popular' | 'suggested' | 'verified'>[] = [
   { key: 'popular', label: 'Popular' },
@@ -84,7 +85,7 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         />
       )}
 
-      <main className="mhn-explore-main-container mhn-page-container max-w-[1180px] grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 items-start lg:min-h-0 lg:flex-1">
+      <PageShell className="mhn-explore-main-container grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8 items-start lg:min-h-0 lg:flex-1">
         {/* CENTER FEED COLUMN */}
         <section className="mhn-explore-center-col flex flex-col gap-5 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-2 pb-16">
           {/* Search Bar Input Widget */}
@@ -362,7 +363,7 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             </div>
           </div>
         </aside>
-      </main>
+      </PageShell>
     </>
   );
 };
