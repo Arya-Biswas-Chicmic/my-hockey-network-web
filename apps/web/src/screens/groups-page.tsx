@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Search, MoreHorizontal } from 'lucide-react';
-import { AppShell } from '@/components/layout/AppShell';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { FallbackImage } from '@/components/ui/fallback-image';
@@ -85,17 +84,9 @@ const DISCOVER_GROUPS: GroupCardData[] = [
 
 export const GroupsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { permissions } = useFeedPermissions(onNavigate);
-  const [activeNavTab, setActiveNavTab] = useState('groups');
   const [activeTab, setActiveTab] = useState<'your-groups' | 'discover'>('your-groups');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-
-  const handleTabChange = (tab: string) => {
-    setActiveNavTab(tab);
-    if (onNavigate) {
-      onNavigate(tab);
-    }
-  };
 
   const groupList = activeTab === 'your-groups' ? YOUR_GROUPS : DISCOVER_GROUPS;
 
@@ -104,7 +95,7 @@ export const GroupsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   );
 
   return (
-    <AppShell activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout}>
+    <>
       {!permissions.allowed && permissions.message && (
         <PendingBanner
           message={permissions.message}
@@ -225,7 +216,7 @@ export const GroupsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           </div>
         </main>
       )}
-    </AppShell>
+    </>
   );
 };
 

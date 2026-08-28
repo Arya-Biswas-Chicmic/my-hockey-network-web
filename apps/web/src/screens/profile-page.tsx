@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { CreatePostModal } from '@/components/features/home/CreatePostModal';
 import { EditProfileModal, ProfileSkeletonLoader } from '@/components/features/profile';
@@ -8,7 +7,7 @@ import { DeleteCareerModal } from '@/components/common/DeleteCareerModal';
 import { useAuth } from '@/hooks/use-auth';
 import { showSuccessToast } from '@/utils/toast';
 import { SUCCESS_MESSAGES } from '@my-hockey-network/constants';
-import { NavTabEnum, ProfileTabEnum } from '@my-hockey-network/contracts';
+import { ProfileTabEnum } from '@my-hockey-network/contracts';
 import { ApprovalCodeModal } from '@/components/supervision/ApprovalCodeModal';
 import { ProfileGuardianRequestsTab } from '@/components/features/profile/ProfileGuardianRequestsTab';
 import { usePendingGuardianInvites } from '@/hooks/use-guardian-relationships';
@@ -30,6 +29,7 @@ import { ProfilePostsTab } from '@/components/features/profile/ProfilePostsTab';
 import { ProfileMediaTab } from '@/components/features/profile/ProfileMediaTab';
 import { ProfileStatsTab } from '@/components/features/profile/ProfileStatsTab';
 import { ProfileAboutTab } from '@/components/features/profile/ProfileAboutTab';
+import { useShellUiStore } from '@/stores/shell-ui-store';
 
 interface PageProps {
   onNavigate?: (screen: string, extraData?: Record<string, unknown>) => void;
@@ -55,7 +55,6 @@ export const ProfilePage: React.FC<PageProps> = ({
     handleAvatarFileChange,
   } = useProfileImageUploads({ setUserProfile, loadAuthMe });
 
-  const [activeNavTab, setActiveNavTab] = useState<NavTabEnum | string>(NavTabEnum.PROFILE);
   const requestedProfileTab = searchParams.get('tab');
   const resolvedInitialProfileTab = Object.values(ProfileTabEnum).includes(requestedProfileTab as ProfileTabEnum)
     ? requestedProfileTab as ProfileTabEnum
@@ -141,23 +140,20 @@ export const ProfilePage: React.FC<PageProps> = ({
     }
   };
 
-  const handleTabChange = (tab: string) => {
-    setActiveNavTab(tab);
-    if (onNavigate) {
-      onNavigate(tab);
+  // The sidebar's "Create Post" button now lives in the shared authenticated
+  // layout, above every page, so it can't call this page's own handler
+  // directly — it bumps a shared counter instead (see `shell-ui-store.ts`).
+  const createPostRequestId = useShellUiStore((state) => state.createPostRequestId);
+  const lastHandledCreatePostRequestId = useRef(createPostRequestId);
+  useEffect(() => {
+    if (createPostRequestId !== lastHandledCreatePostRequestId.current) {
+      lastHandledCreatePostRequestId.current = createPostRequestId;
+      handleOpenCreatePost();
     }
-  };
+  }, [createPostRequestId]);
 
   return (
-    <div className="mhn-app-shell">
-      <LeftSidebar
-        activeTab={activeNavTab}
-        onTabChange={handleTabChange}
-        onLogout={onLogout}
-        onCreatePostClick={handleOpenCreatePost}
-      />
-
-      <div className="mhn-app-content mhn-profile-page-root">
+    <div className="mhn-profile-page-root">
       {!permissions.allowed && permissions.message && (
         <PendingBanner
           message={permissions.message}
@@ -307,7 +303,6 @@ export const ProfilePage: React.FC<PageProps> = ({
       />
 
       {cropModal}
-      </div>
     </div>
   );
 };

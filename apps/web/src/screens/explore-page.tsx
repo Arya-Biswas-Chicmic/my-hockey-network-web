@@ -8,7 +8,6 @@ import {
   Send,
   Bookmark,
 } from 'lucide-react';
-import { AppShell } from '@/components/layout/AppShell';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { FallbackImage } from '@/components/ui/fallback-image';
@@ -45,7 +44,6 @@ const INITIAL_SUGGESTIONS: SuggestedUser[] = [
 
 export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { permissions } = useFeedPermissions(onNavigate);
-  const [activeNavTab, setActiveNavTab] = useState('explore');
   const [activeExploreTab, setActiveExploreTab] = useState<'popular' | 'suggested' | 'verified'>('popular');
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<SuggestedUser[]>(INITIAL_SUGGESTIONS);
@@ -62,13 +60,6 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [post2Likes, setPost2Likes] = useState(42);
   const [post2Bookmarked, setPost2Bookmarked] = useState(false);
 
-  const handleTabChange = (tab: string) => {
-    setActiveNavTab(tab);
-    if (onNavigate) {
-      onNavigate(tab);
-    }
-  };
-
   const toggleFollowUser = (id: string) => {
     setSuggestions((prev) =>
       prev.map((item) => (item.id === id ? { ...item, isFollowing: !item.isFollowing } : item))
@@ -76,7 +67,7 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   };
 
   return (
-    <AppShell activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout}>
+    <>
       {!permissions.allowed && permissions.message && (
         <PendingBanner
           message={permissions.message}
@@ -372,6 +363,6 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           </div>
         </aside>
       </main>
-    </AppShell>
+    </>
   );
 };

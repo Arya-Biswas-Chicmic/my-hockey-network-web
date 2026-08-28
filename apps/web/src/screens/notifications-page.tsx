@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Search } from 'lucide-react';
-import { AppShell } from '@/components/layout/AppShell';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { NotificationCard } from '@/components/features/notifications/NotificationCard';
@@ -77,17 +76,9 @@ const INITIAL_NOTIFICATIONS: NotificationItemData[] = [
 
 export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { permissions } = useFeedPermissions(onNavigate);
-  const [activeNavTab, setActiveNavTab] = useState('notifications');
   const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'requests'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState<NotificationItemData[]>(INITIAL_NOTIFICATIONS);
-
-  const handleTabChange = (tab: string) => {
-    setActiveNavTab(tab);
-    if (onNavigate) {
-      onNavigate(tab);
-    }
-  };
 
   const handleAcceptRequest = (id: string) => {
     setNotifications((prev) =>
@@ -118,7 +109,7 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
   });
 
   return (
-    <AppShell activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout}>
+    <>
       {!permissions.allowed && permissions.message && (
         <PendingBanner
           message={permissions.message}
@@ -205,7 +196,7 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
           ))}
         </div>
       </main>
-    </AppShell>
+    </>
   );
 };
 

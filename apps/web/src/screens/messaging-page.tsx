@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { ChatSidebar, ChatItem } from '@/components/features/messaging/ChatSidebar';
@@ -124,17 +123,9 @@ const INITIAL_CONVERSATIONS: Record<
 
 export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { permissions } = useFeedPermissions(onNavigate);
-  const [activeNavTab, setActiveNavTab] = useState('messaging');
   const [selectedChatId, setSelectedChatId] = useState<string>('hockey-club');
   const [chats] = useState<ChatItem[]>(DEFAULT_CHATS);
   const [conversations, setConversations] = useState(INITIAL_CONVERSATIONS);
-
-  const handleTabChange = (tab: string) => {
-    setActiveNavTab(tab);
-    if (onNavigate) {
-      onNavigate(tab);
-    }
-  };
 
   const handleSendMessage = (text: string) => {
     if (!selectedChatId) return;
@@ -162,10 +153,7 @@ export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
   const activeConv = selectedChatId ? conversations[selectedChatId] : undefined;
 
   return (
-    <div className="mhn-app-shell">
-      <LeftSidebar activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout} />
-
-      <div className="mhn-app-content mhn-messaging-page-root">
+    <div className="mhn-messaging-page-root">
         {/* Pending Guardian Notice Banner */}
         {!permissions.allowed && permissions.message && (
           <PendingBanner
@@ -206,7 +194,6 @@ export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
             />
           </section>
         </main>
-      </div>
     </div>
   );
 };

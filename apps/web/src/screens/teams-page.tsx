@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Search, Plus, X } from 'lucide-react';
-import { AppShell } from '@/components/layout/AppShell';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { FallbackImage } from '@/components/ui/fallback-image';
@@ -78,20 +77,12 @@ const DISCOVER_TEAMS: TeamItem[] = [
 
 export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { permissions } = useFeedPermissions(onNavigate);
-  const [activeNavTab, setActiveNavTab] = useState('teams');
   const [activeTab, setActiveTab] = useState<'your-teams' | 'discover'>('your-teams');
   const [searchQuery, setSearchQuery] = useState('');
   const [teams, setTeams] = useState<TeamItem[]>(YOUR_TEAMS);
   const [discoverTeams] = useState<TeamItem[]>(DISCOVER_TEAMS);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
-
-  const handleTabChange = (tab: string) => {
-    setActiveNavTab(tab);
-    if (onNavigate) {
-      onNavigate(tab);
-    }
-  };
 
   const handleCreateTeam = () => {
     if (!newTeamName.trim()) return;
@@ -117,7 +108,7 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   );
 
   return (
-    <AppShell activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout}>
+    <>
       {!permissions.allowed && permissions.message && (
         <PendingBanner
           message={permissions.message}
@@ -285,7 +276,7 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           </div>
         </div>
       )}
-    </AppShell>
+    </>
   );
 };
 

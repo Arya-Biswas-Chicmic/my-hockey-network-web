@@ -3,11 +3,10 @@
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/common/Button';
-import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { ApprovalCodeModal } from '@/components/supervision/ApprovalCodeModal';
 import { ParentOnboardingModal } from '@/components/features/parent';
 import { useAuth } from '@/hooks/use-auth';
-import { NavTabEnum, SupervisionMainTabEnum, SupervisionViewModeEnum, ToastTypeEnum } from '@my-hockey-network/contracts';
+import { SupervisionMainTabEnum, SupervisionViewModeEnum, ToastTypeEnum } from '@my-hockey-network/contracts';
 import { SUCCESS_MESSAGES } from '@my-hockey-network/constants';
 
 import { useSupervisionWards } from '@/hooks/use-supervision-wards';
@@ -34,7 +33,6 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
     searchParams.get('selectedWardId') ||
     searchParams.get('childId');
 
-  const [activeNavTab, setActiveNavTab] = useState<NavTabEnum | string>(NavTabEnum.SUPERVISION);
   const [activeMainTab, setActiveMainTab] = useState<SupervisionMainTabEnum>(SupervisionMainTabEnum.PERMISSIONS);
   const [viewMode, setViewMode] = useState<SupervisionViewModeEnum>(SupervisionViewModeEnum.MAIN);
   const [isAddPlayerModalOpen, setIsAddPlayerModalOpen] = useState(false);
@@ -83,16 +81,8 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
     }
   };
 
-  const handleTabChange = (tab: string, extraData?: Record<string, unknown>) => {
-    setActiveNavTab(tab);
-    if (onNavigate) onNavigate(tab, extraData);
-  };
-
   return (
-    <div className="mhn-app-shell">
-      <LeftSidebar activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout} />
-
-      <div className="mhn-app-content mhn-supervision-page-root">
+    <div className="mhn-supervision-page-root">
       <main className="mhn-supervision-main-container">
         <div className="mhn-supervision-card-wrapper">
           <SupervisionSidebar
@@ -229,7 +219,6 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
           if (data?.playerId) onNavigate?.('profile', { userId: data.playerId });
         }}
       />
-      </div>
     </div>
   );
 };

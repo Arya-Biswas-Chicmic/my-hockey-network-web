@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { isEmailValid } from '@my-hockey-network/validation';
 import { PendingBanner } from '@/components/common';
-import { AppShell } from '@/components/layout/AppShell';
 import { RightSidebar } from '@/components/layout/RightSidebar';
 import {
   HomeTabs,
@@ -13,7 +12,7 @@ import {
   CreatePostModal,
   HomeSkeletonLoader,
 } from '@/components/features/home';
-import { QueryKeys, NavTabEnum, PostAudienceEnum } from '@my-hockey-network/contracts';
+import { QueryKeys, PostAudienceEnum } from '@my-hockey-network/contracts';
 import { useAuth } from '@/hooks/use-auth';
 import { globalQueryClient, invalidateQueryPrefix } from '@/query';
 import { useCreatePostMutation } from '@/hooks/use-post-mutations';
@@ -22,6 +21,7 @@ import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { extractErrorMessage, getApiErrorStatus, showSuccessToast, showErrorToast, showInfoToast } from '@/utils/toast';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, HELPER_MESSAGES } from '@my-hockey-network/constants';
 import { useHomeFeed } from '@/hooks/useHomeFeed';
+import { useShellUiStore } from '@/stores/shell-ui-store';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -38,9 +38,10 @@ interface PostPrivacySettings {
 export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { user } = useAuth();
   const { permissions, requirePermission } = useFeedPermissions(onNavigate);
-  const [activeNavTab, setActiveNavTab] = useState<NavTabEnum | string>(NavTabEnum.HOME);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const createPostMutation = useCreatePostMutation();
+  const createPostRequestId = useShellUiStore((state) => state.createPostRequestId);
+  const lastHandledCreatePostRequestId = useRef(createPostRequestId);
 
   const {
     activeFeedTab,
@@ -61,8 +62,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const currentUserName = user?.profile?.displayName || 'Player';
   const currentUserAvatar = resolveMediaUrl(user?.profile?.avatarUrl, '/userPlaceholder.webp');
 
-  const handleTabChange = (tab: string, extraData?: { selectedWardId?: string }) => {
-    setActiveNavTab(tab);
+  const handleTabChange = (tab: string) => {
     if (onNavigate) {
       onNavigate(tab);
     }
@@ -138,26 +138,22 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     }
   };
 
+  // The sidebar's "Create Post" button now lives in the shared authenticated
+  // layout, above every page, so it can't call this page's own handler
+  // directly — it bumps a shared counter instead (see `shell-ui-store.ts`).
+  useEffect(() => {
+    if (createPostRequestId !== lastHandledCreatePostRequestId.current) {
+      lastHandledCreatePostRequestId.current = createPostRequestId;
+      handleOpenCreatePost();
+    }
+  }, [createPostRequestId]);
+
   if (isPageLoading) {
-    return (
-      <AppShell
-        activeTab={activeNavTab}
-        onTabChange={handleTabChange}
-        onLogout={onLogout}
-        onCreatePostClick={handleOpenCreatePost}
-      >
-        <HomeSkeletonLoader />
-      </AppShell>
-    );
+    return <HomeSkeletonLoader />;
   }
 
   return (
-    <AppShell
-      activeTab={activeNavTab}
-      onTabChange={handleTabChange}
-      onLogout={onLogout}
-      onCreatePostClick={handleOpenCreatePost}
-    >
+    <>
       {!permissions.allowed && permissions.message && (
         <PendingBanner
           message={permissions.message}
@@ -223,6 +219,6 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           userAvatar={currentUserAvatar}
         />
       )}
-    </AppShell>
+    </>
   );
 };

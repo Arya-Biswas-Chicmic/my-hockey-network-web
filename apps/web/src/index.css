@@ -1429,7 +1429,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
+  /* Figma (1418:8871): px-12 py-9, not py-10. */
+  padding: 9px 12px;
   border-radius: 10px;
   border: none;
   background: transparent;
@@ -1447,29 +1448,37 @@
 .mhn-dropdown-item-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  /* Figma: gap-[8px], not 12px. */
+  gap: 8px;
   min-width: 0;
 }
 
 .mhn-dropdown-avatar-img {
-  width: 32px;
-  height: 32px;
+  /* Figma: View Profile's avatar is size-[26px], not 32px. */
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   object-fit: cover;
 }
 
 .mhn-dropdown-item-text {
   font-size: 14px;
-  font-weight: 600;
+  /* Figma: font-medium (500), not semibold (600). */
+  font-weight: 500;
   color: var(--color-foreground);
 }
 
 .mhn-dropdown-icon-box {
-  width: 32px;
-  height: 32px;
+  /* Figma: a size-[16px] icon in p-[5px] padding = 26px, not a fixed 32px box. */
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background-color: var(--color-accent);
-  color: var(--color-accent-foreground);
+  /* var(--color-auth-action) is the same #0b66c2 in both themes — matches
+     Figma's icon glyph color exactly, unlike the generic accent-foreground
+     token this used to read (feedback 2026-08-28: "Setting and Privacy
+     icons and check other icons too"). */
+  color: var(--color-auth-action);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1478,7 +1487,9 @@
 
 .mhn-dropdown-chevron,
 .mhn-family-chevron {
-  color: var(--color-muted-foreground);
+  /* Figma's row chevrons render white/full-opacity, not the muted-gray
+     `--color-muted-foreground` this read as. */
+  color: var(--color-foreground);
   flex-shrink: 0;
   transition: color 0.15s ease, transform 0.15s ease;
 }
@@ -1503,11 +1514,11 @@
 }
 
 .mhn-family-icon-box {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background-color: var(--color-popover);
-  color: var(--color-accent-foreground);
+  color: var(--color-auth-action);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1537,15 +1548,18 @@
 }
 
 .mhn-family-member-img {
-  width: 28px;
-  height: 28px;
+  /* Figma: size-[26px], not 28px. */
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   object-fit: cover;
 }
 
 .mhn-family-member-name {
   font-size: 13px;
-  font-weight: 600;
+  /* Figma: Steve/David use font-normal (400), the one row-text in this
+     dropdown that isn't medium. */
+  font-weight: 400;
   color: var(--color-foreground);
   white-space: nowrap;
   overflow: hidden;
@@ -1555,13 +1569,16 @@
 }
 
 .mhn-family-switch-btn {
-  width: 26px;
-  height: 26px;
+  /* Figma: the switch-account icon's own frame is size-[24px], not 26px. */
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-muted-foreground);
+  /* Figma: #F0F0F0 ("Stroke" in this file's own token list) — near-white,
+     not the muted-gray token this read as. */
+  color: #f0f0f0;
   background: transparent;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
@@ -1577,16 +1594,23 @@
   margin: 4px 0;
 }
 
+:root.dark .mhn-dropdown-divider {
+  background-color: #1d2432;
+}
+
 /* Logout Button */
 .mhn-dropdown-logout-btn {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 8px;
+  padding: 9px 12px;
   border-radius: 10px;
   border: none;
   background: transparent;
-  color: var(--color-destructive);
+  /* #c20b0e is the same red Figma uses for this row in both themes (see
+     `.mhn-logout-icon-box`/`.mhn-logout-text` below) — not the generic
+     `--color-destructive` token, which reads lighter in dark mode. */
+  color: #c20b0e;
   cursor: pointer;
   width: 100%;
   text-align: left;
@@ -1598,21 +1622,25 @@
 }
 
 .mhn-logout-icon-box {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background-color: var(--color-destructive-surface-strong);
-  color: var(--color-destructive);
+  color: #c20b0e;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
+:root.dark .mhn-logout-icon-box {
+  background-color: #322525;
+}
+
 .mhn-logout-text {
   font-size: 14px;
-  font-weight: 600;
-  color: var(--color-destructive);
+  font-weight: 500;
+  color: #c20b0e;
 }
 
 /* --- 2. Pending Guardian Notice Banner --- */
@@ -11051,13 +11079,13 @@ img.secure {
    as we don't have top bar now"). The shimmer gradient uses theme tokens
    (not a hardcoded white-on-dark gradient) so it reads correctly in both
    themes, not just the dark one the old version assumed. */
+/* Static, not shimmering — the sidebar's own nav labels/icons never
+   actually change between routes, so animating this the same way real
+   loading content shimmers read as if the whole sidebar was reloading on
+   every tab click (feedback 2026-08-28: "shimmer working on the left tab
+   also... left keep consistent they won't have shimmer"). */
 .mhn-sidebar-skeleton-box {
-  background: linear-gradient(90deg,
-      var(--color-secondary) 0%,
-      var(--color-border) 50%,
-      var(--color-secondary) 100%);
-  background-size: 250% 100%;
-  animation: pulseGlow 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background: var(--color-secondary);
   border-radius: 4px;
 }
 
@@ -14474,9 +14502,12 @@ img.secure {
   color: var(--color-foreground);
 }
 
-:root.dark .mhn-dropdown-icon-box {
-  background: var(--color-accent);
-  color: var(--color-accent-foreground);
+:root.dark .mhn-dropdown-icon-box,
+:root.dark .mhn-family-icon-box {
+  /* Figma (1418:8871): #112744 circle, #0b66c2 glyph — not the generic
+     accent tokens, which read a different navy/lighter blue. */
+  background: #112744;
+  color: var(--color-auth-action);
 }
 
 :root.dark .mhn-date-divider-label {

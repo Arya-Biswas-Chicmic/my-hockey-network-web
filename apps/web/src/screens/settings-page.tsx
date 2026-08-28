@@ -7,14 +7,13 @@ import { Ban, MapPin, Search } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Input, Dropdown } from '@/components/common/FormControls';
 import { FallbackImage } from '@/components/ui/fallback-image';
-import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { NoDataFound } from '@/components/common/no-data-found';
 import { NetworkSkeletonCard } from '@/components/features/network/NetworkSkeletonLoader';
 import { useAuth } from '@/hooks/use-auth';
 import { useDebounce } from '@/hooks/use-debounce';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
-import { NavTabEnum, SettingsSubTabEnum } from '@my-hockey-network/contracts';
+import { SettingsSubTabEnum } from '@my-hockey-network/contracts';
 import {
   useBlockedUsersQuery,
   useUnblockUserMutation,
@@ -30,7 +29,6 @@ interface SettingsPageProps {
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout }) => {
   const { user } = useAuth();
-  const [activeNavTab, setActiveNavTab] = useState<NavTabEnum | string>(NavTabEnum.SETTINGS);
   const [activeSubTab, setActiveSubTab] = useState<SettingsSubTabEnum>(SettingsSubTabEnum.BLOCKED);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 800);
@@ -87,13 +85,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
     }
   };
 
-  const handleTabChange = (tab: string) => {
-    setActiveNavTab(tab);
-    if (onNavigate) {
-      onNavigate(tab);
-    }
-  };
-
   const notificationItems = [
     { id: 'message' as const, title: 'Message notifications', subtitle: 'Get notified when you receive a message', enabled: notifications.message },
     { id: 'connectionRequest' as const, title: 'Connection request notifications', subtitle: 'Get notified about incoming requests', enabled: notifications.connectionRequest },
@@ -110,10 +101,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
   );
 
   return (
-    <div className="mhn-app-shell">
-      <LeftSidebar activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout} />
-
-      <div className="mhn-app-content mhn-settings-page-root">
+    <div className="mhn-settings-page-root">
       <main className="mhn-settings-main-container">
         <div className="mhn-settings-top-bar">
           <h1 className="mhn-settings-title">Settings</h1>
@@ -294,7 +282,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
           </section>
         </div>
       </main>
-      </div>
     </div>
   );
 };

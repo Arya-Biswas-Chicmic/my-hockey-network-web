@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
-import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { useDebounce } from '@/hooks/use-debounce';
 import { showErrorToast, showInfoToast } from '@/utils/toast';
-import { NavTabEnum } from '@my-hockey-network/contracts';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { createFileSchema, supportTicketFormSchema, type SupportTicketFormValues } from '@my-hockey-network/validation';
@@ -139,7 +137,6 @@ const FAQ_ITEMS: FaqItem[] = [
 ];
 
 export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
-  const [activeTab, setActiveTab] = useState<NavTabEnum | string>(NavTabEnum.HELP);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 800);
 
@@ -164,13 +161,6 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
       ticketForm.reset();
       setAttachedFile(null);
   });
-
-  const handleTabChange = (tab: string, extraData?: Record<string, unknown>) => {
-    setActiveTab(tab);
-    if (onNavigate) {
-      onNavigate(tab, extraData);
-    }
-  };
 
   const handleToggleFaq = (id: string) => {
     setExpandedFaqId((prev) => (prev === id ? null : id));
@@ -202,10 +192,7 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
   });
 
   return (
-    <div className="mhn-app-shell">
-      <LeftSidebar activeTab={activeTab} onTabChange={handleTabChange} onLogout={onLogout} />
-
-      <div className="mhn-app-content mhn-help-page-container">
+    <div className="mhn-help-page-container">
       <main className="mhn-help-main-layout">
         
         {/* ==================== HERO SEARCH SECTION ==================== */}
@@ -431,7 +418,6 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
         </section>
 
       </main>
-      </div>
     </div>
   );
 };

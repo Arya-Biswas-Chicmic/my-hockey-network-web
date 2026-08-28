@@ -2,7 +2,6 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
 import React, { useState, useEffect } from 'react';
 import { NoDataFound, ServerDown } from '@/components/common';
-import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { ManageNetworkCard } from '@/components/features/network/ManageNetworkCard';
 import { ProfileSummaryCard } from '@/components/features/home/ProfileSummaryCard';
 import { GroupsView } from '@/components/features/network/GroupsView';
@@ -25,7 +24,7 @@ import {
   RecommendedPerson,
 } from '@my-hockey-network/core';
 
-import { QueryKeys, NavTabEnum, NetworkViewModeEnum } from '@my-hockey-network/contracts';
+import { QueryKeys, NetworkViewModeEnum } from '@my-hockey-network/contracts';
 import { useQuery } from '@/query';
 import { Search } from 'lucide-react';
 import { extractErrorMessage, getApiErrorStatus } from '@/utils/toast';
@@ -38,7 +37,6 @@ interface PageProps {
 
 export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { user, loadAuthMe } = useAuth();
-  const [activeNavTab, setActiveNavTab] = useState<NavTabEnum>(NavTabEnum.MY_NETWORK);
   const [currentView, setCurrentView] = useState<NetworkViewModeEnum>(NetworkViewModeEnum.NETWORK);
   const [selectedGroupId, setSelectedGroupId] = useState<string>();
   const [activeFilterTab, setActiveFilterTab] = useState('Invitations');
@@ -143,18 +141,6 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
     }
   }, [peopleData]);
 
-  const handleTabChange = (tab: string) => {
-    if (Object.values(NavTabEnum).includes(tab as NavTabEnum)) {
-      setActiveNavTab(tab as NavTabEnum);
-    }
-    if (tab === NavTabEnum.MY_NETWORK || tab === 'network') {
-      setCurrentView(NetworkViewModeEnum.NETWORK);
-    }
-    if (onNavigate) {
-      onNavigate(tab);
-    }
-  };
-
   const handleAcceptRequest = async (id: string) => {
     try {
       await acceptRelationship(id);
@@ -204,14 +190,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
   );
 
   return (
-    <div className="mhn-app-shell">
-      <LeftSidebar
-        activeTab={activeNavTab}
-        onTabChange={handleTabChange}
-        onLogout={onLogout}
-      />
-
-      <div className="mhn-app-content mhn-network-page-root">
+    <div className="mhn-network-page-root">
       {/* Main Container */}
       <main className="mhn-network-main-layout">
         {currentView === NetworkViewModeEnum.GROUP_DETAIL ? (
@@ -379,7 +358,6 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
           </>
         )}
       </main>
-      </div>
     </div>
   );
 };

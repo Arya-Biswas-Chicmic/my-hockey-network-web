@@ -1,5 +1,6 @@
 import { FallbackImage } from '@/components/ui/fallback-image';
 import { ChevronDown, ChevronRight, Users } from 'lucide-react';
+import { SwitchAccountIcon } from '@/components/icons/DropdownIcons';
 
 export interface FamilyMember {
   id: string;
@@ -34,7 +35,7 @@ export function HeaderFamilyMenu({
       <div className="mhn-family-header" onClick={onToggleExpand}>
         <div className="mhn-dropdown-item-left">
           <div className="mhn-family-icon-box">
-            <Users size={18} aria-hidden="true" />
+            <Users size={16} aria-hidden="true" />
           </div>
           <span className="mhn-dropdown-item-text">
             Family {isFamilyLoading ? '...' : `(${familyMembers.length})`}
@@ -63,13 +64,13 @@ export function HeaderFamilyMenu({
                   onClick={() => onSelectMember(member.id)}
                 >
                   <div className="mhn-dropdown-item-left mhn-family-member-left">
-                    <FallbackImage src={member.avatar} alt={member.name} width={28} height={28} className="mhn-family-member-img" />
+                    <FallbackImage src={member.avatar} alt={member.name} width={26} height={26} className="mhn-family-member-img" />
                     <span className="mhn-family-member-name" title={member.name}>
                       {member.name.length > 18 ? `${member.name.trim().split(/\s+/).slice(0, 2).join(' ')}...` : member.name}
                     </span>
                   </div>
                   <div className="mhn-family-switch-btn" title={`View ${member.name} in Supervision`}>
-                    <ChevronRight size={16} aria-hidden="true" />
+                    <SwitchAccountIcon size={24} aria-hidden="true" />
                   </div>
                 </div>
               ))}

@@ -1,7 +1,7 @@
 import { Button } from '@/components/common/Button';
 import { FallbackImage } from '@/components/ui/fallback-image';
 import { HeaderFamilyMenu, type FamilyMember } from '@/components/common/HeaderFamilyMenu';
-import { ChevronRight, Eye, HelpCircle, LogOut, Moon, Settings, Sun } from 'lucide-react';
+import { ChevronRight, Eye, HelpCircle, LogOut, Moon, Settings } from 'lucide-react';
 
 export interface HeaderProfileDropdownProps {
   activeUser: { name: string; avatar: string };
@@ -52,8 +52,8 @@ export function HeaderProfileDropdown({
             <FallbackImage
               src={activeUser.avatar}
               alt={activeUser.name}
-              width={32}
-              height={32}
+              width={26}
+              height={26}
               className="mhn-dropdown-avatar-img"
             />
             <span className="mhn-dropdown-item-text">View Profile</span>
@@ -81,35 +81,38 @@ export function HeaderProfileDropdown({
         <Button className="mhn-dropdown-item" onClick={() => navigateAndClose('settings')}>
           <div className="mhn-dropdown-item-left">
             <div className="mhn-dropdown-icon-box">
-              <Settings size={18} aria-hidden="true" />
+              <Settings size={16} aria-hidden="true" />
             </div>
             <span className="mhn-dropdown-item-text">Settings & Privacy</span>
           </div>
           <ChevronRight className="mhn-dropdown-chevron" size={16} aria-hidden="true" />
         </Button>
 
-        <Button
-          className="mhn-dropdown-item"
-          onClick={onToggleTheme}
-          aria-label={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} mode`}
-        >
+        <div className="mhn-dropdown-item">
           <div className="mhn-dropdown-item-left">
             <div className="mhn-dropdown-icon-box">
-              {resolvedTheme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              <Moon size={16} aria-hidden="true" />
             </div>
-            <span className="mhn-dropdown-item-text">
-              {resolvedTheme === 'dark' ? 'Light mode' : 'Dark mode'}
-            </span>
+            <span className="mhn-dropdown-item-text">Dark Theme</span>
           </div>
-          <ChevronRight className="mhn-dropdown-chevron" size={16} aria-hidden="true" />
-        </Button>
+          <Button
+            type="button"
+            role="switch"
+            aria-checked={resolvedTheme === 'dark'}
+            aria-label={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} mode`}
+            className={`mhn-parent-toggle-track ${resolvedTheme === 'dark' ? 'mhn-active' : ''}`}
+            onClick={onToggleTheme}
+          >
+            <div className={`mhn-parent-toggle-thumb ${resolvedTheme === 'dark' ? 'mhn-active' : ''}`} />
+          </Button>
+        </div>
 
         {/* Parent-only management route. Child approvals stay under Profile. */}
         {isParent && (
           <Button className="mhn-dropdown-item" onClick={() => navigateAndClose('supervision')}>
             <div className="mhn-dropdown-item-left">
               <div className="mhn-dropdown-icon-box">
-                <Eye size={18} aria-hidden="true" />
+                <Eye size={16} aria-hidden="true" />
               </div>
               <span className="mhn-dropdown-item-text">Supervision</span>
             </div>
@@ -120,7 +123,7 @@ export function HeaderProfileDropdown({
         <Button className="mhn-dropdown-item" onClick={() => navigateAndClose('help')}>
           <div className="mhn-dropdown-item-left">
             <div className="mhn-dropdown-icon-box">
-              <HelpCircle size={18} aria-hidden="true" />
+              <HelpCircle size={16} aria-hidden="true" />
             </div>
             <span className="mhn-dropdown-item-text">Help & Support</span>
           </div>

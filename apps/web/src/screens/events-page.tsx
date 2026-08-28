@@ -7,7 +7,6 @@ import {
   Plus,
   ChevronDown,
 } from 'lucide-react';
-import { AppShell } from '@/components/layout/AppShell';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { EventCard } from '@/components/features/events/EventCard';
@@ -88,19 +87,11 @@ const INITIAL_EVENTS: EventItem[] = [
 
 export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { permissions } = useFeedPermissions(onNavigate);
-  const [activeNavTab, setActiveNavTab] = useState('events');
   const [activeTopTab, setActiveTopTab] = useState<'personal' | 'network' | 'explore'>('personal');
   const [activeFilterPill, setActiveFilterPill] = useState<string>('interested');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [events, setEvents] = useState<EventItem[]>(INITIAL_EVENTS);
-
-  const handleTabChange = (tab: string) => {
-    setActiveNavTab(tab);
-    if (onNavigate) {
-      onNavigate(tab);
-    }
-  };
 
   const toggleInterested = (id: string) => {
     setEvents((prev) =>
@@ -130,7 +121,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   });
 
   return (
-    <AppShell activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout}>
+    <>
       {!permissions.allowed && permissions.message && (
         <PendingBanner
           message={permissions.message}
@@ -261,7 +252,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           ))}
         </div>
       </main>
-    </AppShell>
+    </>
   );
 };
 

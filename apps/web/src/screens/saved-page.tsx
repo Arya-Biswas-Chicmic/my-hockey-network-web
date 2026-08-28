@@ -8,7 +8,6 @@ import {
   Clock,
   MapPin,
 } from 'lucide-react';
-import { AppShell } from '@/components/layout/AppShell';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { FallbackImage } from '@/components/ui/fallback-image';
@@ -73,17 +72,9 @@ const INITIAL_SAVED_ITEMS: SavedItem[] = [
 
 export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { permissions } = useFeedPermissions(onNavigate);
-  const [activeNavTab, setActiveNavTab] = useState('saved');
   const [activeTab, setActiveTab] = useState<'all' | 'posts' | 'events'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [savedItems, setSavedItems] = useState<SavedItem[]>(INITIAL_SAVED_ITEMS);
-
-  const handleTabChange = (tab: string) => {
-    setActiveNavTab(tab);
-    if (onNavigate) {
-      onNavigate(tab);
-    }
-  };
 
   const handleRemoveSaved = (id: string) => {
     setSavedItems((prev) => prev.filter((item) => item.id !== id));
@@ -106,7 +97,7 @@ export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   });
 
   return (
-    <AppShell activeTab={activeNavTab} onTabChange={handleTabChange} onLogout={onLogout}>
+    <>
       {!permissions.allowed && permissions.message && (
         <PendingBanner
           message={permissions.message}
@@ -285,7 +276,7 @@ export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           )}
         </div>
       </main>
-    </AppShell>
+    </>
   );
 };
 

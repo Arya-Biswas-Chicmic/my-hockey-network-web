@@ -4,6 +4,102 @@ Last reviewed: 2026-08-28
 
 ## Completed
 
+- Hoisted the sidebar into `(authenticated)/layout.tsx` so it never unmounts on navigation
+  (feedback 2026-08-28: "I don't want mount and remount why we need to do just to show selected
+  tab" — a follow-up to the earlier shimmer-only fix, which had explicitly flagged this as the
+  larger change it wasn't yet doing). Previously all 15 authenticated screens each rendered their
+  own `<LeftSidebar>`/`<AppShell>` instance; Next's `(authenticated)/loading.tsx` Suspense fallback
+  swapped in over the *entire* previous tree on every navigation while the next route rendered, so
+  the sidebar really did remount every time a tab was clicked, not just visually flicker.
+  - Added `AuthenticatedShell` (`app/(authenticated)/authenticated-shell.tsx`), a client component
+    that renders one `<AppShell>` wired via `useAppNavigation()`, wrapped around `{children}` in
+    `layout.tsx`. Confirmed every one of the 15 screens' own `handleTabChange` already reduced to
+    nothing but `onNavigate(tab)` — `useAppNavigation()` is what every route's own `page.tsx`
+    already passed down — so hoisting it needed no per-page behavior changes, just deleting the
+    now-redundant local copies (`activeNavTab` state, `handleTabChange` wrappers, the
+    `.mhn-app-shell`/`<LeftSidebar>`/`<AppShell>` JSX) from `home-page`, `explore-page`,
+    `groups-page`, `saved-page`, `notifications-page`, `teams-page`, `events-page`,
+    `messaging-page`, `help-page`, `profile-page`, `settings-page`, `event-detail-page`,
+    `my-network-page`, `supervision-page`, and the unused `ComingSoonPage`.
+  - **Caught and fixed a real regression from the first attempt**: making `layout.tsx` itself
+    `'use client'` (needed for the hooks) silently disabled its own `export const dynamic =
+    'force-dynamic'` — Next only reads route segment config from Server Components — which flipped
+    ~15 routes from server-rendered-on-demand to statically prerendered in the production build.
+    Not something this change was meant to touch. Fixed by keeping `layout.tsx` a plain Server
+    Component and moving all the client-only logic into `authenticated-shell.tsx`. Confirmed via a
+    clean production build: every affected route (`/home`, `/messaging`, `/profile`, `/settings`,
+    `/events`, `/explore`, `/groups`, `/supervision`, `/event-detail`, `/help`, `/notifications`,
+    `/saved`, `/teams`, `/network`) is `ƒ` (dynamic) again, matching the pre-refactor build exactly.
+  - **"Create Post" from the sidebar** used to call each page's own local handler directly; two
+    pages (`home-page`, `profile-page`) own genuinely different post-creation flows (different
+    mutations, different target lists), so a single shared modal wasn't right. Added
+    `createPostRequestId`/`requestCreatePost()` to `shell-ui-store.ts` (a counter, not a boolean, so
+    a second click while already open still re-fires) — the hoisted sidebar bumps it, and each page
+    that owns a create-post modal watches it via a `useEffect` + `useRef` guard and opens its own
+    local modal exactly as before. Verified live: clicking "Create Post" from Profile opens
+    Profile's own modal; clicking it from Notifications (no modal there) does nothing, no error.
+  - Verified the actual fix live by tagging the sidebar DOM node with a random marker and clicking
+    through Home → Messaging → Profile: the marker (i.e. the same React instance) survived every
+    navigation instead of getting a fresh one, confirming the sidebar genuinely never remounts now.
+  - One accepted, narrow behavior change: `my-network-page`'s `handleTabChange` used to reset its
+    internal `currentView` back to the network list specifically when re-clicking "Network" while
+    already on that page (e.g. out of a group-detail view) — that per-click reset is gone now that
+    the sidebar's click goes straight to `router.push` without passing through the page's own
+    handler. Everything else on that page is unaffected.
+
+- Pixel-matched the profile dropdown (`HeaderProfileDropdown.tsx`/`HeaderFamilyMenu.tsx`) against
+  Figma node 1418:8871, fetched directly rather than inferred (feedback 2026-08-28, numbered list +
+  screenshot). Traced exact values from `get_design_context`/`download_assets`, not guessed:
+  - Icon circles (Settings/Supervision/Help/Dark-Theme/Family-header): 26px (16px icon + 5px
+    padding), not a fixed 32px — background `#112744`, glyph `var(--color-auth-action)` (`#0b66c2`,
+    confirmed the same in both themes already) instead of the generic accent tokens, which read a
+    visibly different blue. Found and removed a second, later-in-cascade `:root.dark
+    .mhn-dropdown-icon-box` rule that was silently winning over the first attempt at this fix.
+  - View Profile avatar 32px→26px, family member avatars 28px→26px, family-switch icon frame
+    26px→24px, row padding 10px→9px, `.mhn-dropdown-item-left` gap 12px→8px, row text weight
+    600→500 (family member names specifically use 400, confirmed from the design's own "Inter:Regular"
+    label).
+  - Row chevrons (View Profile/Settings/Supervision/Help) were `--color-muted-foreground` (gray);
+    Figma's are full white/foreground.
+  - Family member rows' right-side icon was a plain `ChevronRight` — Figma uses a distinct circular
+    "switch account" glyph. Traced it for real from the exported SVG path data into a new
+    `components/icons/DropdownIcons.tsx` (`SwitchAccountIcon`), `#f0f0f0` (this file's own "Stroke"
+    design token, confirmed via `get_design_context`'s reported styles).
+  - Divider color `var(--color-border)` → exact `#1d2432`.
+  - Logout row: icon circle `#322525`, icon+text `#c20b0e` in both themes (confirmed via the
+    exported SVG's own `fill`) — was reading the generic, lighter `--color-destructive` token.
+  - **Dark Theme row rebuilt to match Figma's actual component**: it was a `Sun`/`Moon`-swapping
+    row with a `ChevronRight`, dynamically labeled "Light mode"/"Dark mode" — Figma has a static
+    "Dark Theme" label, a fixed moon icon, and a real toggle switch, not a chevron (feedback
+    2026-08-28: "Dark theme switch button to change theme and icon"). Reused
+    `.mhn-parent-toggle-track`/`.mhn-parent-toggle-thumb` (already in `index.css` from
+    `CreatePlayerProtectStep.tsx`, and its own later-cascade override already happened to be
+    exactly Figma's spec: 40×22 track, `#0b66c2` on-state, 18px knob) instead of building a new
+    toggle component. Changed the row wrapper from `<Button>` to `<div>` since only the switch
+    itself is interactive now, not the whole row — also avoids nesting a `<button>` inside one.
+  - All verified live via computed styles at every value above, not just visually.
+
+- Stopped the sidebar's loading skeleton from shimmering on route navigation (feedback 2026-08-28:
+  "shimmer working on the left tab also... left keep consistent they won't have shimmer"). Root
+  cause: `(authenticated)/loading.tsx` — the Suspense fallback Next.js shows for every navigation
+  between authenticated routes — renders `FullAppSkeletonLoader`, which includes `SidebarSkeleton`.
+  Its placeholder boxes used the same `pulseGlow` shimmer animation as real content skeletons, so
+  clicking between Home/Messaging/Profile/etc. briefly showed the *entire* sidebar shimmering, even
+  though its nav labels and icons never actually change between routes. Made
+  `.mhn-sidebar-skeleton-box` a static `var(--color-secondary)` fill instead — still the right shape
+  for zero layout shift, no longer reads as "reloading." Verified the compiled rule directly (no
+  reliable way to catch the sub-second Suspense flash live): `background: var(--color-secondary);
+  border-radius: 4px;`, no `animation`/gradient.
+  - **Note on scope**: this stops the *shimmer motion* specifically, which is what was reported.
+    The sidebar still technically unmounts and remounts on every route change (each page currently
+    renders its own `<LeftSidebar>`/`<AppShell>` instance, rather than the App Router's shared
+    `(authenticated)/layout.tsx` owning one persistent instance) — the skeleton will still flash in
+    briefly, just without animating. Confirmed live that this is a mechanically safe, low-risk
+    change; eliminating the flash/remount entirely would mean hoisting the sidebar into the shared
+    layout, which touches all 14 authenticated page components' shell-wrapper JSX plus how "Create
+    Post" is triggered from the sidebar (currently page-local state on 2 of them) — a much larger
+    change, out of scope here unless asked for.
+
 - Follow-up fix to the Home feed tab bar's sticky-scroll pass, from a screenshot showing the
   active-tab underline cutting through the first post's avatar once scrolled (feedback 2026-08-28):
   1. **Underline overlapping the feed** — `HomeTabs.tsx` drew the active indicator as its own
