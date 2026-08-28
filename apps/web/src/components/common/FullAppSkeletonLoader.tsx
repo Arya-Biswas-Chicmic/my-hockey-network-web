@@ -1,48 +1,41 @@
-'use client';
-
 import React from 'react';
-import { usePathname } from 'next/navigation';
 import { SidebarSkeleton } from '@/components/common/SidebarSkeleton';
 import { HomeSkeletonLoader } from '@/components/features/home/HomeSkeletonLoader';
-import { ProfileSkeletonLoader } from '@/components/features/profile/ProfileSkeletonLoader';
-import { NetworkSkeletonGrid } from '@/components/features/network/NetworkSkeletonLoader';
 
-export const FullAppSkeletonLoader: React.FC = () => {
-  // `usePathname()`, not `typeof window !== 'undefined' ?
-  // window.location.pathname : ''` — that read `''` during SSR (always
-  // falling through to `HomeSkeletonLoader`) but the real pathname on the
-  // client, so the server-rendered and first-client-rendered HTML disagreed
-  // whenever this mounted on any route but Home, causing a hydration
-  // mismatch (surfaced in the console as "Hydration failed because the
-  // server rendered HTML didn't match the client" on every route this way).
-  // `usePathname()` returns the same value in both places.
-  const pathname = usePathname() ?? '';
-
-  const renderContentSkeleton = () => {
-    if (pathname.startsWith('/profile')) {
-      return <ProfileSkeletonLoader />;
-    }
-    if (pathname.startsWith('/my-network')) {
-      return (
-        <div className="mhn-pt-24">
-          <NetworkSkeletonGrid count={6} />
-        </div>
-      );
-    }
-    return <HomeSkeletonLoader />;
-  };
-
-  // Renders through the real `.mhn-app-shell`/`.mhn-app-content` classes
-  // (same as every actual page) so this swaps in without a layout shift —
-  // previously used its own bespoke wrapper alongside a horizontal top-bar
-  // skeleton left over from the app's pre-Sidebar design (see
-  // `SidebarSkeleton.tsx`).
-  return (
-    <div className="mhn-app-shell">
-      <SidebarSkeleton />
-      <div className="mhn-app-content">
-        {renderContentSkeleton()}
-      </div>
+/**
+ * The authenticated app chrome (sidebar + content well) as a loading
+ * placeholder, with the per-route content skeleton passed in.
+ *
+ * Renders through the real `.mhn-app-shell`/`.mhn-app-content` classes so it
+ * swaps in without a layout shift.
+ */
+export const AppShellSkeleton: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="mhn-app-shell">
+    <SidebarSkeleton />
+    <div className="mhn-app-content">
+      {children}
     </div>
-  );
-};
+  </div>
+);
+
+/**
+ * Default loading state for the `(authenticated)` route group.
+ *
+ * This used to be the app's single root `loading.tsx` and picked its content
+ * skeleton by reading `usePathname()`. Both of those were wrong:
+ *
+ * - At the root it also covered `(auth)` and `(public)`, so signed-out visitors
+ *   loading `/onboarding` or a public profile saw a fake logged-in app — sidebar,
+ *   feed, right rail — before the real centered page replaced it. Each route
+ *   group now owns its own `loading.tsx`.
+ * - The pathname branching needed `'use client'` and a hydration-mismatch
+ *   workaround, and its `/my-network` branch never matched anything because the
+ *   real route is `/network` — so network loads silently fell back to the Home
+ *   skeleton. Those branches are now per-route `loading.tsx` files, which is
+ *   Next's own mechanism for this and needs no client-side pathname sniffing.
+ */
+export const FullAppSkeletonLoader: React.FC = () => (
+  <AppShellSkeleton>
+    <HomeSkeletonLoader />
+  </AppShellSkeleton>
+);

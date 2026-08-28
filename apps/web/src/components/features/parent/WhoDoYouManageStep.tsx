@@ -26,7 +26,7 @@ export const WhoDoYouManageStep: React.FC<WhoDoYouManageStepProps> = ({ onAddPla
         Add the players you&apos;re responsible for managing.
       </div>
 
-      <div className="mhn-parent-info-banner">
+      <div className="mhn-parent-info-banner flex items-center gap-2">
         <Image src="/secure.png" alt="secure" width={18} height={22} className="secure" />
         <span>
           For minor players, you&apos;ll control privacy, team relationships, and contact permissions.

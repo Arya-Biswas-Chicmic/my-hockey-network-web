@@ -9,6 +9,7 @@
     "@my-hockey-network/auth": "workspace:*",
     "@my-hockey-network/constants": "workspace:*",
     "@my-hockey-network/contracts": "workspace:*",
-    "@my-hockey-network/types": "workspace:*"
+    "@my-hockey-network/types": "workspace:*",
+    "@my-hockey-network/validation": "workspace:*"
   }
 }

@@ -1,5 +1,14 @@
-import { Button } from '@/components/common/Button';
 import React from 'react';
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/common/Spinner';
 
 interface LogoutModalProps {
@@ -15,59 +24,39 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({
   onConfirm,
   isLoading = false,
 }) => {
-  if (!isOpen) return null;
-
   return (
-    <div className="mhn-modal-overlay">
-      <div className="mhn-modal-card mhn-delete-modal-card">
-        {/* Modal Header */}
-        <div className="mhn-delete-modal-header">
-          <h3 className="mhn-delete-modal-title">
-            Log Out
-          </h3>
-          {!isLoading && (
-            <Button
-              onClick={onClose}
-              className="mhn-delete-modal-close"
-              aria-label="Close modal"
-            >
-              &times;
-            </Button>
-          )}
-        </div>
-
-        {/* Modal Body */}
-        <p className="mhn-delete-modal-body">
-          Are you sure you want to log out? You will need to sign in again to access your account.
-        </p>
-
-        {/* Action Buttons */}
-        <div className="mhn-logout-modal-actions">
-          <Button
-            type="button"
-            onClick={onClose}
-            disabled={isLoading}
-            className="mhn-btn-logout-cancel"
-          >
+    <Dialog open={isOpen} onOpenChange={(open) => !open && !isLoading && onClose()}>
+      <DialogContent className="max-w-sm" showCloseButton={!isLoading}>
+        <DialogHeader>
+          <DialogTitle>Log Out</DialogTitle>
+        </DialogHeader>
+        <DialogBody>
+          <DialogDescription>
+            Are you sure you want to log out? You will need to sign in again to access your
+            account.
+          </DialogDescription>
+        </DialogBody>
+        <DialogFooter>
+          <Button type="button" variant="solid-outline" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
           <Button
             type="button"
+            variant="solid-destructive"
             onClick={onConfirm}
             disabled={isLoading}
-            className="mhn-btn-logout-confirm"
           >
             {isLoading ? (
               <>
-                <Spinner size="sm" color="currentColor" />
+                <Spinner size="sm" />
                 <span>Logging out...</span>
               </>
             ) : (
               'Log Out'
             )}
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };

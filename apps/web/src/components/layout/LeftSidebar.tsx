@@ -127,7 +127,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
             onToggleFamilyExpand={toggleFamilyExpanded}
             onSelectFamilyMember={(memberId) => onTabChange?.('supervision', { selectedWardId: memberId })}
             onShowMoreFamily={() => onTabChange?.('supervision')}
-            resolvedTheme={resolvedTheme}
+            resolvedTheme={resolvedTheme ?? 'dark'}
             onToggleTheme={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
             onClose={() => setIsProfileOpen(false)}
             onNavigate={handleTabClick}

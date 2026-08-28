@@ -105,6 +105,34 @@ describe('GuestGuard', () => {
     );
     expect(screen.getByText('Guest content')).toBeTruthy();
   });
+
+  // While the bootstrap is in flight the layout is genuinely unknown, so the
+  // brand loader shows rather than any route-shaped skeleton.
+  it('shows the brand loader while bootstrapping', () => {
+    useAuthMock.mockReturnValue({ hasBootstrapped: false, isAuthenticated: false });
+    const { container } = render(
+      <GuestGuard>
+        <div>Guest content</div>
+      </GuestGuard>,
+    );
+    expect(container.querySelector('.mhn-brand-loader')).not.toBeNull();
+    expect(container.querySelector('.mhn-app-shell')).toBeNull();
+  });
+
+  // Regression guard: this used to render `FullAppSkeletonLoader`, so a visitor
+  // on a guest route saw the authenticated sidebar and feed rather than the
+  // centered onboarding shell.
+  it('shows the auth placeholder, not the authenticated app shell, once bootstrapped', () => {
+    useAuthMock.mockReturnValue({ hasBootstrapped: true, isAuthenticated: true });
+    const { container } = render(
+      <GuestGuard>
+        <div>Guest content</div>
+      </GuestGuard>,
+    );
+    expect(container.querySelector('.onboarding-screen')).not.toBeNull();
+    expect(container.querySelector('.mhn-app-shell')).toBeNull();
+    expect(container.querySelector('.mhn-sidebar')).toBeNull();
+  });
 });
 
 describe('ParentRoleGuard', () => {

@@ -7,6 +7,7 @@ export function isEmailValid(email: string): boolean {
   return emailSchema.safeParse(email.trim()).success;
 }
 
+export * from './date';
 export * from './profileValidation';
 export * from './file';
 export * from './forms';

@@ -1,6 +1,6 @@
 # Frontend technical architecture and development guidelines
 
-Last reviewed: 2026-08-27
+Last reviewed: 2026-08-28
 
 This document is mandatory for new frontend work. The owner has authorized the Next.js migration and
 implementation is underway in `apps/web`. Vite, React Router, Formik, and npm have been removed from
@@ -17,6 +17,7 @@ implementation is underway in `apps/web`. Vite, React Router, Formik, and npm ha
 | Mobile navigation | React Navigation native stack and bottom tabs |
 | Web rendering | Server Components by default; Client Components at interactive boundaries |
 | Styling | Tailwind CSS 4 plus the existing reusable project classes/design tokens |
+| Theming | `next-themes` with `attribute="class"`; see section 9 before touching dark mode |
 | Web UI primitives | `apps/web/src/components/ui`, `components/form/fields`, and existing `components/common` |
 | Mobile UI primitives | Existing `apps/mobile/src/components` components |
 | Server/API state | TanStack Query v5 on web through the existing query layer |
@@ -119,6 +120,7 @@ Zod schemas. TanStack Query owns interactive web server state; Next.js App Route
 
 The authenticated dark palette is defined once through semantic tokens in `index.css` and resolved
 by `components/core/theme-provider.tsx`. Do not add feature-local hex palettes for themeable UI.
+See section 9 for the class-based dark-mode rules.
 
 ## 7. Next.js rendering strategy
 
@@ -144,3 +146,43 @@ until each is explicitly classified per `WEB_SEO_AND_RENDERING_STRATEGY.md`.
 Every implementation change must update relevant documentation, add proportionate tests, preserve
 greater-than-80% enforced coverage, and pass `pnpm verify`. Mobile runtime changes must also pass
 `pnpm build:mobile`.
+
+## 9. Theming and dark mode (web)
+
+Dark mode is **class-based**. `next-themes` writes `class="dark"` (or `"light"`) onto `<html>`;
+nothing writes a `data-theme` attribute any more. Get this wrong and dark mode silently breaks:
+selectors still parse, they just never match.
+
+Rules:
+
+1. **`core/theme-provider` is the only theme owner.** Import `useTheme` from
+   `@/components/core/theme-provider`, never from `next-themes` directly. It is configured with
+   `attribute="class"`, `defaultTheme="dark"`, `enableSystem`, and `disableTransitionOnChange`.
+2. **`resolvedTheme` can be `undefined`** before hydration (`next-themes` types it as
+   `string | undefined`). Guard every use: `resolvedTheme ?? 'dark'` when passing it to a prop typed
+   `string`, or compare directly (`resolvedTheme === 'dark'`) where a boolean is wanted.
+3. **Write new dark styling as Tailwind `dark:` variants** (`className="bg-white dark:bg-slate-900"`)
+   rather than adding another `.dark .mhn-*` block to `index.css`. These work because
+   `index.css` declares `@custom-variant dark (&:where(.dark, .dark *));` — Tailwind 4 otherwise
+   defaults `dark:` to `prefers-color-scheme`, which would ignore the class entirely.
+4. **Legacy dark rules use `:root.dark …`** in `index.css` (converted from the previous
+   `:root[data-theme='dark']`). If you add to that legacy block, match that selector shape. Never
+   reintroduce `[data-theme=...]`.
+5. **`index.css` header lines are load-bearing.** `@import "tailwindcss"`, `@import "tw-animate-css"`
+   (supplies `animate-in` / `fade-out-0` / `zoom-in-95`, used by `.cn-dialog-*`), the
+   `@custom-variant dark` line, and the `@theme` token block must all stay at the top of the file.
+   Removing any one of them breaks the build or silently drops styling.
+6. **New color values belong in the `@theme` block** as `--color-*` tokens, which auto-generate the
+   matching utilities. Do not hardcode hex values in components, and do not copy raw color values in
+   from the Admin Panel — port the *pattern*, keep our tokens. `index.css` now defines 103 tokens
+   covering backgrounds, foregrounds, borders, the slate ramp, and the destructive/success/accent/info
+   families, each with a `:root.dark` override — check for an existing one before adding another.
+   Every token needs a dark value: a token defined only in `@theme` silently keeps its light colour
+   in dark mode, which is exactly how `--color-destructive` shipped a light-mode red onto the dark
+   shell.
+7. **Verify both themes in a browser**, not just a typecheck. A missing dark rule typechecks fine.
+   Toggle light/dark and confirm text, surfaces, and borders all move together.
+
+Known gap: `common/Button`'s `secondary`, `outline`, `danger`, `icon`, and `link` variants reference
+`.mhn-ui-button--*` classes that do not exist in `index.css` and render unstyled. Use `primary`,
+`solid`, `solid-outline`, or `solid-destructive` until that is fixed.

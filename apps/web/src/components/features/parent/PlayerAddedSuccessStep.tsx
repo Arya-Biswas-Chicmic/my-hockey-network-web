@@ -40,23 +40,25 @@ export const PlayerAddedSuccessStep: React.FC<PlayerAddedSuccessStepProps> = ({
   };
 
   const displayNameShort = formatShortPlayerName(playerName, 14);
+  const actionLabel = type === 'link' ? 'Done' : `Go to ${displayNameShort}’s Profile`;
+  const invitationTarget = childEmail?.trim() || displayNameShort;
 
   return (
-    <div className="mhn-parent-step-container mhn-text-center mhn-parent-step-container-max380 mhn-parent-step-success">
-      <div className="mhn-parent-icon-circle mhn-green">
-        <Check size={32} aria-hidden="true" />
+    <div className="mhn-parent-step-container mhn-text-center mhn-parent-step-success">
+      <div className="bg-success-surface w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+        <Check className="text-success" size={34} aria-hidden="true" />
       </div>
 
-      <h2 className="mhn-parent-step-title">
+      <h2 className="mhn-parent-step-title mhn-parent-success-title">
         {displayNameShort} has been {type === 'link' ? 'invited' : 'added'}
       </h2>
-      <p className="mhn-parent-step-desc mhn-mb-32">
+      <p className="mhn-parent-step-desc mhn-parent-success-desc">
         {type === 'link'
-          ? `Invitation sent to ${childEmail}. Waiting for player to accept code.`
+          ? `Invitation sent to ${invitationTarget}. Waiting for player to accept code.`
           : `You're now managing ${displayNameShort}'s hockey profile.`}
       </p>
 
-      <div className="mhn-col-flex-gap-12">
+      <div className="mhn-parent-success-actions">
         <Button
           type="button"
           className="mhn-parent-btn-primary mhn-btn-loading-flex"
@@ -68,7 +70,7 @@ export const PlayerAddedSuccessStep: React.FC<PlayerAddedSuccessStepProps> = ({
               <LoaderCircle size={18} className="mhn-spin" aria-hidden="true" />
               <span>Loading...</span>
             </>
-          ) : `Go to ${displayNameShort}’s Profile`}
+          ) : actionLabel}
         </Button>
         <Button type="button" className="mhn-parent-btn-secondary" onClick={onAddAnother} disabled={isFinishing}>
           Add Another Player

@@ -1,4 +1,5 @@
 import { ProfileValidationMessages, CareerValidationMessages } from '@my-hockey-network/contracts';
+import { ageFromDate, isFutureDate, parseDob } from './date';
 
 export interface ProfileValidationData {
   firstName?: string;
@@ -46,15 +47,22 @@ export function validateProfileField(name: keyof ProfileValidationData | string,
   }
 
   if (name === 'dateOfBirth' && trimmed) {
-    const dobDate = new Date(trimmed);
-    if (isNaN(dobDate.getTime())) {
+    // Parsed through the shared strict parser rather than `new Date(trimmed)`: the latter
+    // accepted anything the engine could coerce (bare '2010', US-order '05/13/2010') and
+    // read 'YYYY-MM-DD' as UTC midnight, which skewed the comparisons below west of UTC.
+    // No format argument — this field is fed 'YYYY-MM-DD' by the `<input type="date">`
+    // surfaces and 'DD/MM/YYYY' by the text ones, and both must keep working.
+    const dobDate = parseDob(trimmed);
+    if (dobDate === null) {
       return ProfileValidationMessages.DOB_INVALID;
     }
-    const today = new Date();
-    if (dobDate > today) {
+    if (isFutureDate(dobDate)) {
       return ProfileValidationMessages.DOB_FUTURE;
     }
-    const age = today.getFullYear() - dobDate.getFullYear();
+    // `ageFromDate` adjusts for whether this year's birthday has passed; the previous
+    // `getFullYear()` subtraction did not, and let a 4-year-old through the `age < 5` gate
+    // for the whole of their fifth calendar year.
+    const age = ageFromDate(dobDate);
     if (age < 5) {
       return ProfileValidationMessages.DOB_MIN_AGE;
     }
