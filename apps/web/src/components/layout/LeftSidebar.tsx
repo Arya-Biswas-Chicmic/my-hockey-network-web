@@ -1,12 +1,20 @@
+'use client';
+
 import Image from 'next/image';
 import React, { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/common/Button';
 import { useAuth } from '@/hooks/use-auth';
 import { LogoutModal } from '@/components/common/LogoutModal';
 import { useHeaderFamily } from '@/hooks/use-header-family';
 import { HeaderProfileDropdown } from '@/components/common/HeaderProfileDropdown';
 import { FallbackImage } from '@/components/ui/fallback-image';
-import { NAVIGATION_ITEMS, NavigationItemConfig } from '@/constants/navigation.constants';
+import {
+  getNavigationItemById,
+  isNavigationItemActive,
+  NAVIGATION_ITEMS,
+  type NavigationItemConfig,
+} from '@/constants/navigation.constants';
 import { SidebarCreatePostIcon, SidebarMoreIcon } from '@/components/icons/SidebarIcons';
 import { useShellUiStore } from '@/stores/shell-ui-store';
 import { useTheme } from '@/components/core/theme-provider';
@@ -19,11 +27,12 @@ export interface LeftSidebarProps {
 }
 
 export const LeftSidebar: React.FC<LeftSidebarProps> = ({
-  activeTab = 'home',
   onTabChange,
   onLogout,
   onCreatePostClick,
 }) => {
+  const pathname = usePathname();
+  const router = useRouter();
   const { user, handleLogout: contextLogout } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
   const {
@@ -40,7 +49,13 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   const { activeUser, familyMembers, isFamilyLoading, isParent } = useHeaderFamily(user);
 
   const handleTabClick = (tabId: string) => {
-    if (onTabChange) onTabChange(tabId);
+    if (onTabChange) {
+      onTabChange(tabId);
+      return;
+    }
+
+    const item = getNavigationItemById(tabId);
+    if (item) router.push(item.route);
   };
 
   const handleLogoutClick = () => {
@@ -63,20 +78,25 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
 
   return (
     <aside className="mhn-sidebar">
-      <div
+      <Button
+        type="button"
         className="mhn-sidebar-logo mhn-cursor-pointer"
         onClick={() => handleTabClick('home')}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && handleTabClick('home')}
         aria-label="Go to Home"
       >
-        <Image src="/logo.png" alt="My Hockey Network" width={140} height={38} className="mhn-sidebar-logo-img" />
-      </div>
+        {/* `.mhn-sidebar`'s background switches with theme (`var(--color-background)`),
+            but only a dark-background logo exists today
+            (`apps/web/public/dark/logo.webp`, white wordmark) — it will read poorly on
+            a light sidebar. Once a light-theme variant is supplied
+            (`apps/web/public/light/logo.webp`), swap this to
+            `themedImageSrc('logo', resolvedTheme)` from `@/utils/themedImage`. */}
+        <Image src="/dark/logo.webp" alt="My Hockey Network" width={140} height={38} className="mhn-sidebar-logo-img" />
+      </Button>
 
       <nav className="mhn-sidebar-nav" aria-label="Main Navigation">
-        {NAVIGATION_ITEMS.map(({ id, label, ActiveIcon, InactiveIcon }: NavigationItemConfig) => {
-          const isActive = activeTab === id;
+        {NAVIGATION_ITEMS.map((item: NavigationItemConfig) => {
+          const { id, label, ActiveIcon, InactiveIcon } = item;
+          const isActive = isNavigationItemActive(pathname, item);
           const Icon = isActive ? ActiveIcon : InactiveIcon;
           return (
             <Button
@@ -102,12 +122,10 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
       </nav>
 
       <div className="mhn-sidebar-footer">
-        <div
+        <Button
+          type="button"
           className="mhn-sidebar-user-chip"
           onClick={toggleProfileMenu}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && toggleProfileMenu()}
           aria-label="User Profile Menu"
         >
           <div className="mhn-sidebar-user-avatar">
@@ -115,7 +133,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
           </div>
           <span className="mhn-sidebar-user-name">{activeUser.name}</span>
           <SidebarMoreIcon className="mhn-user-chevron" size={16} aria-hidden={true} />
-        </div>
+        </Button>
 
         {isProfileOpen && (
           <HeaderProfileDropdown

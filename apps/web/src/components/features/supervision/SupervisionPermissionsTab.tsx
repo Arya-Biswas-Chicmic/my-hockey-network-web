@@ -89,7 +89,7 @@ export function SupervisionPermissionsTab({
       <div className={`mhn-supervision-accordion ${expandedCategories.home ? 'mhn-accordion-expanded' : ''}`}>
         <div className="mhn-accordion-header" onClick={() => toggleCategory('home')}>
           <div className="mhn-accordion-title-left">
-            <NextImage src="/home.png" alt="" width={32} height={32} className="home" />
+            <NextImage src="/home.webp" alt="" width={32} height={32} className="home" />
             <span className="superTitle">Home</span>
           </div>
           <ChevronDown className={`mhn-accordion-chevron ${expandedCategories.home ? 'mhn-chevron-up' : ''}`} size={16} aria-hidden="true" />
@@ -110,7 +110,7 @@ export function SupervisionPermissionsTab({
       <div className={`mhn-supervision-accordion ${expandedCategories.network ? 'mhn-accordion-expanded' : ''}`}>
         <div className="mhn-accordion-header" onClick={() => toggleCategory('network')}>
           <div className="mhn-accordion-title-left">
-            <NextImage src="/myNetwork.png" alt="" width={32} height={32} className="home" />
+            <NextImage src="/myNetwork.webp" alt="" width={32} height={32} className="home" />
             <span className="superTitle">My Network</span>
           </div>
           <ChevronDown className={`mhn-accordion-chevron ${expandedCategories.network ? 'mhn-chevron-up' : ''}`} size={16} aria-hidden="true" />
@@ -159,7 +159,7 @@ export function SupervisionPermissionsTab({
       <div className={`mhn-supervision-accordion ${expandedCategories.messaging ? 'mhn-accordion-expanded' : ''}`}>
         <div className="mhn-accordion-header" onClick={() => toggleCategory('messaging')}>
           <div className="mhn-accordion-title-left">
-            <NextImage src="/messaging2.png" alt="" width={32} height={32} className="home" />
+            <NextImage src="/messaging2.webp" alt="" width={32} height={32} className="home" />
             <span className="superTitle">Messaging</span>
           </div>
           <ChevronDown className={`mhn-accordion-chevron ${expandedCategories.messaging ? 'mhn-chevron-up' : ''}`} size={16} aria-hidden="true" />
@@ -193,7 +193,7 @@ export function SupervisionPermissionsTab({
       <div className={`mhn-supervision-accordion ${expandedCategories.notifications ? 'mhn-accordion-expanded' : ''}`}>
         <div className="mhn-accordion-header" onClick={() => toggleCategory('notifications')}>
           <div className="mhn-accordion-title-left">
-            <NextImage src="/notifications.png" alt="" width={32} height={32} className="home" />
+            <NextImage src="/notifications.webp" alt="" width={32} height={32} className="home" />
             <span className="superTitle">Notifications</span>
           </div>
           <ChevronDown className={`mhn-accordion-chevron ${expandedCategories.notifications ? 'mhn-chevron-up' : ''}`} size={16} aria-hidden="true" />

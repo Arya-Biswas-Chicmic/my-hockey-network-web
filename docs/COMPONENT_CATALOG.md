@@ -107,8 +107,8 @@ local/object-URL previews only): every remote or static image in `apps/web` rend
   `onError={(e) => (e.target as HTMLImageElement).src = '...'}` DOM-mutation pattern. Use for
   avatars, cover banners, team/event logos — anything with a user- or backend-supplied URL that may
   be empty or fail to load.
-  - `fallbackSrc` (default `/userPlaceholder.png`): shown when `src` is empty or the image fails to
-    load. Pass a different fallback (`/cover.png`, `/HC.png`, `/kcBlue.png`, ...) to match the
+  - `fallbackSrc` (default `/userPlaceholder.webp`): shown when `src` is empty or the image fails to
+    load. Pass a different fallback (`/cover.webp`, `/HC.webp`, `/kcBlue.webp`, ...) to match the
     original per-feature placeholder.
   - `hideOnError`: renders nothing instead of swapping to a fallback — use for optional decorative
     images (e.g. a team logo badge) where hiding is preferable to a generic placeholder.
@@ -136,6 +136,112 @@ local/object-URL previews only): every remote or static image in `apps/web` rend
   below) — none is a Next-optimizable remote asset, matching Admin's identical exception in
   `form-image-upload.tsx`. Do not add a new raw `<img>` outside these categories; `pnpm lint:check`
   enforces `@next/next/no-img-element` at `--max-warnings=0`.
+
+### Static asset location and format (2026-08-27 consolidation)
+
+Every static/local image ships from exactly one place per app — do not add a second images
+directory or copy an asset into `src/`:
+
+- **Web**: `apps/web/public/` — referenced by root-relative string path (`/foo.webp`) from
+  `next/image`, `FallbackImage`, or CSS `url(...)`. Files here are served as-is; nothing under
+  `src/` is a valid place for a static image, since Next.js can only reference `public/` this way
+  (a `src/`-relative image would instead require an ES module `import`, which is a different,
+  incompatible pattern — see "Why not `src/assets`" below).
+- **Mobile**: `apps/mobile/assets/` (icons/splash consumed by `app.config.ts` — `icon`, `splash`,
+  `adaptiveIcon` — stay at this top level) and `apps/mobile/assets/images/` (everything else),
+  referenced via static `require('../../../assets/images/foo.webp')` calls. Metro requires a
+  literal string argument to `require()` — no dynamic path construction.
+- **Format**: photos/illustrations are `.webp` (q≈85) — same visual quality as the PNG originals at
+  roughly an 87% size reduction (web `public/` went from 13.6 MB to 1.7 MB across 83 files). Icons
+  and logos stay `.svg`. Mobile app icons/splash images (`apps/mobile/assets/*.png` at the top
+  level) stay `.png` — Expo's `app.config.ts` icon/splash/adaptive-icon pipeline expects PNG
+  specifically; do not convert those four files.
+- **Why not `src/assets`**: this was evaluated and rejected. Every existing image reference in this
+  codebase (`next/image`, `FallbackImage`, CSS `url()`) uses a root-relative string path against
+  `public/`, and `FallbackImage` in particular is built around plain string URLs because it also
+  handles backend-supplied avatar/post-image URLs that are never known at build time — a
+  static-import pattern can't express those. Moving to `src/assets/` would mean converting every
+  reference in every component to an ES module import, a rewrite with no functional benefit here:
+  `next/image`'s optimizer is already active against `public/` (confirmed serving `.webp` output
+  with automatic width/quality negotiation via `/_next/image?...`).
+- A leftover `apps/web/src/assets/` directory (pre-Next.js Vite scaffolding — `hero.png`,
+  `react.svg`, `vite.svg`, plus a set of sidebar/feed SVGs that had already been hand-traced into
+  `SidebarIcons.tsx`/`FeedActionIcons.tsx` as inline JSX) was confirmed unused via a codebase-wide
+  import search and removed.
+- Some existing files in both locations have **zero code references** (24 in `apps/web/public/`,
+  including the unused `Social Icons.png`→`.webp`; 1 in `apps/mobile/assets/images/`,
+  `GurdianApprovalRequest.png`→`.webp`) — these were converted for consistency but were not deleted,
+  since removing them wasn't explicitly requested. Treat them as candidates for a future prune.
+
+### Theme-variant images (light/dark)
+
+Most images and icons in this codebase render identically regardless of theme (avatars, event
+photos, badge-style icons that carry their own background) and stay directly under
+`public/`/`assets/images/` as above — **do not** move an image into a theme subfolder, or
+duplicate a file across both folders, unless it genuinely needs a different asset per theme. An
+audit of every icon/logo reference in the web app (2026-08-28) found exactly two real
+theme-dependent cases, both below; nothing else needs this treatment — several icons that look
+theme-risky in isolation (plain, no self-background) turned out fine because the surface they
+render on is itself hardcoded to one theme and never switches (e.g. `event-detail-page.tsx`, the
+`Dropdown` component, `ProfileHeroCard` — none of these participate in dark mode at all yet, which
+is a separate, larger gap than icon theming).
+
+- **Web**: a theme-paired image lives at `apps/web/public/light/<name>.webp` and
+  `apps/web/public/dark/<name>.webp`. Use the same basename in both folders when both exist, so the
+  pairing is visible from the filename alone — but don't create a file in one folder just to
+  mirror the other; an asset only goes in `light/`/`dark/` once a real per-theme file exists for
+  it (see the logo entry below for the interim state while a light variant is pending). Resolve the
+  path with `themedImageSrc(name, resolvedTheme)` from `@/utils/themedImage` (pass `resolvedTheme`
+  from `useTheme()`, not the raw `theme` setting, which may be `'system'`) rather than hand-writing
+  `isDark ? '/x.webp' : '/y.webp'` at each call site.
+  - `onboarding-welcome` / `onboarding-otp` (`OnboardingModal.tsx`/`OnboardingIllustration.tsx`):
+    light mode has two distinct step illustrations (`light/onboarding-welcome.webp`,
+    `light/onboarding-otp.webp`); dark mode has one illustration shared across every step
+    (`dark/onboarding.webp` — a single file, not duplicated under two names, since there is no
+    real per-step dark art yet).
+  - `logo` (`Header.tsx`, `MobileNavigation.tsx`, `LeftSidebar.tsx`, `Sidebar.tsx`): the only
+    existing art (`dark/logo.webp`) is a white wordmark meant for a dark surface.
+    `LeftSidebar.tsx`/`Sidebar.tsx` render it inside `.mhn-sidebar`, whose background switches to
+    light via `var(--color-background)` — so it will read poorly there once light theme is
+    exercised on an authenticated screen. `Header.tsx` is safe as-is (`.mhn-header` has a
+    hardcoded dark gradient that never changes). **Pending**: a light-theme logo variant
+    (`light/logo.webp`) — until it's supplied, all four call sites intentionally still point at
+    `/dark/logo.webp` (no behavior change from before this audit) rather than wiring up
+    `themedImageSrc` against a file that doesn't exist yet. Each call site has a comment marking
+    exactly what to change once the asset lands.
+- **Mobile**: no image is theme-differentiated yet — `apps/mobile/src/utils/images.tsx` already
+  has the `IMAGES`/`DARK_IMAGES` object scaffolding for this, but both currently point at the same
+  file (`money.webp`). When a real dark variant is needed, follow the same pairing convention
+  (`apps/mobile/assets/images/light/<name>.webp` + `.../dark/<name>.webp`) and populate
+  `DARK_IMAGES` with the dark-folder `require()`.
+
+### Theme-variant icons — inline SVG, not light/dark files (2026-08-28)
+
+For a **single-color stroke/fill icon** where only the color differs by theme (not the shape),
+do **not** create `light/foo.svg` + `dark/foo.svg` file pairs — that duplicates a file forever for
+something a CSS token already solves. Instead: trace the icon as a React component using
+`currentColor` for every stroke/fill (see `SidebarIcons.tsx`, `FeedActionIcons.tsx`,
+`LoginIcons.tsx`), and let the call site's CSS set the color via the existing theme-token system
+(`var(--color-foreground)`, `var(--color-muted-foreground)`, etc., which already flip per theme via
+`:root[data-theme='dark']` overrides in `index.css`). One component, no duplicate files, correct in
+both themes automatically. Reserve actual `light/`/`dark/` **image** folders (see above) for cases
+where the artwork itself is genuinely different, not just recolored — the onboarding illustration
+is the one real example so far.
+
+`apps/web/src/components/icons/LoginIcons.tsx` — icons traced from Figma's Login/onboarding
+section (`cqlBXHZtqPkKcLRmR6a1B8`, node `2203:29491`), sourced via `download_assets` (never
+hand-drawn): `LoginCalendarIcon` (now wired into `DatePickerButton.tsx`, replacing lucide's generic
+`CalendarDays`), `LoginShieldIcon`, `LoginEyeIcon` (password-visibility toggle — no current call
+site; this app's auth is OTP-based, no password field, kept for if one is ever added),
+`LoginChevronDownIcon`. Added to `allowedCustomSvgFiles` in `scripts/check-component-reuse.mjs`,
+matching the other hand-traced icon files.
+
+**In progress, not complete**: the user asked for every icon across the full 118-screen design
+(section `1418:8806`, "Feedback Final") to be inventoried and re-sourced from Figma this way,
+removing the current ad hoc raster icons (`arrowBottom.webp`, `back.webp`, `edit2.webp`, etc.) once
+real replacements exist. That is a large, multi-pass undertaking — do not assume it is done because
+this section exists. Continue it screen-by-screen; verify (typecheck/lint/tests/build) after each
+batch rather than mass-converting unverified.
 
 ## Image crop-on-upload
 

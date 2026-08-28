@@ -57,7 +57,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
   return (
     <main className="min-h-screen bg-background pb-16">
       <div className="relative h-48 w-full overflow-hidden bg-muted sm:h-64">
-        <FallbackImage src={coverUrl} alt="" fill className="object-cover" fallbackSrc="/cover.png" />
+        <FallbackImage src={coverUrl} alt="" fill className="object-cover" fallbackSrc="/cover.webp" />
       </div>
 
       <div className="mx-auto max-w-2xl px-6">

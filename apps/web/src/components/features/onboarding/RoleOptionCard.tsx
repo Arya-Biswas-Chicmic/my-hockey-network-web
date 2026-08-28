@@ -1,5 +1,4 @@
 import React from 'react';
-import Image from 'next/image';
 import { Button } from '@/components/common/Button';
 import type { RoleOptionCardProps } from '@/types/onboarding';
 
@@ -8,6 +7,8 @@ export const RoleOptionCard: React.FC<RoleOptionCardProps> = ({
   isSelected,
   onSelect,
 }) => {
+  const RoleIcon = role.icon;
+
   return (
     <Button
       type="button"
@@ -17,15 +18,10 @@ export const RoleOptionCard: React.FC<RoleOptionCardProps> = ({
       className={`role-card ${isSelected ? 'role-card-selected' : ''}`}
     >
       <div className="role-content-left">
-        {/* Role Icon */}
+        {/* Role Icon — traced SVG, not a raster image, so it inherits
+            .role-icon-box's color via currentColor. */}
         <div className="role-icon-box">
-          <Image
-            src={role.icon}
-            alt={role.title}
-            width={50}
-            height={48}
-            className="role-icon-img"
-          />
+          <RoleIcon aria-hidden="true" className="role-icon-img" />
         </div>
 
         {/* Role Description */}

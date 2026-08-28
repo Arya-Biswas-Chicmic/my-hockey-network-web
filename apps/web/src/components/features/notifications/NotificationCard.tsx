@@ -41,7 +41,7 @@ export const NotificationCard: React.FC<NotificationItemProps> = ({
             src={avatar}
             alt={senderName}
             fill
-            fallbackSrc="/userPlaceholder.png"
+            fallbackSrc="/userPlaceholder.webp"
             className="object-cover"
           />
         </div>

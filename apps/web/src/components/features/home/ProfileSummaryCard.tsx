@@ -22,10 +22,10 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
   name,
   role,
   avatarUrl,
-  coverUrl = '/cover.png',
+  coverUrl = '/cover.webp',
   location,
   teamName,
-  teamLogo = '/userPlaceholder.png',
+  teamLogo = '/userPlaceholder.webp',
   followers,
   following,
   onPostClick
@@ -47,7 +47,7 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
             src={resolvedCover}
             alt="Cover"
             fill
-            fallbackSrc="/cover.png"
+            fallbackSrc="/cover.webp"
             className="mhn-network-banner-img"
           />
         </div>
@@ -85,7 +85,7 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
                 alt={effectiveTeamName}
                 width={21}
                 height={25}
-                fallbackSrc="/HC.png"
+                fallbackSrc="/HC.webp"
                 className="mhn-profile-team-logo"
               />
               <span className="mhn-profile-team-name">{effectiveTeamName}</span>

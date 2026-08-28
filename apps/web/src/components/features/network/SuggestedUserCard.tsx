@@ -22,10 +22,10 @@ export interface SuggestedUserProps {
 export const SuggestedUserCard: React.FC<SuggestedUserProps> = ({
   id,
   name,
-  avatarUrl = '/userPlaceholder.png',
+  avatarUrl = '/userPlaceholder.webp',
   roleTag,
   teamName,
-  teamLogo = '/kcBlue.png',
+  teamLogo = '/kcBlue.webp',
   location,
   isFollowing: initialFollowing = false,
   onFollow,
@@ -85,7 +85,7 @@ export const SuggestedUserCard: React.FC<SuggestedUserProps> = ({
               alt={teamName || 'Team logo'}
               width={16}
               height={17}
-              fallbackSrc="/kcBlue.png"
+              fallbackSrc="/kcBlue.webp"
               className="mhn-suggested-team-logo"
             />
             <span className="mhn-suggested-team-name">{teamName}</span>

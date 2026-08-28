@@ -5,11 +5,13 @@ import { ChevronRight, Link2, Plus } from 'lucide-react';
 interface AddPlayerChoiceStepProps {
   onCreateNew: () => void;
   onLinkExisting: () => void;
+  onBack: () => void;
 }
 
 export const AddPlayerChoiceStep: React.FC<AddPlayerChoiceStepProps> = ({
   onCreateNew,
   onLinkExisting,
+  onBack,
 }) => {
   return (
     <div className="mhn-parent-step-container mhn-parent-step-choice">
@@ -47,6 +49,11 @@ export const AddPlayerChoiceStep: React.FC<AddPlayerChoiceStepProps> = ({
         </Button>
       </div>
 
+      <div className="mhn-parent-actions-stack">
+        <Button type="button" className="mhn-parent-btn-secondary" onClick={onBack}>
+          Back
+        </Button>
+      </div>
     </div>
   );
 };

@@ -43,7 +43,7 @@ const INITIAL_EVENTS: EventItem[] = [
   {
     id: 'ev-1',
     title: '2026 Tim Hortons NHL Heritage Classic',
-    image: '/classic.png',
+    image: '/classic.webp',
     date: 'October 29, 2026',
     location: 'Princess Auto Stadium · Winnipeg',
     interestedCount: '1.5k',
@@ -54,7 +54,7 @@ const INITIAL_EVENTS: EventItem[] = [
   {
     id: 'ev-2',
     title: '2026 NHL Heritage Classic',
-    image: '/event1.png',
+    image: '/event1.webp',
     date: 'October 29, 2026',
     location: 'Princess Auto Stadium · Winnipeg',
     interestedCount: '1.5k',
@@ -65,7 +65,7 @@ const INITIAL_EVENTS: EventItem[] = [
   {
     id: 'ev-3',
     title: 'MHN Youth All-Stars Championship',
-    image: '/event2.png',
+    image: '/event2.webp',
     date: 'November 15, 2026',
     location: 'Scotiabank Arena · Toronto',
     interestedCount: '2.1k',
@@ -76,7 +76,7 @@ const INITIAL_EVENTS: EventItem[] = [
   {
     id: 'ev-4',
     title: 'Winter Classic Hockey Training Camp',
-    image: '/playHockey.png',
+    image: '/playHockey.webp',
     date: 'December 04, 2026',
     location: 'Bell Centre · Montreal',
     interestedCount: '890',

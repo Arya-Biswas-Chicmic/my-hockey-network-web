@@ -22,10 +22,10 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
   name,
   role,
   avatarUrl,
-  bannerUrl = '/cover.png',
+  bannerUrl = '/cover.webp',
   location,
   teamName,
-  teamLogo = '/userPlaceholder.png',
+  teamLogo = '/userPlaceholder.webp',
   followersCount,
   followingCount,
   onMenuItemClick
@@ -54,7 +54,7 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
             src={resolvedBanner}
             alt="Cover"
             fill
-            fallbackSrc="/cover.png"
+            fallbackSrc="/cover.webp"
             className="mhn-network-banner-img"
           />
         </div>
@@ -92,7 +92,7 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
                 alt={effectiveTeamName}
                 width={21}
                 height={25}
-                fallbackSrc="/HC.png"
+                fallbackSrc="/HC.webp"
                 className="mhn-profile-team-logo"
               />
               <span className="mhn-profile-team-name">{effectiveTeamName}</span>
@@ -125,7 +125,7 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
             className="mhn-manage-menu-item"
           >
             <div className="mhn-manage-icon-box">
-              <Image src="/connections.png" alt="Connections" width={26} height={26} className='small-icon'/>
+              <Image src="/connections.webp" alt="Connections" width={26} height={26} className='small-icon'/>
             </div>
             <span className="mhn-manage-menu-text">Connections</span>
           </Button>
@@ -136,7 +136,7 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
             className="mhn-manage-menu-item"
           >
               <div className="mhn-manage-icon-box">
-              <Image src="/groups.png" alt="Groups" width={26} height={26} className='small-icon'/>
+              <Image src="/groups.webp" alt="Groups" width={26} height={26} className='small-icon'/>
             </div>
             <span className="mhn-manage-menu-text">Groups</span>
           </Button>
@@ -147,7 +147,7 @@ export const ManageNetworkCard: React.FC<ManageNetworkCardProps> = ({
             className="mhn-manage-menu-item"
           >
              <div className="mhn-manage-icon-box">
-              <Image src="/events.png" alt="Events" width={26} height={26} className='small-icon'/>
+              <Image src="/events.webp" alt="Events" width={26} height={26} className='small-icon'/>
             </div>
             <span className="mhn-manage-menu-text">Events</span>
           </Button>

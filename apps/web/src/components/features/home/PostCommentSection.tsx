@@ -34,7 +34,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
   const { user } = useAuth();
   const { requirePermission } = useFeedPermissions();
   const rawUserAvatar = user?.profile?.avatarUrl;
-  const currentUserAvatar = resolveMediaUrl(rawUserAvatar, '/userPlaceholder.png');
+  const currentUserAvatar = resolveMediaUrl(rawUserAvatar, '/userPlaceholder.webp');
   const currentUserName = user?.profile?.displayName || 'You';
 
   const [statusNotice, setStatusNotice] = useState<string | null>(null);
@@ -152,7 +152,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
           {comments.map((item) => {
             const author = item.authorProfile ?? item.author;
             const authorName = author?.displayName || 'Network Member';
-            const authorAvatar = resolveMediaUrl(author?.avatarUrl, '/userPlaceholder.png');
+            const authorAvatar = resolveMediaUrl(author?.avatarUrl, '/userPlaceholder.webp');
             const timeText = formatRelativeTime(item.createdAt) || 'Just now';
 
             const likeInfo = likedComments[item.id] || { count: item.likeCount || 0, isLiked: false };

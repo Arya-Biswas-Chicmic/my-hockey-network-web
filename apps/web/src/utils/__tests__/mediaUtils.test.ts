@@ -10,8 +10,8 @@ describe('resolveMediaUrl', () => {
     '"http://localhost:3000/..." avatar URL (left over from local dev media-storage testing) made ' +
     'next/image throw synchronously at render (next.config.js only allows https remote hosts), ' +
     'taking down the whole authenticated shell', () => {
-    expect(resolveMediaUrl('http://localhost:3000/v1/media/local/avatars/x.jpg')).toBe('/userPlaceholder.png');
-    expect(resolveMediaUrl('http://example.com/avatar.png')).toBe('/userPlaceholder.png');
+    expect(resolveMediaUrl('http://localhost:3000/v1/media/local/avatars/x.jpg')).toBe('/userPlaceholder.webp');
+    expect(resolveMediaUrl('http://example.com/avatar.png')).toBe('/userPlaceholder.webp');
   });
 
   it('allows a local relative path through unchanged (not subject to remotePatterns)', () => {
@@ -19,51 +19,51 @@ describe('resolveMediaUrl', () => {
   });
 
   it('falls back to the default placeholder for null/undefined/empty input', () => {
-    expect(resolveMediaUrl(null)).toBe('/userPlaceholder.png');
-    expect(resolveMediaUrl(undefined)).toBe('/userPlaceholder.png');
-    expect(resolveMediaUrl('')).toBe('/userPlaceholder.png');
-    expect(resolveMediaUrl('   ')).toBe('/userPlaceholder.png');
+    expect(resolveMediaUrl(null)).toBe('/userPlaceholder.webp');
+    expect(resolveMediaUrl(undefined)).toBe('/userPlaceholder.webp');
+    expect(resolveMediaUrl('')).toBe('/userPlaceholder.webp');
+    expect(resolveMediaUrl('   ')).toBe('/userPlaceholder.webp');
   });
 
   it('treats the literal strings "null"/"undefined" as missing (a defensive guard against stringified nulls)', () => {
-    expect(resolveMediaUrl('null')).toBe('/userPlaceholder.png');
-    expect(resolveMediaUrl('undefined')).toBe('/userPlaceholder.png');
+    expect(resolveMediaUrl('null')).toBe('/userPlaceholder.webp');
+    expect(resolveMediaUrl('undefined')).toBe('/userPlaceholder.webp');
   });
 
   it('uses a caller-supplied fallback instead of the default when given one', () => {
-    expect(resolveMediaUrl(null, '/HC.png')).toBe('/HC.png');
-    expect(resolveMediaUrl(undefined, '/kcBlue.png')).toBe('/kcBlue.png');
+    expect(resolveMediaUrl(null, '/HC.webp')).toBe('/HC.webp');
+    expect(resolveMediaUrl(undefined, '/kcBlue.webp')).toBe('/kcBlue.webp');
   });
 });
 
 describe('resolveCoverUrl', () => {
   it('returns the trimmed url when it is a real value', () => {
-    expect(resolveCoverUrl(' https://example.com/cover.png ')).toBe('https://example.com/cover.png');
+    expect(resolveCoverUrl(' https://example.com/cover.webp ')).toBe('https://example.com/cover.webp');
   });
 
   it('falls back to the default cover placeholder for null/undefined/empty input', () => {
-    expect(resolveCoverUrl(null)).toBe('/cover.png');
-    expect(resolveCoverUrl(undefined)).toBe('/cover.png');
-    expect(resolveCoverUrl('')).toBe('/cover.png');
+    expect(resolveCoverUrl(null)).toBe('/cover.webp');
+    expect(resolveCoverUrl(undefined)).toBe('/cover.webp');
+    expect(resolveCoverUrl('')).toBe('/cover.webp');
   });
 
   it('treats the literal strings "null"/"undefined" as missing', () => {
-    expect(resolveCoverUrl('null')).toBe('/cover.png');
-    expect(resolveCoverUrl('undefined')).toBe('/cover.png');
+    expect(resolveCoverUrl('null')).toBe('/cover.webp');
+    expect(resolveCoverUrl('undefined')).toBe('/cover.webp');
   });
 
-  it('falls back when the url contains "placeholder" case-insensitively (unlike resolveMediaUrl, which allows it) — regression test for a real bug where the app\'s actual "/userPlaceholder.png" path never matched a case-sensitive check', () => {
-    expect(resolveCoverUrl('/some-placeholder-path.png')).toBe('/cover.png');
-    expect(resolveCoverUrl('/userPlaceholder.png')).toBe('/cover.png');
-    expect(resolveMediaUrl('/userPlaceholder.png')).toBe('/userPlaceholder.png');
+  it('falls back when the url contains "placeholder" case-insensitively (unlike resolveMediaUrl, which allows it) — regression test for a real bug where the app\'s actual "/userPlaceholder.webp" path never matched a case-sensitive check', () => {
+    expect(resolveCoverUrl('/some-placeholder-path.png')).toBe('/cover.webp');
+    expect(resolveCoverUrl('/userPlaceholder.webp')).toBe('/cover.webp');
+    expect(resolveMediaUrl('/userPlaceholder.webp')).toBe('/userPlaceholder.webp');
   });
 
   it('uses a caller-supplied fallback instead of the default when given one', () => {
-    expect(resolveCoverUrl(null, '/kcBlue.png')).toBe('/kcBlue.png');
+    expect(resolveCoverUrl(null, '/kcBlue.webp')).toBe('/kcBlue.webp');
   });
 
   it('falls back for a non-https absolute URL, same as resolveMediaUrl', () => {
-    expect(resolveCoverUrl('http://localhost:3000/v1/media/local/covers/x.jpg')).toBe('/cover.png');
+    expect(resolveCoverUrl('http://localhost:3000/v1/media/local/covers/x.jpg')).toBe('/cover.webp');
   });
 });
 

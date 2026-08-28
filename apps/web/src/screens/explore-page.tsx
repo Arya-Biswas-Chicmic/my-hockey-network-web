@@ -36,11 +36,11 @@ interface SuggestedUser {
 }
 
 const INITIAL_SUGGESTIONS: SuggestedUser[] = [
-  { id: 's1', name: 'Connor McDavid', avatar: '/connor.png', isFollowing: false },
-  { id: 's2', name: 'Sidney Crosby', avatar: '/steve.png', isFollowing: false },
-  { id: 's3', name: 'Alex Ovechkin', avatar: '/ovechkin.png', isFollowing: false },
-  { id: 's4', name: 'Nathan MacKinnon', avatar: '/jack.png', isFollowing: false },
-  { id: 's5', name: 'Auston Matthews', avatar: '/lucas.png', isFollowing: false },
+  { id: 's1', name: 'Connor McDavid', avatar: '/connor.webp', isFollowing: false },
+  { id: 's2', name: 'Sidney Crosby', avatar: '/steve.webp', isFollowing: false },
+  { id: 's3', name: 'Alex Ovechkin', avatar: '/ovechkin.webp', isFollowing: false },
+  { id: 's4', name: 'Nathan MacKinnon', avatar: '/jack.webp', isFollowing: false },
+  { id: 's5', name: 'Auston Matthews', avatar: '/lucas.webp', isFollowing: false },
 ];
 
 export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
@@ -122,10 +122,10 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               <div className="flex items-center gap-3">
                 <div className="relative w-11 h-11 rounded-full overflow-hidden shrink-0 border border-[#1E2D4A]">
                   <FallbackImage
-                    src="/KCBluenocks.png"
+                    src="/KCBluenocks.webp"
                     alt="KC Blueknocks"
                     fill
-                    fallbackSrc="/hockeyClub.png"
+                    fallbackSrc="/hockeyClub.webp"
                     className="object-cover"
                   />
                 </div>
@@ -174,10 +174,10 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             {/* Post Image Container */}
             <div className="relative w-full rounded-xl overflow-hidden bg-slate-900 aspect-[16/9] border border-[#182740]">
               <FallbackImage
-                src="/playHockey.png"
+                src="/playHockey.webp"
                 alt="KC Blueknocks Match"
                 fill
-                fallbackSrc="/event1.png"
+                fallbackSrc="/event1.webp"
                 className="object-cover"
               />
               {/* Carousel Indicator Badge 1/3 */}
@@ -243,10 +243,10 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               <div className="flex items-center gap-3">
                 <div className="relative w-11 h-11 rounded-full overflow-hidden shrink-0 border border-[#1E2D4A]">
                   <FallbackImage
-                    src="/gerard.png"
+                    src="/gerard.webp"
                     alt="Jack Ruffle"
                     fill
-                    fallbackSrc="/userPlaceholder.png"
+                    fallbackSrc="/userPlaceholder.webp"
                     className="object-cover"
                   />
                 </div>
@@ -347,7 +347,7 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                         src={person.avatar}
                         alt={person.name}
                         fill
-                        fallbackSrc="/userPlaceholder.png"
+                        fallbackSrc="/userPlaceholder.webp"
                         className="object-cover"
                       />
                     </div>

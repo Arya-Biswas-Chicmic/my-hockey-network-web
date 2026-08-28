@@ -79,7 +79,7 @@ export function GroupsView({ onViewGroup }: GroupsViewProps) {
         <div className="mhn-groups-cards-grid">
           {groupsQuery.data.items.map((group) => (
             <article key={group.id} className="mhn-group-card">
-              <div className="mhn-group-card-banner"><Image src="/cover.png" alt="" fill className="mhn-group-banner-img" /></div>
+              <div className="mhn-group-card-banner"><Image src="/cover.webp" alt="" fill className="mhn-group-banner-img" /></div>
               <div className="mhn-group-card-body">
                 <h3 className="mhn-group-title">{group.name}</h3>
                 <p className="mhn-group-members">{group.memberCount ?? 0} members</p>

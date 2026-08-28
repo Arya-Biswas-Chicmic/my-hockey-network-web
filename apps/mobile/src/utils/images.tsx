@@ -1,11 +1,11 @@
 import { Asset } from 'expo-asset';
 
 export const IMAGES = {
-  MONEY: require('@assets/images/money.png'),
+  MONEY: require('@assets/images/money.webp'),
 };
 
 export const DARK_IMAGES = {
-  MONEY: require('@assets/images/money.png'),
+  MONEY: require('@assets/images/money.webp'),
 };
 
 // preload images

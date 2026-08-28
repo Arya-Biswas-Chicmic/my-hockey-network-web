@@ -88,7 +88,7 @@ export function ConnectionsView({ onMessageClick, isLoading = false }: Connectio
         <div className="mhn-network-skeleton-grid">
           {members.map((member) => (
             <article key={member.id} className="mhn-connection-member-card">
-              <div className="mhn-connection-avatar-ring"><Image src={member.avatarUrl || '/userPlaceholder.png'} alt="" width={74} height={74} className="mhn-connection-avatar-img" /></div>
+              <div className="mhn-connection-avatar-ring"><Image src={member.avatarUrl || '/userPlaceholder.webp'} alt="" width={74} height={74} className="mhn-connection-avatar-img" /></div>
               <h4 className="mhn-connection-member-name">{member.name}</h4>
               <p className="mhn-connection-member-role">{member.roleTag}</p>
               {member.teamName && (

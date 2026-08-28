@@ -31,7 +31,7 @@ export function EditProfileIdentitySection({ avatarUrl, onAvatarFileChange, onRe
             alt="Profile Avatar"
             className="mhn-avatar-preview-img"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = '/userPlaceholder.png';
+              (e.target as HTMLImageElement).src = '/userPlaceholder.webp';
             }}
           />
           <FilePickerButton
@@ -51,7 +51,7 @@ export function EditProfileIdentitySection({ avatarUrl, onAvatarFileChange, onRe
           >
             Upload Photo
           </FilePickerButton>
-          {avatarUrl !== '/userPlaceholder.png' && (
+          {avatarUrl !== '/userPlaceholder.webp' && (
             <Button type="button" onClick={onRemoveAvatar} className="mhn-btn-remove-photo">
               Remove
             </Button>

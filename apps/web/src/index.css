@@ -1,45 +1,5 @@
 @import "tailwindcss";
-
-/*
- * Core shadcn-style semantic color tokens (Tailwind 4 CSS-first `@theme`,
- * no JS config needed). Mapped to this app's existing brand palette — the
- * primary blue (#1860c3) and slate/navy neutrals are the values already
- * used across `.mhn-*` component classes below, not a new palette.
- * Every `--color-*` token here auto-generates the matching Tailwind
- * utilities (`bg-background`, `text-primary`, `border-border`, ...).
- * New web UI should prefer these + plain Tailwind utilities over adding
- * another one-off `.mhn-*` class. See docs/COMPONENT_CATALOG.md.
- */
-@theme {
-  --color-background: #ffffff;
-  --color-foreground: #0f172a;
-  --color-card: #ffffff;
-  --color-card-foreground: #0f172a;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #0f172a;
-  --color-primary: #1860c3;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #f1f5f9;
-  --color-secondary-foreground: #0f172a;
-  --color-muted: #f1f5f9;
-  --color-muted-foreground: #64748b;
-  --color-accent: #eff6ff;
-  --color-accent-foreground: #1860c3;
-  --color-destructive: #dc2626;
-  --color-destructive-foreground: #ffffff;
-  --color-border: #e2e8f0;
-  --color-input: #e2e8f0;
-  --color-ring: #1860c3;
-  --color-auth-surface: #ffffff;
-  --color-auth-field: #ffffff;
-  --color-auth-stroke: #d9d9d9;
-  --color-auth-subtext: #64748b;
-  --color-auth-placeholder: #8c8c8c;
-  --color-auth-action: #0b66c2;
-  --color-auth-action-bright: #439cf7;
-  --color-auth-selected: #f0f7ff;
-  --radius: 0.75rem;
-}
+@import "./theme/tokens.css";
 
 @keyframes mhn-spin {
   0% {
@@ -56,8 +16,8 @@
   html,
   body,
   #root {
-    background-color: #ffffff;
-    background: #ffffff;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     margin: 0;
     padding: 0;
@@ -69,8 +29,8 @@
 .onboarding-screen {
   min-height: 100vh;
   width: 100%;
-  background-color: #ffffff;
-  background: #ffffff;
+  background-color: var(--color-auth-surface);
+  background: var(--color-auth-surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1373,20 +1333,29 @@
   z-index: 999;
 }
 
+/* Structural sizing (width/radius/padding/gap) traced from Figma
+   (2203:29491... actually 1418:8871, "zzzz" — the profile popup, dark
+   theme) — 300px wide, 10px radius, 10/16/10px padding. Colors below stay
+   theme-aware: the light-mode values here are pre-existing (not
+   Figma-verified for light — this pass only checked the dark screenshot,
+   feedback 2026-08-28); dark-mode gets an exact override further down
+   instead of relying on the generic `--color-card` card treatment, since
+   Figma specifies particular hex values for this popup that don't match
+   that shared token. */
 .mhn-profile-dropdown {
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
-  width: 270px;
-  background-color: #ffffff;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
+  width: 300px;
+  background-color: var(--profile-menu-surface);
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-  padding: 12px;
+  padding: 10px 10px 16px;
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 16px;
   box-sizing: border-box;
 }
 
@@ -1394,7 +1363,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: 9px 12px;
   border-radius: 10px;
   border: none;
   background: transparent;
@@ -1405,18 +1374,18 @@
 }
 
 .mhn-dropdown-item:hover {
-  background-color: #f8fafc;
+  background-color: var(--color-secondary);
 }
 
 .mhn-dropdown-item-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .mhn-dropdown-avatar-img {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   object-fit: cover;
 }
@@ -1424,27 +1393,40 @@
 .mhn-dropdown-item-text {
   font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--color-foreground);
 }
 
 .mhn-dropdown-icon-box {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background-color: #eff6ff;
+  background-color: var(--profile-menu-icon);
+  color: var(--color-auth-action);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+}
+
+/* The "View Profile" row and the Family menu sit inside one shared darker
+   card in Figma (bg #010a1b vs the popup's own #0a1a31) — this wraps them;
+   see `HeaderProfileDropdown.tsx`. */
+.mhn-dropdown-profile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  background-color: var(--profile-menu-card);
 }
 
 /* Family Box */
 .mhn-dropdown-family-box {
-  background-color: #f0f6ff;
-  border-radius: 12px;
-  padding: 10px 12px;
+  background-color: var(--profile-menu-surface);
+  border-radius: 8px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 16px;
 }
 
 .mhn-family-header {
@@ -1455,13 +1437,15 @@
 }
 
 .mhn-family-icon-box {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background-color: #ffffff;
+  background-color: var(--profile-menu-icon);
+  color: var(--color-auth-action);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .mhn-family-list {
@@ -1482,20 +1466,20 @@
 }
 
 .mhn-family-member-item:hover {
-  background-color: #e2e8f0;
+  background-color: var(--color-secondary);
 }
 
 .mhn-family-member-img {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   object-fit: cover;
 }
 
 .mhn-family-member-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: #0f172a;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-foreground);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1515,12 +1499,12 @@
 }
 
 .mhn-family-switch-btn:hover {
-  background-color: #cbd5e1;
+  background-color: var(--color-muted);
 }
 
 .mhn-dropdown-divider {
   height: 1px;
-  background-color: #e2e8f0;
+  background-color: var(--color-border);
   margin: 4px 0;
 }
 
@@ -1528,8 +1512,13 @@
 .mhn-dropdown-logout-btn {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  /* Match .mhn-dropdown-item-left's gap and .mhn-dropdown-item's padding
+     exactly — Logout has its own icon+text flex container (not
+     .mhn-dropdown-item-left) so it didn't automatically pick up that fix,
+     leaving its icon/text visibly offset from every row above it (feedback
+     2026-08-28: "check logout it should be aligned"). */
+  gap: 8px;
+  padding: 9px 12px;
   border-radius: 10px;
   border: none;
   background: transparent;
@@ -1540,23 +1529,25 @@
 }
 
 .mhn-dropdown-logout-btn:hover {
-  background-color: #fef2f2;
+  background-color: color-mix(in srgb, var(--color-destructive) 10%, transparent);
 }
 
 .mhn-logout-icon-box {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background-color: #fee2e2;
+  background-color: var(--profile-menu-danger-icon);
+  color: var(--color-destructive);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .mhn-logout-text {
   font-size: 14px;
   font-weight: 600;
-  color: #dc2626;
+  color: var(--color-destructive);
 }
 
 /* --- 2. Pending Guardian Notice Banner --- */
@@ -1614,14 +1605,20 @@
   max-width: 1180px;
   width: 100%;
   margin: 24px auto;
-  /* Reverted from a prior 40px pass — that read as too much gap between the
-     sidebar and the feed once actually live (feedback 2026-08-27). Back to
-     a tighter 24px gutter on the sidebar side; the feed↔right-column gap
-     keeps a bit more (32px) since only the left gap was flagged. */
-  padding: 0 24px;
+  /* Figma (1398:3904, "Home-For You"): sidebar 300 + gap 48 + feed 470 +
+     gap 48 + right column 300 = 1166, the exact width of its 3-column
+     wrapper. Both gaps are 48px, not the 34px/32px this had (feedback
+     2026-08-28: "exactly match the spacing between 3 components"). At this
+     component's own max-width (1180) inside `.mhn-app-content` (1200 wide
+     once `.mhn-app-shell` hits its 1440px cap), the auto left/right margin
+     from centering is 10px each side — 38px of left padding (not 24) on
+     top of that 10px auto-margin reaches the full 48px gap to the sidebar.
+     The previous 24px/40px history here was tuned by eye, not measured
+     against Figma; this replaces that with the actual spec. */
+  padding: 0 24px 0 38px;
   display: grid;
   grid-template-columns: 1fr 340px;
-  gap: 32px;
+  gap: 48px;
   align-items: start;
   box-sizing: border-box;
 }
@@ -6370,11 +6367,19 @@
   background-color: #09519b;
 }
 
+/* Light theme (2203:26934) and dark theme (2203:35941, "Button dark"
+   instance) specify genuinely different sizes here, not just color —
+   16px/#6c6c6c/0.2px tracking vs 18px/white/no tracking — so the
+   dark-theme override below sets its own font-size/line-height too rather
+   than just recoloring this base rule. */
 .btn-change-email {
   background: none;
   border: none;
-  color: #64748b;
-  font-size: 14px;
+  color: #6c6c6c;
+  font-size: 16px;
+  line-height: 1.4;
+  letter-spacing: 0.2px;
+  font-weight: 400;
   cursor: pointer;
   margin-top: 16px;
   display: block;
@@ -12042,11 +12047,11 @@ img.secure {
 
 /* Group Detail View Banners */
 .mhn-group-member-banner {
-  background-image: url(/cover.png);
+  background-image: url(/cover.webp);
 }
 
 .mhn-group-cover-banner {
-  background-image: url(/event1.png);
+  background-image: url(/event1.webp);
 }
 
 /* Network Skeleton Card Centralized Styles */
@@ -14133,34 +14138,6 @@ img.secure {
    desktop experience. Component overrides intentionally consume these
    tokens so future screens do not introduce one-off navy values.
    ========================================================================== */
-:root[data-theme='dark'] {
-  --color-background: #020817;
-  --color-foreground: #f4f7fb;
-  --color-card: #07152a;
-  --color-card-foreground: #f4f7fb;
-  --color-popover: #0b1a31;
-  --color-popover-foreground: #f4f7fb;
-  --color-primary: #168bff;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #0d1d35;
-  --color-secondary-foreground: #dce7f5;
-  --color-muted: #0d1d35;
-  --color-muted-foreground: #8190a6;
-  --color-accent: #10284a;
-  --color-accent-foreground: #69b4ff;
-  --color-border: #18304e;
-  --color-input: #18304e;
-  --color-ring: #168bff;
-  --color-auth-surface: #010a1b;
-  --color-auth-field: #0a0e1c;
-  --color-auth-stroke: #1b2330;
-  --color-auth-subtext: #f0f0f0;
-  --color-auth-placeholder: #6f6f6f;
-  --color-auth-action: #0b66c2;
-  --color-auth-action-bright: #439cf7;
-  --color-auth-selected: #0a172d;
-}
-
 :root[data-theme='dark'] body,
 :root[data-theme='dark'] #root {
   background: var(--color-background);
@@ -14351,9 +14328,36 @@ img.secure {
   color: var(--color-foreground);
 }
 
-:root[data-theme='dark'] .mhn-dropdown-icon-box {
-  background: var(--color-accent);
-  color: var(--color-accent-foreground);
+/* Exact hex from Figma (1418:8871, "zzzz" — the profile popup, dark theme)
+   rather than the generic `--color-card`/`--color-accent` card treatment
+   this popup was inheriting from a shared `:is(...)` group, which reads
+   close but not exact (feedback 2026-08-28: "make popup theme and color
+   correct check figma"). Placed after that group so it wins on source
+   order at equal specificity. */
+:root[data-theme='dark'] .mhn-profile-dropdown {
+  background-color: var(--profile-menu-surface);
+  border-color: var(--color-border);
+}
+
+:root[data-theme='dark'] .mhn-dropdown-profile-card {
+  background-color: var(--profile-menu-card);
+}
+
+:root[data-theme='dark'] .mhn-dropdown-family-box {
+  background-color: var(--profile-menu-surface);
+}
+
+:root[data-theme='dark'] :is(.mhn-dropdown-icon-box, .mhn-family-icon-box) {
+  background: var(--profile-menu-icon);
+  color: var(--color-auth-action);
+}
+
+:root[data-theme='dark'] .mhn-logout-icon-box {
+  background: var(--profile-menu-danger-icon);
+}
+
+:root[data-theme='dark'] .mhn-logout-text {
+  color: var(--color-destructive);
 }
 
 :root[data-theme='dark'] .mhn-date-divider-label {
@@ -14482,8 +14486,18 @@ img.secure {
   color: var(--color-foreground);
 }
 
-:root[data-theme='dark'] :is(.verify-email-subtitle, .verify-email-footer, .btn-change-email) {
+:root[data-theme='dark'] :is(.verify-email-subtitle, .verify-email-footer) {
   color: var(--color-muted-foreground);
+}
+
+/* "Change Email" is white per Figma (2203:31297 -> Button dark instance
+   2203:35941, `text-[color:var(--text,white)]`), not the muted gray the
+   subtitle/footer text uses — was incorrectly grouped with them. */
+:root[data-theme='dark'] .btn-change-email {
+  color: var(--color-foreground);
+  font-size: 18px;
+  line-height: 28px;
+  letter-spacing: normal;
 }
 
 :root[data-theme='dark'] .mhn-timer-text {
@@ -14492,6 +14506,7 @@ img.secure {
 
 :root[data-theme='dark'] .btn-change-email:hover {
   color: var(--color-foreground);
+  opacity: 0.85;
 }
 
 :root[data-theme='dark'] .otp-digit-input {
@@ -14608,26 +14623,6 @@ img.secure {
    tokens) actually works in both themes instead of only being patched for
    one, unlike most of the legacy classes above it.
    ========================================================================== */
-:root {
-  --color-background: #ffffff;
-  --color-foreground: #0f172a;
-  --color-card: #ffffff;
-  --color-card-foreground: #0f172a;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #0f172a;
-  --color-primary: #1860c3;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #f1f5f9;
-  --color-secondary-foreground: #0f172a;
-  --color-muted: #f1f5f9;
-  --color-muted-foreground: #64748b;
-  --color-accent: #eff6ff;
-  --color-accent-foreground: #1860c3;
-  --color-border: #e2e8f0;
-  --color-input: #e2e8f0;
-  --color-ring: #1860c3;
-}
-
 .mhn-app-shell {
   display: flex;
   min-height: 100dvh;
@@ -14664,10 +14659,22 @@ img.secure {
   min-height: 100dvh;
   position: sticky;
   top: 0;
+  /* `position: sticky` establishes a local stacking context even with no
+     explicit z-index (per the CSS spec, not just older/looser browser
+     behavior). Without a z-index here, that context — and everything inside
+     it, including the profile dropdown and the logout confirm modal, which
+     is `position: fixed` but still stacks within whatever context contains
+     it in the DOM — only had implicit "auto" priority, so it lost to any
+     sibling in `.mhn-app-content` (e.g. a feed post's action-menu popover)
+     that set its own z-index. One explicit value here fixes both (feedback
+     2026-08-28: profile dropdown and logout modal both rendering behind
+     the feed). */
+  z-index: 20;
   align-self: flex-start;
   display: flex;
   flex-direction: column;
-  background: var(--color-background);
+  background: var(--color-sidebar);
+  color: var(--color-sidebar-foreground);
   /* No border here — Figma's sidebar and feed share the same background
      with no divider line between them (figma.com/design/
      cqlBXHZtqPkKcLRmR6a1B8, node 1398:3904); feedback 2026-08-27 flagged
@@ -14730,13 +14737,13 @@ img.secure {
 }
 
 .mhn-sidebar-nav-item-active {
-  color: #439CF7 !important;
+  color: var(--color-auth-action-bright) !important;
   font-weight: 700;
 }
 
 .mhn-sidebar-nav-item-active svg,
 .mhn-sidebar-nav-item-active span {
-  color: #439CF7 !important;
+  color: var(--color-auth-action-bright) !important;
   fill: currentColor;
 }
 
@@ -14790,12 +14797,18 @@ img.secure {
 /* HeaderProfileDropdown (reused as-is from the top-nav Header) normally
    opens downward from a top-right avatar button (`top: calc(100% + 12px);
    right: 0`) — flip it to open upward-left from the sidebar's bottom-fixed
-   user chip instead, since there's no room below it. */
+   user chip instead, since there's no room below it. Width matches the
+   sidebar's own outer width (240px) rather than the dropdown's default
+   300px — `.mhn-sidebar-footer` (the positioning ancestor) sits inside
+   `.mhn-sidebar`'s 16px horizontal padding, so `left: -16px` compensates to
+   align the dropdown's edges flush with the sidebar's own edges (feedback
+   2026-08-28: "width should be exactly similar to the left bar"). */
 .mhn-sidebar-footer .mhn-profile-dropdown {
   top: auto;
   bottom: calc(100% + 12px);
-  left: 0;
+  left: -16px;
   right: auto;
+  width: 240px;
 }
 
 /* Feed scope tabs (For You / Network / Groups) */
@@ -14913,7 +14926,14 @@ img.secure {
   max-width: 1440px;
   min-height: min(960px, 100dvh);
   padding: clamp(16px, 2.78vw, 40px);
-  gap: clamp(28px, 5vw, 72px);
+  /* Figma (e.g. 2203:32344): illustration wrapper ends at x=716
+     (40 padding + 676 wide), form content starts at x=853, in the 1440px
+     reference frame — a 137px gap. The previous `5vw, 72px` cap left this
+     at roughly half that at desktop widths, reading as "too tight" against
+     Figma even though every gap *inside* each panel already matched
+     exactly (feedback 2026-08-28: prior spacing check only covered the
+     card-list internals, not the gap between the two panels themselves). */
+  gap: clamp(28px, 9.5vw, 137px);
   border-radius: 0;
   background: var(--color-auth-surface);
   color: var(--color-foreground);
@@ -15082,6 +15102,11 @@ img.secure {
   height: 48px;
   border-radius: 7px;
   background: color-mix(in srgb, var(--color-auth-action) 10%, transparent);
+  /* Figma's icon fill is #0B66C2, exactly --color-auth-action — the icon is
+     now a traced SVG using currentColor (RoleIcons.tsx), not a raster
+     image, so this needs an explicit color or it would otherwise inherit
+     .role-card's `color: var(--color-foreground)`. */
+  color: var(--color-auth-action);
 }
 
 .role-icon-img {
@@ -15141,10 +15166,6 @@ img.secure {
 
 .verify-email-footer {
   color: var(--color-muted-foreground);
-}
-
-.btn-change-email {
-  color: var(--color-foreground);
 }
 
 .mhn-parent-modal-overlay.mhn-inline,

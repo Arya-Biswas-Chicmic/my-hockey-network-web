@@ -31,7 +31,7 @@ export function SupervisionSidebar({
       <div className="mhn-supervision-sidebar-header">
         <h2 className="mhn-supervision-sidebar-title">Supervision</h2>
         <Button className="mhn-supervision-add-btn" onClick={onAddPlayerClick} title="Add Minor Account">
-          <NextImage src="/add4.png" alt="" width={32} height={32} className="add4" />
+          <NextImage src="/add4.webp" alt="" width={32} height={32} className="add4" />
         </Button>
       </div>
 

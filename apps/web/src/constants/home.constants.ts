@@ -15,5 +15,5 @@ export const DEFAULT_INVITE_CARD_CONFIG = {
   title: 'Invite & Grow',
   description: 'Invite players, coaches, and families to grow your hockey network.',
   ctaText: 'Invite Now',
-  illustrationUrl: '/InviteGrow.png',
+  illustrationUrl: '/InviteGrow.webp',
 } as const;

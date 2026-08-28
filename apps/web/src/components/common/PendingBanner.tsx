@@ -17,7 +17,7 @@ export const PendingBanner: React.FC<PendingBannerProps> = ({
     <div className="mhn-pending-banner">
       <div className="mhn-pending-banner-content">
         <div className="mhn-pending-banner-icon">
-           <Image src="/info.png" alt="" width={20} height={20} className='info-icon'/>
+           <Image src="/info.webp" alt="" width={20} height={20} className='info-icon'/>
         </div>
         <span className="mhn-pending-banner-text">{message}</span>
       </div>

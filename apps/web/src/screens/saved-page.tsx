@@ -42,10 +42,10 @@ const INITIAL_SAVED_ITEMS: SavedItem[] = [
     id: 'sav-1',
     type: 'post',
     authorName: 'KC Blueknocks',
-    authorAvatar: '/KCBluenocks.png',
+    authorAvatar: '/KCBluenocks.webp',
     authorSubtitle: 'Official Team · 1d',
     content: "First tournament of the season! Let's go! Big thanks to all our players, coaches, and supporters who brought incredible energy to the rink today.",
-    image: '/playHockey.png',
+    image: '/playHockey.webp',
     likesCount: 13,
     commentsCount: 2,
     repostCount: 1,
@@ -54,7 +54,7 @@ const INITIAL_SAVED_ITEMS: SavedItem[] = [
     id: 'sav-2',
     type: 'event',
     title: '2026 Tim Hortons NHL Heritage Classic',
-    image: '/classic.png',
+    image: '/classic.webp',
     date: 'October 29, 2026',
     location: 'Princess Auto Stadium · Winnipeg',
   },
@@ -62,7 +62,7 @@ const INITIAL_SAVED_ITEMS: SavedItem[] = [
     id: 'sav-3',
     type: 'post',
     authorName: 'Jack Ruffle',
-    authorAvatar: '/gerard.png',
+    authorAvatar: '/gerard.webp',
     authorSubtitle: 'C · #97 · 20 July',
     content: '🏒 FINAL MATCH DAY! 🏆 Everything we\'ve trained for comes down to this moment. No fear. No excuses. Just heart, teamwork, and the hunger to win! #IceHockey #FinalMatch #GameDay',
     likesCount: 42,
@@ -197,7 +197,7 @@ export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       <div className="flex items-center gap-3">
                         <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 border border-[#1E2D4A]">
                           <FallbackImage
-                            src={item.authorAvatar || '/userPlaceholder.png'}
+                            src={item.authorAvatar || '/userPlaceholder.webp'}
                             alt={item.authorName || ''}
                             fill
                             className="object-cover"
@@ -251,7 +251,7 @@ export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                       <div className="flex gap-4">
                         <div className="relative w-28 aspect-[16/9] rounded-lg overflow-hidden shrink-0 bg-slate-900 border border-[#182740]">
                           <FallbackImage
-                            src={item.image || '/classic.png'}
+                            src={item.image || '/classic.webp'}
                             alt={item.title || ''}
                             fill
                             className="object-cover"

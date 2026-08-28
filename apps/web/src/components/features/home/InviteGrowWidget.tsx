@@ -9,7 +9,7 @@ interface InviteGrowWidgetProps {
 
 export const InviteGrowWidget: React.FC<InviteGrowWidgetProps> = ({
   onInviteClick,
-  illustrationUrl = '/player.png',
+  illustrationUrl = '/player.webp',
 }) => {
   return (
     <div className="mhn-invite-grow-card relative overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 backdrop-blur-sm">

@@ -34,7 +34,7 @@ export function HeaderFamilyMenu({
       <div className="mhn-family-header" onClick={onToggleExpand}>
         <div className="mhn-dropdown-item-left">
           <div className="mhn-family-icon-box">
-            <Users size={18} color="#1860C3" />
+            <Users size={16} color="#0B66C2" />
           </div>
           <span className="mhn-dropdown-item-text">
             Family {isFamilyLoading ? '...' : `(${familyMembers.length})`}
@@ -59,7 +59,7 @@ export function HeaderFamilyMenu({
                   onClick={() => onSelectMember(member.id)}
                 >
                   <div className="mhn-dropdown-item-left mhn-family-member-left">
-                    <FallbackImage src={member.avatar} alt={member.name} width={28} height={28} className="mhn-family-member-img" />
+                    <FallbackImage src={member.avatar} alt={member.name} width={26} height={26} className="mhn-family-member-img" />
                     <span className="mhn-family-member-name" title={member.name}>
                       {member.name.length > 18 ? `${member.name.trim().split(/\s+/).slice(0, 2).join(' ')}...` : member.name}
                     </span>

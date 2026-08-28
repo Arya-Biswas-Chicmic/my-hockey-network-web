@@ -15,7 +15,7 @@ import { resolveMediaUrl } from '@/utils/mediaUtils';
 export function useHeaderFamily(user: AuthMeResponse | null | undefined, userName?: string) {
   const resolvedName = user?.profile?.displayName || userName || 'Player';
   const rawAvatar = user?.profile?.avatarUrl;
-  const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
+  const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.webp');
   const [activeUser, setActiveUser] = useState({ name: resolvedName, avatar: resolvedAvatar });
   const [familyMembers, setFamilyMembers] = useState<Array<{ id: string; name: string; avatar: string }>>([]);
   const isParent = isParentUser(user ?? null);
@@ -29,7 +29,7 @@ export function useHeaderFamily(user: AuthMeResponse | null | undefined, userNam
   useEffect(() => {
     const name = user?.profile?.displayName || userName || 'Player';
     const av = user?.profile?.avatarUrl;
-    const avatar = resolveMediaUrl(av, '/userPlaceholder.png');
+    const avatar = resolveMediaUrl(av, '/userPlaceholder.webp');
     setActiveUser({ name, avatar });
   }, [user, userName]);
 
@@ -40,7 +40,7 @@ export function useHeaderFamily(user: AuthMeResponse | null | undefined, userNam
         const mapped = children.map((child) => ({
           id: child.id,
           name: child.displayName || child.firstName || 'Child',
-          avatar: resolveMediaUrl(child.avatarUrl, '/userPlaceholder.png'),
+          avatar: resolveMediaUrl(child.avatarUrl, '/userPlaceholder.webp'),
         }));
         setFamilyMembers(mapped);
       } else {

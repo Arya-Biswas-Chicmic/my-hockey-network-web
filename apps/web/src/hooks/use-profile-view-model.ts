@@ -24,12 +24,12 @@ export function useProfileViewModel(
 
   const liveName = String(rawProf.displayName || rawProf.name || 'Player');
   const rawAvatar = rawProf.avatarUrl as string | undefined;
-  const liveAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
+  const liveAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.webp');
   const rawCover =
     (rawProf.coverImageUrl as string | undefined) ||
     (rawProf.coverUrl as string | undefined) ||
     (rawProf.coverImageKey as string | undefined);
-  const liveCoverImage = resolveCoverUrl(rawCover, '/cover.png');
+  const liveCoverImage = resolveCoverUrl(rawCover, '/cover.webp');
   const rawRole =
     rawProf.primaryRole ||
     rawProf.profileType ||

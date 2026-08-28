@@ -33,10 +33,10 @@ export function GuardianRelationshipRequestCard({
 }: Readonly<GuardianRelationshipRequestCardProps>) {
   const counterparty = request.counterparty ?? request.requester ?? request.child ?? request.minor ?? {};
   const displayName = getGuardianRequestName(request);
-  const avatarUrl = resolveMediaUrl(counterparty.avatarUrl ?? request.avatarUrl, '/userPlaceholder.png');
+  const avatarUrl = resolveMediaUrl(counterparty.avatarUrl ?? request.avatarUrl, '/userPlaceholder.webp');
   const roleTag = counterparty.roleTag ?? counterparty.primaryRole ?? request.roleTag ?? 'PLAYER';
   const teamName = counterparty.teamName;
-  const teamLogo = resolveMediaUrl(counterparty.teamLogo, '/HC.png');
+  const teamLogo = resolveMediaUrl(counterparty.teamLogo, '/HC.webp');
   const location = counterparty.location ?? counterparty.city;
 
   return (

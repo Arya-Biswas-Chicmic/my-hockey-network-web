@@ -58,7 +58,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   authorName,
   authorRole = 'Official Team',
   authorTime = '1d',
-  authorAvatar = '/userPlaceholder.png',
+  authorAvatar = '/userPlaceholder.webp',
   content: initialContent,
   postImage,
   images,

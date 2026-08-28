@@ -22,10 +22,10 @@ export interface PendingRequestProps {
 export const PendingRequestCard: React.FC<PendingRequestProps> = ({
   id,
   name = 'Athlete',
-  avatarUrl = '/userPlaceholder.png',
+  avatarUrl = '/userPlaceholder.webp',
   roleTag = 'PLAYER',
   teamName,
-  teamLogo = '/kcBlue.png',
+  teamLogo = '/kcBlue.webp',
   location,
   onAccept,
   onIgnore
@@ -110,7 +110,7 @@ export const PendingRequestCard: React.FC<PendingRequestProps> = ({
               alt={teamName || 'Team logo'}
               width={16}
               height={17}
-              fallbackSrc="/kcBlue.png"
+              fallbackSrc="/kcBlue.webp"
               className="mhn-request-team-logo"
             />
             <span className="mhn-request-team-name">{teamName}</span>

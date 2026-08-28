@@ -5,7 +5,7 @@ export const GuardianIllustrationPanel: React.FC = () => {
   return (
     <div className="guardian-panel" aria-label="Guardian Approval Illustration Panel">
       <Image
-        src="/empowering.png"
+        src="/empowering.webp"
         alt="Empowering the next generation of athletes"
         fill
         className="guardian-panel-img"

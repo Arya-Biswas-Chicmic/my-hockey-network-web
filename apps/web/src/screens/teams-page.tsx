@@ -25,28 +25,28 @@ const YOUR_TEAMS: TeamItem[] = [
   {
     id: 'team-1',
     name: 'Columbus Blue Jackets',
-    logo: '/columbus.png',
+    logo: '/columbus.webp',
     league: 'NHL',
     isMember: true,
   },
   {
     id: 'team-2',
     name: 'Florida Panthers',
-    logo: '/kcBlue.png',
+    logo: '/kcBlue.webp',
     league: 'NHL',
     isMember: true,
   },
   {
     id: 'team-3',
     name: 'Boston Bruins',
-    logo: '/HC.png',
+    logo: '/HC.webp',
     league: 'NHL',
     isMember: true,
   },
   {
     id: 'team-4',
     name: 'Toronto Maple Leafs',
-    logo: '/HockeyClub2.png',
+    logo: '/HockeyClub2.webp',
     league: 'NHL',
     isMember: true,
   },
@@ -56,21 +56,21 @@ const DISCOVER_TEAMS: TeamItem[] = [
   {
     id: 'team-5',
     name: 'Chicago Blackhawks',
-    logo: '/classic.png',
+    logo: '/classic.webp',
     league: 'NHL',
     isMember: false,
   },
   {
     id: 'team-6',
     name: 'New York Rangers',
-    logo: '/event3.png',
+    logo: '/event3.webp',
     league: 'NHL',
     isMember: false,
   },
   {
     id: 'team-7',
     name: 'Edmonton Oilers',
-    logo: '/event6.png',
+    logo: '/event6.webp',
     league: 'NHL',
     isMember: false,
   },
@@ -99,7 +99,7 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     const newTeam: TeamItem = {
       id: `team-${Date.now()}`,
       name: newTeamName.trim(),
-      logo: '/columbus.png',
+      logo: '/columbus.webp',
       league: 'Custom League',
       isMember: true,
     };
@@ -200,7 +200,7 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   src={team.logo}
                   alt={team.name}
                   fill
-                  fallbackSrc="/columbus.png"
+                  fallbackSrc="/columbus.webp"
                   className="object-cover"
                 />
               </div>

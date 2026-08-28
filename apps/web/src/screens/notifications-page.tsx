@@ -28,7 +28,7 @@ const INITIAL_NOTIFICATIONS: NotificationItemData[] = [
   {
     id: 'notif-1',
     senderName: 'Lucifer',
-    avatar: '/steve.png',
+    avatar: '/steve.webp',
     text: 'Follow your friends to get things started.',
     time: '1h',
     isUnread: false,
@@ -37,7 +37,7 @@ const INITIAL_NOTIFICATIONS: NotificationItemData[] = [
   {
     id: 'notif-2',
     senderName: 'David',
-    avatar: '/david.png',
+    avatar: '/david.webp',
     text: 'send you friend request',
     time: '1h',
     isUnread: false,
@@ -47,7 +47,7 @@ const INITIAL_NOTIFICATIONS: NotificationItemData[] = [
   {
     id: 'notif-3',
     senderName: 'John',
-    avatar: '/gerard.png',
+    avatar: '/gerard.webp',
     text: 'Invite your friends to get things started.',
     time: '1h',
     isUnread: true,
@@ -56,7 +56,7 @@ const INITIAL_NOTIFICATIONS: NotificationItemData[] = [
   {
     id: 'notif-4',
     senderName: 'Steve',
-    avatar: '/saylor.png',
+    avatar: '/saylor.webp',
     text: 'Invite you to join there team',
     time: '1h',
     isUnread: false,
@@ -66,7 +66,7 @@ const INITIAL_NOTIFICATIONS: NotificationItemData[] = [
   {
     id: 'notif-5',
     senderName: 'Noah',
-    avatar: '/mai.png',
+    avatar: '/mai.webp',
     text: 'wants to add you as their guardian',
     time: '1h',
     isUnread: false,

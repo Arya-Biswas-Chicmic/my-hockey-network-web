@@ -2,11 +2,11 @@ import { useWhoToFollow } from '@/hooks/use-who-to-follow';
 import { FollowSuggestionUser } from '@/types/home.types';
 
 const FALLBACK_SUGGESTIONS: FollowSuggestionUser[] = [
-  { id: 'suggest-1', name: 'Connor McDavid', avatar: '/player.png' },
-  { id: 'suggest-2', name: 'Sidney Crosby', avatar: '/player.png' },
-  { id: 'suggest-3', name: 'Alex Ovechkin', avatar: '/player.png' },
-  { id: 'suggest-4', name: 'Nathan MacKinnon', avatar: '/player.png' },
-  { id: 'suggest-5', name: 'Auston Matthews', avatar: '/player.png' },
+  { id: 'suggest-1', name: 'Connor McDavid', avatar: '/player.webp' },
+  { id: 'suggest-2', name: 'Sidney Crosby', avatar: '/player.webp' },
+  { id: 'suggest-3', name: 'Alex Ovechkin', avatar: '/player.webp' },
+  { id: 'suggest-4', name: 'Nathan MacKinnon', avatar: '/player.webp' },
+  { id: 'suggest-5', name: 'Auston Matthews', avatar: '/player.webp' },
 ];
 
 export function useFollowSuggestions() {

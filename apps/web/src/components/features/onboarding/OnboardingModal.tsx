@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTheme } from '@/components/core/theme-provider';
+import { themedImageSrc } from '@/utils/themedImage';
 import { OnboardingIllustration } from '@/components/features/onboarding/OnboardingIllustration';
 import { RoleSelectionForm } from '@/components/features/onboarding/RoleSelectionForm';
 import { CreateAccountForm, VerifyEmailForm, LoginForm, GuardianApprovalModal, RequestSentCard } from '@/components/features/auth';
@@ -17,12 +18,18 @@ interface OnboardingModalProps {
   onComplete?: (data: { selectedRoles: string[]; accountData?: { fullName: string; email: string; dob: string; parentEmail?: string }; onboardingResult?: OnboardingResponse | AuthMeResponse; redirectProfileId?: string }) => void;
 }
 
-function getIllustrationSource(step: number, authMode: AuthModeEnum, loginStep: number, isDark: boolean): string {
-  if (step >= 4) return '/empowering.png';
-  if (isDark) return '/IceHockeyDark.png';
+function getIllustrationSource(step: number, authMode: AuthModeEnum, loginStep: number, theme: 'light' | 'dark'): string {
+  // Guardian/parent steps use one theme-independent illustration — not part
+  // of the light/dark pair below.
+  if (step >= 4) return '/empowering.webp';
+  // Dark mode has one illustration shared across every step (no per-step
+  // dark art exists yet) — a single `dark/onboarding.webp`, not a per-step
+  // file duplicated under two names. Light mode has two distinct
+  // illustrations, one per step.
+  if (theme === 'dark') return themedImageSrc('onboarding', 'dark');
   const isOtpStep = (authMode === AuthModeEnum.SIGNUP && step === 3)
     || (authMode === AuthModeEnum.LOGIN && loginStep === 2);
-  return isOtpStep ? '/OTPbg.png' : '/Welcome.png';
+  return themedImageSrc(isOtpStep ? 'onboarding-otp' : 'onboarding-welcome', 'light');
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = AuthModeEnum.LOGIN, onComplete }) => {
@@ -331,7 +338,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialMode = 
     <div className="onboarding-modal">
       {step !== 4 && step !== 5 && (
         <OnboardingIllustration
-          imageSrc={getIllustrationSource(step, authMode, loginStep, resolvedTheme === 'dark')}
+          imageSrc={getIllustrationSource(step, authMode, loginStep, resolvedTheme)}
         />
       )}
 

@@ -68,7 +68,7 @@ export function SupervisionAddPlayerFlow({
             className="mhn-parent-choice-card mhn-active"
           >
             <div className="mhn-parent-flex-row-center-16">
-              <NextImage src="/addPlayer.png" alt="Add Player" width={40} height={40} className="add-player-img" />
+              <NextImage src="/addPlayer.webp" alt="Add Player" width={40} height={40} className="add-player-img" />
               <div>
                 <div className="mhn-parent-card-title">Create a new player profile</div>
                 <div className="mhn-parent-card-sub">Set up a player profile for your child.</div>
@@ -82,7 +82,7 @@ export function SupervisionAddPlayerFlow({
             className="mhn-parent-choice-card"
           >
             <div className="mhn-parent-flex-row-center-16">
-              <NextImage src="/linking.png" alt="Link Existing" width={40} height={40} className="add-player-img" />
+              <NextImage src="/linking.webp" alt="Link Existing" width={40} height={40} className="add-player-img" />
               <div>
                 <div className="mhn-parent-card-title">Link an existing player</div>
                 <div className="mhn-parent-card-sub">Connect with a player who already has a MyHockey account.</div>
@@ -128,7 +128,7 @@ export function SupervisionAddPlayerFlow({
     return (
       <div className="mhn-flow-container mhn-flow-success-box">
         <div className="mhn-success-circle-icon">
-          <NextImage src="/CheckCircle.png" alt="check-circle" width={129} height={129} className="checkCircle" />
+          <NextImage src="/CheckCircle.webp" alt="check-circle" width={129} height={129} className="checkCircle" />
         </div>
 
         <h2 className="mhn-flow-title">{shortName} has been added</h2>
@@ -168,7 +168,7 @@ export function SupervisionAddPlayerFlow({
     return (
       <div className="mhn-flow-container mhn-flow-success-box">
         <div className="mhn-request-sent-icon-wrapper">
-          <NextImage alt="request-sent" src="/emailSent.png" width={128} height={128} />
+          <NextImage alt="request-sent" src="/emailSent.webp" width={128} height={128} />
         </div>
 
         <h2 className="mhn-flow-title mhn-flow-title-large">Request Sent!</h2>

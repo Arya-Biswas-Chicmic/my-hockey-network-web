@@ -1,9 +1,149 @@
 # Implementation status
 
-Last reviewed: 2026-08-27
+Last reviewed: 2026-08-28
 
 ## Completed
 
+- Fixed the sidebar profile dropdown and the logout confirmation modal both rendering **behind**
+  the feed content, plus dropdown width and logout-row alignment (feedback 2026-08-28). Root cause
+  for the stacking bug: `.mhn-sidebar { position: sticky; top: 0; }` had no explicit `z-index` —
+  per the CSS spec, a `position: sticky` element still establishes its own local stacking context
+  even at `z-index: auto`, which traps all descendants (including `HeaderProfileDropdown`'s
+  `position: absolute` dropdown and `LogoutModal`'s `position: fixed; z-index: 9999` overlay,
+  neither rendered via a portal) at only "auto" priority against sibling `.mhn-app-content`. One
+  fix resolves both: added `z-index: 20;` to `.mhn-sidebar`. Also fixed
+  `.mhn-sidebar-footer .mhn-profile-dropdown` to `width: 240px; left: -16px;` so its outer edges
+  align exactly with the sidebar's own 240px width (the `-16px` compensates for the parent
+  `.mhn-sidebar-footer`'s inset inside the sidebar's 16px padding) — reverting an earlier pass's
+  literal-Figma 300px value per explicit feedback to match the sidebar's actual rendered width
+  instead. Fixed `.mhn-dropdown-logout-btn`'s own flex container (`gap: 12px; padding: 10px 12px;`
+  → `gap: 8px; padding: 9px 12px;`), which an earlier turn's alignment fix to
+  `.mhn-dropdown-item-left`/`.mhn-dropdown-item` had missed since the logout button uses a separate
+  container, not those classes. Verified live via `getBoundingClientRect`/`getComputedStyle` at
+  1440px width: dropdown rect `x:0, width:240` exactly matches sidebar `x:0, width:240`; dropdown
+  `z-index:1000` vs sidebar `z-index:20` now renders above `.mhn-app-content`; logout button rect
+  (`x:11, width:218`) now pixel-identical to the other menu items; logout modal confirmed rendering
+  above the feed via screenshot.
+- Fixed the Home page's 3-column layout spacing (left sidebar / feed / right column) to match
+  Figma exactly (feedback 2026-08-28: "exactly match the spacing between 3 components"). Figma
+  (`1398:3904`, "Home-For You") gives sidebar 300 + gap 48 + feed 470 + gap 48 + right column 300 =
+  1166, the exact width of its 3-column wrapper — both gaps are 48px. `.mhn-home-main-layout` had
+  `padding: 0 24px; gap: 32px;`, tuned by eye rather than measured. Changed to
+  `padding: 0 24px 0 38px; gap: 48px;` (the extra left padding accounts for this component's own
+  10px auto-centering margin inside `.mhn-app-content` at the 1440px desktop breakpoint). Verified
+  live at 1440px width: sidebar right edge (240) → feed left edge (288) = 48px; feed right edge
+  (1018) → right column left edge (1066) = 48px — both exact.
+- Found and fixed the actual onboarding-modal spacing bug after two earlier passes checking
+  card-internal spacing (title/subtitle/card-list/button gaps) came back pixel-perfect and missed
+  it: the gap **between** the illustration panel and the form panel itself was never checked.
+  Figma (e.g. `2203:32344`) has the illustration ending at x=716 and the form content starting at
+  x=853 in its 1440px reference frame — a 137px gap — but `.onboarding-modal`'s `gap:
+  clamp(28px, 5vw, 72px)` capped out at roughly half that on desktop. Changed to
+  `clamp(28px, 9.5vw, 137px)`; verified live at 1920px width — 136px measured (1px off from
+  clamp/vw rounding, imperceptible).
+- Added the missing "Back" button on the parent/guardian sub-flow's "How would you like to add
+  them?" step (`AddPlayerChoiceStep.tsx` / `ParentOnboardingStep.CHOOSE_METHOD`). Traced from
+  Figma (`2203:43222`) to confirm the button belongs there; every other step in that sub-flow
+  already had working `onBack` navigation (`CreatePlayerDetailsStep`, `CreatePlayerProtectStep`,
+  `LinkExistingPlayerStep`) using the already-correct `.mhn-parent-btn-secondary` style (confirmed
+  matching Figma's `#439cf7` border/text, 18px/28px exactly) — only this one step was missing the
+  prop entirely. Added `onBack` to its props, wired `ParentOnboardingModal.tsx` to route it to
+  `WHO_MANAGE`, updated the test that constructs the component. Verified live end-to-end: full
+  signup flow → Parent/Guardian role → Create Account → OTP (dev-prefilled) → "Who do you
+  manage?" → "Add a Player" → confirmed the Back button renders and correctly returns to "Who do
+  you manage?".
+- Started re-sourcing the app's icons from Figma properly, per feedback that the current icon set
+  is ad hoc raster files rather than traced design assets — **this is a large task, not finished
+  this pass**. Investigated the first target node (`1418:8806`) and found it isn't an icon sheet as
+  described — it's a 118-screen section covering the entire app ("Feedback Final"), confirmed via
+  `get_metadata`. Confirmed with the user this is genuinely the intended scope. Started with the
+  bounded, well-understood Login/onboarding section (`2203:29491`) instead: extracted the icon set
+  via `download_assets` (a single screen alone exceeded the 20-asset-per-call cap, confirming the
+  scale), built `apps/web/src/components/icons/LoginIcons.tsx` with `LoginCalendarIcon`,
+  `LoginShieldIcon`, `LoginEyeIcon`, `LoginChevronDownIcon` — traced from the real exported SVG path
+  data, using `currentColor` rather than Figma's per-instance hex so one component works in both
+  themes (see `docs/COMPONENT_CATALOG.md` → "Theme-variant icons" for why file-per-theme duplication
+  was rejected for these). Wired `LoginCalendarIcon` into `DatePickerButton.tsx`, replacing
+  lucide-react's generic `CalendarDays` with the exact traced glyph. Added `LoginIcons.tsx` to
+  `allowedCustomSvgFiles` in `scripts/check-component-reuse.mjs`. Verified via typecheck, lint,
+  component-reuse, all 212 tests, and a clean production build; live verification of the DOB
+  calendar icon specifically was blocked by this environment's auth/seed-data gaps (same
+  `/auth/me` 403s noted elsewhere in this doc), not by the component itself.
+  **Remaining, explicitly not done**: the light-theme counterpart screens for the Login flow;
+  `LoginShieldIcon`/`LoginEyeIcon`/`LoginChevronDownIcon` don't have confirmed current call sites
+  yet (extracted correctly, not wired in); the full 118-screen inventory and the old-icon removal
+  the user asked for. Continue screen-by-screen, verifying after each batch — do not attempt to
+  mass-convert the rest unverified in one pass.
+- Upgraded `dark/logo.webp` from a Figma source (file `cqlBXHZtqPkKcLRmR6a1B8`, node `1399:7885`,
+  the sidebar logo in the "Home-For You" frame). Investigated this node expecting it to be the
+  light-theme logo variant flagged as missing in the previous pass — it wasn't: pulling the actual
+  layer content (not the rendered thumbnail) showed identical art to what's already in
+  `dark/logo.webp`, just at much higher native resolution (1536×1024 vs the existing 483×129),
+  confirmed via matching transparent corners on both. The Figma source also included a faint
+  starfield/sparkle texture around the wordmark not present in the current asset, and needed
+  cropping to its true content bounds (the raw layer has a lot of surrounding canvas). Re-exported:
+  auto-cropped to content bounds (alpha-threshold bounding box, discarding the sparkle-only
+  margins), downsampled to a sane 4x retina resolution (644×172 — the source's native 1249×329
+  produced a 500KB lossless file for a small navbar asset, wasteful for something `next/image`
+  re-optimizes on delivery regardless), and re-encoded (initial lossy attempts at q90–95 showed
+  visible block artifacting on the fine text gradients even after downsampling to reasonable size;
+  settled on `-q 95 -sharp_yuv` after downsampling, which came out clean — 77 KB, verified
+  pixel-clean via decode-and-inspect, not just file size). No code changes needed — same filename,
+  same four call sites. Still waiting on an actual light-theme logo asset; this only improved the
+  existing dark one.
+- Fixed a duplicate created in the theme-image work below: `dark/onboarding-welcome.webp` and
+  `dark/onboarding-otp.webp` were byte-identical (confirmed via checksum). Collapsed to one file,
+  `dark/onboarding.webp`, and updated `getIllustrationSource` to reference it directly rather than
+  duplicating it under two step-specific names. Then audited every icon/logo reference in the web
+  app for real light/dark contrast problems (not assumed ones) — see
+  `docs/COMPONENT_CATALOG.md` → "Theme-variant images" for the full writeup. Found exactly one
+  genuine case: `logo.webp` is white-wordmark art for a dark surface, but `LeftSidebar.tsx` and
+  `Sidebar.tsx` render it inside `.mhn-sidebar`, whose background switches to light via
+  `var(--color-background)`. Moved the file to `apps/web/public/dark/logo.webp` (its correct
+  semantic home) and updated all four call sites (`Header.tsx`, `MobileNavigation.tsx`,
+  `LeftSidebar.tsx`, `Sidebar.tsx`) to the new path — `Header.tsx` is safe as-is since
+  `.mhn-header`'s background is a hardcoded dark gradient that never changes, but the other three
+  are flagged with a comment to swap to `themedImageSrc('logo', resolvedTheme)` once a light-theme
+  logo variant is supplied (pending — no such asset exists yet, so no functional change was made
+  to avoid a 404 in light theme). Checked ~15 other raster icons (`back`, `arrowBottom`, `edit2`,
+  `edit3`, `location2`, `notifications`, `home`, `groups`, `events`, `myNetwork`, `secure`,
+  `manage`, `CheckCircle`, etc.) individually against the actual CSS background of every surface
+  they render on, in both themes — none had a genuine problem: most carry their own colored badge
+  background (theme-agnostic by construction), and the rest sit on screens/components that are
+  hardcoded light-only and don't participate in dark theme at all yet (`event-detail-page.tsx`,
+  the `Dropdown` component, `ProfileHeroCard`) — a separate, larger gap than icon theming, not
+  fixed here. Verified via typecheck, lint, and all 212 tests.
+- Introduced a `light/`/`dark/` subfolder convention for genuinely theme-variant images (see
+  `docs/COMPONENT_CATALOG.md` → "Theme-variant images"), scoped to the only real case in the
+  codebase today: the onboarding illustration. Moved `Welcome.webp`/`OTPbg.webp` to
+  `apps/web/public/light/onboarding-{welcome,otp}.webp` and `IceHockeyDark.webp` to
+  `apps/web/public/dark/onboarding-{welcome,otp}.webp` (duplicated — dark mode has one shared
+  illustration across all steps, not per-step variants, so both dark filenames point at the same
+  art until a real per-step dark illustration exists). Added `themedImageSrc()` in
+  `apps/web/src/utils/themedImage.ts` so `OnboardingModal.tsx`'s `getIllustrationSource` resolves
+  the pair by theme instead of a hand-written ternary; fixed a stale `/Welcome.webp` default prop
+  in `OnboardingIllustration.tsx` left over from the move. Confirmed no other image in the web app
+  is theme-conditional (only this one call site), and that mobile's `IMAGES`/`DARK_IMAGES` object
+  scaffolding in `utils/images.tsx` isn't yet populated with any real theme-differentiated asset —
+  left mobile as-is rather than creating empty placeholder folders. Verified via typecheck, lint,
+  component-reuse, all 212 tests, a clean production build, and live browser checks confirming
+  both `/dark/onboarding-welcome.webp` and `/light/onboarding-welcome.webp` load and render
+  correctly when the theme is switched.
+- Consolidated static image assets to one location per app and standardized format (see
+  `docs/COMPONENT_CATALOG.md` → "Static asset location and format" for the policy). Web:
+  `apps/web/public/` is the sole location (83 PNGs converted to WebP q≈85, 13.6 MB → 1.7 MB;
+  every `next/image`/`FallbackImage`/CSS `url()` reference updated to the new `.webp` filenames;
+  verified via typecheck, lint, component-reuse, all 212 tests, a clean production build, and live
+  network checks confirming both `/_next/image` and direct static `.webp` requests return 200).
+  Mobile: `apps/mobile/assets/images/` similarly converted (10 files), with the 3 referencing
+  `require(...)` call sites updated (Metro requires a static string) and the 4
+  icon/splash/adaptive-icon PNGs at `apps/mobile/assets/` left untouched since Expo's
+  `app.config.ts` pipeline expects PNG there; verified via mobile typecheck and lint. Removed the
+  unused `apps/web/src/assets/` directory (pre-Next.js Vite leftovers — confirmed zero imports).
+  Considered and rejected moving images into `src/assets/` on either app (see the doc section for
+  why). A handful of assets had zero code references before this pass (24 web, 1 mobile,
+  including `Social Icons.png` and `GurdianApprovalRequest.png`) — converted for consistency but
+  left in place rather than deleted, since removal wasn't requested; flagged as prune candidates.
 - Unified the signup parent-onboarding "Add Player" step and the Supervision "+ Add Player" flow
   onto one shared `PlayerDetailsFormFields` component (`apps/web/src/components/features/parent/`)
   built on the common `FormInput`/`FormDateInput`/`FormSelect` fields, replacing each flow's separate

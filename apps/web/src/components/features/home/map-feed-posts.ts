@@ -51,7 +51,7 @@ export function mapFeedPosts(items: unknown[], identity: FeedIdentity): FeedPost
       authorName: author.displayName || 'Member',
       authorRole: getAuthorSubtitle(author),
       authorTime: post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : 'Recently',
-      authorAvatar: author.avatarUrl || '/userPlaceholder.png',
+      authorAvatar: author.avatarUrl || '/userPlaceholder.webp',
       content: post.body || '',
       postImage: post.media?.[0]?.url,
       likesCount: post.likeCount ?? post.reactionsCount ?? 0,

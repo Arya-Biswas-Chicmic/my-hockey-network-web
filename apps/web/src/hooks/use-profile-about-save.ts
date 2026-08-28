@@ -84,7 +84,7 @@ export function useProfileAboutSave({ setUserProfile, loadAuthMe }: UseProfileAb
     const avatarKeyToSend: string | undefined = data?.avatarKey;
     let avatarUrlToSend: string | undefined = undefined;
 
-    if (!avatarKeyToSend && data?.avatarUrl && data?.avatarUrl !== '/userPlaceholder.png' && !data?.avatarUrl.includes('userPlaceholder.png') && !data?.avatarUrl.startsWith('blob:')) {
+    if (!avatarKeyToSend && data?.avatarUrl && data?.avatarUrl !== '/userPlaceholder.webp' && !data?.avatarUrl.includes('userPlaceholder.webp') && !data?.avatarUrl.startsWith('blob:')) {
       avatarUrlToSend = data?.avatarUrl;
     }
 

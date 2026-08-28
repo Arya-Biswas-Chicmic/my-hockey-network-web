@@ -1,9 +1,9 @@
 'use client';
 
-import { CalendarDays } from 'lucide-react';
 import { useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { LoginCalendarIcon } from '@/components/icons/LoginIcons';
 
 export interface DatePickerButtonProps {
   onDateSelected: (isoDate: string) => void;
@@ -32,7 +32,7 @@ export function DatePickerButton({
   return (
     <>
       <Button type="button" variant="icon" className={className} disabled={disabled} onClick={handleOpenPicker} aria-label={label}>
-        <CalendarDays size={18} aria-hidden="true" />
+        <LoginCalendarIcon size={18} aria-hidden="true" />
       </Button>
       <input ref={inputRef} type="date" className="sr-only" tabIndex={-1} aria-hidden="true" onChange={handleDateChange} />
     </>

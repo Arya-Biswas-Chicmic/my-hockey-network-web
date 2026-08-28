@@ -66,7 +66,7 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
         genderCategory: String(profRecord.genderCategory || profRecord.gender || 'Male'),
         preferredLanguage: String(profRecord.preferredLanguage || 'en'),
         defaultVisibility: String(profRecord.defaultVisibility || 'CONNECTIONS'),
-        avatarUrl: resolveMediaUrl(profRecord.avatarUrl as string | undefined, '/userPlaceholder.png'),
+        avatarUrl: resolveMediaUrl(profRecord.avatarUrl as string | undefined, '/userPlaceholder.webp'),
       };
     },
     [user]
@@ -181,7 +181,7 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
   const handleRemoveAvatar = () => {
     revokeAvatarPreview();
     setSelectedAvatarFile(null);
-    handleChange('avatarUrl', '/userPlaceholder.png');
+    handleChange('avatarUrl', '/userPlaceholder.webp');
   };
 
   const handleAttemptClose = () => {

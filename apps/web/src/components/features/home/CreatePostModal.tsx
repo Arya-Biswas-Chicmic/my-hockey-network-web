@@ -37,7 +37,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const { user } = useAuth();
   const resolvedName = user?.profile?.displayName || userName || 'Player';
   const rawAvatar = user?.profile?.avatarUrl || userAvatar;
-  const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
+  const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.webp');
 
   const [screen, setScreen] = useState<'create' | 'audience' | 'custom'>('create');
   const [tempAudience, setTempAudience] = useState<CreatePostAudienceEnum>(CreatePostAudienceEnum.EVERYONE);

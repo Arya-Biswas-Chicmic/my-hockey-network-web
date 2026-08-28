@@ -14,7 +14,7 @@ const DEFAULT_CHATS: ChatItem[] = [
   {
     id: 'hockey-club',
     name: 'Hockey Club',
-    avatar: '/hockeyClub.png',
+    avatar: '/hockeyClub.webp',
     lastMessage: 'Gerard White: Etiam tempor orci...',
     unreadCount: 0,
     isGroup: true,
@@ -22,7 +22,7 @@ const DEFAULT_CHATS: ChatItem[] = [
   {
     id: 'steve',
     name: 'Steve',
-    avatar: '/steve.png',
+    avatar: '/steve.webp',
     lastMessage: 'You: Yup',
     unreadCount: 0,
     isGroup: false,
@@ -30,7 +30,7 @@ const DEFAULT_CHATS: ChatItem[] = [
   {
     id: 'david',
     name: 'David',
-    avatar: '/david.png',
+    avatar: '/david.webp',
     lastMessage: 'Hey',
     unreadCount: 0,
     isGroup: false,
@@ -50,13 +50,13 @@ const INITIAL_CONVERSATIONS: Record<
   'hockey-club': {
     title: 'Hockey Club',
     subtitle: '187 People · 4 Online',
-    avatarUrl: '/hockeyClub.png',
-    bannerUrl: '/cover.png',
+    avatarUrl: '/hockeyClub.webp',
+    bannerUrl: '/cover.webp',
     messages: [
       {
         id: 'msg-1',
         senderName: 'Mai Sakurajima',
-        senderAvatar: '/mai.png',
+        senderAvatar: '/mai.webp',
         time: '02:22 AM',
         dateDivider: 'Friday',
         text: 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
@@ -64,7 +64,7 @@ const INITIAL_CONVERSATIONS: Record<
       {
         id: 'msg-2',
         senderName: 'Taylor Swift',
-        senderAvatar: '/saylor.png',
+        senderAvatar: '/saylor.webp',
         time: '02:22 AM',
         text: 'Lorem ipsum dolor sit amet,',
         reactions: [{ emoji: '❤️', count: 8 }],
@@ -72,7 +72,7 @@ const INITIAL_CONVERSATIONS: Record<
       {
         id: 'msg-3',
         senderName: 'Gerard White',
-        senderAvatar: '/gerard.png',
+        senderAvatar: '/gerard.webp',
         time: '02:22 AM',
         dateDivider: 'Today',
         text: 'Etiam tempor orci eu lobortis elementum. Tincidunt augue interdum velit euismod in pellentesque massa placerat duis. Facilisis magna etiam tempor orci eu lobortis.',
@@ -86,12 +86,12 @@ const INITIAL_CONVERSATIONS: Record<
   steve: {
     title: 'Steve',
     subtitle: 'Online',
-    avatarUrl: '/steve.png',
+    avatarUrl: '/steve.webp',
     messages: [
       {
         id: 'msg-steve-1',
         senderName: 'Steve',
-        senderAvatar: '/steve.png',
+        senderAvatar: '/steve.webp',
         time: '01:15 PM',
         dateDivider: 'Today',
         text: 'Hey! Are you coming to practice today?',
@@ -99,7 +99,7 @@ const INITIAL_CONVERSATIONS: Record<
       {
         id: 'msg-steve-2',
         senderName: 'You',
-        senderAvatar: '/userPlaceholder.png',
+        senderAvatar: '/userPlaceholder.webp',
         time: '01:18 PM',
         text: 'Yup',
       },
@@ -108,12 +108,12 @@ const INITIAL_CONVERSATIONS: Record<
   david: {
     title: 'David',
     subtitle: 'Offline',
-    avatarUrl: '/david.png',
+    avatarUrl: '/david.webp',
     messages: [
       {
         id: 'msg-david-1',
         senderName: 'David',
-        senderAvatar: '/david.png',
+        senderAvatar: '/david.webp',
         time: '11:00 AM',
         dateDivider: 'Yesterday',
         text: 'Hey',
@@ -145,7 +145,7 @@ export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
     const newMsg: MessageItem = {
       id: `msg-${Date.now()}`,
       senderName: 'You',
-      senderAvatar: '/userPlaceholder.png',
+      senderAvatar: '/userPlaceholder.webp',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       text,
     };

@@ -168,7 +168,7 @@ export function Dropdown({
             <option key={option.value} value={option.value}>{option.label}</option>
           ))}
         </Select>
-        <Image src="/arrowBottom.png" alt="" aria-hidden="true" width={16} height={16} className="mhn-dropdown-arrow-icon" />
+        <Image src="/arrowBottom.webp" alt="" aria-hidden="true" width={16} height={16} className="mhn-dropdown-arrow-icon" />
       </div>
     </FormField>
   );

@@ -17,7 +17,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
   onNavigate,
   onLogout,
   eventTitle = '2026 Tim Hortons NHL Heritage Classic',
-  bannerImage = '/classic.png',
+  bannerImage = '/classic.webp',
   onBack,
 }) => {
   const [activeNavTab, setActiveNavTab] = useState('events');
@@ -56,7 +56,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
             className="mhn-btn-back-arrow"
             aria-label="Back"
           >
-            <Image src="/back.png" alt="back" width={24} height={24} className='back' />
+            <Image src="/back.webp" alt="back" width={24} height={24} className='back' />
           </Button>
           <h1 className="mhn-event-page-title">{eventTitle}</h1>
         </div>
@@ -114,7 +114,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
             >
               <span>{isReadMore ? 'Show less' : 'Show more'}</span>
               <Image
-                src="/arrowBottom.png"
+                src="/arrowBottom.webp"
                 alt="arrow"
                 width={9}
                 height={5}
@@ -176,7 +176,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
               {/* Item 1: Location */}
               <div className="mhn-location-date-item">
                 <div className="mhn-location-icon-circle">
-                  <Image src="/location2.png" alt="location" width={40} height={40} className='location2-event' />
+                  <Image src="/location2.webp" alt="location" width={40} height={40} className='location2-event' />
                 </div>
                 <div className="mhn-location-date-info">
                   <h4 className="mhn-location-title">Princess Auto Stadium - Winrip...</h4>
@@ -190,7 +190,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
               {/* Item 2: Date & Time */}
               <div className="mhn-location-date-item">
                 <div className="mhn-location-icon-circle">
-                  <Image src="/calendar3.png" alt="calendar" width={40} height={40} className='location2-event' />
+                  <Image src="/calendar3.webp" alt="calendar" width={40} height={40} className='location2-event' />
                 </div>
                 <div className="mhn-location-date-info">
                   <h4 className="mhn-location-title">Oct 25, 2026</h4>

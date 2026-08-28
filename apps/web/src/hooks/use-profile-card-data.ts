@@ -35,11 +35,11 @@ export function useProfileCardData(fallbacks: ProfileCardFallbacks) {
   return {
     name: apiProfile?.displayName || authProfile?.displayName || fallbacks.name || 'Player',
     role,
-    avatar: resolveMediaUrl(apiProfile?.avatarUrl || authProfile?.avatarUrl || fallbacks.avatarUrl, '/userPlaceholder.png'),
+    avatar: resolveMediaUrl(apiProfile?.avatarUrl || authProfile?.avatarUrl || fallbacks.avatarUrl, '/userPlaceholder.webp'),
     cover: resolveCoverUrl(
       apiProfile?.coverImageUrl || apiProfile?.coverUrl || apiProfile?.coverImageKey ||
       authProfile?.coverImageUrl || authProfile?.coverUrl || authProfile?.coverImageKey || fallbacks.coverUrl,
-      '/cover.png',
+      '/cover.webp',
     ),
     location: apiProfile?.city || apiProfile?.location || authProfile?.city || authProfile?.location || fallbacks.location,
     teamName: String(role).toUpperCase() === 'PARENT' ? undefined : careerTeam || profileTeam || fallbacks.teamName,

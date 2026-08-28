@@ -74,7 +74,9 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="mhn-header-logo-area">
           <div className="mhn-logo-badge mhn-header-logo-badge" onClick={() => handleTabClick('home')}>
             <div className="mhn-logo-stick-icon">
-              <Image src="/logo.png" alt="My Hockey Network" width={161} height={43} className='logo' />
+              {/* .mhn-header's background is a hardcoded dark gradient regardless of
+                  theme, so this dark-only logo art never needs a light variant here. */}
+              <Image src="/dark/logo.webp" alt="My Hockey Network" width={161} height={43} className='logo' />
             </div>
           </div>
         </div>

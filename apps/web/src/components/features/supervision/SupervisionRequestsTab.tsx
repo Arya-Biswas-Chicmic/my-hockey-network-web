@@ -97,7 +97,7 @@ export function SupervisionRequestsTab({
                 ? (req.requester?.avatarUrl || req.minorCard?.avatarUrl || req.minor?.avatarUrl)
                 : (child.avatarUrl || req.avatarUrl);
 
-              const avatarUrl = resolveMediaUrl(rawAvatar, '/userPlaceholder.png');
+              const avatarUrl = resolveMediaUrl(rawAvatar, '/userPlaceholder.webp');
 
               const roleTag = isApprovalItem
                 ? (req.requester?.roleTag || req.minorCard?.roleTag || (req.requester?.primaryRole ? String(req.requester.primaryRole) : 'Parent'))
@@ -108,7 +108,7 @@ export function SupervisionRequestsTab({
                 : (child.teamName || req.teamName);
 
               const rawTeamLogo = isApprovalItem ? req.requester?.teamLogo : child.teamLogo;
-              const teamLogo = rawTeamLogo ? resolveMediaUrl(rawTeamLogo, '/HC.png') : '/HC.png';
+              const teamLogo = rawTeamLogo ? resolveMediaUrl(rawTeamLogo, '/HC.webp') : '/HC.webp';
 
               const location = isApprovalItem
                 ? (req.requester?.location || req.minorCard?.location || req.minor?.city)

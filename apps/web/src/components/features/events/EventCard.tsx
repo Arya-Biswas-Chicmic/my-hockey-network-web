@@ -39,7 +39,7 @@ export const EventCard: React.FC<EventCardProps> = ({
           src={image}
           alt={title}
           fill
-          fallbackSrc="/classic.png"
+          fallbackSrc="/classic.webp"
           className="object-cover transition-transform duration-300 hover:scale-105"
         />
         {/* Top-Right Menu Options Button */}

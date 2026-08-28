@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Image, { type ImageProps } from 'next/image';
 import { isRenderableImageUrl } from '@/utils/mediaUtils';
 
-const DEFAULT_FALLBACK = '/userPlaceholder.png';
+const DEFAULT_FALLBACK = '/userPlaceholder.webp';
 
 export interface FallbackImageProps extends Omit<ImageProps, 'src' | 'alt' | 'onError'> {
   src?: string | null;

@@ -22,18 +22,18 @@ const DEFAULT_MATCHES: MatchItem[] = [
     id: 'm1',
     league: 'U16 AAA League',
     homeTeam: 'KC Blueknocks',
-    homeLogo: '/KCBluenocks.png',
+    homeLogo: '/KCBluenocks.webp',
     awayTeam: 'NW Warriors',
-    awayLogo: '/publicTournaments.png',
+    awayLogo: '/publicTournaments.webp',
     timeInfo: 'Today • 5:00 PM'
   },
   {
     id: 'm2',
     league: 'U16 AAA League',
     homeTeam: 'NW Warriors',
-    homeLogo: '/publicTournaments.png',
+    homeLogo: '/publicTournaments.webp',
     awayTeam: 'KC Blueknocks',
-    awayLogo: '/CoachTeam.png',
+    awayLogo: '/CoachTeam.webp',
     timeInfo: 'Today • 9:00 PM'
   }
 ];

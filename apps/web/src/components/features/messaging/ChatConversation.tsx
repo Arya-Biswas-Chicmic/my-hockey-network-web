@@ -65,10 +65,10 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
         <div className="mhn-conv-user-group">
           <div className="mhn-conv-avatar-box">
             <FallbackImage
-              src={avatarUrl || '/hockeyClub.png'}
+              src={avatarUrl || '/hockeyClub.webp'}
               alt={title}
               fill
-              fallbackSrc="/hockeyClub.png"
+              fallbackSrc="/hockeyClub.webp"
               className="mhn-conv-avatar-img"
             />
           </div>
@@ -100,7 +100,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
               src={bannerUrl}
               alt="Group Cover"
               fill
-              fallbackSrc="/cover.png"
+              fallbackSrc="/cover.webp"
               className="mhn-chat-banner-img"
             />
           </div>
@@ -123,7 +123,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
                     src={msg.senderAvatar}
                     alt={msg.senderName}
                     fill
-                    fallbackSrc="/userPlaceholder.png"
+                    fallbackSrc="/userPlaceholder.webp"
                     className="mhn-msg-avatar-img"
                   />
                 </div>

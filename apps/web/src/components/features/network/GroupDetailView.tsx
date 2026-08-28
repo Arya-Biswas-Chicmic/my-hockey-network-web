@@ -29,7 +29,7 @@ export interface GroupDetailViewProps {
 export function GroupDetailView({
   groupName = 'San Jose Sharks',
   memberCount = '54.7k Members',
-  coverImage = '/cover.png',
+  coverImage = '/cover.webp',
   onBackToGroups,
 }: GroupDetailViewProps) {
   const [activeTab, setActiveTab] = useState<'posts' | 'about' | 'people' | 'events' | 'media' | 'files'>('events');
@@ -41,7 +41,7 @@ export function GroupDetailView({
     {
       id: 'gev-1',
       title: '2026 Tim Hortons NHL Heritage Classic',
-      image: '/classic.png',
+      image: '/classic.webp',
       date: 'October 25, 2026',
       location: 'Princess Auto Stadium – Winnipeg',
       interestedCount: '1.9k',
@@ -52,7 +52,7 @@ export function GroupDetailView({
     {
       id: 'gev-2',
       title: '2026 Tim Hortons NHL Heritage Classic',
-      image: '/event1.png',
+      image: '/event1.webp',
       date: 'October 25, 2026',
       location: 'Princess Auto Stadium – Winnipeg',
       interestedCount: '1.9k',
@@ -63,7 +63,7 @@ export function GroupDetailView({
     {
       id: 'gev-3',
       title: '2026 Tim Hortons NHL Heritage Classic',
-      image: '/event2.png',
+      image: '/event2.webp',
       date: 'October 25, 2026',
       location: 'Princess Auto Stadium – Winnipeg',
       interestedCount: '1.9k',
@@ -92,7 +92,7 @@ export function GroupDetailView({
             src={coverImage}
             alt={groupName}
             fill
-            fallbackSrc="/cover.png"
+            fallbackSrc="/cover.webp"
             className="object-cover w-full h-full"
           />
         </div>

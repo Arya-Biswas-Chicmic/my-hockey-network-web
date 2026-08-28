@@ -9,7 +9,7 @@ export const GuardianFormHeader: React.FC = () => {
       <div className="guardian-badge-wrapper">
 
          <Image
-        src="/girdian.png"
+        src="/girdian.webp"
         alt="parent-icon"
         width={96}
         height={96}

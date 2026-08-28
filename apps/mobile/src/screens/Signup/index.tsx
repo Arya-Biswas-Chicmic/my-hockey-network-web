@@ -109,7 +109,7 @@ const SignupScreen = ({ navigation }: Props) => {
         >
           <View style={styles.illustrationContainer}>
             <Image
-              source={require('../../../assets/images/Welcome.png')}
+              source={require('../../../assets/images/Welcome.webp')}
               style={styles.illustrationImage}
               resizeMode="cover"
             />
@@ -148,7 +148,7 @@ const SignupScreen = ({ navigation }: Props) => {
               onChangeText={setDob}
               rightAccessory={
                 <Image
-                  source={require('../../../assets/images/calendar.png')}
+                  source={require('../../../assets/images/calendar.webp')}
                   style={styles.inputIconImage}
                   resizeMode="contain"
                 />
@@ -185,7 +185,7 @@ const SignupScreen = ({ navigation }: Props) => {
               onPress={() => setError('Google sign-in is not configured yet.')}
             >
               <Image
-                source={require('../../../assets/images/social.png')}
+                source={require('../../../assets/images/social.webp')}
                 style={styles.googleIconImage}
                 resizeMode="contain"
               />

@@ -27,19 +27,19 @@ const ROLE_OPTIONS: MobileRoleOption[] = [
     id: 'parent',
     title: 'Parent / Guardian',
     description: 'Support my athlete on and off the ice',
-    icon: require('../../../assets/images/parents.png'),
+    icon: require('../../../assets/images/parents.webp'),
   },
   {
     id: 'player',
     title: 'Player',
     description: 'I play hockey',
-    icon: require('../../../assets/images/player.png'),
+    icon: require('../../../assets/images/player.webp'),
   },
   {
     id: 'coach',
     title: 'Coach / Team Staff',
     description: 'I coach or support a team.',
-    icon: require('../../../assets/images/CoachTeam.png'),
+    icon: require('../../../assets/images/CoachTeam.webp'),
   },
 ];
 
@@ -66,7 +66,7 @@ const OnboardingScreen = ({ navigation }: Props) => {
       >
         <View style={styles.illustrationContainer}>
           <Image
-            source={require('../../../assets/images/Welcome.png')}
+            source={require('../../../assets/images/Welcome.webp')}
             style={styles.illustrationImage}
             resizeMode="cover"
           />
@@ -110,8 +110,8 @@ const OnboardingScreen = ({ navigation }: Props) => {
                   <Image
                     source={
                       isSelected
-                        ? require('../../../assets/images/checked.png')
-                        : require('../../../assets/images/unchecked.png')
+                        ? require('../../../assets/images/checked.webp')
+                        : require('../../../assets/images/unchecked.webp')
                     }
                     style={styles.checkboxImage}
                     resizeMode="contain"

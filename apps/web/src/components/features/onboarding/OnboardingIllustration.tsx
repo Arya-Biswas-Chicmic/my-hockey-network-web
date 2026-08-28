@@ -7,7 +7,7 @@ interface OnboardingIllustrationProps {
 }
 
 export const OnboardingIllustration: React.FC<OnboardingIllustrationProps> = ({
-  imageSrc = '/Welcome.png',
+  imageSrc = '/light/onboarding-welcome.webp',
   altText = 'Hockey Illustration',
 }) => {
   return (

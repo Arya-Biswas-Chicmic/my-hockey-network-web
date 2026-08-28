@@ -28,7 +28,7 @@ function mapChildren(children: SupervisionChildItem[]): WardListItem[] {
     id: child.id,
     name: child.displayName || child.firstName || 'Minor Player',
     age: child.age || 12,
-    avatar: resolveMediaUrl(child.avatarUrl, '/userPlaceholder.png'),
+    avatar: resolveMediaUrl(child.avatarUrl, '/userPlaceholder.webp'),
   }));
 }
 

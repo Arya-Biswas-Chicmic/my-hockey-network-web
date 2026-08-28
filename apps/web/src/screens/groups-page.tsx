@@ -25,28 +25,28 @@ const YOUR_GROUPS: GroupCardData[] = [
   {
     id: 'grp-1',
     name: 'San Jose Sharks',
-    coverImage: '/event1.png',
+    coverImage: '/event1.webp',
     memberCount: '1M members',
     isMember: true,
   },
   {
     id: 'grp-2',
     name: 'San Jose Sharks',
-    coverImage: '/playHockey.png',
+    coverImage: '/playHockey.webp',
     memberCount: '1M members',
     isMember: true,
   },
   {
     id: 'grp-3',
     name: 'Toronto Maple Leafs',
-    coverImage: '/event2.png',
+    coverImage: '/event2.webp',
     memberCount: '850k members',
     isMember: true,
   },
   {
     id: 'grp-4',
     name: 'Chicago Blackhawks',
-    coverImage: '/classic.png',
+    coverImage: '/classic.webp',
     memberCount: '620k members',
     isMember: true,
   },
@@ -56,28 +56,28 @@ const DISCOVER_GROUPS: GroupCardData[] = [
   {
     id: 'grp-5',
     name: 'New York Rangers',
-    coverImage: '/event3.png',
+    coverImage: '/event3.webp',
     memberCount: '780k members',
     isMember: false,
   },
   {
     id: 'grp-6',
     name: 'Detroit Red Wings',
-    coverImage: '/event4.png',
+    coverImage: '/event4.webp',
     memberCount: '920k members',
     isMember: false,
   },
   {
     id: 'grp-7',
     name: 'Montreal Canadiens',
-    coverImage: '/event5.png',
+    coverImage: '/event5.webp',
     memberCount: '1.2M members',
     isMember: false,
   },
   {
     id: 'grp-8',
     name: 'Edmonton Oilers',
-    coverImage: '/event6.png',
+    coverImage: '/event6.webp',
     memberCount: '650k members',
     isMember: false,
   },
@@ -186,7 +186,7 @@ export const GroupsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                     src={group.coverImage}
                     alt={group.name}
                     fill
-                    fallbackSrc="/cover.png"
+                    fallbackSrc="/cover.webp"
                     className="object-cover transition-transform duration-300 hover:scale-105"
                   />
                   {/* Top-Right Menu Options Button */}

@@ -9,6 +9,7 @@ import {
 } from '@/components/features/parent/CreatePlayerProtectStep';
 import { PlayerAddedSuccessStep } from '@/components/features/parent/PlayerAddedSuccessStep';
 import { RoleOptionCard } from '@/components/features/onboarding/RoleOptionCard';
+import { RolePlayerIcon } from '@/components/icons/RoleIcons';
 
 afterEach(cleanup);
 
@@ -29,7 +30,7 @@ describe('Figma onboarding interaction flow', () => {
           id: 'PLAYER',
           title: 'Player',
           description: 'I play hockey',
-          icon: '/player.svg',
+          icon: RolePlayerIcon,
         }}
         isSelected
         onSelect={onSelect}
@@ -45,18 +46,22 @@ describe('Figma onboarding interaction flow', () => {
   it('routes each add-player choice through its component event handler', () => {
     const onCreateNew = vi.fn();
     const onLinkExisting = vi.fn();
+    const onBack = vi.fn();
     render(
       <AddPlayerChoiceStep
         onCreateNew={onCreateNew}
         onLinkExisting={onLinkExisting}
+        onBack={onBack}
       />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: /create a new player profile/i }));
     fireEvent.click(screen.getByRole('button', { name: /link an existing player/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^back$/i }));
 
     expect(onCreateNew).toHaveBeenCalledOnce();
     expect(onLinkExisting).toHaveBeenCalledOnce();
+    expect(onBack).toHaveBeenCalledOnce();
   });
 
   it('reports visibility and supervision changes without mutating form data', () => {

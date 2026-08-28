@@ -21,7 +21,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      data-theme="dark"
+      data-theme-preference="dark"
+      suppressHydrationWarning
+    >
       <body>
         <Providers>{children}</Providers>
       </body>

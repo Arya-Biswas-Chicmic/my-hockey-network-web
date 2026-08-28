@@ -69,7 +69,7 @@ export function ProfileHeroCard({
           alt=""
           aria-hidden="true"
           fill
-          fallbackSrc="/cover.png"
+          fallbackSrc="/cover.webp"
           className="object-cover"
         />
         {isUploadingCover && (
@@ -89,7 +89,7 @@ export function ProfileHeroCard({
             {isUploadingCover ? (
               <Spinner size="sm" color="#1860C3" />
             ) : (
-              <Image src="/edit2.png" width={32} height={32} className="edit2-icon" alt="edit-icon" />
+              <Image src="/edit2.webp" width={32} height={32} className="edit2-icon" alt="edit-icon" />
             )}
           </FilePickerButton>
         )}

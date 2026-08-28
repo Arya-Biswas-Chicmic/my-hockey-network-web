@@ -3,13 +3,11 @@
 import React, { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { AuthProvider } from '@/contexts/auth-context';
-import { ThemeProvider } from '@/components/core/theme-provider';
 import { ServerDownScreen } from '@/components/common/server-down-screen';
 import { Toast } from '@/components/common/Toast';
 import { API_ENDPOINTS, ToastTypeEnum } from '@my-hockey-network/contracts';
 import { TOAST_EVENT, type ToastOptions } from '@/utils/toast';
 import { QueryProvider, globalQueryClient } from '@/query';
-import type { ThemePreference } from '@/theme/theme-cookie';
 import { webApiClient } from '@/platform/api-client';
 import { ApiError } from '@my-hockey-network/api-client';
 import { configureWebPlatform } from '@/platform/api-client';
@@ -18,7 +16,6 @@ configureWebPlatform();
 
 interface ProvidersProps {
   children: ReactNode;
-  defaultTheme?: ThemePreference;
 }
 
 // Credential-free and authentication routes must remain usable when the
@@ -34,7 +31,7 @@ function isBackendIndependentRoute(pathname: string | null): boolean {
   );
 }
 
-export function Providers({ children, defaultTheme }: ProvidersProps) {
+export function Providers({ children }: ProvidersProps) {
   const pathname = usePathname();
   const [serverDownState, setServerDownState] = useState<{
     isDown: boolean;
@@ -102,31 +99,29 @@ export function Providers({ children, defaultTheme }: ProvidersProps) {
   };
 
   return (
-    <ThemeProvider defaultTheme={defaultTheme}>
-      <QueryProvider>
-        <AuthProvider>
-          {children}
+    <QueryProvider>
+      <AuthProvider>
+        {children}
 
-          {toastState && (
-            <Toast
-              message={toastState.message}
-              type={toastState.type}
-              actionText={toastState.actionText}
-              onActionClick={toastState.onActionClick}
-              duration={toastState.duration}
-              onClose={() => setToastState(null)}
-            />
-          )}
+        {toastState && (
+          <Toast
+            message={toastState.message}
+            type={toastState.type}
+            actionText={toastState.actionText}
+            onActionClick={toastState.onActionClick}
+            duration={toastState.duration}
+            onClose={() => setToastState(null)}
+          />
+        )}
 
-          {serverDownState.isDown && !isBackendIndependentRoute(pathname) && (
-            <ServerDownScreen
-              statusCode={serverDownState.statusCode}
-              message={serverDownState.message}
-              onRetry={handleRetryConnection}
-            />
-          )}
-        </AuthProvider>
-      </QueryProvider>
-    </ThemeProvider>
+        {serverDownState.isDown && !isBackendIndependentRoute(pathname) && (
+          <ServerDownScreen
+            statusCode={serverDownState.statusCode}
+            message={serverDownState.message}
+            onRetry={handleRetryConnection}
+          />
+        )}
+      </AuthProvider>
+    </QueryProvider>
   );
 }

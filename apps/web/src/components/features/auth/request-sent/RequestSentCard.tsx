@@ -43,7 +43,7 @@ export const RequestSentCard: React.FC<RequestSentCardProps> = ({
         {/* Top Status Visualization Icon */}
         <div className="request-sent-badge-wrapper">
           <Image
-            src="/StatusVisualization.png"
+            src="/StatusVisualization.webp"
             alt="Status Visualization"
             width={128}
             height={128}
@@ -84,7 +84,7 @@ export const RequestSentCard: React.FC<RequestSentCardProps> = ({
         <div className="request-sent-features-grid">
           <PublicFeatureCard
             icon={ <Image
-            src="/publicTournaments.png"
+            src="/publicTournaments.webp"
             alt="Status Visualization"
             width={40}
             height={40}
@@ -96,7 +96,7 @@ export const RequestSentCard: React.FC<RequestSentCardProps> = ({
 
           <PublicFeatureCard
             icon={ <Image
-            src="/communityBoard.png"
+            src="/communityBoard.webp"
             alt="Status Visualization"
             width={40}
             height={40}

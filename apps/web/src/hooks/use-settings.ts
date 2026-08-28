@@ -27,7 +27,7 @@ function mapBlockedUser(b: BlockedUserDTO): BlockedUserView {
     id: b.id || b.targetId || cp.id || 'unknown',
     name: cp.displayName || cp.name || 'Blocked User',
     roleTag: cp.roleTag || (cp.position ? `${cp.position} ${cp.jerseyNumber ? `• #${cp.jerseyNumber}` : ''}` : cp.primaryRole || 'Player'),
-    avatarUrl: cp.avatarUrl || '/userPlaceholder.png',
+    avatarUrl: cp.avatarUrl || '/userPlaceholder.webp',
     teamName: cp.teamName || '',
     teamLogo: cp.teamLogo || '',
     location: cp.location || cp.city || '',

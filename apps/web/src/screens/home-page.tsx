@@ -59,7 +59,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   } = useHomeFeed();
 
   const currentUserName = user?.profile?.displayName || 'Player';
-  const currentUserAvatar = resolveMediaUrl(user?.profile?.avatarUrl, '/userPlaceholder.png');
+  const currentUserAvatar = resolveMediaUrl(user?.profile?.avatarUrl, '/userPlaceholder.webp');
 
   const handleTabChange = (tab: string, extraData?: { selectedWardId?: string }) => {
     setActiveNavTab(tab);
@@ -208,7 +208,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
           <InviteGrowWidget
             onInviteClick={() => showInfoToast('Member invitations are not available yet.')}
-            illustrationUrl="/player.png"
+            illustrationUrl="/player.webp"
           />
         </RightSidebar>
       </main>

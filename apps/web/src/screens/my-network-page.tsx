@@ -98,10 +98,10 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
         return {
           id: item.id,
           name: cp?.displayName || item.source?.displayName || '-',
-          avatarUrl: cp?.avatarUrl || item.source?.avatarUrl || '/userPlaceholder.png',
+          avatarUrl: cp?.avatarUrl || item.source?.avatarUrl || '/userPlaceholder.webp',
           roleTag: formattedRole,
           teamName: cp?.teamName || '-',
-          teamLogo: cp?.teamLogo || '/kcBlue.png',
+          teamLogo: cp?.teamLogo || '/kcBlue.webp',
           location: cp?.location || '-',
         };
       });
@@ -128,10 +128,10 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
         return {
           id: prof.id || prof.profileId || `rec_${Math.random()}`,
           name: prof.displayName || prof.name || '-',
-          avatarUrl: prof.avatarUrl || '/userPlaceholder.png',
+          avatarUrl: prof.avatarUrl || '/userPlaceholder.webp',
           roleTag: formattedRole,
           teamName: prof.teamName || '-',
-          teamLogo: prof.teamLogo || '/kcBlue.png',
+          teamLogo: prof.teamLogo || '/kcBlue.webp',
           location: prof.location || '-',
           isFollowing: false,
         };
@@ -224,7 +224,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
             <aside className="mhn-network-col-left">
               {currentView === NetworkViewModeEnum.GROUPS ? (
                 <ProfileSummaryCard 
-                  coverUrl={resolveCoverUrl(user?.profile?.coverImageUrl || user?.profile?.coverUrl, "/cover.png")}
+                  coverUrl={resolveCoverUrl(user?.profile?.coverImageUrl || user?.profile?.coverUrl, "/cover.webp")}
                   location={user?.profile?.city}
                   onPostClick={() => {
                     if (onNavigate) onNavigate('home');
@@ -232,7 +232,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
                 />
               ) : (
                 <ManageNetworkCard 
-                  bannerUrl={resolveCoverUrl(user?.profile?.coverImageUrl || user?.profile?.coverUrl, "/cover.png")}
+                  bannerUrl={resolveCoverUrl(user?.profile?.coverImageUrl || user?.profile?.coverUrl, "/cover.webp")}
                   location={user?.profile?.city}
                   onMenuItemClick={(item) => {
                     if (item === 'groups') {

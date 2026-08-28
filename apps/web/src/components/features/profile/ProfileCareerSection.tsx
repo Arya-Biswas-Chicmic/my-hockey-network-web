@@ -213,7 +213,7 @@ export function ProfileCareerSection({
                     alt={team.teamName || 'Team Logo'}
                     width={40}
                     height={40}
-                    fallbackSrc="/kcBlue.png"
+                    fallbackSrc="/kcBlue.webp"
                     className="mhn-career-team-logo-img"
                   />
                   <div>
@@ -238,7 +238,7 @@ export function ProfileCareerSection({
                     title="Edit team details"
                     disabled={isDeletingTeamId === team.id}
                   >
-                    <Image src="/edit3.png" alt="Edit" width={16} height={16} className="mhn-edit-icon-img" />
+                    <Image src="/edit3.webp" alt="Edit" width={16} height={16} className="mhn-edit-icon-img" />
                   </Button>
                   <Button
                     type="button"

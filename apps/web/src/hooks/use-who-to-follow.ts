@@ -19,7 +19,7 @@ function mapPerson(item: RecommendedPerson, index: number): WhoToFollowPerson {
   return {
     id: prof.id || prof.profileId || `who-to-follow-${index}`,
     name: prof.displayName || prof.name || 'Player',
-    avatar: resolveMediaUrl(prof.avatarUrl, '/userPlaceholder.png'),
+    avatar: resolveMediaUrl(prof.avatarUrl, '/userPlaceholder.webp'),
   };
 }
 

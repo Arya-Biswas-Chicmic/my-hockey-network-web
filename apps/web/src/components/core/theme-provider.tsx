@@ -1,36 +1,49 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getStoredThemePreference, setStoredThemePreference, ThemePreference } from '@/theme/theme-cookie';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  DEFAULT_RESOLVED_THEME,
+  getStoredThemePreference,
+  persistTheme,
+  type ResolvedTheme,
+  type ThemePreference,
+} from '@/theme/theme-cookie';
 
 interface ThemeContextType {
   theme: ThemePreference;
-  resolvedTheme: 'light' | 'dark';
+  resolvedTheme: ResolvedTheme;
   setTheme: (theme: ThemePreference) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const ThemeProvider: React.FC<{ children: ReactNode; defaultTheme?: ThemePreference }> = ({
+interface ThemeProviderProps {
+  children: ReactNode;
+  defaultTheme?: ThemePreference;
+  defaultResolvedTheme?: ResolvedTheme;
+}
+
+export function ThemeProvider({
   children,
   defaultTheme,
-}) => {
-  const [theme, setThemeState] = useState<ThemePreference>(() => defaultTheme || getStoredThemePreference());
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('dark');
+  defaultResolvedTheme = DEFAULT_RESOLVED_THEME,
+}: Readonly<ThemeProviderProps>) {
+  const [theme, setThemeState] = useState<ThemePreference>(() => defaultTheme ?? getStoredThemePreference());
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(defaultResolvedTheme);
 
-  const setTheme = (newTheme: ThemePreference) => {
+  const setTheme = useCallback((newTheme: ThemePreference) => {
     setThemeState(newTheme);
-    setStoredThemePreference(newTheme);
-  };
+  }, []);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const applyTheme = () => {
-      const nextResolvedTheme = theme === 'system'
+      const nextResolvedTheme: ResolvedTheme = theme === 'system'
         ? (mediaQuery.matches ? 'dark' : 'light')
         : theme;
 
       setResolvedTheme(nextResolvedTheme);
       document.documentElement.setAttribute('data-theme', nextResolvedTheme);
-      document.documentElement.style.colorScheme = nextResolvedTheme;
+      document.documentElement.setAttribute('data-theme-preference', theme);
+      persistTheme(theme, nextResolvedTheme);
     };
 
     applyTheme();
@@ -38,17 +51,19 @@ export const ThemeProvider: React.FC<{ children: ReactNode; defaultTheme?: Theme
     return () => mediaQuery.removeEventListener('change', applyTheme);
   }, [theme]);
 
+  const value = useMemo(() => ({ theme, resolvedTheme, setTheme }), [resolvedTheme, setTheme, theme]);
+
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );
-};
+}
 
-export const useTheme = () => {
+export function useTheme(): ThemeContextType {
   const context = useContext(ThemeContext);
   if (!context) {
     throw new Error('useTheme must be used within a ThemeProvider');
   }
   return context;
-};
+}
