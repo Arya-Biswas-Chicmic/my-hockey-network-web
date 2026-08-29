@@ -45,11 +45,15 @@ export function EventDetailPage({ onNavigate, eventTitle = demoEventDetail.title
           without an internal scroll owner here, everything past one
           viewport height was simply clipped and unreachable (bug report
           2026-08-31: "event page details scrolling is not working").
-          `lg:h-full lg:overflow-y-auto` on this inner section, plus
-          `lg:min-h-0 lg:flex-1` on the `PageShell` above so it actually
-          shrinks to the available height instead of overflowing it, is the
-          same pattern Profile's own scroll section already uses. */}
-      <section className="mhn-layout-col-center flex flex-col gap-6 pb-16 text-foreground lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">
+          `.mhn-layout-col-center` (the one shared "scrollable detail
+          column" class, see its definition in index.css) on this inner
+          section, plus `lg:min-h-0 lg:flex-1` on the `PageShell` above so
+          it actually shrinks to the available height instead of
+          overflowing it, is the same pattern Home/Profile's own scroll
+          sections already use — folded into that one class (feedback
+          2026-08-31: "fix here only [by] adding [a] global factor") rather
+          than each page re-typing the same four Tailwind utilities. */}
+      <section className="mhn-layout-col-center flex flex-col gap-6 pb-16 text-foreground">
         <header className="flex items-center gap-3">
           <Button type="button" variant="unstyled" className="flex size-8 items-center justify-center rounded-full hover:bg-muted" onClick={handleBack} aria-label="Back to events">
             <ChevronRight size={24} className="rotate-180" aria-hidden="true" />

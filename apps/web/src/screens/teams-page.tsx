@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { MoreHorizontal, Plus, X } from 'lucide-react';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { FallbackImage } from '@/components/ui/fallback-image';
@@ -22,6 +22,8 @@ interface TeamItem {
   logo: string;
   league?: string;
   isMember?: boolean;
+  memberCount: string;
+  memberAvatars: string[];
 }
 
 const YOUR_TEAMS: TeamItem[] = [
@@ -31,6 +33,8 @@ const YOUR_TEAMS: TeamItem[] = [
     logo: '/columbus.webp',
     league: 'NHL',
     isMember: true,
+    memberCount: '183 Members',
+    memberAvatars: ['/connor.webp', '/lucas.webp', '/jack.webp'],
   },
   {
     id: 'team-2',
@@ -38,6 +42,8 @@ const YOUR_TEAMS: TeamItem[] = [
     logo: '/kcBlue.webp',
     league: 'NHL',
     isMember: true,
+    memberCount: '96 Members',
+    memberAvatars: ['/gerard.webp', '/steve.webp', '/saylor.webp'],
   },
   {
     id: 'team-3',
@@ -45,6 +51,8 @@ const YOUR_TEAMS: TeamItem[] = [
     logo: '/HC.webp',
     league: 'NHL',
     isMember: true,
+    memberCount: '210 Members',
+    memberAvatars: ['/david.webp', '/ovechkin.webp', '/mai.webp'],
   },
   {
     id: 'team-4',
@@ -52,6 +60,8 @@ const YOUR_TEAMS: TeamItem[] = [
     logo: '/HockeyClub2.webp',
     league: 'NHL',
     isMember: true,
+    memberCount: '142 Members',
+    memberAvatars: ['/connor.webp', '/jack.webp', '/steve.webp'],
   },
 ];
 
@@ -62,6 +72,8 @@ const DISCOVER_TEAMS: TeamItem[] = [
     logo: '/classic.webp',
     league: 'NHL',
     isMember: false,
+    memberCount: '312 Members',
+    memberAvatars: ['/lucas.webp', '/gerard.webp', '/david.webp'],
   },
   {
     id: 'team-6',
@@ -69,6 +81,8 @@ const DISCOVER_TEAMS: TeamItem[] = [
     logo: '/event3.webp',
     league: 'NHL',
     isMember: false,
+    memberCount: '183 Members',
+    memberAvatars: ['/connor.webp', '/ovechkin.webp', '/saylor.webp'],
   },
   {
     id: 'team-7',
@@ -76,6 +90,8 @@ const DISCOVER_TEAMS: TeamItem[] = [
     logo: '/event6.webp',
     league: 'NHL',
     isMember: false,
+    memberCount: '128 Members',
+    memberAvatars: ['/jack.webp', '/mai.webp', '/steve.webp'],
   },
 ];
 
@@ -102,6 +118,8 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       logo: '/columbus.webp',
       league: 'Custom League',
       isMember: true,
+      memberCount: '1 Member',
+      memberAvatars: [],
     };
 
     setTeams([newTeam, ...teams]);
@@ -194,62 +212,92 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           </Button>
         </div>
 
-        {/* Team Items List */}
-        <div className="flex flex-col gap-2 mt-2 max-w-[580px]">
+        {/* Team Cards Grid — matches the Groups/Events card-grid pattern
+            (feedback 2026-08-31: "Make sure team list will be similar to
+            card view like we have in groups or events not make list...
+            its not in figma we need to invoate this"). No Figma reference
+            exists for this specific list view, so the card itself is
+            invented: a banner + centered crest (teams have circular
+            crests, not rectangular cover photos, so a plain photo header
+            like Groups' doesn't fit), name, member count, a small
+            overlapping preview of a few roster avatars, and a
+            View/Join action — the same information density as a Group
+            card (name + member count + join affordance) plus a members
+            preview. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-2">
           {filteredTeams.map((team) => (
-            <div
+            <article
               key={team.id}
-              className="flex items-center gap-4 py-3.5 border-b border-[#162238]/60 last:border-none transition-colors"
+              className="mhn-team-card bg-[#0A1220] border border-[#162238] rounded-2xl overflow-hidden flex flex-col shadow-lg transition-all hover:border-[#1F3352]"
             >
-              {/* Team Crest Logo — opens Team Detail on its Posts tab,
-                  same as clicking the name (feedback: "build this team
-                  page detail page design", Figma node 1686:8399). */}
-              <Button
-                type="button"
-                variant="unstyled"
-                className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 bg-slate-900 border border-[#1E2D4A]"
+              {/* Banner + centered crest */}
+              <div
+                className="relative w-full pt-8 pb-10 flex items-center justify-center bg-gradient-to-b from-[#101B30] to-[#0A1220] cursor-pointer"
                 onClick={() => openTeamDetail(team, 'posts')}
-                aria-label={`View ${team.name}`}
               >
-                <FallbackImage
-                  src={team.logo}
-                  alt={team.name}
-                  fill
-                  fallbackSrc="/columbus.webp"
-                  className="object-cover"
-                />
-              </Button>
+                <div className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 bg-slate-900 border-2 border-[#1E2D4A] shadow-lg">
+                  <FallbackImage
+                    src={team.logo}
+                    alt={team.name}
+                    fill
+                    sizes="64px"
+                    fallbackSrc="/columbus.webp"
+                    className="object-cover"
+                  />
+                </div>
 
-              {/* Team Details & Sub-links */}
-              <div className="flex flex-col gap-1 min-w-0 flex-1">
+                <Button
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/50 backdrop-blur-md text-slate-200 flex items-center justify-center hover:bg-black/70 transition-colors"
+                  aria-label={`${team.name} options`}
+                >
+                  <MoreHorizontal size={16} />
+                </Button>
+              </div>
+
+              {/* Card Body */}
+              <div className="p-4 flex flex-col flex-1 gap-1 items-center text-center">
                 <Button
                   type="button"
                   variant="unstyled"
-                  className="text-left hover:text-slate-300 transition-colors"
+                  className="hover:text-[#168BFF] transition-colors"
                   onClick={() => openTeamDetail(team, 'posts')}
                 >
-                  <h3 className="text-base font-bold text-slate-100 truncate">
-                    {team.name}
-                  </h3>
+                  <h3 className="text-sm font-bold text-slate-100 line-clamp-1">{team.name}</h3>
                 </Button>
+                <p className="text-xs text-slate-400">{team.memberCount}</p>
 
-                {/* Sub-links row: Posts · Members · Events — each opens
-                    Team Detail directly on that tab. */}
-                <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <Button className="hover:text-slate-200 transition-colors font-medium" onClick={() => openTeamDetail(team, 'posts')}>
-                    Posts
+                {/* Members preview — overlapping avatar stack, opens
+                    straight to the Members tab. */}
+                {team.memberAvatars.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="unstyled"
+                    className="mt-2 flex items-center -space-x-2"
+                    onClick={() => openTeamDetail(team, 'members')}
+                    aria-label={`View ${team.name} members`}
+                  >
+                    {team.memberAvatars.map((avatar, index) => (
+                      <div
+                        key={avatar + index}
+                        className="relative w-6 h-6 rounded-full overflow-hidden border-2 border-[#0A1220] bg-slate-900"
+                      >
+                        <FallbackImage src={avatar} alt="" fill sizes="24px" className="object-cover" />
+                      </div>
+                    ))}
                   </Button>
-                  <span>·</span>
-                  <Button className="hover:text-slate-200 transition-colors font-medium" onClick={() => openTeamDetail(team, 'members')}>
-                    Members
-                  </Button>
-                  <span>·</span>
-                  <Button className="hover:text-slate-200 transition-colors font-medium" onClick={() => openTeamDetail(team, 'events')}>
-                    Events
+                )}
+
+                <div className="mt-auto pt-3 w-full">
+                  <Button
+                    onClick={() => openTeamDetail(team, 'posts')}
+                    className="w-full h-9 rounded-xl text-xs font-semibold bg-[#0A1220] text-[#168BFF] border border-[#168BFF] hover:bg-[#168BFF]/10 transition-all flex items-center justify-center"
+                  >
+                    {team.isMember ? 'View Team' : 'Join Team'}
                   </Button>
                 </div>
               </div>
-            </div>
+            </article>
           ))}
         </div>
       </PageShell>

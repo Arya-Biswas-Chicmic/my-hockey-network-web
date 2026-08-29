@@ -210,7 +210,7 @@ export const ProfilePage: React.FC<PageProps> = ({
       )}
 
       <PageShell className="mhn-home-main-layout lg:my-0 lg:min-h-0 lg:flex-1">
-        <section ref={profileScrollRef} className="mhn-layout-col-center flex flex-col gap-4 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">
+        <section ref={profileScrollRef} className="mhn-layout-col-center flex flex-col gap-4">
           {!user || (Boolean(effectiveProfileId) && (isProfileTargetLoading || (isProfileTargetFetching && !targetProfileRes))) ? (
             <ProfileSkeletonLoader />
           ) : (

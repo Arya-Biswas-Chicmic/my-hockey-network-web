@@ -113,10 +113,11 @@ function EventsTab({ team, onEventClick }: Readonly<{ team: DemoTeamDetail; onEv
 
   return (
     <section>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-bold text-foreground">Events</h2>
-        <SearchWidget value={query} onChange={setQuery} className="w-64" />
-      </div>
+      {/* No standalone "Events" heading — the tab bar right above already
+          says Events, so the label was pure redundancy inside the tab's
+          own content (feedback 2026-08-31: "Remove this event text and
+          expand search bar"). The search bar takes the freed row. */}
+      <SearchWidget value={query} onChange={setQuery} className="mb-4 w-full" />
       <div className="flex flex-col gap-3">
         {events.map((event) => (
           <EventCard

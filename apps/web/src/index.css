@@ -2737,17 +2737,36 @@
   width: 100%;
 }
 
-/* The center feed column scrolls independently of the sidebar/right column
-   (`lg:overflow-y-auto` in home-page.tsx) — that part works on its own, no
-   styling needed. This only controls the scrollbar's own look: transparent
-   at rest (Figma's static mockup has no persistent scrollbar line — flagged
-   directly, 2026-08-27: "no lines in the figma, match exactly" — and an
-   always-visible thumb read as exactly that, a line), a subtle themed thumb
-   appears only on hover, matching how most modern browsers already behave
-   by default rather than adding a permanent decoration. */
+/* The single shared "this column is the scrollable region of a detail page"
+   factor — every route that needs its own content to scroll independently
+   of the fixed-height `.mhn-app-content` shell (Home's feed, Profile,
+   Event Detail, ...) used to hand-type the same four `lg:h-full
+   lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain` Tailwind utilities
+   at its own call site (feedback 2026-08-31: "keep it consist[ent]...
+   fix here only [by] adding [a] global factor" — a repeat of the same
+   "single source of truth" ask already applied to tab colors/search bar
+   elsewhere this project). Folded into the class itself so a page opts in
+   with just `className="mhn-layout-col-center"` and nothing else; this
+   also controls the scrollbar's own look: transparent at rest (Figma's
+   static mockup has no persistent scrollbar line — flagged directly,
+   2026-08-27: "no lines in the figma, match exactly" — an always-visible
+   thumb read as exactly that, a line), a subtle themed thumb appears only
+   on hover, matching how most modern browsers already behave by default
+   rather than adding a permanent decoration. Scoped to the `lg:` breakpoint
+   (matching Tailwind's `lg:` prefix) since mobile/tablet keep normal
+   document flow instead of a height-bounded inner scroller. */
 .mhn-layout-col-center {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
+}
+
+@media (min-width: 1024px) {
+  .mhn-layout-col-center {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 .mhn-layout-col-center:hover {

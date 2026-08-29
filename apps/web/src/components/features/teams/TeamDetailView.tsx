@@ -6,6 +6,7 @@ import { Button } from '@/components/common/Button';
 import { WhoToFollowWidget } from '@/components/features/home/WhoToFollowWidget';
 import { TeamDetailContent } from '@/components/features/teams/TeamDetailContent';
 import { FallbackImage } from '@/components/ui/fallback-image';
+import { profileDemoData } from '@/demo-data/profile';
 import { getDemoTeamDetail, type TeamDetailTab } from '@/demo-data/teams';
 import { cn } from '@/utils/cn';
 import { showInfoToast } from '@/utils/toast';
@@ -110,7 +111,13 @@ export function TeamDetailView({ teamId, teamName, teamLogo, initialTab = 'posts
         </div>
 
         <aside>
-          <WhoToFollowWidget onViewAll={() => onNavigate?.('network')} />
+          {/* Same component, same `fallbackSuggestions` convention as Home
+              (`home-page.tsx`) — without it, `useFollowSuggestions` had
+              nothing to fall back to whenever the real `/network`
+              suggestions API returned empty, so the widget rendered with
+              no rows at all (feedback 2026-08-31: "who to follow is same
+              compoent than why its not showing data"). */}
+          <WhoToFollowWidget fallbackSuggestions={profileDemoData.people} onViewAll={() => onNavigate?.('network')} />
         </aside>
       </div>
     </div>

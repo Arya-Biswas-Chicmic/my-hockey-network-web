@@ -83,7 +83,10 @@ function EventsTab({ group, onEventClick }: Readonly<{ group: DemoGroupDetail; o
   const events = group.events.filter((event) => `${event.title} ${event.location}`.toLowerCase().includes(query.trim().toLowerCase()));
   return (
     <section>
-      <div className="mb-4 flex items-center justify-between gap-4"><h2 className="text-lg font-bold text-foreground">Events</h2><SearchWidget value={query} onChange={setQuery} className="w-64" /></div>
+      {/* No standalone "Events" heading — the tab bar right above already
+          says Events (feedback 2026-08-31: "Remove this event text and
+          expand search bar"). The search bar takes the freed row. */}
+      <SearchWidget value={query} onChange={setQuery} className="mb-4 w-full" />
       <div className="grid gap-4 sm:grid-cols-2">
         {events.map((event) => <EventCard key={event.id} {...event} isInterested={interestedIds.has(event.id)} onCardClick={onEventClick} onToggleInterested={(id) => setInterestedIds((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; })} />)}
       </div>

@@ -177,7 +177,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
       <PageShell className="mhn-home-main-layout lg:my-0 lg:min-h-0 lg:flex-1">
         {/* CENTER MAIN FEED COLUMN */}
-        <section className="mhn-layout-col-center flex flex-col lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">
+        <section className="mhn-layout-col-center flex flex-col">
           <HomeTabs activeTab={activeFeedTab} onChange={setActiveFeedTab} />
 
           <Feed

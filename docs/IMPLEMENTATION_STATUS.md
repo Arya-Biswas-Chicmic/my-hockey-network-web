@@ -4,6 +4,23 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Consolidated the repeated "this column is the scrollable region of a fixed-height detail page"
+  pattern (`lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain`, hand-typed identically at
+  Home/Profile/Event Detail's own call sites) into `.mhn-layout-col-center` itself in `index.css`
+  (feedback 2026-08-31: "fix here only [by] adding [a] global factor"). Every consumer now just
+  needs the one class name; simplified all three call sites accordingly. Fixed the Teams list's card
+  grid redesign and Team Detail's own remaining issues from the same pass — Redesigned the Teams list
+  from a plain row list into a card grid matching Groups/Events (feedback: "Make sure team list will
+  be similar to card view like we have in groups or events... its not in figma we need to invoate
+  this") — no Figma reference exists for this specific view, so the card (banner + centered crest,
+  name, member count, a small overlapping roster-avatar preview, View/Join action) is an original
+  design consistent with the Group card's information density. Fixed Team Detail's (and Group
+  Detail's, same shared pattern) Events tab showing a redundant "Events" heading directly under a tab
+  bar that already says Events; removed it and let the search bar fill the row. Fixed Team Detail's
+  `WhoToFollowWidget` rendering empty — it never received `fallbackSuggestions` the way Home's own
+  usage does, so `useFollowSuggestions` had nothing to fall back to when the real suggestions API
+  returned empty (feedback: "who to follow is same compoent than why its not showing data").
+
 - Built the Team Detail page (Figma nodes 1686:8399 hero/Posts, 1696:9258 Members, 1696:10222 Events,
   1884:14732 Media, 1733:21876 About), opened inline from `screens/teams-page.tsx` — same pattern as
   Group Detail (no separate route). `TeamDetailView`/`TeamDetailContent` mirror `GroupDetailView`/
