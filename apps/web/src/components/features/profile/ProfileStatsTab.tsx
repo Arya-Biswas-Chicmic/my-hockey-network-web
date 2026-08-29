@@ -1,6 +1,7 @@
 'use client';
 
-import { Select } from '@/components/common/FormControls';
+import { useState } from 'react';
+import { Dropdown } from '@/components/common/FormControls';
 import { NoDataFound } from '@/components/common/no-data-found';
 import { profileDemoData } from '@/demo-data/profile';
 
@@ -16,20 +17,24 @@ export interface ProfileStatsTabProps {
  * comment for the same fix); otherwise viewing anyone else's profile
  * showed your own stats. */
 export function ProfileStatsTab({ isOwnProfile, showDemoFallback = false }: Readonly<ProfileStatsTabProps>) {
+  const { filters, summary, metrics } = profileDemoData.stats;
+  const [season, setSeason] = useState(filters.seasons[0]);
+  const [team, setTeam] = useState(filters.teams[0]);
+  const [competition, setCompetition] = useState(filters.competitionTypes[0]);
+
   if (!isOwnProfile && !showDemoFallback) {
     return <NoDataFound title="No Stats Yet" description="Player statistics aren't available for this profile yet." />;
   }
 
-  const { filters, summary, metrics } = profileDemoData.stats;
   return (
     <section className="rounded-lg border border-auth-stroke bg-auth-field p-4 text-foreground">
       <div className="grid grid-cols-3 gap-2 max-[520px]:grid-cols-1">
         <label className="sr-only" htmlFor="profile-season">Season</label>
-        <Select id="profile-season" defaultValue={filters.seasons[0]} className="h-9 rounded-lg border border-auth-stroke bg-background px-3 text-xs text-foreground">{filters.seasons.map((value) => <option key={value}>{value}</option>)}</Select>
+        <Dropdown id="profile-season" value={season} options={filters.seasons} onChange={setSeason} variant="compact-centered" />
         <label className="sr-only" htmlFor="profile-team">Team</label>
-        <Select id="profile-team" defaultValue={filters.teams[0]} className="h-9 rounded-lg border border-auth-stroke bg-background px-3 text-xs text-foreground">{filters.teams.map((value) => <option key={value}>{value}</option>)}</Select>
+        <Dropdown id="profile-team" value={team} options={filters.teams} onChange={setTeam} variant="compact-centered" />
         <label className="sr-only" htmlFor="profile-competition">Competition</label>
-        <Select id="profile-competition" defaultValue={filters.competitionTypes[0]} className="h-9 rounded-lg border border-auth-stroke bg-background px-3 text-xs text-foreground">{filters.competitionTypes.map((value) => <option key={value}>{value}</option>)}</Select>
+        <Dropdown id="profile-competition" value={competition} options={filters.competitionTypes} onChange={setCompetition} variant="compact-centered" />
       </div>
       <div className="mt-4 flex items-center justify-between rounded-lg border border-auth-stroke bg-background p-4">
         <div><h2 className="text-base font-bold">{summary.title}</h2><p className="mt-1 text-xs text-muted-foreground">Season performance overview</p></div>

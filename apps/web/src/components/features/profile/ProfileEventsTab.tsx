@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
-import { Input, Select } from '@/components/common/FormControls';
+import { Dropdown, Input } from '@/components/common/FormControls';
 import { NoDataFound } from '@/components/common/no-data-found';
 import { EventCard } from '@/components/features/events/EventCard';
 import { profileDemoData } from '@/demo-data/profile';
@@ -38,7 +38,14 @@ export function ProfileEventsTab({ isOwnProfile, showDemoFallback = false }: Rea
       <h2 className="text-lg font-bold">Events</h2>
       <div className="mt-4 grid grid-cols-[1fr_132px] gap-2 max-[520px]:grid-cols-1">
         <div className="relative"><Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" /><Input value={query} onValueChange={setQuery} disableAutoSanitize placeholder="Search events" className="h-9 w-full rounded-lg border border-auth-stroke bg-background pl-9 pr-3 text-xs text-foreground" /></div>
-        <Select value={filter} onChange={(event) => setFilter(event.target.value)} className="h-9 rounded-lg border border-auth-stroke bg-background px-3 text-xs text-foreground" aria-label="Event relationship"><option>Interested</option><option>Going</option><option>Hosted</option></Select>
+        <label className="sr-only" htmlFor="profile-event-relationship">Event relationship</label>
+        <Dropdown
+          id="profile-event-relationship"
+          value={filter}
+          options={['Interested', 'Going', 'Hosted']}
+          onChange={setFilter}
+          variant="compact-centered"
+        />
       </div>
       <div className="mt-4 flex flex-col gap-3">
         {events.map((event) => <EventCard key={event.id} {...event} compact isInterested={interestedIds.has(event.id)} onToggleInterested={toggleInterested} />)}

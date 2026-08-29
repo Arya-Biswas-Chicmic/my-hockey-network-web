@@ -1,8 +1,11 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
-import { Input } from '@/components/common/FormControls';
+import { Dropdown, Input } from '@/components/common/FormControls';
 
 afterEach(cleanup);
 
@@ -33,5 +36,53 @@ describe('Input', () => {
 
     fireEvent.blur(screen.getByLabelText('Full name'));
     expect(onValueChange).toHaveBeenCalledWith('Alex Morgan', expect.anything());
+  });
+});
+
+describe('Dropdown', () => {
+  it('centers the selected compact-filter label and keeps native selection behavior', () => {
+    function CompactDropdownHarness() {
+      const [value, setValue] = useState('2025-26');
+
+      return (
+        <Dropdown
+          id="season-filter"
+          value={value}
+          options={['2025-26', '2024-25']}
+          onChange={setValue}
+          variant="compact-centered"
+        />
+      );
+    }
+
+    const { container } = render(<CompactDropdownHarness />);
+    const select = container.querySelector('#season-filter') as HTMLSelectElement;
+    const display = container.querySelector('.mhn-dropdown-centered-display');
+
+    expect(select.className).toContain('mhn-dropdown-select--compact-centered');
+    expect(display?.textContent).toContain('2025-26');
+
+    fireEvent.change(select, { target: { value: '2024-25' } });
+
+    expect(select.value).toBe('2024-25');
+    expect(display?.textContent).toContain('2024-25');
+  });
+
+  it('matches the shared compact-dropdown Figma geometry', () => {
+    const stylesheet = readFileSync(resolve('apps/web/src/index.css'), 'utf8');
+    const selectRule = stylesheet.match(
+      /\.mhn-dropdown-select--compact-centered\s*\{([^}]*)\}/,
+    )?.[1];
+    const displayRule = stylesheet.match(
+      /\.mhn-dropdown-centered-display\s*\{([^}]*)\}/,
+    )?.[1];
+
+    expect(selectRule).toMatch(/height:\s*36px/);
+    expect(selectRule).toMatch(/text-align:\s*center/);
+    expect(displayRule).toMatch(/justify-content:\s*center/);
+    expect(displayRule).toMatch(/gap:\s*8px/);
+    expect(displayRule).toMatch(/font-size:\s*14px/);
+    expect(displayRule).toMatch(/font-weight:\s*400/);
+    expect(displayRule).toMatch(/line-height:\s*20px/);
   });
 });

@@ -7,81 +7,12 @@ import { Button } from '@/components/common/Button';
 import { GroupDetailView } from '@/components/features/network/GroupDetailView';
 import { SearchWidget } from '@/components/features/home/SearchWidget';
 import { PageShell } from '@/components/layout/PageShell';
+import { discoverDemoGroups, yourDemoGroups } from '@/demo-data/groups';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
   onLogout?: () => void;
 }
-
-interface GroupCardData {
-  id: string;
-  name: string;
-  coverImage: string;
-  memberCount: string;
-  isMember?: boolean;
-}
-
-const YOUR_GROUPS: GroupCardData[] = [
-  {
-    id: 'grp-1',
-    name: 'San Jose Sharks',
-    coverImage: '/event1.webp',
-    memberCount: '1M members',
-    isMember: true,
-  },
-  {
-    id: 'grp-2',
-    name: 'San Jose Sharks',
-    coverImage: '/playHockey.webp',
-    memberCount: '1M members',
-    isMember: true,
-  },
-  {
-    id: 'grp-3',
-    name: 'Toronto Maple Leafs',
-    coverImage: '/event2.webp',
-    memberCount: '850k members',
-    isMember: true,
-  },
-  {
-    id: 'grp-4',
-    name: 'Chicago Blackhawks',
-    coverImage: '/classic.webp',
-    memberCount: '620k members',
-    isMember: true,
-  },
-];
-
-const DISCOVER_GROUPS: GroupCardData[] = [
-  {
-    id: 'grp-5',
-    name: 'New York Rangers',
-    coverImage: '/event3.webp',
-    memberCount: '780k members',
-    isMember: false,
-  },
-  {
-    id: 'grp-6',
-    name: 'Detroit Red Wings',
-    coverImage: '/event4.webp',
-    memberCount: '920k members',
-    isMember: false,
-  },
-  {
-    id: 'grp-7',
-    name: 'Montreal Canadiens',
-    coverImage: '/event5.webp',
-    memberCount: '1.2M members',
-    isMember: false,
-  },
-  {
-    id: 'grp-8',
-    name: 'Edmonton Oilers',
-    coverImage: '/event6.webp',
-    memberCount: '650k members',
-    isMember: false,
-  },
-];
 
 export const GroupsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { permissions } = useFeedPermissions(onNavigate);
@@ -89,7 +20,7 @@ export const GroupsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
-  const groupList = activeTab === 'your-groups' ? YOUR_GROUPS : DISCOVER_GROUPS;
+  const groupList = activeTab === 'your-groups' ? yourDemoGroups : discoverDemoGroups;
 
   const filteredGroups = groupList.filter((group) =>
     !searchQuery.trim() || group.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -118,6 +49,7 @@ export const GroupsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           <GroupDetailView
             groupId={selectedGroupId}
             onBackToGroups={() => setSelectedGroupId(null)}
+            onEventClick={() => onNavigate?.('event-detail')}
           />
         </PageShell>
       ) : (
@@ -172,6 +104,7 @@ export const GroupsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                     src={group.coverImage}
                     alt={group.name}
                     fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 260px"
                     fallbackSrc="/cover.webp"
                     className="object-cover transition-transform duration-300 hover:scale-105"
                   />
@@ -214,4 +147,3 @@ export const GroupsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
     </>
   );
 };
-

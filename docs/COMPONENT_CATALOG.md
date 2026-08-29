@@ -344,6 +344,13 @@ supported for the existing `.mhn-modal-*` call sites and is not being removed in
 
 Every new modal must be built on `Dialog` or `Modal`, never a hand-rolled overlay div.
 
+`components/features/events/EventOrganizerDialog.tsx` is the Event Detail people-list composition:
+it uses `Dialog`, `SearchWidget`, `FallbackImage`, and `common/Button`, and receives typed people from
+`demo-data/events`. `components/features/network/GroupDetailView.tsx` is the single Group Detail
+shell for `/groups` and Network; its tab content lives in `features/groups/GroupDetailContent.tsx`
+and reuses `FeedPostCard` for Posts and `EventCard` for Events. Group tab fixtures and listing cards
+must remain centralized in `demo-data/groups` rather than being copied into screens.
+
 ### `common/Button` sets `whitespace-nowrap`
 
 `buttonVariants`' base class list includes `whitespace-nowrap` (and `shrink-0`), which is right for

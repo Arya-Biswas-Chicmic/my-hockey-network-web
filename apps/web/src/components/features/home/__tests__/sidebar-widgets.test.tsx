@@ -16,10 +16,12 @@ describe("Home sidebar Figma widgets", () => {
       <InviteGrowWidget onInviteClick={onInviteClick} />,
     );
 
-    const illustration = container.querySelector("img");
-    expect(illustration?.getAttribute("src")).toContain(
+    const illustrations = container.querySelectorAll("img");
+    expect(illustrations).toHaveLength(2);
+    expect(illustrations[0]?.getAttribute("src")).toContain(
       "invite-grow-illustration.png",
     );
+    expect(illustrations[1]?.getAttribute("src")).toContain("InviteGrow.webp");
 
     fireEvent.click(screen.getByRole("button", { name: "Invite Now" }));
     expect(onInviteClick).toHaveBeenCalledTimes(1);
@@ -64,7 +66,7 @@ describe("Home sidebar Figma widgets", () => {
     );
     expect(dateRule).toMatch(/color:\s*var\(--color-primary-foreground\)/);
     expect(illustrationRule).toMatch(/width:\s*136px/);
-    expect(illustrationRule).toMatch(/height:\s*126px/);
+    expect(illustrationRule).toMatch(/height:\s*124px/);
     expect(illustrationRule).toMatch(/top:\s*16px/);
     expect(illustrationRule).toMatch(/right:\s*13px/);
   });

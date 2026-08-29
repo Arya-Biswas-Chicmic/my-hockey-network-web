@@ -2796,8 +2796,10 @@
 .mhn-post-author-group {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 0;
   min-width: 0;
+  text-align: left;
 }
 
 .mhn-author-avatar-box {
@@ -2820,9 +2822,11 @@
 .mhn-author-meta {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 4px;
   min-width: 0;
   padding: 4px 4px 4px 8px;
+  text-align: left;
 }
 
 .mhn-author-name {
@@ -11574,6 +11578,45 @@ img.secure {
   height: 14px;
   pointer-events: none;
   object-fit: contain;
+}
+
+/* Compact filters use Figma's centered label + chevron composition
+   (1725:20736), instead of the native select arrow pinned to the edge. */
+.mhn-dropdown-select--compact-centered {
+  height: 36px;
+  padding: 0;
+  border-color: var(--color-auth-stroke);
+  background-color: var(--color-background);
+  color: transparent;
+  text-align: center;
+}
+
+.mhn-dropdown-select--compact-centered option {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+.mhn-dropdown-centered-display {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--color-foreground);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  pointer-events: none;
+}
+
+.mhn-dropdown-centered-display svg {
+  flex: 0 0 auto;
+}
+
+.mhn-dropdown-select--compact-centered.mhn-dropdown-disabled +
+  .mhn-dropdown-centered-display {
+  color: var(--color-foreground-subtle);
 }
 
 /* Delete Career Modal Centralized Styles */

@@ -4,6 +4,45 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Fixed Event Detail's own content being unreachable past one viewport height (bug report
+  2026-08-31: "event page details scrolling is not working"). `.mhn-app-content` is `lg:h-dvh
+  lg:overflow-hidden` — every route needs its own internal scroll owner inside that, and the
+  rebuilt `event-detail-page.tsx` had none, so "About"/"Things to know"/the Organiser &amp;
+  Attendant list past the fold were silently clipped and unreachable by any scroll gesture, not
+  just visually cut off. Wrapped the page's content in a `mhn-layout-col-center` section with
+  `lg:h-full lg:min-h-0 lg:overflow-y-auto` and gave `PageShell` `lg:min-h-0 lg:flex-1`, the same
+  pattern Profile/Groups/Events already use. Verified live via `getBoundingClientRect()`/
+  `scrollHeight` that `.mhn-app-content` no longer overflows the viewport and the previously
+  clipped content now scrolls into view.
+
+- Rebuilt Event Detail from Figma node `1523:15029`, including the exact Heritage Classic artwork,
+  responsive action/about/metadata/guest layout, and the searchable Event Organiser & Attendant
+  `Dialog` from node `2238:49228`. Rebuilt Group Detail from node `1630:7646` with the supplied
+  Figma cover/media assets, Posts as the default tab, the shared `FeedPostCard`/`EventCard`, and
+  populated About, People, Events, Media, and Files tabs. Event and group preview content now lives
+  in typed `demo-data/events` and `demo-data/groups` facades; the Groups listing consumes the same
+  centralized group fixtures. Added fixture-contract and interaction coverage for organizer search,
+  follow/action states, shared post reuse, and every group tab.
+
+- Aligned compact Profile dropdowns to Figma node `1725:20736`. Profile Stats previously rendered
+  raw native selects, which pinned each browser-owned chevron to the far edge of its control rather
+  than centering the selected label and chevron as one unit. The existing shared `Dropdown` now has
+  a typed `compact-centered` variant with the Figma 36px height, 14px/20px regular label, 8px
+  label-to-chevron gap, and centered composition, reusing the existing Figma-sourced chevron icon.
+  Profile Stats' season/team/competition filters and Profile Events' relationship filter all use
+  that shared variant; ordinary form dropdowns retain their standard end-aligned affordance. Added
+  controlled-interaction and CSS-contract coverage.
+
+- Corrected the shared feed-card author alignment against Figma node `1468:10048`. The shared
+  `Button` primitive centers its contents by default, and `PostCardHeader` did not explicitly
+  restore left alignment inside the author metadata column; longer role/date subtitles therefore
+  made the name appear horizontally centered above them. `.mhn-post-author-group` now overrides
+  the button layout with `justify-content: flex-start`/`text-align: left`, while
+  `.mhn-author-meta` owns `align-items: flex-start`/`text-align: left` and retains Figma's 8px
+  avatar-to-copy inset. Because Home, Explore, Profile, and Saved all render the same
+  `FeedPostCard` -> `PostCardHeader` composition, the correction applies to every feed-card surface
+  without route-specific copies. Added component and CSS-contract coverage for the shared header.
+
 - Verified `FeedPostCard`/`PostCardHeader` against Figma node 1806:15295 ("Post") and confirmed the
   Header of post spacing (avatar 48px, `pt-12px pl-12px pr-4px pb-8px`), the name/subtitle container
   padding, and the caption/footer 12px-flush inset all already match exactly — measured via live
@@ -2382,11 +2421,11 @@ FollowWidget`'s own row shape (`.mhn-who-to-follow-row`/`-avatar`/
 - Production web build must pass.
 - Web/native UI ownership and pnpm-only dependency management checks must pass.
 
-Latest measured enforced-code coverage: 95.32% statements, 89.08% branches, 98.14% functions, and
-95.48% lines (enforced boundary: `packages/api-client`, `auth`, `domain`, `validation` index files;
+Latest measured enforced-code coverage: 95.35% statements, 89.14% branches, 98.14% functions, and
+95.50% lines (enforced boundary: `packages/api-client`, `auth`, `domain`, `validation` index files;
 `packages/core/src/api/signUpRules.ts`; `apps/web/src/platform/auth-storage.ts`,
 `query/query-client.ts`, `utils/guardianUtils.ts`, `utils/mediaUtils.ts`, `utils/toast.ts`,
-`utils/dateUtils.ts`). The Vitest suite contains 241 tests across 34 test files, plus 6 Playwright smoke tests
+`utils/dateUtils.ts`). The Vitest suite contains 318 tests across 49 test files, plus 6 Playwright smoke tests
 (`apps/web/e2e/public.spec.ts`, run separately via `pnpm test:e2e`, not counted in the Vitest total).
 Web form validation, secure storage behavior, query/mutation hook behavior, route-guard
 fail-closed/redirect behavior, dialog/OTP-input keyboard and focus behavior, and route/form
