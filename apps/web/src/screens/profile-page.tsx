@@ -36,6 +36,7 @@ import { RightSidebar } from '@/components/layout/RightSidebar';
 import { SearchWidget } from '@/components/features/home/SearchWidget';
 import { WhoToFollowWidget } from '@/components/features/home/WhoToFollowWidget';
 import { profileDemoData } from '@/demo-data/profile';
+import { getMyDemoFeedRecords, toPostItem } from '@/demo-data/feed';
 import type { CareerFormValues } from '@my-hockey-network/validation';
 
 interface PageProps {
@@ -161,9 +162,15 @@ export const ProfilePage: React.FC<PageProps> = ({
     { staleTime: 0 },
   );
 
+  // Demo/local posts are intentional filler appended after real ones, not an
+  // empty-state fallback — same policy as the Home feed (see `useHomeFeed`):
+  // real API posts always come first, and the 10 "mine" records from the
+  // shared feed dataset (`@/demo-data/feed`) are always appended after them
+  // — only on the viewer's own profile, never someone else's.
   useEffect(() => {
-    setLiveUserPosts(postsQuery.items.length > 0 ? postsQuery.items : profileDemoData.feed);
-  }, [postsQuery.items]);
+    const demoOwnPosts = isOwnProfile ? getMyDemoFeedRecords().map(toPostItem) : [];
+    setLiveUserPosts([...postsQuery.items, ...demoOwnPosts]);
+  }, [postsQuery.items, isOwnProfile]);
 
   const createPost = useProfileCreatePost();
   const handleOpenCreatePost = () => {
@@ -219,6 +226,8 @@ export const ProfilePage: React.FC<PageProps> = ({
                 onShareProfileClick={() => showSuccessToast(SUCCESS_MESSAGES.PROFILE_LINK_COPIED)}
                 followers={user?.counts?.followers ?? followers}
                 following={user?.counts?.following ?? following}
+                onFollowersClick={() => onNavigate?.('network', { connectionTab: 'followers' })}
+                onFollowingClick={() => onNavigate?.('network', { connectionTab: 'following' })}
                 roleSubtitle={roleSubtitle}
                 age={liveAge}
                 dob={liveDob}

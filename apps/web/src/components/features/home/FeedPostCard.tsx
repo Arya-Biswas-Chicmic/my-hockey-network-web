@@ -122,7 +122,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   }
 
   return (
-    <article className="mhn-feed-post-card rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur-sm overflow-hidden mb-4 transition-all">
+    <article className="mhn-feed-post-card">
       <PostCardHeader
         authorName={authorName}
         authorRole={authorRole}

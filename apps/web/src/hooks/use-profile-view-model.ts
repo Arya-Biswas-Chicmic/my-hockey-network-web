@@ -1,4 +1,5 @@
 import { resolveMediaUrl, resolveCoverUrl } from '@/utils/mediaUtils';
+import { getLocalAvatar } from '@/utils/local-avatar-storage';
 import type { CareerEntry } from '@my-hockey-network/core';
 import type { AuthMeResponse } from '@my-hockey-network/contracts';
 
@@ -32,8 +33,15 @@ export function useProfileViewModel(
   const rawTargetProfile = (targetResObj.profile || targetDataObj.profile || targetProfileRes) as Record<string, unknown> | null;
   const activeProfile = rawTargetProfile?.id || rawTargetProfile?.profileId || rawTargetProfile?.displayName ? rawTargetProfile : (isOwnProfile ? user?.profile : null);
   const rawProf = (activeProfile || {}) as Record<string, unknown>;
+  // A genuinely-fetched profile (even one with lots of unset optional fields, like a
+  // brand-new account) must never be padded out with `fallbackProfile`'s demo values —
+  // that would silently present fabricated position/DOB/height/etc. as the user's real
+  // data, and would get submitted back to the backend as real if Edit Profile is saved
+  // untouched (docs/DEMO_DATA_POLICY.md). The demo fallback is only for the case where
+  // there is no real profile to show at all.
+  const hasRealProfile = Boolean(rawProf.id || rawProf.profileId || rawProf.displayName);
   const valueFor = (...keys: string[]): unknown => {
-    for (const source of [rawProf, fallbackProfile]) {
+    for (const source of hasRealProfile ? [rawProf] : [rawProf, fallbackProfile]) {
       for (const key of keys) {
         const value = source[key];
         if (value !== null && value !== undefined && value !== '') return value;
@@ -41,11 +49,18 @@ export function useProfileViewModel(
     }
     return undefined;
   };
-  const resolvedProfile = { ...fallbackProfile, ...rawProf };
+  const resolvedProfile = hasRealProfile ? rawProf : { ...fallbackProfile, ...rawProf };
 
   const liveName = String(valueFor('displayName', 'name') || 'Player');
   const rawAvatar = valueFor('avatarUrl') as string | undefined;
-  const liveAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.webp');
+  // Own profile prefers the local-first photo cache over whatever the
+  // backend returned (feedback 2026-08-29 — see
+  // `@/utils/local-avatar-storage`). This hook's own `activeProfile` comes
+  // from a separate `getProfile()` fetch, not the auth-context `user` that
+  // already carries this override, so it needs its own lookup here too.
+  const ownProfileId = String(rawProf.id || rawProf.profileId || '');
+  const localAvatar = isOwnProfile ? getLocalAvatar(ownProfileId) : null;
+  const liveAvatar = resolveMediaUrl(localAvatar || rawAvatar, '/userPlaceholder.webp');
   const rawCover =
     (valueFor('coverImageUrl', 'coverUrl', 'coverImageKey') as string | undefined);
   const liveCoverImage = resolveCoverUrl(rawCover, '/cover.webp');
@@ -63,7 +78,7 @@ export function useProfileViewModel(
 
   // Live profile field fallbacks
   const liveBio = String(valueFor('bio') || '');
-  const livePosition = String(valueFor('position') || 'Center');
+  const livePosition = String(valueFor('position') || '');
   const jerseyNumber = valueFor('jerseyNumber');
   const liveJersey = jerseyNumber !== null && jerseyNumber !== undefined ? String(jerseyNumber) : '';
   const liveCity = String(valueFor('city', 'location') || '');
@@ -71,7 +86,7 @@ export function useProfileViewModel(
     valueFor('dateOfBirth', 'dob', 'date_of_birth') ||
     (isOwnProfile ? user?.profile?.dateOfBirth : null);
   const liveDob = rawDob ? (String(rawDob).includes('T') ? String(rawDob).split('T')[0] : String(rawDob)) : '';
-  const liveGender = String(valueFor('genderCategory', 'gender') || 'Male');
+  const liveGender = String(valueFor('genderCategory', 'gender') || '');
 
   // `ProfileReadResponse.profile.age` is computed server-side when present;
   // otherwise derive it client-side from DOB rather than showing nothing.

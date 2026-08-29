@@ -178,8 +178,12 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
           </Button>
         </div>
 
-        {/* Notification Items List */}
-        <div className="flex flex-col gap-1 mt-2 max-w-[840px]">
+        {/* Notification Items List — `gap-2` (8px), matching the Home
+            feed's own post-to-post gap, the project's one reference
+            spacing for a vertical card stack (feedback 2026-08-30:
+            "spacing between two feed this is ideal spacing I need
+            everywhere"). */}
+        <div className="flex flex-col gap-2 mt-2 max-w-[840px]">
           {filteredNotifications.map((notif) => (
             <NotificationCard
               key={notif.id}

@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { QueryKeys } from '@my-hockey-network/contracts';
 import { FeedPostProps } from '@/components/features/home/FeedPostCard';
-import { FeedService, FIGMA_MOCK_POSTS } from '@/services/feed.service';
+import { FeedService } from '@/services/feed.service';
+import { getHomeFeedDemoPosts } from '@/demo-data/home';
 import { useInfiniteListQuery } from '@/query/use-infinite-query';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useAuth } from '@/hooks/use-auth';
 import { getApiErrorStatus, extractErrorMessage } from '@/utils/toast';
 import { HomeFeedTab } from '@/types/home.types';
 import { SEARCH_DEBOUNCE_MS } from '@/constants/home.constants';
+import { resolveMediaUrl } from '@/utils/mediaUtils';
 
 export interface FeedErrorState {
   isServerError: boolean;
@@ -81,14 +83,43 @@ export function useHomeFeed() {
       }
     : null;
 
-  // Demo fallback only once the first page has genuinely resolved empty —
-  // never while still loading (that flashed demo content before real posts
-  // arrived, per this session's Profile Posts review finding) and never on
-  // a real fetch error (that's `feedError`'s job, not a fallback's).
-  const feedPosts =
-    !feedQuery.isLoading && !feedError && feedQuery.items.length === 0
-      ? FIGMA_MOCK_POSTS
-      : feedQuery.items;
+  // Demo/local posts are intentional filler, not an empty-state fallback —
+  // product direction 2026-08-29: "demo posts were added purposely to show
+  // how the feed page will look... after getting feed from APIs we will
+  // append the local feed." So real API posts always come first (never
+  // shown while still loading — `Feed`'s own `isLoading` branch renders the
+  // skeleton instead of `feedPosts` for that), and the local set is always
+  // appended after them, whether the real page came back empty, partial, or
+  // full. Do not gate this on `feedQuery.items.length` again — a prior pass
+  // in this session did that by mistake, treating it as a demo-data-policy
+  // violation when it's actually the intended feed composition.
+  const viewer = useMemo(
+    () => ({
+      name: user?.profile?.displayName || undefined,
+      avatar: user?.profile?.avatarUrl ? resolveMediaUrl(user.profile.avatarUrl) : undefined,
+      role: user?.profile?.roleTag || user?.primaryRole || undefined,
+    }),
+    [user],
+  );
+
+  const demoPosts = useMemo(() => {
+    const normalizedSearch = debouncedSearchQuery.trim().toLowerCase();
+    const posts = getHomeFeedDemoPosts(activeFeedTab, viewer);
+    if (!normalizedSearch) return posts;
+    return posts.filter((post) =>
+      `${post.authorName} ${post.authorRole ?? ''} ${post.content}`.toLowerCase().includes(normalizedSearch),
+    );
+  }, [activeFeedTab, debouncedSearchQuery, viewer]);
+
+  // API data remains authoritative and stays first; the local set is always
+  // appended after it in this presentation model only (never written into
+  // the TanStack cache, so it never gets treated as real, paginated data).
+  const feedPosts = useMemo(
+    () => activeFeedTab === HomeFeedTab.FOR_YOU
+      ? [...feedQuery.items, ...demoPosts]
+      : [...demoPosts],
+    [activeFeedTab, demoPosts, feedQuery.items],
+  );
 
   const handleFollowChange = (targetAuthorKey: string, targetFollowingState: boolean) => {
     // Cache-level optimistic update isn't wired for the infinite query yet;
@@ -126,11 +157,11 @@ export function useHomeFeed() {
     debouncedSearchQuery,
     sortBy,
     setSortBy,
-    isPageLoading: !isAuthResolved || (feedQuery.isLoading && feedQuery.items.length === 0),
+    isPageLoading: activeFeedTab === HomeFeedTab.FOR_YOU && (!isAuthResolved || (feedQuery.isLoading && feedQuery.items.length === 0)),
     isFeedRefreshing: feedQuery.isLoading,
     feedPosts,
-    feedError,
-    hasNextPage: feedQuery.hasNextPage,
+    feedError: activeFeedTab === HomeFeedTab.FOR_YOU ? feedError : null,
+    hasNextPage: activeFeedTab === HomeFeedTab.FOR_YOU && feedQuery.hasNextPage,
     isFetchingNextPage: feedQuery.isFetchingNextPage,
     onLoadMore: feedQuery.fetchNextPage,
     handleFollowChange,

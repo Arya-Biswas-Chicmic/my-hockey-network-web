@@ -39,44 +39,40 @@ export function PostCardHeader({
   onReportClick,
 }: Readonly<PostCardHeaderProps>) {
   return (
-    <div className="mhn-post-header flex items-center justify-between p-4">
-      <div className="mhn-post-author-group flex items-center gap-3">
-        <div className="mhn-author-avatar-box relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-slate-800">
+    <div className="mhn-post-header">
+      <div className="mhn-post-author-group">
+        <div className="mhn-author-avatar-box">
           <FallbackImage
             src={authorAvatar}
             alt={authorName}
             fill
-            sizes="40px"
-            className="mhn-author-avatar-img object-cover"
+            sizes="48px"
+            className="mhn-author-avatar-img"
           />
         </div>
-        <div className="mhn-author-meta flex flex-col">
-          <h4 className="mhn-author-name text-sm font-bold text-slate-100 leading-tight">{authorName}</h4>
-          <span className="mhn-author-subtitle text-xs text-slate-400">
+        <div className="mhn-author-meta">
+          <h4 className="mhn-author-name">{authorName}</h4>
+          <span className="mhn-author-subtitle">
             {authorRole} • {authorTime}
           </span>
         </div>
       </div>
 
-      <div className="mhn-post-header-actions flex items-center gap-2">
+      <div className="mhn-post-header-actions">
         {!isSelf && (
           <Button
             onClick={onToggleFollow}
             disabled={isFollowingLoading}
-            className={`mhn-btn-follow rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${
-              isFollowing
-                ? 'bg-[#0D1A30] text-white border border-[#152238] shadow-sm'
-                : 'bg-[#07101E] text-[#168BFF] border border-[#168BFF] hover:bg-[#168BFF]/10'
-            } ${isFollowingLoading ? 'opacity-50 cursor-wait' : ''}`}
+            className={`mhn-btn-follow ${isFollowing ? 'mhn-btn-following' : ''}`}
             title={!canFollow ? 'Parent did not give permission' : undefined}
           >
             {!canFollow ? (
-              <span className="flex items-center gap-1">
+              <span className="mhn-follow-label">
                 <LockKeyhole size={12} aria-hidden={true} />
                 Follow
               </span>
             ) : isFollowingLoading ? (
-              <Spinner size="sm" color={isFollowing ? '#FFFFFF' : '#168BFF'} />
+              <Spinner size="sm" />
             ) : isFollowing ? (
               'Following'
             ) : (
@@ -85,10 +81,10 @@ export function PostCardHeader({
           </Button>
         )}
 
-        <div className="relative">
+        <div className="mhn-post-menu-container">
           <Button
             onClick={onToggleMenu}
-            className="mhn-btn-more-options p-1.5 text-slate-400 hover:text-slate-200"
+            className="mhn-btn-more-options"
             aria-label="More options"
           >
             <MoreHorizontal size={20} aria-hidden={true} />

@@ -20,21 +20,22 @@ export function PostCardContent({
   eventDateTag,
 }: Readonly<PostCardContentProps>) {
   return (
-    <div className="mhn-post-content space-y-3">
+    <div className="mhn-post-content">
       {content && (
-        <p className={`mhn-post-text ${!isExpanded ? 'mhn-post-text-truncated' : ''}`}>
-          {content}
-        </p>
-      )}
+        <div className="mhn-post-copy">
+          <p className={`mhn-post-text ${!isExpanded ? 'mhn-post-text-truncated' : ''}`}>
+            {content}
+          </p>
 
-      {content && content.length > 120 && (
-        <Button onClick={onToggleExpand} className="mhn-post-more-btn text-xs text-blue-400 font-medium">
-          {isExpanded ? 'Show less' : '...more'}
-        </Button>
+          {content.length > 120 && (
+            <Button onClick={onToggleExpand} className="mhn-post-more-btn">
+              {isExpanded ? 'Show less' : '...more'}
+            </Button>
+          )}
+        </div>
       )}
 
       <PostMedia postImage={postImage} images={images} altText="Post attachment" eventDateTag={eventDateTag} />
     </div>
   );
 }
-

@@ -107,6 +107,13 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             onChange={setActiveExploreTab}
           />
 
+          {/* Post stack — its own `gap-2` (8px), matching the Home feed's
+              post-to-post gap (the project's one reference spacing for a
+              vertical card stack, feedback 2026-08-30: "spacing between two
+              feed this is ideal spacing I need everywhere"), kept separate
+              from the outer section's `gap-5` which spaces the search bar/
+              tabs chrome above it instead. */}
+          <div className="flex flex-col gap-2">
           {/* POST 1: KC Blueknocks */}
           <article className="mhn-explore-post-card bg-[#0A1220] border border-[#162238] rounded-2xl p-4 flex flex-col gap-3 shadow-lg">
             {/* Post Header */}
@@ -315,6 +322,7 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               </div>
             </div>
           </article>
+          </div>
         </section>
 
         {/* RIGHT SIDEBAR COLUMN: YOU MIGHT LIKE */}

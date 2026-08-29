@@ -43,12 +43,11 @@ export function ProfilePostsTab({
     onLoadMore,
   });
   return (
-    <section aria-label="Profile posts" className="flex flex-col gap-4">
-      <div className="flex flex-col gap-4">
+    <section aria-label="Profile posts" className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2">
         {posts.map((post) => {
               const author: NonNullable<PostItem['author']> = post.authorProfile || post.author || { id: '', displayName: '' };
               const postName = author.displayName || authorName;
-              const postAvatar = author.avatarUrl || authorAvatar;
               const postRole = author.position
                 ? `${author.position}${author.jerseyNumber ? ` • #${author.jerseyNumber}` : ''}`
                 : author.roleTag || author.primaryRole || `${authorRole}${jerseyText ? ` • #${jerseyText}` : ''}`;
@@ -58,6 +57,14 @@ export function ProfilePostsTab({
               // intentionally represent a team/person post so the Figma follow state
               // remains visible without pretending the signed-in user authored it.
               const isSelfPost = !post.id.startsWith('demo-') || author.id.startsWith('demo-profile-');
+              // `authorAvatar` (this page's own `liveAvatar`) already resolves
+              // through the local photo cache for the owning profile — for the
+              // viewer's own posts specifically, that must win over whatever
+              // stale `avatarUrl` this individual post record still has
+              // embedded from fetch time (feedback 2026-08-30: "I updated the
+              // profile photo only this post doesn't have"). Other authors'
+              // posts keep using their own embedded avatar as before.
+              const postAvatar = (isSelfPost ? authorAvatar || author.avatarUrl : author.avatarUrl || authorAvatar) || undefined;
 
               return (
                 <FeedPostCard

@@ -29,6 +29,7 @@ import { useQuery } from '@/query';
 import { Search } from 'lucide-react';
 import { PageShell } from '@/components/layout/PageShell';
 import { extractErrorMessage, getApiErrorStatus } from '@/utils/toast';
+import { useSearchParams } from 'next/navigation';
 
 
 interface PageProps {
@@ -37,8 +38,14 @@ interface PageProps {
 }
 
 export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
+  const searchParams = useSearchParams();
+  const initialConnectionTab = searchParams.get('tab') === 'followers' ? 'followers' : 'following';
   const { user, loadAuthMe } = useAuth();
-  const [currentView, setCurrentView] = useState<NetworkViewModeEnum>(NetworkViewModeEnum.NETWORK);
+  const [currentView, setCurrentView] = useState<NetworkViewModeEnum>(
+    searchParams.get('view') === NetworkViewModeEnum.CONNECTIONS
+      ? NetworkViewModeEnum.CONNECTIONS
+      : NetworkViewModeEnum.NETWORK,
+  );
   const [selectedGroupId, setSelectedGroupId] = useState<string>();
   const [activeFilterTab, setActiveFilterTab] = useState('Invitations');
   const [searchQuery, setSearchQuery] = useState('');
@@ -241,7 +248,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
               )}
 
               {currentView === 'connections' ? (
-                <ConnectionsView onMessageClick={() => onNavigate && onNavigate('messaging')} />
+                <ConnectionsView initialTab={initialConnectionTab} onMessageClick={() => onNavigate && onNavigate('messaging')} />
               ) : currentView === 'groups' ? (
                 <GroupsView
                   onViewGroup={(groupId) => {

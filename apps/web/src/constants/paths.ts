@@ -14,6 +14,7 @@ export const paths = {
   groups: '/groups',
   teams: '/teams',
   saved: '/saved',
+  connections: '/connections',
   auth: {
     onboarding: '/onboarding',
     guardian: '/guardian',

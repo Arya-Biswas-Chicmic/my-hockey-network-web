@@ -48,7 +48,14 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
 
   const wards = useSupervisionWards({
     initialWardId: initialWardIdFromNav,
-    onWardsRefreshed: (wardId) => void permissions.fetchControlsForWard(wardId),
+    // Same load/finally pairing as `handleSelectWard` below — this used to
+    // call `fetchControlsForWard` without ever touching `isControlsLoading`
+    // at all, so a ward auto-selected on page load (as opposed to one the
+    // user clicks) left the permissions skeleton showing forever too.
+    onWardsRefreshed: (wardId) => {
+      permissions.setIsControlsLoading(true);
+      void permissions.fetchControlsForWard(wardId).finally(() => permissions.setIsControlsLoading(false));
+    },
     showToast,
   });
 

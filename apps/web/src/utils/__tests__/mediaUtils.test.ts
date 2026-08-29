@@ -68,15 +68,19 @@ describe('resolveCoverUrl', () => {
 });
 
 describe('isRenderableImageUrl', () => {
-  it('accepts https and local-relative URLs', () => {
+  it('accepts https, local-relative, and data: image URLs', () => {
     expect(isRenderableImageUrl('https://example.com/x.png')).toBe(true);
     expect(isRenderableImageUrl('HTTPS://example.com/x.png')).toBe(true);
     expect(isRenderableImageUrl('/local/path.png')).toBe(true);
+    // The local-first avatar cache's own format (@/utils/local-avatar-storage,
+    // feedback 2026-08-29) — Next's <Image> renders these unoptimized, so
+    // next.config.js's https-only remotePatterns never applies to them.
+    expect(isRenderableImageUrl('data:image/png;base64,abc')).toBe(true);
+    expect(isRenderableImageUrl('DATA:image/jpeg;base64,abc')).toBe(true);
   });
 
   it('rejects http and other schemes that next.config.js\'s https-only remotePatterns would reject', () => {
     expect(isRenderableImageUrl('http://localhost:3000/x.jpg')).toBe(false);
     expect(isRenderableImageUrl('ftp://example.com/x.png')).toBe(false);
-    expect(isRenderableImageUrl('data:image/png;base64,abc')).toBe(false);
   });
 });

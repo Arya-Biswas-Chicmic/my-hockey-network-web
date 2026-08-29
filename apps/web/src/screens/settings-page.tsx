@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useDebounce } from '@/hooks/use-debounce';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { PageShell } from '@/components/layout/PageShell';
+import { CompactPageHeader } from '@/components/layout/CompactPageHeader';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
 import { SettingsSubTabEnum } from '@my-hockey-network/contracts';
 import {
@@ -104,47 +105,49 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate, onLogout
   return (
     <div className="mhn-settings-page-root">
       <PageShell className="mhn-settings-main-container">
-        <div className="mhn-settings-top-bar">
-          <h1 className="mhn-settings-title">Settings</h1>
-          <div className="mhn-settings-search-wrapper">
-            <Search className="mhn-settings-search-icon" size={16} aria-hidden="true" />
-            <Input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                const val = e.target.value;
-                setSearchQuery(val);
-                if (val.toLowerCase().includes('notif')) {
-                  setActiveSubTab(SettingsSubTabEnum.NOTIFICATION);
-                } else if (val.toLowerCase().includes('block')) {
-                  setActiveSubTab(SettingsSubTabEnum.BLOCKED);
-                } else if (val.toLowerCase().includes('email') || val.toLowerCase().includes('role') || val.toLowerCase().includes('lang')) {
-                  setActiveSubTab(SettingsSubTabEnum.GENERAL);
-                }
-              }}
-              placeholder="Search settings..."
-              className="mhn-settings-search-input"
-            />
-          </div>
-        </div>
+        <CompactPageHeader
+          title="Settings"
+          actions={
+            <div className="mhn-settings-search-wrapper">
+              <Search className="mhn-settings-search-icon" size={16} aria-hidden="true" />
+              <Input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSearchQuery(val);
+                  if (val.toLowerCase().includes('notif')) {
+                    setActiveSubTab(SettingsSubTabEnum.NOTIFICATION);
+                  } else if (val.toLowerCase().includes('block')) {
+                    setActiveSubTab(SettingsSubTabEnum.BLOCKED);
+                  } else if (val.toLowerCase().includes('email') || val.toLowerCase().includes('role') || val.toLowerCase().includes('lang')) {
+                    setActiveSubTab(SettingsSubTabEnum.GENERAL);
+                  }
+                }}
+                placeholder="Search settings..."
+                className="mhn-settings-search-input"
+              />
+            </div>
+          }
+        />
 
         <div className="mhn-settings-card-wrapper">
           <aside className="mhn-settings-sidebar">
             <Button
               onClick={() => setActiveSubTab(SettingsSubTabEnum.GENERAL)}
-              className={`mhn-settings-subtab-btn ${activeSubTab === SettingsSubTabEnum.GENERAL ? 'mhn-subtab-active' : ''}`}
+              className={`mhn-settings-subtab-btn justify-start ${activeSubTab === SettingsSubTabEnum.GENERAL ? 'mhn-subtab-active' : ''}`}
             >
               General
             </Button>
             <Button
               onClick={() => setActiveSubTab(SettingsSubTabEnum.NOTIFICATION)}
-              className={`mhn-settings-subtab-btn ${activeSubTab === SettingsSubTabEnum.NOTIFICATION ? 'mhn-subtab-active' : ''}`}
+              className={`mhn-settings-subtab-btn justify-start ${activeSubTab === SettingsSubTabEnum.NOTIFICATION ? 'mhn-subtab-active' : ''}`}
             >
               Notification
             </Button>
             <Button
               onClick={() => setActiveSubTab(SettingsSubTabEnum.BLOCKED)}
-              className={`mhn-settings-subtab-btn ${activeSubTab === SettingsSubTabEnum.BLOCKED ? 'mhn-subtab-active' : ''}`}
+              className={`mhn-settings-subtab-btn justify-start ${activeSubTab === SettingsSubTabEnum.BLOCKED ? 'mhn-subtab-active' : ''}`}
             >
               Blocked Users
             </Button>

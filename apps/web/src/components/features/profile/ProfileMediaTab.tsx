@@ -4,14 +4,18 @@ import { useState } from 'react';
 import { Expand, X } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { FallbackImage } from '@/components/ui/fallback-image';
-import { profileDemoData } from '@/demo-data/profile';
+import { getMyDemoMediaItems } from '@/demo-data/feed';
 
+/** Same shared feed dataset the Home feed and Profile > Posts read from
+ * (`@/demo-data/feed`) — a photo posted to the feed is the same photo shown
+ * here, instead of an unrelated standalone media fixture. */
 export function ProfileMediaTab() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const mediaItems = getMyDemoMediaItems();
 
   return (
     <section aria-label="Profile media" className="grid grid-cols-2 gap-1 overflow-hidden rounded-lg border border-auth-stroke bg-auth-field p-1">
-      {profileDemoData.media.map((item) => (
+      {mediaItems.map((item) => (
         <Button key={item.id} onClick={() => setSelectedImage(item.src)} className="group relative aspect-square min-h-0 overflow-hidden bg-secondary" aria-label={`Open ${item.alt}`}>
           <FallbackImage src={item.src} alt={item.alt} fill sizes="(max-width: 520px) 50vw, 156px" className="object-cover transition-transform duration-300 group-hover:scale-105" />
           <span className="absolute right-2 top-2 grid size-7 place-items-center rounded-full bg-background/75 text-foreground opacity-0 backdrop-blur transition-opacity group-hover:opacity-100"><Expand size={14} aria-hidden="true" /></span>

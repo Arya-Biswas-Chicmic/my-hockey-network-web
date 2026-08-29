@@ -18,7 +18,13 @@ export const UpcomingEventsWidget: React.FC<UpcomingEventsWidgetProps> = ({
   const { events, isLoading } = useUpcomingEvents(initialEvents);
 
   return (
-    <div className="mhn-sidebar-card rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 backdrop-blur-sm mb-4">
+    // No `mb-4` — the parent `.mhn-layout-col-right` already applies a
+    // uniform `gap: 22px` between every sidebar widget; this extra
+    // margin-bottom stacked on top of it, making the gap below this card
+    // ~38px instead of the 22px every other pair uses (feedback 2026-08-30:
+    // "fix the space and keep the spacing even... like we have in between
+    // who to know and upcoming event").
+    <div className="mhn-sidebar-card rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 backdrop-blur-sm">
       <div className="mhn-sidebar-card-header flex items-center justify-between mb-3">
         <h3 className="mhn-sidebar-card-title text-sm font-bold text-slate-100">Upcoming Events</h3>
         {onViewAll && (

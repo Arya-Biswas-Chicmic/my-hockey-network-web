@@ -18,6 +18,8 @@ const DEFAULT_CHATS: ChatItem[] = [
     lastMessage: 'Gerard White: Etiam tempor orci...',
     unreadCount: 0,
     isGroup: true,
+    // A 187-person official-team broadcast group — only its admins post.
+    canMessage: false,
   },
   {
     id: 'steve',
@@ -128,8 +130,11 @@ export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
   const [chats] = useState<ChatItem[]>(DEFAULT_CHATS);
   const [conversations, setConversations] = useState(INITIAL_CONVERSATIONS);
 
+  const selectedChat = chats.find((chat) => chat.id === selectedChatId);
+  const canMessageSelectedChat = selectedChat?.canMessage ?? true;
+
   const handleSendMessage = (text: string) => {
-    if (!selectedChatId) return;
+    if (!selectedChatId || !canMessageSelectedChat) return;
 
     const currentConv = conversations[selectedChatId];
     if (!currentConv) return;
@@ -192,6 +197,7 @@ export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
               bannerUrl={activeConv?.bannerUrl}
               messages={activeConv?.messages}
               onSendMessage={handleSendMessage}
+              canMessage={canMessageSelectedChat}
             />
           </section>
         </PageShell>

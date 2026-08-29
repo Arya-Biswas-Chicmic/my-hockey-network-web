@@ -4,6 +4,42 @@ Last reviewed: 2026-08-30
 
 ## Completed
 
+- Corrected the Home/Profile feed end-of-scroll clipping reported on 2026-08-29. The authenticated
+  content shell remains viewport-fixed, but the shared `mhn-home-main-layout` now owns an explicit
+  `minmax(0, 1fr)` desktop row and the center column is the single height-bounded scroll owner with
+  bottom breathing room. The last post, its complete media, and action footer can therefore reach
+  the visible viewport instead of stopping half-rendered behind the shell boundary. Tablet/mobile
+  explicitly return to normal document flow rather than inheriting the desktop nested scroller.
+
+- Implemented the populated Home and Connections designs from Figma nodes `1398:3904`,
+  `2176:17096`, and `2176:18260`. Home now has ten centralized JSON posts for each of For You,
+  Network, and Groups, with multi-image posts routed through the existing shared carousel. Live For
+  You pages remain first and preview records are appended only in `useHomeFeed`; Network and Groups
+  no longer stop at placeholder screens. The existing center-column scroll and API infinite-query
+  sentinel remain authoritative. Connections now opens its existing real FOLLOW relationship API
+  as Following/Followers tabs, renders the Figma four-column responsive card layout, keeps API
+  members first, appends centralized connection fixtures, and retains retry visibility if the live
+  request fails. Profile follower/following counts now deep-link into this one shared screen with
+  the matching tab selected. Added fixture integrity tests covering counts, IDs, tab ownership, and
+  multi-image coverage.
+
+- Replaced the authenticated sidebar's mixed icon implementation with the exact selected/unselected
+  Figma assets supplied for Home, Network, Events, Messaging, Explore, Notifications, Profile,
+  Saved, Dashboard, Associations, Teams, Feed, and Groups. Desktop and mobile menus now share the
+  typed `SidebarNavigationIcon` renderer, while route configuration stores only the semantic icon
+  name. CSS-mask rendering preserves the supplied SVG geometry while semantic theme colors keep all
+  exports visible across light/dark themes. The currently visible nine routes use
+  their matching families; the remaining four approved families are ready for their routes without
+  introducing duplicate components.
+- Matched the shared feed card to Figma nodes `1468:9944`, `1468:9796`, and `1468:9883`: 48px author
+  avatar, exact header/copy/footer padding, outlined 36px Follow action, theme-tokenized dark post
+  surface and border, and 32px footer actions. Removed the card's obsolete bottom margin and set the
+  owning feed/profile stacks to the Figma `1806:15962` 8px inter-card gap, preventing the previous
+  margin-plus-gap accumulation. Added navigation asset/state tests. Full `pnpm verify` passes:
+  documentation/security/component-reuse gates, web and mobile TypeScript/lint, 289 tests across 42
+  files, 95.32% statements / 89.08% branches / 98.14% functions / 95.48% lines, and the production
+  Next.js build.
+
 - Rebuilt Profile against the six supplied Figma nodes (`1642:9236`, `1725:17554`, `1725:20538`,
   `2004:20941`, `1733:22397`, and `2176:12730`) after re-reading the current branch and correcting
   the incomplete first pass:
@@ -1841,6 +1877,337 @@ Last reviewed: 2026-08-30
   Home exactly (was 1180px); still pending — reshaping Explore's actual
   content (search bar at the top of the feed, "who to know" shifted up) to
   visually mirror Home, not just share its width.
+
+- Debugged "why is feed not scrolling till end" (2026-08-29): root cause was
+  CSS, not the pagination code. `.mhn-home-main-layout`'s single implicit
+  grid row sized itself to content instead of the viewport (`align-items:
+  start`, no explicit row height), so `.mhn-layout-col-center`'s `lg:h-full`
+  had nothing definite to resolve against and the column's own box grew
+  taller than `.mhn-app-content`'s clipped viewport — permanently hiding the
+  bottom of the feed, including the infinite-scroll sentinel that triggers
+  `fetchNextPage`. Fixed with `grid-template-rows: minmax(0, 1fr)` +
+  `align-items: stretch`. Verified live: created 11 real posts, confirmed
+  the sentinel became reachable, scrolling fired a real `cursor=...` page-2
+  request, and the paginated post rendered.
+
+- Demo/local feed data model reset to match actual product intent
+  (2026-08-29): a prior pass in this session had gated the Home feed's demo
+  posts to only show when the real feed was empty, treating the always-
+  appended demo tail as a demo-data-policy violation — corrected feedback:
+  "demo posts were added purposely to show how the feed page will
+  look... after getting feed from APIs we will append the local feed." Real
+  API posts now always come first (never during loading) with the local set
+  always appended after, on both Home (`useHomeFeed.ts`) and Profile > Posts
+  (`profile-page.tsx`).
+  - New single shared dataset (`apps/web/src/demo-data/feed/` — 30 records:
+    10 "mine" + 20 "other", varied across text-only/single-image/multi-
+    image/event posts) replaces three previously separate, inconsistent
+    fixtures (`home/for-you.json`, `profile/feed.json`,
+    `profile/media.json`, all now deleted). `toFeedPostProps`/`toPostItem`
+    adapters project the same records into whatever shape each surface
+    already expects; `isMine` records get the real signed-in viewer's name/
+    avatar stamped on at render time rather than a fixed fake identity.
+    Home feed, Profile > Posts, Profile > Media (derives its grid from the
+    viewer's own posts' images), and Saved (filters the 8 records flagged
+    `isSaved` out of the 20 "other") all read this one dataset now — "single
+    data base will be used in multiple locations."
+  - Event-kind posts got a "Register"/"Registered" CTA next to the event
+    date banner (`PostMedia.tsx`) — local toggle + toast, no registration
+    backend exists yet, same pattern already used for the demo Save button.
+  - Verified live: 30 demo posts render after real ones on Home; "mine"
+    posts show the real signed-in profile's name; Profile > Media shows
+    exactly the images from the 10 "mine" posts; Saved shows exactly the 8
+    `isSaved` records (7 posts + 1 event). `typecheck`/`lint:check`/
+    `test:run` (295/295) all pass; `profile-presentation.test.tsx` and
+    `demo-data.test.ts` updated for the new dataset shape/size.
+
+- Right rail (discovery column — Search/Who to Follow/Upcoming Events/
+  Invite & Earn) scroll clipping (2026-08-29): `.mhn-layout-col-right` had
+  `height: auto; overflow: visible`, no scroll mechanism of its own, so
+  whatever fell below `.mhn-app-content`'s clipped viewport (usually the
+  Invite & Earn card) was permanently unreachable. Fixed with `max-height:
+  100%; overflow-y: auto` (keeps `align-self: start` so it still doesn't
+  stretch to match the feed's height). Also needed `min-height: 0` — grid
+  items default to `min-height: auto` (their content's max-content size),
+  which forced the shared `minmax(0, 1fr)` row to grow to fit this column's
+  full content, defeating `.mhn-layout-col-center`'s own clipping too, the
+  same failure mode `min-h-0` already prevents there. (A ~15,500px "both
+  columns collapsed to full content height" reading seen mid-investigation
+  turned out to be the *test* browser's viewport having collapsed to 0×0
+  after a dev-server restart, tripping the `max-width: 1023px` mobile
+  layout — not a real regression; see the comment on `.mhn-layout-col-right`
+  for the dead end so it isn't rediscovered.)
+
+- Messaging layout (2026-08-29): three fixes.
+  - Chat list column narrowed 340px → 280px (gap 24px → 20px) to give the
+    conversation pane more room (~568px → ~632px) — total width unchanged
+    at 932px — "message details section looks compact... decrease the
+    width of message group... increase [conversation pane] width, keep
+    entire viewport same."
+  - "message details page height is more than others going below the
+    screen": `.mhn-messaging-page-root` was the one page wrapper not
+    participating in `.mhn-app-content`'s flex column (`min-height: 100vh`
+    instead of `flex: 1 1 auto; min-height: 0`), and `.mhn-chat-sidebar-
+    card`/`.mhn-chat-conversation-card`/`.mhn-chat-messages-stream` used
+    guessed fixed pixel heights (640px/620px) instead of filling the actual
+    available space. Replaced with the same `flex`/`min-height: 0`/
+    `grid-template-rows: minmax(0, 1fr)` + `align-items: stretch` pattern
+    Home's feed needed. Header and input footer now stay fixed
+    (`flex-shrink: 0`); only the message stream and the chat list itself
+    scroll.
+  - `ChatItem.canMessage` (default `true`) — when `false`, `ChatConversation`
+    replaces the composer with a "Only admin can message in this group"
+    notice instead of a normal input, for chats where the viewer isn't
+    allowed to post — "where we don't have permission show only admin can
+    message." Demo data marks the 187-person "Hockey Club" group this way.
+  - Verified live: conversation card bottom now sits inside the viewport
+    (696px vs. 720px window), message stream scrolls independently of the
+    fixed header/footer, sending a message in an allowed chat still works
+    end-to-end, and the restricted group shows the lock notice instead of
+    an input.
+
+- Local-first profile photo, a new Connections nav destination, the
+  Invite & Grow widget's real crop/scroll bugs, and a scroll-to-slide
+  carousel (2026-08-30):
+  - **Profile photo local cache** — the real upload endpoint isn't working
+    right now, so `@/services/profile-photo.service.ts`'s
+    `saveProfilePhotoDummy` stands in for it (swap its body for the real
+    `uploadMediaFile`/`updateAuthProfile` call later, same return shape,
+    same call site). The cropped photo is cached in `localStorage`
+    (`@/utils/local-avatar-storage.ts`, keyed per profile id) as soon as
+    that dummy call succeeds, and **every** avatar render in the app reads
+    from that cache in preference to the backend's `avatarUrl` — patched
+    once at `auth-context.tsx`'s `updateUser` (covers the sidebar, Home
+    feed's own-post identity) and once in `use-profile-view-model.ts`'s
+    `liveAvatar` (the Profile page's own separate `getProfile()` fetch
+    doesn't go through `auth-context`). This stays in place permanently,
+    not just until the real API works — see `docs/DEMO_DATA_POLICY.md`'s
+    new "Not demo data" section. Along the way, `resolveMediaUrl`'s
+    https-only URL guard (added earlier this session) was blocking
+    `data:image/...` URLs entirely, silently falling back to the
+    placeholder — extended to allow them, since Next's `<Image>` renders
+    data URLs unoptimized and never hits the `remotePatterns` check that
+    guard exists for.
+  - **Connections page** — `ConnectionsView` existed (`GroupsView`-style
+    tabs/search/grid) but was only reachable buried inside My Network's
+    menu. Added a dedicated `/connections` route + sidebar nav item (the
+    `network` icon assets already existed, unused, in
+    `SidebarNavigationIcon.tsx`/`index.css` — never wired into
+    `NAVIGATION_ITEMS`) rendering just `ConnectionsView` with no extra
+    left-column card, matching Figma node 2176:17096 exactly. Profile's
+    followers/following clicks now land here instead of
+    `/network?view=connections`.
+  - **Invite & Grow real bugs, not just styling** — feedback was "I asked
+    you add scrolling but no added so not able to see tha section": the
+    scroll `max-height`/`overflow-y` fix from the right-rail work above
+    *was* in place, but `.mhn-layout-col-right`'s flex children had no
+    `flex-shrink: 0`, so the browser satisfied the overflow by silently
+    squashing the *last* child (Invite & Grow, down to ~42px) instead of
+    leaving every widget at its natural size and scrolling — the entire
+    point of adding `overflow-y: auto`. Fixed with `.mhn-layout-col-right >
+    * { flex-shrink: 0; }`. Also matched Figma node 1806:16060 exactly
+    (border-only card, `#1d2432` border, `--color-primary` button) and
+    replaced the generic `/player.webp` illustration with the design's own
+    glowing-skater graphic, exported as one flattened PNG via
+    `download_assets` rather than hand-porting its ~30 nested
+    mix-blend-mode SVG layers.
+  - **Carousel scroll-to-slide** — `PostMedia.tsx`'s image carousel now
+    uses a native CSS scroll-snap track (`overflow-x: auto; scroll-snap-
+    type: x mandatory`) instead of only prev/next buttons, so trackpad
+    swipe / shift+wheel / touch drag change the image too — deliberately
+    not a custom `onWheel` handler, which would fight the feed's own
+    vertical scroll. The reported "counter and arrow rendering at the top
+    of the page, overlapping the tab bar" turned out not to be a real bug:
+    reproducing it consistently showed every `.mhn-media-badge` correctly
+    positioned against its own card once the test viewport was confirmed
+    non-zero-width — same false-alarm class already documented on
+    `.mhn-layout-col-right`.
+  - Verified live: dummy photo save round-trips through localStorage and
+    survives a full page reload (sidebar, Profile hero, and Home feed's own
+    posts all pick it up); `/connections` renders and its nav item
+    highlights active; Invite & Grow's card height goes from ~42px to its
+    real ~202px and the full card (title/description/button/illustration)
+    is reachable by scroll; carousel badge updates on programmatic
+    horizontal scroll. `typecheck`/`lint:check`/`test:run` (295/295) all
+    pass — one existing test asserting `data:` URLs were rejected was
+    updated to assert the opposite, deliberately.
+
+- Messaging composer/header cleanup, Register-button React error, repost
+  menu/Invite & Grow styling, header z-index, and the shared sticky-
+  header/scroll-body pattern rollout (2026-08-30):
+  - **Composer** — input pill `border-radius: 24px` → `8px`; Send button
+    activates immediately on text entry (see the send-button entry below —
+    this pass only wired `disabled={!inputText.trim()}`, the visual "looks
+    active" fix landed later the same day, see further down); a real emoji
+    popover (`QUICK_EMOJI`, native color emoji, no image assets needed);
+    an attach popover (`FilePickerButton`-based, Photo/Video + Document,
+    5MB limit, multi-file, no real upload yet — shows an info/error toast);
+    GIF button removed entirely.
+  - **Headers** — chat list's pencil icon replaced with `+`; conversation
+    header's `+`/Settings icons removed (no feature behind them yet;
+    Search kept).
+  - **`PostMedia.tsx` React error** — "Cannot update a component
+    (`Providers`) while rendering a different component (`PostMedia`)":
+    the Register button's `setIsRegistered(prev => {...})` updater called
+    `showSuccessToast`/`showInfoToast` as a side effect *inside* the
+    updater function — impure updaters can run during React's render
+    phase. Fixed by reading `isRegistered` directly and moving the toast
+    calls into the handler body, outside the updater.
+  - **Repost menu** — `.mhn-repost-menu-item`'s text color was
+    `var(--color-background)` (a copy/paste slip), making "Repost"
+    near-invisible dark-on-dark; fixed to a light, readable color and
+    aligned its icon with `flex-shrink: 0`.
+  - **Invite & Grow real background bug** — Tailwind-utility rewrite never
+    touched the legacy `.mhn-invite-grow-card` plain-CSS rule (light-theme
+    `#d0e2ff` border / `--color-accent-surface` background) or a
+    `:root.dark .mhn-invite-grow-card` override two classes deep that
+    always won regardless of source order — neither ever got removed.
+    Rewrote the CSS classes to match Figma exactly (transparent
+    background, `#1d2432` border) and deleted the dark-mode override.
+    Reconfirms this codebase's convention: structural chrome styling
+    belongs in `index.css`'s `.mhn-*` classes, not scattered Tailwind
+    utilities per component file.
+  - **Z-index scale, documented** — the event-register banner overlapping
+    the top header traced to `.mhn-feed-scope-tabs` sitting at `z-index: 5`
+    ; raised to `15`. Documented the scale directly in `index.css`:
+    in-post overlays = 10, in-page sticky headers = 15, `.mhn-sidebar` =
+    20.
+  - **Shared "sticky header, scrolling content" pattern** — added
+    `.mhn-page-sticky-header` / `.mhn-page-scroll-body` to `index.css`
+    (feedback: "now top will be move only content below them will
+    scroll... like explore... event have title and search and filter in
+    top bar"). Applied to `events-page.tsx` this pass; Help & Support
+    picked it up in the next entry below, others remain pending.
+
+- Settings alignment, Supervision's permanent shimmer, Help & Support's
+  theme/scroll/radius bugs, messaging media-preview + send-button-active,
+  and uneven right-sidebar spacing (2026-08-30):
+  - **Settings tab alignment** — the shared `Button` component's
+    `buttonVariants` base classes always include Tailwind `justify-center`,
+    which overrides `.mhn-settings-subtab-btn`'s plain-CSS `text-align:
+    left` (flex-item positioning isn't affected by `text-align`). Added an
+    explicit `justify-start` to each subtab button; `twMerge` (via `cn()`)
+    resolves the conflict correctly. Search input `border-radius: 20px` →
+    `8px`.
+  - **Supervision's permanent shimmer** — `isControlsLoading` initialized
+    `useState(true)` with no path to ever become `false` when zero managed
+    players exist ("No managed players found"): `setIsControlsLoading
+    (false)` only ran inside the user-click-driven `handleSelectWard`, and
+    the separate auto-select-on-load path (`onWardsRefreshed`) never
+    touched the flag at all. Fixed by defaulting to `false` and giving
+    `onWardsRefreshed` the same load/`finally` pairing `handleSelectWard`
+    already had.
+  - **Help & Support** — category pills `border-radius: 24px` → `8px`;
+    `.mhn-faq-card-item.expanded`'s hardcoded `#93C5FD`/`#F0F9FF`
+    light-theme colors (rendered as a jarring white card in dark mode)
+    replaced with the theme-aware `--color-auth-action`/
+    `--color-accent-surface`; `.mhn-faq-cat-badge`'s hardcoded `#0369A1`
+    text replaced the same way. Adopted the sticky-header/scroll-body
+    pattern; the page's own wrapper div's `min-height: 100vh` was fighting
+    the shell's `lg:h-dvh`/`lg:overflow-hidden` clipped flex column, so its
+    real content (FAQ list + ticket form + contact cards, 2700px+)
+    overflowed past the clip boundary and the whole document scrolled
+    instead — dragging the left sidebar along with it. Scoped the wrapper
+    to `flex: 1; min-height: 0; overflow: hidden` at the `lg` breakpoint so
+    only `.mhn-page-scroll-body` scrolls internally. 14 FAQs already
+    exceeded the requested 10+.
+  - **Messaging media "getting cropped"** — the conversation avatar and
+    group banner render via `object-fit: cover` into small fixed-
+    aspect-ratio boxes, which necessarily crops anything that doesn't
+    match; there was no way to see the whole image. Both are now clickable
+    and open a `Modal`-based preview with `object-fit: contain`, showing
+    the full uncropped image.
+  - **Messaging send button "active" state** — `.mhn-btn-chat-send` had no
+    default `background-color` at all, only a `:hover` one, so it only
+    ever looked active while the mouse was literally over it. Default is
+    now the active color; `:disabled` (empty input) dims it instead.
+    Enter-to-send was already wired and verified working.
+  - **Right-sidebar uneven spacing** — `.mhn-layout-col-right` already
+    applies a uniform `gap: 22px` between every widget, but
+    `UpcomingEventsWidget`'s root div also carried a stray Tailwind `mb-4`,
+    stacking an extra 16px on top of the gap below it specifically (~38px
+    vs. 22px everywhere else). Removed the redundant margin.
+  - Verified live for all of the above: Settings tabs left-align; Help &
+    Support's pills, expanded-FAQ card, and badge are all dark-themed with
+    no white patches, and scrolling the FAQ list leaves the sticky header
+    and the app's left sidebar both fixed in place (confirmed by scrolling
+    the actual `.mhn-page-scroll-body` element, not just the page — the
+    Browser pane's own `scroll` action was independently confirmed to
+    force `documentElement.scrollTop` in a way a real wheel event over a
+    genuinely non-scrollable ancestor chain wouldn't, i.e. a testing-tool
+    artifact, not the bug); clicking the messaging group banner/avatar
+    opens the full uncropped image; the send button is visibly active
+    as soon as text is typed, with the mouse elsewhere on screen; Enter
+    sends a message end-to-end; the three right-sidebar gaps measure 22px/
+    22px/22px. `typecheck`/`lint:check`/`check-component-reuse.mjs`/
+    `test:run` (295/295) all pass.
+
+- Own-post avatar staleness, project-wide 8px card-stack spacing, logout
+  alignment, and a compact sidebar-less shell for Settings/Supervision/
+  Help & Support (2026-08-30):
+  - **Feed/Profile post avatars going stale** — `mapFeedPosts` and
+    `ProfilePostsTab` both read the post record's own embedded
+    `author.avatarUrl`, which is whatever the backend/demo data had at
+    fetch time; updating the local photo cache (see the earlier
+    "Profile photo local cache" entry) never touched already-fetched
+    posts, so the viewer's OWN older posts kept showing the old photo
+    even after every other avatar in the app updated (feedback
+    2026-08-30: "I updated the profile photo only this post doesn't
+    have... we need to still update the profile photo if same user").
+    Both now prefer the local cache over the embedded value specifically
+    for the viewer's own posts (`isSelf`/`isSelfPost`); other authors'
+    posts are untouched.
+  - **Project-wide 8px spacing** — `.mhn-feed-posts-stack`'s 8px
+    inter-post gap (Figma node 1806:15962) is now the one reference
+    spacing for any vertical card stack, applied to
+    `.mhn-layout-col-right` (was 22px), Notifications' and Saved's item
+    lists, and Explore's post stack (feedback: "spacing between two feed
+    this is ideal spacing I need everywhere, in right panel side and in
+    other tabs also"). Left untouched: multi-column card grids (Groups)
+    and dense single-line list rows (Messaging's chat list), which are
+    different UI shapes than a feed-style card stack.
+  - **Logout button alignment** — `.mhn-dropdown-logout-btn` had no
+    `justify-content` of its own, so nothing opposed the shared `Button`
+    component's Tailwind `justify-center` base class, and it rendered
+    centered instead of flush left like every other row in that dropdown
+    (which all set `justify-content: space-between` explicitly). Fixed
+    by adding `justify-content: flex-start`.
+  - **Compact sidebar-less shell** — Figma (node 2176:19341, Supervision)
+    shows Settings/Supervision/Help & Support full-bleed with no
+    persistent app sidebar, just a back arrow in the page's own header
+    (feedback: "check how setting is looking no left panel only back
+    button, similarly for help and support"). `AppShell.tsx` now detects
+    those three routes and skips `LeftSidebar`/`MobileNavigation`
+    entirely rather than hiding them with CSS, backed by a new
+    `.mhn-app-shell--compact` grid variant that drops the sidebar
+    column. New shared `CompactPageHeader` component (back arrow + title
+    + optional right-side actions) used by Settings and Help & Support;
+    Supervision's existing ward-list panel header grew its own back
+    arrow instead, since Figma nests it there rather than in a separate
+    top bar.
+  - **Help & Support compacted further** — the old hero (icon badge +
+    title + subtitle + a large centered search box) is gone, replaced by
+    `CompactPageHeader` with the search box in its `actions` slot,
+    freeing up real height for the FAQ list (feedback: "we have 14
+    articles which looks in small area... increase their area so that
+    we can easily see 3 4 faq"). Also found and fixed the actual reason
+    the FAQ chevron read as a barely-visible dot: `.mhn-arrow-rotate`
+    hardcoded a `9px × 4.5px` box sized for a *different* small inline
+    caret icon on the event-detail page, and the FAQ chevron was
+    reusing that same class — split into its own `.mhn-faq-arrow-rotate`
+    at a real 24px instead of enlarging the shared class and breaking
+    the other use site.
+  - Verified live: Settings and Help & Support both render with no main
+    app sidebar, a back arrow + title, and the full viewport width;
+    Help & Support now shows 3-4 FAQ cards at once with clearly visible
+    chevrons; the right sidebar's three gaps are all 8px. Supervision's
+    back-arrow change was verified by code/typecheck only — the
+    available test session isn't a parent-role account, so
+    `ParentRoleGuard` redirects it before the page renders; the same
+    `AppShell` mechanism already proven on Settings/Help applies
+    identically here since it's a pure pathname check with no role
+    dependency. `typecheck`/`lint:check`/`check-component-reuse.mjs`/
+    `test:run` (295/295) all pass.
 
 ## Current quality gates
 

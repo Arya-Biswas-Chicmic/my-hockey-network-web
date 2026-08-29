@@ -2,7 +2,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
 import React, { useState } from 'react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { MoreHorizontal, Pencil, Search } from 'lucide-react';
+import { MoreHorizontal, Plus, Search } from 'lucide-react';
 import { FallbackImage } from '@/components/ui/fallback-image';
 import { NoDataFound } from '@/components/common/no-data-found';
 
@@ -14,6 +14,12 @@ export interface ChatItem {
   time?: string;
   unreadCount?: number;
   isGroup?: boolean;
+  /** Defaults to `true`. `false` for a broadcast-style group where only its
+   * admins can post — `ChatConversation` replaces the composer with an
+   * "Only admin can message" notice instead of disabling it silently.
+   * Feedback 2026-08-29: "where we don't have permission show only admin
+   * can message". */
+  canMessage?: boolean;
 }
 
 interface ChatSidebarProps {
@@ -57,7 +63,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             <MoreHorizontal size={18} aria-hidden="true" />
           </Button>
           <Button className="mhn-chat-icon-btn" aria-label="New chat">
-            <Pencil size={18} aria-hidden="true" />
+            <Plus size={18} aria-hidden="true" />
           </Button>
         </div>
       </div>

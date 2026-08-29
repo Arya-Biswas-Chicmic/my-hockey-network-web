@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getNavigationItemById,
   isNavigationItemActive,
+  NAVIGATION_ITEMS,
 } from '@/constants/navigation.constants';
 
 describe('navigation route matching', () => {
@@ -27,5 +28,20 @@ describe('navigation route matching', () => {
 
     expect(home).toBeDefined();
     expect(isNavigationItemActive('/homepage', home!)).toBe(false);
+  });
+
+  it('maps every visible route to its matching Figma icon family', () => {
+    expect(NAVIGATION_ITEMS.map(({ id, icon }) => [id, icon])).toEqual([
+      ['home', 'home'],
+      ['messaging', 'messaging'],
+      ['explore', 'explore'],
+      ['events', 'events'],
+      ['groups', 'groups'],
+      ['connections', 'network'],
+      ['teams', 'teams'],
+      ['notifications', 'notifications'],
+      ['saved', 'saved'],
+      ['profile', 'profile'],
+    ]);
   });
 });

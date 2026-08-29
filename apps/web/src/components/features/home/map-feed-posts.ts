@@ -1,6 +1,7 @@
 import type { PostItem } from '@my-hockey-network/core';
 
 import type { FeedPostProps } from '@/components/features/home/FeedPostCard';
+import { getLocalAvatar } from '@/utils/local-avatar-storage';
 
 interface FeedIdentity {
   profileId?: string;
@@ -45,13 +46,23 @@ export function mapFeedPosts(items: unknown[], identity: FeedIdentity): FeedPost
         || authorProfileId === identity.userId
       ));
 
+    // Every post's `author.avatarUrl` is whatever the backend/demo record had
+    // embedded at fetch time — for the viewer's OWN posts, that goes stale
+    // the moment they update their photo locally (feedback 2026-08-30: "I
+    // updated the profile photo only this post doesn't have... we need to
+    // still update the profile photo if same user"). The local cache
+    // (permanent display layer, see `local-avatar-storage.ts`) takes
+    // priority over the embedded value for exactly the posts that are
+    // actually the viewer's own — other authors' posts are untouched.
+    const localOwnAvatar = isSelf ? getLocalAvatar(authorProfileId || identity.profileId) : null;
+
     return [{
       id: postId,
       authorId: post.authorProfileId || author.id || author.displayName,
       authorName: author.displayName || 'Member',
       authorRole: getAuthorSubtitle(author),
       authorTime: post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : 'Recently',
-      authorAvatar: author.avatarUrl || '/userPlaceholder.webp',
+      authorAvatar: localOwnAvatar || author.avatarUrl || '/userPlaceholder.webp',
       content: post.body || '',
       postImage: post.media?.[0]?.url,
       likesCount: post.likeCount ?? post.reactionsCount ?? 0,

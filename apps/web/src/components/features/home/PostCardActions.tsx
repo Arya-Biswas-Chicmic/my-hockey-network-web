@@ -66,31 +66,29 @@ export function PostCardActions({
   const [isSaved, setIsSaved] = useState(false);
 
   return (
-    <div className="mhn-post-footer px-4 py-3 border-t border-slate-800/60">
-      <div className="mhn-post-actions-group flex items-center justify-between">
-        <div className="mhn-post-actions-group-left flex items-center gap-5">
+    <div className="mhn-post-footer">
+      <div className="mhn-post-actions-group">
+        <div className="mhn-post-actions-group-left">
           <Button
             onClick={onLike}
             disabled={isLiking}
-            className="mhn-action-item flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+            className="mhn-action-item"
             aria-label="Like post"
             title={!canReact ? 'Parent did not give permission' : undefined}
           >
             {!canReact ? (
               <LockKeyhole size={16} className="text-slate-500" aria-hidden="true" />
             ) : (
-              <span className={`mhn-like-badge flex items-center justify-center h-4 w-4 rounded-full ${isLiked ? 'bg-rose-500 text-white' : 'bg-rose-500/20 text-rose-500'}`}>
+              <span className={`mhn-like-badge ${isLiked ? 'mhn-like-badge-active' : ''}`}>
                 <FeedLikeSparkIcon size={12} aria-hidden="true" />
               </span>
             )}
-            <span className="mhn-action-count font-medium">{formatCompactNumber(likes)}</span>
+            <span className="mhn-action-count">{formatCompactNumber(likes)}</span>
           </Button>
 
           <Button
             onClick={onToggleComments}
-            className={`mhn-action-item flex items-center gap-1.5 text-xs transition-colors ${
-              showComments ? 'text-blue-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
-            }`}
+            className={`mhn-action-item ${showComments ? 'mhn-action-item-active' : ''}`}
             aria-label="Toggle comments"
             title={!canComment ? 'Parent did not give permission' : undefined}
           >
@@ -99,7 +97,7 @@ export function PostCardActions({
             ) : (
               <FeedCommentIcon size={16} className="comment-count-icon text-slate-400" aria-hidden="true" />
             )}
-            <span className="mhn-action-count font-medium">{formatCompactNumber(currentCommentsCount)}</span>
+            <span className="mhn-action-count">{formatCompactNumber(currentCommentsCount)}</span>
           </Button>
 
           {!isSelf && (
@@ -107,9 +105,7 @@ export function PostCardActions({
               <Button
                 onClick={onRepostButtonClick}
                 disabled={isSharing}
-                className={`mhn-action-item flex items-center gap-1.5 text-xs transition-colors ${
-                  hasReposted ? 'text-emerald-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
-                }`}
+                className={`mhn-action-item ${hasReposted ? 'mhn-action-item-reposted' : ''}`}
                 aria-label="Repost"
                 aria-haspopup="menu"
                 aria-expanded={isRepostMenuOpen}
@@ -126,7 +122,7 @@ export function PostCardActions({
                     aria-hidden="true"
                   />
                 )}
-                <span className="mhn-action-count font-medium">{formatCompactNumber(reposts)}</span>
+                <span className="mhn-action-count">{formatCompactNumber(reposts)}</span>
               </Button>
 
               {isRepostMenuOpen && (
@@ -151,10 +147,10 @@ export function PostCardActions({
           )}
         </div>
 
-        <div className="mhn-post-actions-group-right flex items-center gap-4 text-slate-400">
+        <div className="mhn-post-actions-group-right">
           <Button
             onClick={() => showInfoToast('Sharing posts externally is not available yet.')}
-            className="mhn-action-item hover:text-slate-200 transition-colors p-1"
+            className="mhn-action-item mhn-action-icon-only"
             aria-label="Send post"
             title="Send"
           >
@@ -166,7 +162,7 @@ export function PostCardActions({
               setIsSaved((prev) => !prev);
               showInfoToast(isSaved ? 'Removed from Saved.' : 'Saved — the Saved page is coming soon.');
             }}
-            className={`mhn-action-item transition-colors p-1 ${isSaved ? 'text-blue-400' : 'hover:text-slate-200'}`}
+            className={`mhn-action-item mhn-action-icon-only ${isSaved ? 'mhn-action-item-active' : ''}`}
             aria-label={isSaved ? 'Remove from saved' : 'Save post'}
             title={isSaved ? 'Remove from saved' : 'Save'}
           >

@@ -1,6 +1,8 @@
 'use client';
 
 import NextImage from 'next/image';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import { SupervisionViewModeEnum } from '@my-hockey-network/contracts';
 
 import { Button } from '@/components/common/Button';
@@ -26,10 +28,26 @@ export function SupervisionSidebar({
   onSelectWard,
   onAddPlayerClick,
 }: Readonly<SupervisionSidebarProps>) {
+  const router = useRouter();
+
   return (
     <aside className="mhn-supervision-sidebar">
       <div className="mhn-supervision-sidebar-header">
-        <h2 className="mhn-supervision-sidebar-title">Supervision</h2>
+        <div className="mhn-compact-page-header-left">
+          {/* Supervision renders without the persistent app sidebar (see
+              `AppShell.tsx`'s `COMPACT_SHELL_ROUTES`) — this back arrow is
+              its only way out, matching Figma node 2176:19341 exactly. */}
+          <Button
+            type="button"
+            variant="unstyled"
+            className="mhn-compact-page-back-btn"
+            aria-label="Go back"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft size={20} aria-hidden="true" />
+          </Button>
+          <h2 className="mhn-supervision-sidebar-title">Supervision</h2>
+        </div>
         <Button className="mhn-supervision-add-btn" onClick={onAddPlayerClick} title="Add Minor Account">
           <NextImage src="/add4.webp" alt="" width={32} height={32} className="add4" />
         </Button>

@@ -1,53 +1,30 @@
-import { ComponentType } from 'react';
-import {
-  SidebarHomeIcon,
-  SidebarMessagingIcon,
-  SidebarExploreIcon,
-  SidebarEventsIcon,
-  SidebarGroupsIcon,
-  SidebarTeamsIcon,
-  SidebarNotificationsIcon,
-  SidebarSavedIcon,
-  SidebarProfileIcon,
-} from '@/components/icons/SidebarIcons';
-import {
-  Bell,
-  Bookmark,
-  CalendarCheck2,
-  Home,
-  MessageSquare,
-  MessagesSquare,
-  Search,
-  Shield,
-  User,
-} from 'lucide-react';
+import type { SidebarNavigationIconName } from '@/components/icons/SidebarNavigationIcon';
 
 export interface NavigationItemConfig {
   id: string;
   label: string;
-  ActiveIcon: ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean }>;
-  InactiveIcon: ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean }>;
+  icon: SidebarNavigationIconName;
   route: string;
   additionalRoutes?: readonly string[];
 }
 
 export const NAVIGATION_ITEMS: readonly NavigationItemConfig[] = [
-  { id: 'home', label: 'Home', ActiveIcon: SidebarHomeIcon, InactiveIcon: Home, route: '/home' },
-  { id: 'messaging', label: 'Messaging', ActiveIcon: SidebarMessagingIcon, InactiveIcon: MessageSquare, route: '/messaging' },
-  { id: 'explore', label: 'Explore', ActiveIcon: SidebarExploreIcon, InactiveIcon: Search, route: '/explore' },
+  { id: 'home', label: 'Home', icon: 'home', route: '/home' },
+  { id: 'messaging', label: 'Messaging', icon: 'messaging', route: '/messaging' },
+  { id: 'explore', label: 'Explore', icon: 'explore', route: '/explore' },
   {
     id: 'events',
     label: 'Events',
-    ActiveIcon: SidebarEventsIcon,
-    InactiveIcon: CalendarCheck2,
+    icon: 'events',
     route: '/events',
     additionalRoutes: ['/event-detail'],
   },
-  { id: 'groups', label: 'Groups', ActiveIcon: SidebarGroupsIcon, InactiveIcon: MessagesSquare, route: '/groups' },
-  { id: 'teams', label: 'Teams', ActiveIcon: SidebarTeamsIcon, InactiveIcon: Shield, route: '/teams' },
-  { id: 'notifications', label: 'Notifications', ActiveIcon: SidebarNotificationsIcon, InactiveIcon: Bell, route: '/notifications' },
-  { id: 'saved', label: 'Saved', ActiveIcon: SidebarSavedIcon, InactiveIcon: Bookmark, route: '/saved' },
-  { id: 'profile', label: 'Profile', ActiveIcon: SidebarProfileIcon, InactiveIcon: User, route: '/profile' },
+  { id: 'groups', label: 'Groups', icon: 'groups', route: '/groups' },
+  { id: 'connections', label: 'Connections', icon: 'network', route: '/connections' },
+  { id: 'teams', label: 'Teams', icon: 'teams', route: '/teams' },
+  { id: 'notifications', label: 'Notifications', icon: 'notifications', route: '/notifications' },
+  { id: 'saved', label: 'Saved', icon: 'saved', route: '/saved' },
+  { id: 'profile', label: 'Profile', icon: 'profile', route: '/profile' },
 ] as const;
 
 function matchesRoute(pathname: string, route: string): boolean {

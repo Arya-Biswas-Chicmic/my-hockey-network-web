@@ -1,0 +1,30 @@
+{
+  "following": [
+    {"id":"demo-following-01","name":"Alex Morgan","avatarUrl":"/demo/profile/avatar.webp","roleTag":"Left Wing · #8","teamName":"HC Bloemendaal","teamLogo":"/HC.webp","location":"Toronto, Canada","type":"following"},
+    {"id":"demo-following-02","name":"Connor McDavid","avatarUrl":"/connor.webp","roleTag":"Centre · #97","teamName":"Edmonton Oilers","teamLogo":"/hockeyClub.webp","location":"Edmonton, Canada","type":"following"},
+    {"id":"demo-following-03","name":"Saylor Swift","avatarUrl":"/saylor.webp","roleTag":"Forward · #19","teamName":"Toronto Stars","teamLogo":"/mhnStars.webp","location":"Toronto, Canada","type":"following"},
+    {"id":"demo-following-04","name":"Lucas Martin","avatarUrl":"/lucas.webp","roleTag":"Goalie · #30","teamName":"Columbus Hockey Club","teamLogo":"/columbus.webp","location":"Columbus, USA","type":"following"},
+    {"id":"demo-following-05","name":"Jack Hughes","avatarUrl":"/jack.webp","roleTag":"Centre · #86","teamName":"New Jersey Devils","teamLogo":"/HC.webp","location":"Newark, USA","type":"following"},
+    {"id":"demo-following-06","name":"Gerard Gallant","avatarUrl":"/gerard.webp","roleTag":"Head Coach","teamName":"Hockey Canada","teamLogo":"/hockeyClub.webp","location":"Summerside, Canada","type":"following"},
+    {"id":"demo-following-07","name":"David Perron","avatarUrl":"/david.webp","roleTag":"Right Wing · #57","teamName":"Ottawa Senators","teamLogo":"/HC.webp","location":"Ottawa, Canada","type":"following"},
+    {"id":"demo-following-08","name":"Steve Mason","avatarUrl":"/steve.webp","roleTag":"Hockey Scout","teamName":"Junior Hockey Network","teamLogo":"/mhnStars.webp","location":"Oakville, Canada","type":"following"},
+    {"id":"demo-following-09","name":"Mason Clarke","avatarUrl":"/player.webp","roleTag":"Defence · #4","teamName":"Toronto Titans","teamLogo":"/HockeyClub2.webp","location":"Toronto, Canada","type":"following"},
+    {"id":"demo-following-10","name":"Jordan Williams","avatarUrl":"/parents.webp","roleTag":"Skills Coach","teamName":"Vancouver Hockey Lab","teamLogo":"/HC.webp","location":"Vancouver, Canada","type":"following"},
+    {"id":"demo-following-11","name":"Daniel Kim","avatarUrl":"/mai.webp","roleTag":"Player · #12","teamName":"Calgary Northstars","teamLogo":"/mhnStars.webp","location":"Calgary, Canada","type":"following"},
+    {"id":"demo-following-12","name":"Ethan Chen","avatarUrl":"/userPlaceholder.webp","roleTag":"Scout","teamName":"Quebec Hockey Group","teamLogo":"/hockeyClub.webp","location":"Montreal, Canada","type":"following"}
+  ],
+  "followers": [
+    {"id":"demo-follower-01","name":"Nathan Brooks","avatarUrl":"/player.webp","roleTag":"Right Wing · #21","teamName":"Toronto Titans","teamLogo":"/HockeyClub2.webp","location":"Toronto, Canada","type":"followers"},
+    {"id":"demo-follower-02","name":"Emma Wilson","avatarUrl":"/mai.webp","roleTag":"Goalie · #31","teamName":"Vancouver Selects","teamLogo":"/HC.webp","location":"Vancouver, Canada","type":"followers"},
+    {"id":"demo-follower-03","name":"Noah Tremblay","avatarUrl":"/lucas.webp","roleTag":"Defence · #5","teamName":"Montreal Ice","teamLogo":"/hockeyClub.webp","location":"Montreal, Canada","type":"followers"},
+    {"id":"demo-follower-04","name":"Olivia Chen","avatarUrl":"/saylor.webp","roleTag":"Centre · #11","teamName":"Calgary Northstars","teamLogo":"/mhnStars.webp","location":"Calgary, Canada","type":"followers"},
+    {"id":"demo-follower-05","name":"Liam Carter","avatarUrl":"/jack.webp","roleTag":"Forward · #17","teamName":"Columbus Hockey Club","teamLogo":"/columbus.webp","location":"Columbus, USA","type":"followers"},
+    {"id":"demo-follower-06","name":"Sophia Martin","avatarUrl":"/parents.webp","roleTag":"Team Manager","teamName":"Ottawa Junior Hockey","teamLogo":"/HC.webp","location":"Ottawa, Canada","type":"followers"},
+    {"id":"demo-follower-07","name":"William Scott","avatarUrl":"/steve.webp","roleTag":"Scout","teamName":"Atlantic Hockey","teamLogo":"/hockeyClub.webp","location":"Halifax, Canada","type":"followers"},
+    {"id":"demo-follower-08","name":"Ava Singh","avatarUrl":"/david.webp","roleTag":"Defence · #6","teamName":"Brampton Blades","teamLogo":"/mhnStars.webp","location":"Brampton, Canada","type":"followers"},
+    {"id":"demo-follower-09","name":"Benjamin Roy","avatarUrl":"/connor.webp","roleTag":"Centre · #9","teamName":"Quebec Nordiques","teamLogo":"/HockeyClub2.webp","location":"Quebec City, Canada","type":"followers"},
+    {"id":"demo-follower-10","name":"Mia Thompson","avatarUrl":"/gerard.webp","roleTag":"Assistant Coach","teamName":"Winnipeg Hockey Club","teamLogo":"/HC.webp","location":"Winnipeg, Canada","type":"followers"},
+    {"id":"demo-follower-11","name":"James Anderson","avatarUrl":"/ovechkin.webp","roleTag":"Left Wing · #18","teamName":"Edmonton Selects","teamLogo":"/hockeyClub.webp","location":"Edmonton, Canada","type":"followers"},
+    {"id":"demo-follower-12","name":"Charlotte Lee","avatarUrl":"/userPlaceholder.webp","roleTag":"Hockey Analyst","teamName":"Canadian Hockey Media","teamLogo":"/mhnStars.webp","location":"Toronto, Canada","type":"followers"}
+  ]
+}

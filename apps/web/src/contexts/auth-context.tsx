@@ -6,6 +6,7 @@ import { webAuth } from '@/platform/auth-service';
 import { webAuthStorage } from '@/platform/auth-storage';
 import { globalQueryClient } from '@/query';
 import { showToast as showCentralToast } from '@/utils/toast';
+import { getLocalAvatar } from '@/utils/local-avatar-storage';
 
 export interface AuthContextType {
   user: AuthMeResponse | null;
@@ -43,9 +44,20 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const userRef = useRef<AuthMeResponse | null>(null);
   const hasBootstrappedRef = useRef(false);
 
+  // The single choke point every `user` update goes through (`loadAuthMe`
+  // success, `setUserProfile`) — the local-first avatar cache (feedback
+  // 2026-08-29, see `@/utils/local-avatar-storage`) overrides
+  // `profile.avatarUrl` here so every consumer of the auth-context `user`
+  // (sidebar, Home feed's own-post identity, Edit Profile, ...) picks it up
+  // for free, without each needing its own local-storage read.
   const updateUser = useCallback((nextUser: AuthMeResponse | null) => {
-    userRef.current = nextUser;
-    setUser(nextUser);
+    const profileId = nextUser?.profile?.id;
+    const localAvatar = profileId ? getLocalAvatar(profileId) : null;
+    const patchedUser = nextUser && localAvatar && nextUser.profile
+      ? { ...nextUser, profile: { ...nextUser.profile, avatarUrl: localAvatar } }
+      : nextUser;
+    userRef.current = patchedUser;
+    setUser(patchedUser);
   }, []);
 
   const loadAuthMe = useCallback(async (silent = false, force = false): Promise<AuthMeResponse | null> => {

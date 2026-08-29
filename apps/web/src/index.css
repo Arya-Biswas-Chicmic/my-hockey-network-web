@@ -1627,6 +1627,14 @@
 .mhn-dropdown-logout-btn {
   display: flex;
   align-items: center;
+  /* Every other row in this dropdown (`.mhn-dropdown-item`) sets its own
+     `justify-content: space-between` and that wins over the shared Button
+     component's Tailwind `justify-center` base class. This rule had no
+     `justify-content` of its own at all, so nothing opposed that Tailwind
+     class here — the icon+text group rendered centered instead of flush
+     left like every row above it (feedback 2026-08-30: "Align logout to
+     the rest of the text which is left side"). */
+  justify-content: flex-start;
   gap: 8px;
   padding: 9px 12px;
   border-radius: 10px;
@@ -1733,9 +1741,57 @@
   padding: 50px 24px 24px 24px;
   display: grid;
   grid-template-columns: minmax(0, 520px) minmax(0, 300px);
+  /* A single implicit `auto` row sizes to its tallest item's *content*
+     height — `align-items: stretch` alone can't fix that, since stretch only
+     governs how an item fills an already-sized track, and an `auto` track
+     has no size to fill. `minmax(0, 1fr)` gives the row this grid's own
+     definite height (from `.mhn-app-content`'s `lg:h-dvh` down through
+     `<main>`'s `lg:flex-1`) as a real track size, so `.mhn-layout-col-center`'s
+     `lg:h-full` has something definite to resolve against instead of falling
+     back to `auto`/content-based sizing. */
+  grid-template-rows: minmax(0, 1fr);
   gap: 64px;
-  align-items: start;
+  /* `stretch` (the grid default) — not `start` — so `.mhn-layout-col-center`'s
+     `lg:h-full` resolves against that row height instead of falling back to
+     its content's natural height. With `align-items: start`, the center
+     column's own box grew taller than the `.mhn-app-content` ancestor it
+     sits in (which clips at the viewport height via `overflow: hidden`), so
+     the bottom of the feed — including the infinite-scroll sentinel that
+     triggers `fetchNextPage` — was permanently clipped and unreachable no
+     matter how far you scrolled: "why feed is not scrolling till end"
+     2026-08-29. `.mhn-layout-col-right` still opts out with its own
+     `align-self: start` (it shouldn't stretch to match the feed's height) —
+     it uses this row's height a different way, via `max-height: 100%` for
+     its own internal scroll (see that class's comment).
+     Regression watch: don't reintroduce `align-items: start` here to "fix"
+     an unrelated right-column spacing issue — fix it on
+     `.mhn-layout-col-right` instead. */
+  align-items: stretch;
   box-sizing: border-box;
+}
+
+/* Home/Profile use a fixed authenticated shell with independently stationary
+   navigation and discovery rails. Give the page grid a definite row and make
+   the center column the only desktop scroll owner. Relying on the previous
+   chain of flex growth + `height: 100%` left the grid row content-sized in
+   some viewport/zoom combinations, while `.mhn-app-content` clipped at
+   `100dvh`; the last post then stopped half-visible even at maximum scroll. */
+@media (min-width: 1024px) {
+  .mhn-home-main-layout {
+    height: 100%;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .mhn-layout-col-center {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    padding-bottom: 24px;
+    box-sizing: border-box;
+  }
 }
 
 /* Grid and flex items default to `min-width: auto`, so the feed column refused
@@ -1772,6 +1828,105 @@
   .mhn-page-container,
   .mhn-home-main-layout {
     padding: 16px;
+  }
+}
+
+/* Shared "fixed header, scrolling content below" pattern (feedback
+   2026-08-29: "Make sure in each tabs, now top will be move only content
+   below them will scroll, keep this common and consistent like explore
+   have search than tabs, event have title and search and filter in top
+   bar similarly in other group"). A page wraps its title/search/filter/tab
+   row in `.mhn-page-sticky-header` and just its list/grid content in
+   `.mhn-page-scroll-body`, both direct children of a `flex flex-col`
+   `PageShell` (already true of every route via `.mhn-page-container`'s
+   `lg:flex lg:flex-col` classes) — the header then stays in place via
+   `flex-shrink: 0` while only the body scrolls, the same mechanism Home's
+   feed (`.mhn-layout-col-center`) and Messaging's conversation pane
+   (`.mhn-chat-messages-stream`) already use, generalized into one pair of
+   classes instead of every page re-deriving it. `z-index: 15` matches
+   `.mhn-feed-scope-tabs`'s tier on the same in-page-header/in-content-
+   overlay/app-shell scale (see that class's comment).
+   Currently applied to Home (via `.mhn-feed-scope-tabs` directly) and
+   Events; still to be rolled out to Groups/Teams/Notifications/Saved/
+   Explore/Connections/Messaging's chat list — apply these two classes
+   there rather than reinventing the pattern per page. */
+.mhn-page-sticky-header {
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  background: var(--color-background);
+  padding-bottom: 16px;
+}
+
+.mhn-page-scroll-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Back-arrow + title bar for the compact-shell pages (Settings, Supervision,
+   Help & Support) — see `CompactPageHeader.tsx` and `.mhn-app-shell--
+   compact` above. Matches Figma node 2176:19341's own header row. */
+.mhn-compact-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.mhn-compact-page-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.mhn-compact-page-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--color-foreground);
+  flex-shrink: 0;
+  transition: background-color 0.15s ease;
+}
+
+.mhn-compact-page-back-btn:hover {
+  background-color: var(--color-secondary);
+}
+
+.mhn-compact-page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-foreground);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mhn-compact-page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1023px) {
+  .mhn-home-main-layout {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+
+  .mhn-layout-col-center {
+    height: auto;
+    overflow: visible;
+    padding-bottom: 24px;
   }
 }
 
@@ -2559,7 +2714,7 @@
 .mhn-feed-posts-stack {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 8px;
   width: 100%;
 }
 
@@ -2602,32 +2757,34 @@
 }
 
 .mhn-feed-post-card {
-  background-color: var(--color-background);
+  background-color: var(--color-auth-field);
   border-radius: 8px;
-  border: 1px solid #8C8C8C33;
+  border: 1px solid var(--color-auth-stroke);
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
   display: flex;
   flex-direction: column;
 }
 
 .mhn-post-header {
-  padding: 16px 20px;
+  min-height: 68px;
+  padding: 12px 4px 8px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background-color: var(--color-auth-field);
 }
 
 .mhn-post-author-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0;
+  min-width: 0;
 }
 
 .mhn-author-avatar-box {
   position: relative;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   overflow: hidden;
   background-color: var(--color-secondary);
@@ -2644,27 +2801,30 @@
 .mhn-author-meta {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  padding: 4px 4px 4px 8px;
 }
 
 .mhn-author-name {
   font-size: 16px;
   font-weight: 600;
-  color: #000000E5;
+  color: var(--color-foreground);
   margin: 0;
   line-height: 1.25;
 }
 
 .mhn-author-subtitle {
   font-size: 12px;
-  color: #00000099;
-  margin-top: 2px;
+  color: color-mix(in srgb, var(--color-foreground) 60%, transparent);
+  margin-top: 0;
   font-weight: 400;
+  line-height: 15px;
 }
 
 .mhn-post-header-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   /* Positioning context for `.mhn-post-menu-popover` (absolute, `top`/
      `right`). PostCardHeader.tsx used to rely on a `.mhn-relative-container`
      class for this — that class has no CSS definition anywhere, so the
@@ -2676,26 +2836,43 @@
 }
 
 .mhn-btn-follow {
-  height: 32px;
-  padding: 0 16px;
-  background-color: #F0F2F5;
-  color: #0C1014;
-  border: none;
+  min-height: 36px;
+  padding: 8px 12px;
+  background-color: transparent;
+  color: var(--color-auth-action);
+  border: 1px solid var(--color-auth-action);
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
+  line-height: 20px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .mhn-btn-follow:hover {
-  background-color: var(--color-border);
-  color: var(--color-foreground);
+  background-color: color-mix(in srgb, var(--color-auth-action) 10%, transparent);
+  color: var(--color-auth-action);
 }
 
 .mhn-btn-following {
-  background-color: var(--color-border);
-  color: var(--color-foreground-muted);
+  background-color: var(--color-auth-action);
+  color: var(--color-primary-foreground);
+}
+
+.mhn-btn-following:hover {
+  background-color: var(--color-primary-hover);
+  color: var(--color-primary-foreground);
+}
+
+.mhn-btn-follow:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
+
+.mhn-follow-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .mhn-btn-more-options {
@@ -2703,7 +2880,9 @@
   border: none;
   color: var(--color-muted-foreground);
   cursor: pointer;
-  padding: 6px;
+  width: 40px;
+  height: 40px;
+  padding: 8px 16px 8px 0;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -2717,14 +2896,18 @@
 }
 
 .mhn-post-content {
-  padding: 0 0 14px;
+  padding: 0;
+}
+
+.mhn-post-copy {
+  padding: 4px 12px 8px;
 }
 
 .mhn-post-text {
   font-size: 14px;
-  color: #000000;
+  color: var(--color-foreground);
   line-height: 20px;
-  margin: 0 20px;
+  margin: 0;
   font-weight: 600;
 }
 
@@ -2735,7 +2918,8 @@
   font-size: 14px;
   cursor: pointer;
   padding: 0;
-  margin: 4px 20px 0;
+  margin: 4px 0 0;
+  line-height: 20px;
 }
 
 .mhn-post-more-btn:hover {
@@ -2752,6 +2936,21 @@
   justify-content: center;
 }
 
+/* Scroll-snap carousel track (feedback 2026-08-29: "add slider option to
+   slide image by scrolling") — hides its own scrollbar since the dot
+   indicators already show position; `max-height` matches the old single
+   `.mhn-post-media-img` cap so multi-image posts don't grow taller than
+   single-image ones. */
+.mhn-post-media-scroll-track {
+  max-height: 440px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.mhn-post-media-scroll-track::-webkit-scrollbar {
+  display: none;
+}
+
 .mhn-post-media-img {
   width: 100%;
   height: 100%;
@@ -2760,8 +2959,10 @@
 }
 
 .mhn-post-footer {
-  padding: 12px 20px;
-  border-top: 1px solid var(--color-secondary);
+  min-height: 42px;
+  padding: 4px 12px;
+  border-top: 1px solid var(--color-auth-stroke);
+  background-color: var(--color-auth-field);
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -2798,14 +2999,21 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  padding: 6px 10px;
+  min-height: 32px;
+  padding: 4px 8px;
   border-radius: 8px;
   transition: background-color 0.15s ease, color 0.15s ease;
-  line-height: 1;
+  line-height: 17.5px;
 }
 
 .mhn-action-icon-only {
-  padding: 6px 8px;
+  min-width: 32px;
+  padding: 4px 8px;
+}
+
+.mhn-action-item-active,
+.mhn-action-item-reposted {
+  color: var(--color-primary);
 }
 
 /* Like button's red reaction badge (Figma `LikeFlow` > red circle + spark
@@ -2890,15 +3098,110 @@
 }
 
 /* --- 6. Right Column Widgets --- */
+/* `max-height: 100%` + `overflow-y: auto` — not `height: auto` +
+   `overflow: visible` — so this column gets its own internal scroll instead
+   of silently growing past `.mhn-app-content`'s clipped viewport. Its
+   content (Search, Who to Follow, Upcoming Events, Invite & Earn) is
+   consistently taller than the feed's visible height, so the bottom
+   widgets were being cut off with no way to scroll to them: "fix right
+   panel scrolling... invite section got cropped at scrolling" 2026-08-29.
+   `max-height` (not `height`) keeps it its natural, shorter height when
+   the content actually fits — this only kicks in once it doesn't.
+   `align-self: start` still opts this column out of the row-stretch
+   `.mhn-home-main-layout` otherwise applies (see that class's comment) —
+   `max-height: 100%` still resolves against the row's height regardless of
+   `align-self`, since that only affects positioning/sizing, not what a
+   percentage height is measured against.
+   Debugging note: while verifying this, `.mhn-layout-col-center` briefly
+   appeared to collapse to full unclamped content height too (~15500px),
+   which looked like this change had broken the shared `minmax(0, 1fr)` row
+   for both columns. That was a false alarm caused by the *test* viewport
+   having collapsed to 0×0 after a dev-server restart (tripping the
+   `@media (max-width: 1023px)` mobile layout below, which turns all of this
+   off) — not a real interaction between the two columns. Don't rediscover
+   that dead end; if this ever looks broken again, check the actual
+   viewport width before suspecting the grid math. */
 .mhn-layout-col-right {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  /* 8px — the same gap `.mhn-feed-posts-stack` uses between feed posts
+     (Figma node 1806:15962), now the project's one reference spacing value
+     for a vertical stack of cards (feedback 2026-08-30: "spacing between
+     two feed this is ideal spacing I need everywhere, in right panel side
+     and in other tabs also"). Was 22px, inconsistent with every other
+     stacked-card list in the app. */
+  gap: 8px;
   width: 100%;
   height: auto;
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   align-self: start;
   justify-content: flex-start;
-  overflow: visible;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+/* Flex children default to `flex-shrink: 1`, so once the column's combined
+   widgets outgrew `max-height: 100%` above, the browser shrank the LAST
+   child (Invite & Grow) down to a sliver instead of leaving every widget at
+   its natural size and letting the column scroll — the entire point of
+   adding `overflow-y: auto` in the first place. "check invite and grow
+   section: I asked you add scrolling but no added so not able to see tha
+   section" 2026-08-29 — it looked unreachable because it had been squashed
+   to ~40px, not because scrolling itself was missing. */
+.mhn-layout-col-right > * {
+  flex-shrink: 0;
+}
+
+.mhn-layout-col-right:hover {
+  scrollbar-color: var(--color-border) transparent;
+}
+
+.mhn-layout-col-right::-webkit-scrollbar {
+  width: 8px;
+}
+
+.mhn-layout-col-right::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mhn-layout-col-right::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 8px;
+}
+
+.mhn-layout-col-right:hover::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+}
+
+.mhn-layout-col-right::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-muted-foreground);
+}
+
+.mhn-layout-col-right:hover {
+  scrollbar-color: var(--color-border) transparent;
+}
+
+.mhn-layout-col-right::-webkit-scrollbar {
+  width: 8px;
+}
+
+.mhn-layout-col-right::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mhn-layout-col-right::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 8px;
+}
+
+.mhn-layout-col-right:hover::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+}
+
+.mhn-layout-col-right::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-muted-foreground);
 }
 
 /* This must follow the base right-column declaration above. The previous
@@ -3128,50 +3431,63 @@
 }
 
 /* Invite & Grow Card */
+/* Matches Figma node 1806:16060/1993:19390 exactly (feedback 2026-08-29:
+   "background color used in the invite & grow is not matching figma, I
+   think figma is transparent... check figma again"). This — plus the
+   `:root.dark` override below — used to be an older light-theme design
+   (filled `--color-accent-surface` background, `#d0e2ff` border, dark
+   `#0c1014` text) that a Tailwind-utility-only rewrite of the component
+   never fully overrode: same-specificity utility classes only win by
+   source order, and the `:root.dark` override two-classes-deep beat them
+   outright regardless of order. Rewritten here instead of in the
+   component's own `className` string — structural chrome like this lives
+   in `index.css`, not scattered per-file Tailwind utilities (the pattern
+   every other `.mhn-*` component class in this file already follows), so
+   there's one definition to keep in sync with Figma, not two competing
+   ones. */
 .mhn-invite-grow-card {
-  background: var(--color-accent-surface);
-  border: 1px solid #d0e2ff;
-  border-radius: 8px;
-
-  padding: 20px;
+  background: transparent;
+  border: 1px solid #1d2432;
+  border-radius: 10px;
+  padding: 16px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 20px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 
 .mhn-invite-grow-content {
   display: flex;
   flex-direction: column;
-  max-width: 175px;
+  gap: 16px;
+  max-width: 179px;
   z-index: 2;
 }
 
 .mhn-invite-grow-title {
   font-size: 16px;
   font-weight: 700;
-  color: #0c1014;
-  line-height: 20px;
+  color: var(--color-foreground);
+  line-height: 21px;
   margin: 0 0 8px 0;
 }
 
 .mhn-invite-grow-desc {
-  font-size: 13px;
-  color: #666666;
-  line-height: 18px;
-  margin: 0 0 16px 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 16px;
+  margin: 0;
   font-weight: 400;
 }
 
 .mhn-btn-invite-now {
-  height: 38px;
-  width: 110px;
+  height: 36px;
+  width: fit-content;
   background-color: var(--color-primary);
   color: var(--color-background);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   border-radius: 8px;
 
   border: none;
@@ -3179,8 +3495,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0 12px;
   transition: background-color 0.15s ease, transform 0.1s ease;
-  box-shadow: 0 2px 6px rgba(24, 96, 195, 0.2);
 }
 
 .mhn-btn-invite-now:hover {
@@ -3189,15 +3505,13 @@
 
 .mhn-invite-grow-illustration {
   position: absolute;
-  right: 0px;
-  bottom: 0px;
-  width: 165px;
-  height: 130px;
-  opacity: 1;
+  right: 8px;
+  bottom: 8px;
+  width: 96px;
+  height: 96px;
+  opacity: 0.9;
   pointer-events: none;
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
+  mix-blend-mode: color-dodge;
 }
 
 .mhn-invite-illustration-img {
@@ -5065,9 +5379,21 @@
    Messaging Page Components & Styling
    ========================================================================== */
 
+/* `.mhn-messaging-page-root` sits directly inside `.mhn-app-content`
+   (`lg:flex lg:h-dvh lg:flex-col lg:overflow-hidden`) as its flex item —
+   unlike every other page, which renders `PageShell`'s `<main>` straight
+   into that flex row with its own `lg:flex-1 lg:min-h-0`. This wrapper had
+   neither: a fixed `min-height: 100vh` doesn't shrink to the space actually
+   left under the app chrome and doesn't cooperate with the flex parent, so
+   the conversation card below could render taller than the viewport with
+   no way to clip/scroll it — "message details page height is more than
+   others going below the screen" 2026-08-29. `flex: 1 1 auto; min-height: 0`
+   makes it a proper shrinkable flex item, the same role `lg:flex-1
+   lg:min-h-0` plays elsewhere. */
 .mhn-messaging-page-root {
-  min-height: 100vh;
   width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
   background-color: #f3f5f8;
   color: var(--color-foreground-strong);
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -5087,15 +5413,30 @@
    sidebar and the padding pixel-identical to Home — feedback 2026-08-30:
    "make sure you don't change the home page layout and... add same
    padding when we click in message tab... make chat detail component
-   width wise smaller [if required] to have same padding". The
-   conversation pane shrinks from ~1016px to ~568px (932 - 340 chat list -
-   24 gap) as a result — still a normal chat-pane width, not cramped. */
+   width wise smaller [if required] to have same padding".
+   Chat list column narrowed 340px → 280px and the gap 24px → 20px
+   (feedback 2026-08-29: "message details section looks compact so we can
+   decrease the width of message group... increase [conversation pane]
+   width, keep entire viewport same") to give the conversation pane more
+   room — it grows from ~568px to ~632px (932 - 280 - 20) — while
+   `.mhn-messaging-main-container`'s own `max-width: 932px` keeps the total
+   unchanged.
+   `min-height: 0; flex: 1 1 auto;` plus `grid-template-rows: minmax(0, 1fr)`
+   + `align-items: stretch` (below) is the same fix Home's feed needed (see
+   `.mhn-home-main-layout`'s comment) — makes this grid's row a real,
+   definite height instead of `auto`/content-based, so
+   `.mhn-chat-sidebar-card`/`.mhn-chat-conversation-card` can fill it and
+   clip their own overflow internally instead of pushing the page taller
+   than the viewport. */
 .mhn-messaging-main-container {
   max-width: 932px;
   display: grid;
-  grid-template-columns: 340px 1fr;
-  gap: 24px;
-  align-items: start;
+  grid-template-columns: 280px 1fr;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 20px;
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 @media (max-width: 900px) {
@@ -5105,6 +5446,13 @@
 }
 
 /* Chats Sidebar Card */
+/* `height: 100%` (from the grid row `.mhn-messaging-main-container` now
+   gives it — see that class's comment) instead of a guessed fixed
+   `min-height: 640px`, which was either too short (clipping real chat
+   lists) or too tall (leaving empty space) depending on the actual
+   viewport — and never left room for `.mhn-chat-list` below to scroll on
+   its own. `min-height: 0` is the same grid/flex-item override
+   `.mhn-layout-col-center` needs for the same reason. */
 .mhn-chat-sidebar-card {
   background-color: var(--color-background);
   border-radius: 8px;
@@ -5115,7 +5463,8 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  min-height: 640px;
+  height: 100%;
+  min-height: 0;
 }
 
 .mhn-chat-sidebar-header {
@@ -5232,10 +5581,17 @@
 }
 
 /* Chat List Items */
+/* The header/search/category-pills above stay fixed; only this list itself
+   scrolls once it outgrows the card's now-viewport-bound height (feedback
+   2026-08-29: "only messages will scroll" — the chat list gets the same
+   treatment as the message stream it sits beside). */
 .mhn-chat-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .mhn-chat-item {
@@ -5305,6 +5661,10 @@
 }
 
 /* Conversation Window Card */
+/* `height: 100%; min-height: 0;` instead of a guessed fixed `min-height:
+   640px` — same reasoning as `.mhn-chat-sidebar-card` above. This is what
+   makes `.mhn-chat-messages-stream` below fill exactly the remaining space
+   under the header and above the input footer, both of which stay put. */
 .mhn-chat-conversation-card {
   background-color: var(--color-background);
   border-radius: 8px;
@@ -5313,7 +5673,8 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
   display: flex;
   flex-direction: column;
-  min-height: 640px;
+  height: 100%;
+  min-height: 0;
   justify-content: space-between;
   overflow: hidden;
 }
@@ -5324,6 +5685,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
 }
 
 .mhn-conv-user-group {
@@ -5339,6 +5701,7 @@
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .mhn-conv-avatar-img {
@@ -5410,14 +5773,20 @@
 }
 
 /* Messages Stream */
+/* No `max-height` — that was a guessed fixed pixel value ("message details
+   page height is more than others going below the screen" 2026-08-29);
+   `flex: 1; min-height: 0;` inside the now-viewport-bound
+   `.mhn-chat-conversation-card` sizes this correctly instead, so the header
+   above and `.mhn-chat-input-footer` below both stay fixed in place and
+   only this stream scrolls. */
 .mhn-chat-messages-stream {
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  max-height: 620px;
 }
 
 .mhn-chat-group-banner {
@@ -5428,12 +5797,32 @@
   overflow: hidden;
   margin-bottom: 4px;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .mhn-chat-banner-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Avatar/banner thumbnails necessarily crop to fill their small fixed-
+   aspect-ratio boxes via `object-fit: cover` — clicking one now opens this
+   full, uncropped preview instead (feedback 2026-08-30: "click on the
+   media and media is getting cropped"). `object-fit: contain` here shows
+   the whole image regardless of its aspect ratio. */
+.mhn-chat-image-preview-card {
+  max-width: min(640px, 92vw);
+  padding: 12px;
+  display: flex;
+}
+
+.mhn-chat-image-preview-img {
+  width: 100%;
+  max-height: 80vh;
+  height: auto;
+  object-fit: contain;
+  border-radius: 4px;
 }
 
 .mhn-chat-date-divider {
@@ -5551,6 +5940,10 @@
 }
 
 /* Input Footer */
+/* `flex-shrink: 0` keeps this pinned at its natural height at the bottom of
+   `.mhn-chat-conversation-card` regardless of message count — "make sure
+   message or send message keep fix in the alignment with the list of
+   users messages and only messages will scroll" 2026-08-29. */
 .mhn-chat-input-footer {
   padding: 14px 20px;
   border-top: 1px solid var(--color-secondary);
@@ -5558,6 +5951,14 @@
   align-items: center;
   gap: 12px;
   background-color: var(--color-background);
+  flex-shrink: 0;
+}
+
+.mhn-chat-input-footer-locked {
+  justify-content: center;
+  color: var(--color-muted-foreground);
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .mhn-btn-chat-attach {
@@ -5583,7 +5984,10 @@
   align-items: center;
   background-color: var(--color-background);
   border: 1px solid var(--color-border-strong);
-  border-radius: 24px;
+  /* 8px, not the pill-shaped 24px it had — matches the project-wide 8px
+     structural-chrome radius (feedback 2026-08-29: "make this bar 8px
+     rounded"). */
+  border-radius: 8px;
   padding: 0 16px;
   height: 46px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -5635,12 +6039,41 @@
   color: var(--color-foreground);
 }
 
-.mhn-chat-gif-btn {
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--color-neutral-700);
-  letter-spacing: 0.5px;
+/* Emoji quick-pick popover — opens upward for the same reason
+   `.mhn-repost-menu-popover` does (the input bar sits at the bottom of the
+   card, and the card clips overflow for its rounded corners; downward would
+   get silently clipped invisible). Shares that popover's backdrop/z-index. */
+.mhn-emoji-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 50;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  width: 176px;
+  padding: 8px;
+  background-color: #0a1a31;
+  border: 1px solid #1d2432;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.mhn-emoji-popover-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  border-radius: 6px;
+  font-size: 18px;
   line-height: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.mhn-emoji-popover-item:hover {
+  background-color: rgba(255, 255, 255, 0.06);
 }
 
 .mhn-btn-chat-send {
@@ -5648,6 +6081,13 @@
   height: 40px;
   border-radius: 50%;
   border: none;
+  /* Was missing a default `background-color` entirely — only `:hover` set
+     one, so the button only ever looked "active" while the mouse happened
+     to be over it, not once there was text ready to send (feedback
+     2026-08-30: "make send button active like we are doing in hover").
+     Active look is now the default; `:disabled` (empty input) dims it
+     instead, matching every other disabled control in this codebase. */
+  background-color: var(--color-primary);
   color: var(--color-background);
   display: flex;
   align-items: center;
@@ -5658,8 +6098,15 @@
   flex-shrink: 0;
 }
 
-.mhn-btn-chat-send:hover {
+.mhn-btn-chat-send:hover:not(:disabled) {
   background-color: var(--color-primary-hover);
+}
+
+.mhn-btn-chat-send:disabled {
+  background-color: var(--color-secondary);
+  color: var(--color-muted-foreground);
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* ==========================================================================
@@ -5772,7 +6219,10 @@
 .mhn-notifications-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  /* 8px — matches `.mhn-feed-posts-stack`'s inter-card gap, the project's
+     one reference spacing for a vertical card stack (feedback 2026-08-30:
+     "spacing between two feed this is ideal spacing I need everywhere"). */
+  gap: 8px;
 }
 
 .mhn-notification-item {
@@ -8288,7 +8738,9 @@
 .mhn-settings-search-input {
   height: 40px;
   padding: 0 16px 0 40px;
-  border-radius: 20px;
+  /* 8px, not the pill-shaped 20px it had — matches the project-wide 8px
+     structural-chrome radius (feedback 2026-08-30: "keep 8px round"). */
+  border-radius: 8px;
   border: 1px solid var(--color-border);
   background-color: var(--color-background);
   font-size: 14px;
@@ -12143,6 +12595,22 @@ img.secure {
   overflow: hidden;
 }
 
+/* Anchored `right: 0` instead of the base rule's `left: 0` — for the
+   messaging attachment menu, whose trigger button sits near the far right
+   edge of the input bar, `left: 0` let the popover hang off the viewport's
+   right edge. */
+.mhn-repost-menu-popover--right {
+  left: auto;
+  right: 0;
+}
+
+/* `color: var(--color-background)` here used to make "Repost" (this rule)
+   nearly invisible against the popover's own dark background — text the
+   same color as the page background, not a readable foreground color; a
+   copy/paste slip, since `:last-child` ("Quote") already used a correct
+   light color. Both items now share the same readable color and icon size
+   (feedback 2026-08-29: "check repost button color... and icon and make
+   aligned better"). */
 .mhn-repost-menu-item {
   width: 100%;
   padding: 12px 24px 12px 12px;
@@ -12152,16 +12620,19 @@ img.secure {
   background: none;
   border: none;
   border-bottom: 1px solid #1d2432;
-  color: var(--color-background);
+  color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
   font-weight: 400;
   text-align: left;
   cursor: pointer;
 }
 
+.mhn-repost-menu-item svg {
+  flex-shrink: 0;
+}
+
 .mhn-repost-menu-item:last-child {
   border-bottom: none;
-  color: rgba(255, 255, 255, 0.9);
 }
 
 .mhn-repost-menu-item:hover {
@@ -12416,18 +12887,26 @@ img.secure {
 }
 
 /* Connections View Centralized Styles */
+.mhn-connections-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
 .mhn-connections-title {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
   color: var(--color-foreground);
-  margin-bottom: 16px;
-  margin-top: 0;
+  margin: 0;
 }
 
 .mhn-connections-search-wrapper {
   position: relative;
-  width: 100%;
-  margin-bottom: 20px;
+  width: min(50%, 410px);
+  margin: 0;
 }
 
 .mhn-connections-search-icon {
@@ -12440,7 +12919,7 @@ img.secure {
 
 .mhn-connections-search-input {
   width: 100%;
-  height: 44px;
+  height: 40px;
   border-radius: 8px;
   border: 1px solid var(--color-border-strong);
   padding-left: 42px;
@@ -12454,55 +12933,76 @@ img.secure {
   display: flex;
   width: 100%;
   border-bottom: 1px solid var(--color-border);
-  margin-bottom: 24px;
+  margin-bottom: 8px;
   gap: 0;
 }
 
 .mhn-connections-tab-btn {
   flex: 1;
-  padding: 14px 16px;
+  min-height: 44px;
+  padding: 12px 16px;
   background-color: transparent;
   border: none;
   border-bottom: 3px solid transparent;
   margin-bottom: -1px;
-  color: #71717A;
-  font-size: 15px;
-  font-weight: 500;
+  color: var(--color-muted-foreground);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
   cursor: pointer;
   transition: all 0.15s ease-in-out;
   text-align: center;
 }
 
 .mhn-connections-tab-btn.active {
-  border-bottom: 3px solid #18181B;
-  color: #18181B;
+  border-bottom-color: var(--color-primary);
+  color: var(--color-foreground);
   font-weight: 700;
 }
 
-.mhn-connection-member-card {
-  background-color: var(--color-background);
+.mhn-connections-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.mhn-connections-api-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--color-muted-foreground);
+  font-size: 12px;
+}
 
-  padding: 20px 16px;
+.mhn-connection-member-card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  min-width: 0;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .mhn-connection-avatar-ring {
-  width: 80px;
-  height: 80px;
+  width: 84px;
+  height: 84px;
   border-radius: 50%;
-  padding: 3px;
-  border: 2px solid var(--color-primary);
+  padding: 0;
+  border: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .mhn-connection-avatar-img {
@@ -12513,8 +13013,9 @@ img.secure {
 }
 
 .mhn-connection-member-name {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
   color: var(--color-foreground);
   margin: 0 0 2px 0;
   word-break: break-word;
@@ -12523,10 +13024,11 @@ img.secure {
 }
 
 .mhn-connection-member-role {
-  font-size: 12px;
+  font-size: 10px;
+  line-height: 16px;
   color: var(--color-muted-foreground);
   margin: 0 0 8px 0;
-  font-weight: 500;
+  font-weight: 400;
   word-break: break-word;
   overflow-wrap: anywhere;
   max-width: 100%;
@@ -12562,7 +13064,7 @@ img.secure {
 
 .mhn-btn-connection-message {
   width: 100%;
-  height: 38px;
+  min-height: 36px;
   background-color: var(--color-background);
   border: 1px solid var(--color-primary);
   border-radius: 8px;
@@ -12576,6 +13078,20 @@ img.secure {
 
 .mhn-btn-connection-message:hover {
   background-color: var(--color-accent);
+}
+
+@media (max-width: 1180px) {
+  .mhn-connections-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .mhn-connections-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .mhn-connections-header { align-items: stretch; flex-direction: column; }
+  .mhn-connections-search-wrapper { width: 100%; }
+  .mhn-connections-grid { grid-template-columns: 1fr; }
 }
 
 /* Parent Features Centralized Styles */
@@ -13518,6 +14034,11 @@ img.secure {
   border-radius: 4px;
 }
 
+/* 9px × 4.5px — sized for `event-detail-page.tsx`'s small inline
+   "Show more/less" caret PNG. `help-page.tsx`'s FAQ chevron used to share
+   this class too, squashing its real `ChevronDown` icon down to the same
+   sliver — split into its own `.mhn-faq-arrow-rotate` below instead of
+   reusing this one, since the two need genuinely different sizes. */
 .mhn-arrow-rotate {
   width: 9px;
   height: 4.5px;
@@ -13528,11 +14049,46 @@ img.secure {
   transform: rotate(180deg);
 }
 
+/* feedback 2026-08-30: "make arrow button big". */
+.mhn-faq-arrow-rotate {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.mhn-faq-arrow-rotate.rotated {
+  transform: rotate(180deg);
+}
+
 /* Help Page Centralized Styles */
 .mhn-help-page-container {
   width: 100%;
   min-height: 100vh;
   background-color: var(--color-surface-subtle);
+}
+
+/* `.mhn-app-content` (the shell's content column) is `lg:flex lg:h-dvh
+   lg:flex-col lg:overflow-hidden` at desktop widths — this wrapper is its
+   direct flex child, so it must actually participate in that flex column
+   (flex: 1, min-height: 0, its own overflow clipped) instead of asserting
+   `min-height: 100vh` against a fixed-height ancestor. Left un-scoped, the
+   `min-height: 100vh` above won the flex sizing fight, the page's real
+   content (FAQ list + ticket form + contact cards, 2700px+) overflowed
+   past the shell's clip boundary, and the browser fell back to scrolling
+   the whole document — dragging the left sidebar along with it (feedback
+   2026-08-30: "left panel is also scrolling keep that fix"). Below `lg`
+   the shell doesn't clip at all, so this only applies at that breakpoint,
+   matching `.mhn-page-sticky-header`/`.mhn-page-scroll-body` in
+   `help-page.tsx` which do the actual internal scrolling. */
+@media (min-width: 1024px) {
+  .mhn-help-page-container {
+    min-height: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 }
 
 /* Width/margin/padding now come from `.mhn-page-container` (feedback
@@ -13579,32 +14135,36 @@ img.secure {
   line-height: 1.6;
 }
 
+/* Compacted from a large, centered 600px-wide box into the
+   `CompactPageHeader`'s right-aligned `actions` slot, matching
+   `.mhn-settings-search-wrapper`'s sizing (feedback 2026-08-30: "keep
+   help and top bar compact"). */
 .mhn-help-search-wrapper {
-  max-width: 600px;
-  margin: 0 auto;
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .mhn-help-search-icon {
   position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 2;
+  left: 14px;
+  pointer-events: none;
 }
 
 .mhn-help-search-input {
-  width: 100%;
-  height: 52px;
+  height: 40px;
+  width: 240px;
+  padding: 0 14px 0 40px;
   border-radius: 8px;
-
-  border: 1.5px solid var(--color-border-strong);
-  padding-left: 50px;
-  padding-right: 20px;
-  font-size: 15px;
-  background-color: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  font-size: 14px;
+  background-color: var(--color-background);
   outline: none;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: border-color 0.15s ease;
+}
+
+.mhn-help-search-input:focus {
+  border-color: var(--color-primary);
 }
 
 .mhn-help-pills-row {
@@ -13616,7 +14176,10 @@ img.secure {
 
 .mhn-help-cat-pill {
   padding: 10px 18px;
-  border-radius: 24px;
+  /* 8px, not the pill-shaped 24px it had — matches the project-wide 8px
+     structural-chrome radius (feedback 2026-08-30: "make them 8px corner
+     radius"). */
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -13654,8 +14217,13 @@ img.secure {
 }
 
 .mhn-faq-card-item.expanded {
-  border: 1.5px solid #93C5FD;
-  background-color: #F0F9FF;
+  /* Was a hardcoded light-blue border/background (`#93C5FD`/`#F0F9FF`) that
+     never switched with the theme, rendering as a jarring white card in
+     dark mode (feedback 2026-08-30: "at bottom theme issue its showing
+     white, keep consistent... make theme specific"). Both vars already
+     flip to dark-appropriate values via `:root.dark`. */
+  border: 1.5px solid var(--color-auth-action);
+  background-color: var(--color-accent-surface);
 }
 
 .mhn-faq-card-item.collapsed {
@@ -13682,7 +14250,9 @@ img.secure {
   padding: 4px 8px;
   border-radius: 6px;
   background-color: var(--color-info-surface);
-  color: #0369A1;
+  /* Was a hardcoded `#0369A1` (light-theme-only navy) — near-illegible on
+     the dark `--color-info-surface` fill in dark mode. */
+  color: var(--color-auth-action);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -14667,11 +15237,6 @@ img.secure {
   border-color: var(--color-border);
 }
 
-:root.dark .mhn-invite-grow-card {
-  background: linear-gradient(135deg, #0b2140 0%, #0e2f5b 100%);
-  border-color: #17487d;
-}
-
 :root.dark .mhn-chat-item:hover,
 :root.dark .mhn-manage-menu-item:hover,
 :root.dark .mhn-action-item:hover,
@@ -15027,6 +15592,22 @@ img.secure {
   }
 }
 
+/* Settings, Supervision, and Help & Support are reached by "drilling in"
+   from the profile dropdown, and Figma (node 2176:19341, Supervision) shows
+   them full-bleed with no persistent app sidebar at all — just a back
+   arrow in the page's own header (feedback 2026-08-30: "check how setting
+   is looking no left panel only back button, similarly for help and
+   support"). `AppShell` swaps in this modifier class and skips rendering
+   `LeftSidebar`/`MobileNavigation` for those routes instead of forcing
+   every page through the same persistent-sidebar shape. */
+.mhn-app-shell--compact {
+  grid-template-columns: minmax(0, 1fr) minmax(0, var(--page-max-width, 932px)) minmax(0, 1fr);
+}
+
+.mhn-app-shell--compact .mhn-app-content {
+  grid-column: 2;
+}
+
 .mhn-sidebar {
   grid-column: 2;
   width: 240px;
@@ -15108,15 +15689,57 @@ img.secure {
 }
 
 .mhn-sidebar-nav-item-active {
-  color: #439CF7 !important;
+  color: var(--color-auth-action-bright) !important;
   font-weight: 700;
 }
 
 .mhn-sidebar-nav-item-active svg,
 .mhn-sidebar-nav-item-active span {
-  color: #439CF7 !important;
+  color: var(--color-auth-action-bright) !important;
   fill: currentColor;
 }
+
+.mhn-sidebar-nav-icon {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  background-color: currentColor;
+  -webkit-mask: var(--mhn-sidebar-icon) center / contain no-repeat;
+  mask: var(--mhn-sidebar-icon) center / contain no-repeat;
+  opacity: 0.62;
+}
+
+.mhn-sidebar-nav-item-active .mhn-sidebar-nav-icon {
+  opacity: 1;
+}
+
+.mhn-sidebar-nav-icon--home-active { --mhn-sidebar-icon: url('/icons/sidebar/home-active.svg'); }
+.mhn-sidebar-nav-icon--home-inactive { --mhn-sidebar-icon: url('/icons/sidebar/home-inactive.svg'); }
+.mhn-sidebar-nav-icon--network-active { --mhn-sidebar-icon: url('/icons/sidebar/network-active.svg'); }
+.mhn-sidebar-nav-icon--network-inactive { --mhn-sidebar-icon: url('/icons/sidebar/network-inactive.svg'); }
+.mhn-sidebar-nav-icon--events-active { --mhn-sidebar-icon: url('/icons/sidebar/events-active.svg'); }
+.mhn-sidebar-nav-icon--events-inactive { --mhn-sidebar-icon: url('/icons/sidebar/events-inactive.svg'); }
+.mhn-sidebar-nav-icon--messaging-active { --mhn-sidebar-icon: url('/icons/sidebar/messaging-active.svg'); }
+.mhn-sidebar-nav-icon--messaging-inactive { --mhn-sidebar-icon: url('/icons/sidebar/messaging-inactive.svg'); }
+.mhn-sidebar-nav-icon--explore-active { --mhn-sidebar-icon: url('/icons/sidebar/explore-active.svg'); }
+.mhn-sidebar-nav-icon--explore-inactive { --mhn-sidebar-icon: url('/icons/sidebar/explore-inactive.svg'); }
+.mhn-sidebar-nav-icon--notifications-active { --mhn-sidebar-icon: url('/icons/sidebar/notifications-active.svg'); }
+.mhn-sidebar-nav-icon--notifications-inactive { --mhn-sidebar-icon: url('/icons/sidebar/notifications-inactive.svg'); }
+.mhn-sidebar-nav-icon--profile-active { --mhn-sidebar-icon: url('/icons/sidebar/profile-active.svg'); }
+.mhn-sidebar-nav-icon--profile-inactive { --mhn-sidebar-icon: url('/icons/sidebar/profile-inactive.svg'); }
+.mhn-sidebar-nav-icon--saved-active { --mhn-sidebar-icon: url('/icons/sidebar/saved-active.svg'); }
+.mhn-sidebar-nav-icon--saved-inactive { --mhn-sidebar-icon: url('/icons/sidebar/saved-inactive.svg'); }
+.mhn-sidebar-nav-icon--dashboard-active { --mhn-sidebar-icon: url('/icons/sidebar/dashboard-active.svg'); }
+.mhn-sidebar-nav-icon--dashboard-inactive { --mhn-sidebar-icon: url('/icons/sidebar/dashboard-inactive.svg'); }
+.mhn-sidebar-nav-icon--associations-active { --mhn-sidebar-icon: url('/icons/sidebar/associations-active.svg'); }
+.mhn-sidebar-nav-icon--associations-inactive { --mhn-sidebar-icon: url('/icons/sidebar/associations-inactive.svg'); }
+.mhn-sidebar-nav-icon--teams-active { --mhn-sidebar-icon: url('/icons/sidebar/teams-active.svg'); }
+.mhn-sidebar-nav-icon--teams-inactive { --mhn-sidebar-icon: url('/icons/sidebar/teams-inactive.svg'); }
+.mhn-sidebar-nav-icon--feed-active { --mhn-sidebar-icon: url('/icons/sidebar/feed-active.svg'); }
+.mhn-sidebar-nav-icon--feed-inactive { --mhn-sidebar-icon: url('/icons/sidebar/feed-inactive.svg'); }
+.mhn-sidebar-nav-icon--groups-active { --mhn-sidebar-icon: url('/icons/sidebar/groups-active.svg'); }
+.mhn-sidebar-nav-icon--groups-inactive { --mhn-sidebar-icon: url('/icons/sidebar/groups-inactive.svg'); }
 
 .mhn-sidebar-create-post {
   margin-top: 12px;
@@ -15243,10 +15866,17 @@ img.secure {
   /* Stays fixed at the top of the scrolling feed column while the posts
      below it scroll underneath (feedback 2026-08-28: "while scoring top bar
      ... will remain fix and feed will scroll"). The opaque background keeps
-     scrolled-past content from showing through once it's stuck. */
+     scrolled-past content from showing through once it's stuck.
+     `z-index: 15` — not `5` — so it stays above the `z-10` overlays inside
+     an individual post card (media badge, prev/next buttons, the event-
+     register banner) once a post scrolls up underneath it; at `5` the
+     event banner painted over this sticky header (feedback 2026-08-29:
+     "register bar is also overlapping with top header, keep top header
+     highest z index"). Scale: in-post overlays 10 < in-page sticky headers
+     15 < `.mhn-sidebar` 20 < the (legacy) top app header 100. */
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: 15;
   background: var(--color-background);
 }
 
@@ -16165,4 +16795,38 @@ img.secure {
   .cn-drawer-footer-base {
     @apply gap-2 p-4 pt-0;
   }
+}
+
+/* Figma feed surface (1468:9944, 1468:9796, 1468:9883). Keep these
+   component-specific rules after the broad theme compatibility layer above
+   so legacy dark-mode selectors cannot replace the post surface or actions. */
+:root.dark :is(.mhn-feed-post-card, .mhn-post-header, .mhn-post-footer) {
+  background-color: var(--color-auth-field);
+  border-color: var(--color-auth-stroke);
+  box-shadow: none;
+}
+
+:root.dark .mhn-btn-follow {
+  background-color: transparent;
+  border-color: var(--color-auth-action);
+  color: var(--color-auth-action);
+}
+
+:root.dark .mhn-btn-follow:hover {
+  background-color: color-mix(in srgb, var(--color-auth-action) 10%, transparent);
+}
+
+:root.dark .mhn-btn-following,
+:root.dark .mhn-btn-following:hover {
+  background-color: var(--color-auth-action);
+  color: var(--color-primary-foreground);
+}
+
+:root.dark :is(.mhn-action-item-active, .mhn-action-item-reposted) {
+  color: var(--color-primary);
+}
+
+.mhn-mobile-menu-item-active .mhn-sidebar-nav-icon {
+  opacity: 1;
+  color: var(--color-auth-action-bright);
 }

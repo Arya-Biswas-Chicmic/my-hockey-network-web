@@ -29,6 +29,8 @@ export interface ProfileHeroCardProps {
   onShareProfileClick: () => void;
   followers: number;
   following: number;
+  onFollowersClick?: () => void;
+  onFollowingClick?: () => void;
   roleSubtitle: string;
   age: number | null;
   dob: string;
@@ -62,6 +64,8 @@ export function ProfileHeroCard({
   onShareProfileClick,
   followers,
   following,
+  onFollowersClick,
+  onFollowingClick,
   roleSubtitle,
   age,
   dob,
@@ -108,8 +112,12 @@ export function ProfileHeroCard({
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-xl font-bold leading-7 tracking-[0.07px]">{name}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground/80">
-            <span><strong className="text-foreground">{formatProfileCount(followers)}</strong> Followers</span>
-            <span><strong className="text-foreground">{formatProfileCount(following)}</strong> Following</span>
+            <Button type="button" onClick={onFollowersClick} className="h-auto p-0 text-sm font-normal text-foreground/80 hover:text-primary">
+              <strong className="mr-1 text-foreground">{formatProfileCount(followers)}</strong> Followers
+            </Button>
+            <Button type="button" onClick={onFollowingClick} className="h-auto p-0 text-sm font-normal text-foreground/80 hover:text-primary">
+              <strong className="mr-1 text-foreground">{formatProfileCount(following)}</strong> Following
+            </Button>
           </div>
           <p className="mt-2 break-words text-sm text-foreground/90">{roleSubtitle}</p>
         </div>

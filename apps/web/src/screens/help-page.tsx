@@ -6,11 +6,12 @@ import { showErrorToast, showInfoToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { createFileSchema, supportTicketFormSchema, type SupportTicketFormValues } from '@my-hockey-network/validation';
-import { ChevronDown, CircleHelp, Search } from 'lucide-react';
+import { ChevronDown, Search } from 'lucide-react';
 import { Form } from '@/components/ui/form';
 import { FilePickerButton } from '@/components/ui/file-picker-button';
 import { FormInput, FormSelect, FormTextarea } from '@/components/form/fields';
 import { PageShell } from '@/components/layout/PageShell';
+import { CompactPageHeader } from '@/components/layout/CompactPageHeader';
 
 interface HelpPageProps {
   onNavigate?: (screen: string, extraData?: Record<string, unknown>) => void;
@@ -194,36 +195,40 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
 
   return (
     <div className="mhn-help-page-container">
-      <PageShell className="mhn-help-main-layout">
-        
-        {/* ==================== HERO SEARCH SECTION ==================== */}
-        <section className="mhn-help-hero-banner">
-          <div className="mhn-help-hero-icon">
-            <CircleHelp size={28} aria-hidden="true" />
-          </div>
+      {/* `lg:min-h-0 lg:flex-1` + the sticky-header/scroll-body split below —
+          same pattern as `events-page.tsx` (feedback 2026-08-29: "top will
+          be move only content below them will scroll"). Without this the
+          page's own content (2700px+ once the FAQ list/ticket form/contact
+          cards all render) overflowed the shell's clipped viewport height
+          and made the whole document scroll instead of just this page's
+          content — dragging the left sidebar along with it (feedback
+          2026-08-30: "left panel is also scrolling keep that fix"). */}
+      <PageShell className="mhn-help-main-layout flex flex-col lg:min-h-0 lg:flex-1">
 
-          <h1 className="mhn-help-hero-title">
-            Help & Support Center
-          </h1>
-          <p className="mhn-help-hero-sub">
-            How can we help you today? Search our knowledge base or browse help categories below.
-          </p>
+        <div className="mhn-page-sticky-header flex flex-col gap-3">
+          {/* Compact back+title header, replacing the old full hero banner
+              (icon badge + title + subtitle + search) — feedback
+              2026-08-30: "we have 14 articles which looks in small area,
+              keep help and top bar compact... increase their area so that
+              we can easily see 3 4 faq". Search moves into this row's
+              `actions` slot instead of its own tall section. */}
+          <CompactPageHeader
+            title="Help & Support"
+            actions={
+              <div className="mhn-help-search-wrapper">
+                <Search size={16} className="mhn-help-search-icon" aria-hidden="true" />
+                <Input
+                  type="text"
+                  placeholder="Search help topics, FAQs..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="mhn-help-search-input"
+                />
+              </div>
+            }
+          />
 
-          {/* Search Box */}
-          <div className="mhn-help-search-wrapper">
-            <Search size={20} className="mhn-help-search-icon" aria-hidden="true" />
-            <Input
-              type="text"
-              placeholder="Search help topics, FAQs, technical issues..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="mhn-help-search-input"
-            />
-          </div>
-        </section>
-
-        {/* ==================== CATEGORY NAVIGATION PILLS ==================== */}
-        <section className="mhn-mb-32">
+          {/* ==================== CATEGORY NAVIGATION PILLS ==================== */}
           <div className="mhn-help-pills-row">
             {[
               { id: 'all', label: '🔍 All Topics' },
@@ -243,7 +248,9 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
               </Button>
             ))}
           </div>
-        </section>
+        </div>
+
+        <div className="mhn-page-scroll-body pb-16">
 
         {/* ==================== FREQUENTLY ASKED QUESTIONS ==================== */}
         <section className="mhn-help-section-card">
@@ -284,7 +291,8 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
                           {faq.question}
                         </span>
                       </div>
-                      <ChevronDown size={18} className={`mhn-arrow-rotate ${isExpanded ? 'rotated' : ''}`} aria-hidden="true" />
+                      {/* 24px, not 18px — feedback 2026-08-30: "make arrow button big". */}
+                      <ChevronDown size={24} className={`mhn-faq-arrow-rotate ${isExpanded ? 'rotated' : ''}`} aria-hidden="true" />
                     </Button>
 
                     {isExpanded && (
@@ -417,6 +425,8 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onNavigate, onLogout }) => {
             </div>
           </div>
         </section>
+
+        </div>
 
       </PageShell>
     </div>

@@ -16,4 +16,5 @@ export enum AppRoute {
   GROUPS = 'groups',
   TEAMS = 'teams',
   SAVED = 'saved',
+  CONNECTIONS = 'connections',
 }

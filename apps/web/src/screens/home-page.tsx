@@ -212,7 +212,6 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
           <InviteGrowWidget
             onInviteClick={() => showInfoToast('Member invitations are not available yet.')}
-            illustrationUrl="/player.webp"
           />
         </RightSidebar>
       </PageShell>

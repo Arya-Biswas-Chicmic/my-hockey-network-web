@@ -15,6 +15,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
 import { showInfoToast } from '@/utils/toast';
 import { PageShell } from '@/components/layout/PageShell';
+import { getSavedDemoFeedRecords, type DemoFeedRecord } from '@/demo-data/feed';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
@@ -37,39 +38,38 @@ interface SavedItem {
   repostCount?: number;
 }
 
-const INITIAL_SAVED_ITEMS: SavedItem[] = [
-  {
-    id: 'sav-1',
+// Saved reads from the same shared feed dataset every other surface does
+// (`@/demo-data/feed`) instead of its own disconnected fixture — product
+// direction 2026-08-29: "out of 20 other feeds show like I have saved
+// those so saved data will show those feeds only so single data base will
+// be used in multiple locations." A record with an `eventDateTag` renders
+// as the "event" card variant; everything else renders as a post.
+function toSavedItem(record: DemoFeedRecord): SavedItem {
+  if (record.eventDateTag) {
+    return {
+      id: record.id,
+      type: 'event',
+      title: record.content,
+      image: record.postImage || record.images?.[0],
+      date: record.eventDateTag,
+      location: record.eventLocation,
+    };
+  }
+  return {
+    id: record.id,
     type: 'post',
-    authorName: 'KC Blueknocks',
-    authorAvatar: '/KCBluenocks.webp',
-    authorSubtitle: 'Official Team · 1d',
-    content: "First tournament of the season! Let's go! Big thanks to all our players, coaches, and supporters who brought incredible energy to the rink today.",
-    image: '/playHockey.webp',
-    likesCount: 13,
-    commentsCount: 2,
-    repostCount: 1,
-  },
-  {
-    id: 'sav-2',
-    type: 'event',
-    title: '2026 Tim Hortons NHL Heritage Classic',
-    image: '/classic.webp',
-    date: 'October 29, 2026',
-    location: 'Princess Auto Stadium · Winnipeg',
-  },
-  {
-    id: 'sav-3',
-    type: 'post',
-    authorName: 'Jack Ruffle',
-    authorAvatar: '/gerard.webp',
-    authorSubtitle: 'C · #97 · 20 July',
-    content: '🏒 FINAL MATCH DAY! 🏆 Everything we\'ve trained for comes down to this moment. No fear. No excuses. Just heart, teamwork, and the hunger to win! #IceHockey #FinalMatch #GameDay',
-    likesCount: 42,
-    commentsCount: 8,
-    repostCount: 4,
-  },
-];
+    authorName: record.authorName,
+    authorAvatar: record.authorAvatar,
+    authorSubtitle: [record.authorRole, record.authorTime].filter(Boolean).join(' · '),
+    content: record.content,
+    image: record.postImage || record.images?.[0],
+    likesCount: record.likesCount,
+    commentsCount: record.commentsCount,
+    repostCount: record.repostCount ?? 0,
+  };
+}
+
+const INITIAL_SAVED_ITEMS: SavedItem[] = getSavedDemoFeedRecords().map(toSavedItem);
 
 export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { permissions } = useFeedPermissions(onNavigate);
@@ -166,8 +166,11 @@ export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           </Button>
         </div>
 
-        {/* Saved Items Stream */}
-        <div className="flex flex-col gap-5 max-w-[760px] mt-2">
+        {/* Saved Items Stream — `gap-2` (8px), matching the Home feed's own
+            post-to-post gap, the project's one reference spacing for a
+            vertical card stack (feedback 2026-08-30: "spacing between two
+            feed this is ideal spacing I need everywhere"). */}
+        <div className="flex flex-col gap-2 max-w-[760px] mt-2">
           {filteredItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
               <Bookmark size={36} className="text-slate-500" />

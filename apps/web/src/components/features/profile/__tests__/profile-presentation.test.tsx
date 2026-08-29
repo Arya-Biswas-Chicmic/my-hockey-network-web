@@ -5,6 +5,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 
 import { ProfileHeroCard, formatDobDisplay, formatProfileCount } from '@/components/features/profile/ProfileHeroCard';
 import { profileDemoData } from '@/demo-data/profile';
+import { getMyDemoFeedRecords, getMyDemoMediaItems } from '@/demo-data/feed';
 import { calculateAge } from '@/hooks/use-profile-view-model';
 import { ProfileTabEnum } from '@my-hockey-network/contracts';
 
@@ -23,13 +24,15 @@ describe('profile presentation helpers', () => {
   });
 
   it('keeps every profile placeholder in the centralized demo-data source', () => {
-    expect(profileDemoData.media).toHaveLength(6);
     expect(profileDemoData.events).toHaveLength(2);
     expect(profileDemoData.stats.metrics).toHaveLength(6);
-    expect(profileDemoData.feed).toHaveLength(2);
     expect(profileDemoData.teams).toHaveLength(2);
     expect(profileDemoData.people).toHaveLength(5);
     expect(profileDemoData.profile.avatarUrl).toMatch(/^\/demo\/profile\//);
+    // Feed/media come from the shared `@/demo-data/feed` dataset now (10
+    // "mine" records — see that module's header comment).
+    expect(getMyDemoFeedRecords()).toHaveLength(10);
+    expect(getMyDemoMediaItems().length).toBeGreaterThan(0);
   });
 
   it('renders the Figma action order and exposes tab changes through callbacks', () => {

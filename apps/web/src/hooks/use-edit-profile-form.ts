@@ -62,10 +62,13 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
         bio: String(profRecord.bio || ''),
         city: String(profRecord.city || profRecord.location || ''),
         dateOfBirth: dobFormatted,
-        position: String(profRecord.position || 'Center'),
-        shootsCatches: String(profRecord.shootsCatches || profRecord.shoots || 'Left'),
+        // Honestly empty rather than guessed: a fabricated default here (e.g. "Center",
+        // "Left", "Male") would get silently submitted to the backend as the user's real
+        // value if they save without touching these fields — see docs/DEMO_DATA_POLICY.md.
+        position: String(profRecord.position || ''),
+        shootsCatches: String(profRecord.shootsCatches || profRecord.shoots || ''),
         jerseyNumber: profRecord.jerseyNumber !== null && profRecord.jerseyNumber !== undefined ? String(profRecord.jerseyNumber) : '',
-        genderCategory: String(profRecord.genderCategory || profRecord.gender || 'Male'),
+        genderCategory: String(profRecord.genderCategory || profRecord.gender || ''),
         preferredLanguage: String(profRecord.preferredLanguage || 'en'),
         defaultVisibility: String(profRecord.defaultVisibility || 'CONNECTIONS'),
         avatarUrl: resolveMediaUrl(profRecord.avatarUrl as string | undefined, '/userPlaceholder.webp'),

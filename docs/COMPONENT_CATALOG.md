@@ -23,6 +23,13 @@ page → feature/container → feature component → existing platform primitive
 - `common/OtpCodeInput`: the accessible six-digit OTP input reused by email verification and
   guardian approval.
 - `common/Header`: reused across the authenticated web pages.
+- `icons/SidebarNavigationIcon`: the single renderer for desktop and mobile-menu navigation icons.
+  It selects the exact Figma-exported filled/outline asset pair from
+  `public/icons/sidebar/<name>-{active,inactive}.svg`, uses a CSS mask so semantic theme colors own
+  presentation without altering the supplied vector geometry, and
+  replaces the prior mix of hand-traced active SVGs and unrelated Lucide inactive icons. Extend its
+  typed icon-name union and asset map when a new sidebar destination is approved; do not create a
+  route-local navigation icon component.
 - `core/theme-provider`: the only web theme owner. It wraps `next-themes` (`attribute="class"`,
   `defaultTheme="dark"`, `enableSystem`) and re-exports `useTheme`, so consumers import the hook from
   this module, never from `next-themes` directly. It persists `light`, `dark`, or `system`, resolves

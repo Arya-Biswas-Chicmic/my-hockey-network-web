@@ -10,6 +10,7 @@ import {
   isNavigationItemActive,
   NAVIGATION_ITEMS,
 } from '@/constants/navigation.constants';
+import { SidebarNavigationIcon } from '@/components/icons/SidebarNavigationIcon';
 
 export interface MobileNavigationProps {
   activeTab?: string;
@@ -76,16 +77,15 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
         <div className="mhn-mobile-menu-drawer">
           <nav className="mhn-mobile-menu-list">
             {NAVIGATION_ITEMS.map((item) => {
-              const { id, label, ActiveIcon, InactiveIcon } = item;
+              const { id, label, icon } = item;
               const isActive = isNavigationItemActive(pathname, item);
-              const Icon = isActive ? ActiveIcon : InactiveIcon;
               return (
                 <Button
                   key={id}
                   onClick={() => handleNavClick(id)}
                   className={`mhn-mobile-menu-item ${isActive ? 'mhn-mobile-menu-item-active' : ''}`}
                 >
-                  <Icon size={20} />
+                  <SidebarNavigationIcon name={icon} active={isActive} />
                   <span>{label}</span>
                 </Button>
               );

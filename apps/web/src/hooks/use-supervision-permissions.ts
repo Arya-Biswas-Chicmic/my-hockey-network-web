@@ -100,7 +100,13 @@ export function useSupervisionPermissions(showToast: (message: string, type: Toa
     mentionNotifications: true,
   });
 
-  const [isControlsLoading, setIsControlsLoading] = useState(true);
+  // Bug fix 2026-08-30: this used to default to `true` on the assumption a
+  // caller would always flip it to `false` once controls loaded for some
+  // ward — but with zero managed players ("No managed players found"),
+  // nothing ever selects a ward, so `handleToggleControl`'s own load path
+  // never runs and this stayed `true` forever, showing the permissions
+  // skeleton indefinitely instead of the real (empty) state.
+  const [isControlsLoading, setIsControlsLoading] = useState(false);
   const [updatingControlKey, setUpdatingControlKey] = useState<string | null>(null);
 
   const fetchControlsForWard = async (wardId: string) => {

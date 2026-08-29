@@ -139,7 +139,13 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         />
       )}
 
-      <PageShell className="mhn-events-main-container flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-16">
+      <PageShell className="mhn-events-main-container flex flex-col lg:min-h-0 lg:flex-1">
+        {/* Sticky header: title/search/filters + tabs + filter pills stay in
+            place; only the event grid below scrolls (feedback 2026-08-29:
+            "make sure in each tabs, now top will be move only content below
+            them will scroll... event have title and search and filter in
+            top bar"). */}
+        <div className="mhn-page-sticky-header flex flex-col gap-6">
         {/* Top Header Controls Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-slate-100">Events</h1>
@@ -227,8 +233,10 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             </Button>
           ))}
         </div>
+        </div>
 
-        {/* Event Cards Grid */}
+        {/* Event Cards Grid — only this scrolls, header above stays put */}
+        <div className="mhn-page-scroll-body pb-16">
         <div
           className={`grid gap-6 mt-2 ${
             viewMode === 'grid'
@@ -251,6 +259,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               onCardClick={(id) => onNavigate && onNavigate('event-detail')}
             />
           ))}
+        </div>
         </div>
       </PageShell>
     </>

@@ -48,19 +48,6 @@ export const Feed: React.FC<FeedProps> = ({
     onLoadMore: onLoadMore ?? (() => {}),
   });
 
-  if (activeTab !== HomeFeedTab.FOR_YOU) {
-    return (
-      <NoDataFound
-        title={activeTab === HomeFeedTab.NETWORK ? 'Network Feed Coming Soon' : 'Groups Feed Coming Soon'}
-        description={
-          activeTab === HomeFeedTab.NETWORK
-            ? "A feed of just your connections' posts isn't available yet."
-            : "A feed of your groups' posts isn't available yet."
-        }
-      />
-    );
-  }
-
   if (isLoading) {
     return (
       <div className="mhn-col-flex-gap-16">
@@ -70,7 +57,7 @@ export const Feed: React.FC<FeedProps> = ({
     );
   }
 
-  if (error?.isServerError) {
+  if (error?.isServerError && posts.length === 0) {
     return (
       <ServerDown
         title="We’re having trouble loading your feed"
@@ -97,7 +84,12 @@ export const Feed: React.FC<FeedProps> = ({
   }
 
   return (
-    <div className="mhn-feed-posts-stack flex flex-col gap-5">
+    <div className="mhn-feed-posts-stack">
+      {error?.isServerError ? (
+        <div className="rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted-foreground" role="status">
+          Live posts could not be loaded. Showing preview posts.
+        </div>
+      ) : null}
       {posts.map((post) => (
         <FeedPostCard
           key={post.id}

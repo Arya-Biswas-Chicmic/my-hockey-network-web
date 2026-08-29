@@ -16,6 +16,7 @@ import {
   type NavigationItemConfig,
 } from '@/constants/navigation.constants';
 import { SidebarCreatePostIcon, SidebarMoreIcon } from '@/components/icons/SidebarIcons';
+import { SidebarNavigationIcon } from '@/components/icons/SidebarNavigationIcon';
 import { useShellUiStore } from '@/stores/shell-ui-store';
 import { useTheme } from '@/components/core/theme-provider';
 
@@ -95,9 +96,8 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
 
       <nav className="mhn-sidebar-nav" aria-label="Main Navigation">
         {NAVIGATION_ITEMS.map((item: NavigationItemConfig) => {
-          const { id, label, ActiveIcon, InactiveIcon } = item;
+          const { id, label, icon } = item;
           const isActive = isNavigationItemActive(pathname, item);
-          const Icon = isActive ? ActiveIcon : InactiveIcon;
           return (
             <Button
               key={id}
@@ -105,7 +105,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
               className={`mhn-sidebar-nav-item ${isActive ? 'mhn-sidebar-nav-item-active' : ''}`}
               aria-current={isActive ? 'page' : undefined}
             >
-              <Icon size={20} aria-hidden={true} />
+              <SidebarNavigationIcon name={icon} active={isActive} />
               <span>{label}</span>
             </Button>
           );

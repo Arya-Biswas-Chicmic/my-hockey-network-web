@@ -83,6 +83,11 @@ export const ROUTE_MAP: Record<AppRoute, RouteDefinition> = {
     path: paths.saved,
     isProtected: true,
   },
+  [AppRoute.CONNECTIONS]: {
+    key: AppRoute.CONNECTIONS,
+    path: paths.connections,
+    isProtected: true,
+  },
   [AppRoute.ONBOARDING]: {
     key: AppRoute.ONBOARDING,
     path: paths.auth.onboarding,
