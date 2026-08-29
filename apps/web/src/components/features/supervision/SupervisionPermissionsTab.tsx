@@ -1,13 +1,25 @@
 'use client';
 
 import { useState, type Dispatch, type SetStateAction } from 'react';
-import NextImage from 'next/image';
-import { ChevronDown, LoaderCircle } from 'lucide-react';
+import { Bell, ChevronDown, Home, LoaderCircle, MessageCircle, Users } from 'lucide-react';
 
 import { Button } from '@/components/common/Button';
 import { Dropdown } from '@/components/common/FormControls';
 import { PermissionSkeletonLoader } from '@/components/supervision/permission-skeleton-loader';
 import type { PermissionState } from '@/hooks/use-supervision-permissions';
+
+/** Figma's 32px, 8px-corner, category-tinted icon badge (node 2176:19341) —
+ * a plain glyph in a colored box per category, not the previous full-color
+ * illustration images (`/home.webp` etc.), which don't match that shape at
+ * all. Reuses lucide (already the app's icon library) instead of adding new
+ * image assets. */
+function CategoryIcon({ variant, icon: Icon }: Readonly<{ variant: 'home' | 'network' | 'messaging' | 'notifications'; icon: typeof Home }>) {
+  return (
+    <div className={`mhn-permission-category-icon mhn-permission-category-icon--${variant}`}>
+      <Icon size={16} aria-hidden="true" />
+    </div>
+  );
+}
 
 interface PermissionRowProps {
   title: string;
@@ -89,7 +101,7 @@ export function SupervisionPermissionsTab({
       <div className={`mhn-supervision-accordion ${expandedCategories.home ? 'mhn-accordion-expanded' : ''}`}>
         <div className="mhn-accordion-header" onClick={() => toggleCategory('home')}>
           <div className="mhn-accordion-title-left">
-            <NextImage src="/home.webp" alt="" width={32} height={32} className="home" />
+            <CategoryIcon variant="home" icon={Home} />
             <span className="superTitle">Home</span>
           </div>
           <ChevronDown className={`mhn-accordion-chevron ${expandedCategories.home ? 'mhn-chevron-up' : ''}`} size={16} aria-hidden="true" />
@@ -110,7 +122,7 @@ export function SupervisionPermissionsTab({
       <div className={`mhn-supervision-accordion ${expandedCategories.network ? 'mhn-accordion-expanded' : ''}`}>
         <div className="mhn-accordion-header" onClick={() => toggleCategory('network')}>
           <div className="mhn-accordion-title-left">
-            <NextImage src="/myNetwork.webp" alt="" width={32} height={32} className="home" />
+            <CategoryIcon variant="network" icon={Users} />
             <span className="superTitle">My Network</span>
           </div>
           <ChevronDown className={`mhn-accordion-chevron ${expandedCategories.network ? 'mhn-chevron-up' : ''}`} size={16} aria-hidden="true" />
@@ -159,7 +171,7 @@ export function SupervisionPermissionsTab({
       <div className={`mhn-supervision-accordion ${expandedCategories.messaging ? 'mhn-accordion-expanded' : ''}`}>
         <div className="mhn-accordion-header" onClick={() => toggleCategory('messaging')}>
           <div className="mhn-accordion-title-left">
-            <NextImage src="/messaging2.webp" alt="" width={32} height={32} className="home" />
+            <CategoryIcon variant="messaging" icon={MessageCircle} />
             <span className="superTitle">Messaging</span>
           </div>
           <ChevronDown className={`mhn-accordion-chevron ${expandedCategories.messaging ? 'mhn-chevron-up' : ''}`} size={16} aria-hidden="true" />
@@ -193,7 +205,7 @@ export function SupervisionPermissionsTab({
       <div className={`mhn-supervision-accordion ${expandedCategories.notifications ? 'mhn-accordion-expanded' : ''}`}>
         <div className="mhn-accordion-header" onClick={() => toggleCategory('notifications')}>
           <div className="mhn-accordion-title-left">
-            <NextImage src="/notifications.webp" alt="" width={32} height={32} className="home" />
+            <CategoryIcon variant="notifications" icon={Bell} />
             <span className="superTitle">Notifications</span>
           </div>
           <ChevronDown className={`mhn-accordion-chevron ${expandedCategories.notifications ? 'mhn-chevron-up' : ''}`} size={16} aria-hidden="true" />

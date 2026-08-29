@@ -1,19 +1,20 @@
 'use client';
 
-import { MapPin } from 'lucide-react';
 import type { UseQueryResult } from '@tanstack/react-query';
 import type { GuardianRelationshipRequest } from '@my-hockey-network/core';
 
 import { Button } from '@/components/common/Button';
 import { NoDataFound } from '@/components/common/no-data-found';
-import { FallbackImage } from '@/components/ui/fallback-image';
 import { GuardianRequestSkeleton } from '@/components/supervision/guardian-request-skeleton';
 import {
   getGuardianRequestCode,
   getGuardianRequestName,
   GuardianRelationshipRequestCard,
 } from '@/components/supervision/guardian-relationship-request-card';
+import { SupervisionRequestRow } from '@/components/supervision/supervision-request-row';
 import { resolveMediaUrl } from '@/utils/mediaUtils';
+import { showInfoToast } from '@/utils/toast';
+import { DEMO_GUARDIAN_REQUESTS } from '@/demo-data/supervision';
 import type { PendingSupervisionRequest } from '@/hooks/use-supervision-requests';
 
 export interface SupervisionRequestsTabProps {
@@ -55,7 +56,13 @@ export function SupervisionRequestsTab({
   onOpenApproveModal,
   onOpenDeclineModal,
 }: Readonly<SupervisionRequestsTabProps>) {
-  const hasNoRequests = livePendingRequests.length === 0 && (guardianRequestsQuery.data ?? []).length === 0;
+  // Demo requests are appended after real ones, never replacing them (same
+  // "real first, demo after" convention as `useHomeFeed`'s demo posts —
+  // see docs/DEMO_DATA_POLICY.md) — feedback 2026-08-30: "multiple request
+  // from demo data". Non-empty, so the empty state below only shows if
+  // this dataset itself is ever cleared.
+  const guardianRequests = [...(guardianRequestsQuery.data ?? []), ...DEMO_GUARDIAN_REQUESTS];
+  const hasNoRequests = livePendingRequests.length === 0 && guardianRequests.length === 0;
 
   return (
     <div className="mhn-supervision-requests-stack">
@@ -107,106 +114,77 @@ export function SupervisionRequestsTab({
                 ? (req.requester?.teamName || req.minorCard?.teamName)
                 : (child.teamName || req.teamName);
 
-              const rawTeamLogo = isApprovalItem ? req.requester?.teamLogo : child.teamLogo;
-              const teamLogo = rawTeamLogo ? resolveMediaUrl(rawTeamLogo, '/HC.webp') : '/HC.webp';
-
               const location = isApprovalItem
                 ? (req.requester?.location || req.minorCard?.location || req.minor?.city)
                 : (child.location || req.location || child.city);
 
               const code = req.code || req.devCode || req.inviteCode;
+              const subtitle = [roleTag, teamName, location].filter(Boolean).join(' • ');
 
               return (
-                <div key={reqId} className="mhn-supervision-req-card mhn-req-card-centered">
-                  <div className="mhn-req-avatar-container">
-                    <FallbackImage src={avatarUrl} alt={displayName} width={72} height={72} className="mhn-req-avatar-lg" />
-                  </div>
-
-                  <h4 title={displayName} className="mhn-req-name-lg">{displayName}</h4>
-                  <p className="mhn-req-role-lg">{roleTag}</p>
-
-                  {teamName && (
-                    <div className="mhn-req-team-pill">
-                      <FallbackImage src={teamLogo} alt="Team" width={16} height={16} hideOnError className="mhn-req-team-logo-mini" />
-                      <span className="mhn-ellipsis-text">{teamName}</span>
-                    </div>
-                  )}
-
-                  {location && (
-                    <div className="mhn-req-loc-row">
-                      <MapPin size={12} className="mhn-flex-shrink-0" aria-hidden="true" />
-                      <span className="mhn-ellipsis-text">{location}</span>
-                    </div>
-                  )}
-
-                  {isApprovalItem && req.action && (
-                    <div className="mhn-req-action-badge">
-                      {`${String(req.action).replace(/_/g, ' ')} approval`}
-                    </div>
-                  )}
-
-                  {isApprovalItem && req.subject && (
-                    <div className="mhn-req-subject-preview-box">
-                      <div className="mhn-req-subject-title">
-                        {req.subject.kind || 'Post'} {req.subject.audience ? `(${req.subject.audience})` : ''}
-                      </div>
-                      {req.subject.body && <p className="mhn-req-subject-body">&quot;{req.subject.body}&quot;</p>}
-                    </div>
-                  )}
-
-                  <div className="mhn-req-btn-row">
-                    <Button
-                      type="button"
-                      className="mhn-req-btn-outline"
-                      disabled={requestActionLoading}
-                      onClick={() => {
-                        if (isApprovalItem) {
-                          onDeclineApprovalItem(reqId);
-                        } else {
-                          // Fire-and-forget, matching the original — no modal for this list's decline.
-                          onDeclineByCode(code || reqId);
-                        }
-                      }}
-                    >
-                      {isApprovalItem ? 'Ignore' : 'Decline'}
-                    </Button>
-                    <Button
-                      type="button"
-                      className="mhn-req-btn-solid"
-                      disabled={requestActionLoading}
-                      onClick={() => {
-                        if (isApprovalItem) {
-                          onApproveApprovalItem(reqId);
-                        } else {
-                          // Empty code is deliberate here — matches original behavior exactly.
-                          onOpenApproveModal(displayName, '');
-                        }
-                      }}
-                    >
-                      {isApprovalItem ? 'Accept' : 'Approve'}
-                    </Button>
-                  </div>
-                </div>
+                <SupervisionRequestRow
+                  key={reqId}
+                  avatarUrl={avatarUrl}
+                  displayName={displayName}
+                  subtitle={subtitle}
+                  badgeText={isApprovalItem && req.action ? `${String(req.action).replace(/_/g, ' ')} approval` : undefined}
+                  subjectTitle={isApprovalItem && req.subject ? `${req.subject.kind || 'Post'} ${req.subject.audience ? `(${req.subject.audience})` : ''}`.trim() : undefined}
+                  subjectBody={isApprovalItem ? req.subject?.body : undefined}
+                  declineLabel={isApprovalItem ? 'Ignore' : 'Decline'}
+                  approveLabel={isApprovalItem ? 'Accept' : 'Approve'}
+                  disabled={requestActionLoading}
+                  onDecline={() => {
+                    if (isApprovalItem) {
+                      onDeclineApprovalItem(reqId);
+                    } else {
+                      // Fire-and-forget, matching the original — no modal for this list's decline.
+                      onDeclineByCode(code || reqId);
+                    }
+                  }}
+                  onApprove={() => {
+                    if (isApprovalItem) {
+                      onApproveApprovalItem(reqId);
+                    } else {
+                      // Empty code is deliberate here — matches original behavior exactly.
+                      onOpenApproveModal(displayName, '');
+                    }
+                  }}
+                />
               );
             })}
-            {(guardianRequestsQuery.data ?? []).map((request) => (
-              <GuardianRelationshipRequestCard
-                key={request.id}
-                request={request}
-                disabled={requestActionLoading}
-                onDecline={(selectedRequest) => {
-                  const code = getGuardianRequestCode(selectedRequest);
-                  if (code) {
-                    onDeclineByCode(code);
-                    return;
-                  }
-                  onOpenDeclineModal(getGuardianRequestName(selectedRequest));
-                }}
-                onApprove={(selectedRequest) => {
-                  onOpenApproveModal(getGuardianRequestName(selectedRequest), getGuardianRequestCode(selectedRequest));
-                }}
-              />
-            ))}
+            {guardianRequests.map((request) => {
+              const isDemo = request.id.startsWith('demo-');
+              return (
+                <GuardianRelationshipRequestCard
+                  key={request.id}
+                  request={request}
+                  disabled={requestActionLoading}
+                  onDecline={(selectedRequest) => {
+                    // Demo items have no real backend record to decline —
+                    // route to a toast instead of the live API/modal flow,
+                    // same "honest, clearly labeled placeholder" pattern
+                    // used for messaging attachments elsewhere.
+                    if (isDemo) {
+                      showInfoToast('This is demo data — connect the guardian-relationship API to decline real requests.');
+                      return;
+                    }
+                    const code = getGuardianRequestCode(selectedRequest);
+                    if (code) {
+                      onDeclineByCode(code);
+                      return;
+                    }
+                    onOpenDeclineModal(getGuardianRequestName(selectedRequest));
+                  }}
+                  onApprove={(selectedRequest) => {
+                    if (isDemo) {
+                      showInfoToast('This is demo data — connect the guardian-relationship API to approve real requests.');
+                      return;
+                    }
+                    onOpenApproveModal(getGuardianRequestName(selectedRequest), getGuardianRequestCode(selectedRequest));
+                  }}
+                />
+              );
+            })}
           </div>
         )}
       </div>

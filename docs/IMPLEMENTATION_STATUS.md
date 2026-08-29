@@ -2209,6 +2209,53 @@ Last reviewed: 2026-08-30
     dependency. `typecheck`/`lint:check`/`check-component-reuse.mjs`/
     `test:run` (295/295) all pass.
 
+- Supervision pixel-matched to Figma (node 2176:19341), a shared request-
+  row component, and demo requests/logs (2026-08-30):
+  - **Two genuine invisible-text bugs, not styling nitpicks** —
+    `.superTitle` (the "Home"/"My Network"/etc. section titles) had
+    `color: '#080809';` — a quoted string, which is not a valid CSS color
+    value, so the whole declaration was silently dropped and the text
+    rendered in the browser's black default against the dark theme.
+    `.mhn-permission-title` (every toggle row's own title, "View feed"/
+    "Create posts"/etc.) had a real but hardcoded `#080809`, same
+    practical effect. Both now use `var(--color-foreground)`. This is
+    what the "Permissions tab showing shimmer" feedback screenshot
+    actually was in the reported case where it wasn't blank shimmer —
+    rows with only their gray subtitle line visible.
+  - **Category icon badges** — Figma's 32px, 8px-corner, per-category-
+    tinted badges (blue/purple/cyan/amber for Home/My Network/Messaging/
+    Notifications) replaced the previous plain 32px illustration images,
+    reusing lucide (already the app's icon library) instead of new image
+    assets — new `CategoryIcon` helper in `SupervisionPermissionsTab.tsx`.
+  - **Toggle switch** sized to Figma's exact 40x22 (handle 18px), not a
+    rounder 44x24 — shared by Settings' notification toggles too.
+  - **Section border-radius** 12px, not 8px, and no more "thicker border
+    while expanded" (Figma doesn't have that; only the chevron rotates).
+  - **Request cards → the follow-card pattern** — `GuardianRelationship
+    RequestCard` (shared by Supervision's Requests tab and Profile's own
+    Guardian Requests tab) and Supervision's separate content-approval
+    list both rendered their own vertically-centered card. Replaced both
+    with one new shared `SupervisionRequestRow`, which reuses `WhoTo
+    FollowWidget`'s own row shape (`.mhn-who-to-follow-row`/`-avatar`/
+    `-name`) — avatar + name/role-team-location on the left, Decline/
+    Approve on the right — per feedback: "make request similar to card
+    we have follow user card similar".
+  - **Demo requests/logs** — `demo-data/supervision/index.ts` adds 3 demo
+    guardian-relationship requests (feedback: "multiple request from
+    demo data") and 10 demo activity logs ("add 10 logs like accepted
+    request, like the video etc"), both appended after real API results,
+    never replacing them (same convention as `useHomeFeed`'s demo posts).
+    Demo request ids are prefixed `demo-` so their Approve/Decline route
+    to an info toast instead of the real guardian-relationship API, which
+    has no record for a fabricated id. Also fixed the Logs tab's
+    pagination footer, which hardcoded "1 - 5 of 5 items" regardless of
+    the actual row count.
+  - Verified by code/typecheck/lint/tests only, same limitation as the
+    entry above — `ParentRoleGuard` blocks the only available test
+    session from reaching `/supervision` at all.
+    `typecheck`/`lint:check`/`check-component-reuse.mjs`/`test:run`
+    (295/295) all pass.
+
 ## Current quality gates
 
 - Obfuscation/security scan must report zero findings.

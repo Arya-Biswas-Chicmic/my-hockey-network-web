@@ -59,7 +59,9 @@ export function SupervisionLogsTab({ logs, searchQuery, onSearchQueryChange }: R
       </div>
 
       <div className="mhn-logs-pagination-footer">
-        <span className="mhn-logs-count-info">1 - 5 of 5 items</span>
+        <span className="mhn-logs-count-info">
+          {logs.length === 0 ? '0 items' : `1 - ${logs.length} of ${logs.length} items`}
+        </span>
         <div className="mhn-logs-pagination-buttons">
           <Button className="mhn-page-btn" disabled>Previous</Button>
           <Button className="mhn-page-btn">Next</Button>

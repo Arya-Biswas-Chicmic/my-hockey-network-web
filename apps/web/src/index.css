@@ -8839,8 +8839,10 @@
 }
 
 .mhn-toggle-switch {
-  width: 44px;
-  height: 24px;
+  /* 40x22 with a 2px inset (18px handle) — Figma's exact toggle size
+     (node 2176:19821), not a rounder, larger generic one. */
+  width: 40px;
+  height: 22px;
   border-radius: 12px;
   border: none;
   cursor: pointer;
@@ -8859,8 +8861,8 @@
 }
 
 .mhn-toggle-handle {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background-color: var(--color-background);
   transition: transform 0.2s ease;
@@ -8868,7 +8870,7 @@
 }
 
 .mhn-toggle-on .mhn-toggle-handle {
-  transform: translateX(20px);
+  transform: translateX(18px);
 }
 
 .mhn-general-settings-view {
@@ -8920,7 +8922,14 @@
 }
 
 .superTitle {
-  color: '#080809';
+  /* Was `color: '#080809';` — a quoted string is not a valid CSS color
+     value, so the declaration was silently dropped and this text fell
+     back to the browser's black default, rendering near-invisible
+     against the dark theme (feedback screenshot 2026-08-30 showed "Home",
+     "My Network", etc. section titles missing while their toggle-row
+     subtitles, which use a real color value, stayed visible). Figma
+     (node 2176:19341) uses white/`--text` here. */
+  color: var(--color-foreground);
   font-size: 15px;
   font-weight: 600;
   line-height: 22.5px;
@@ -9224,16 +9233,14 @@
 }
 
 .mhn-supervision-accordion {
+  /* 12px + 1px border, not 8px + a 2px-on-expand border — Figma's
+     "Section" wrapper (node 2176:19803 etc.) keeps the same 1px border
+     regardless of expand state; only the chevron rotates. */
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: 12px;
 
   overflow: hidden;
   background-color: var(--color-background);
-  transition: border-color 0.15s ease;
-}
-
-.mhn-supervision-accordion.mhn-accordion-expanded {
-  border: 2px solid var(--color-muted-foreground);
 }
 
 .mhn-accordion-header {
@@ -9249,10 +9256,45 @@
 .mhn-accordion-title-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   font-size: 16px;
   font-weight: 700;
   color: var(--color-foreground);
+}
+
+/* Figma's 32px, 8px-corner, category-tinted icon badge (node 2176:19805
+   etc.), reusing the same "icon in a tinted box" shape as
+   `.mhn-dropdown-icon-box` elsewhere in the app rather than inventing a
+   new one — just square instead of circular, and tinted per category
+   instead of always the accent color, both per Figma. */
+.mhn-permission-category-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mhn-permission-category-icon--home {
+  background-color: color-mix(in srgb, #0b66c2 9%, transparent);
+  color: #0b66c2;
+}
+
+.mhn-permission-category-icon--network {
+  background-color: color-mix(in srgb, #7c3aed 9%, transparent);
+  color: #7c3aed;
+}
+
+.mhn-permission-category-icon--messaging {
+  background-color: color-mix(in srgb, #0891b2 9%, transparent);
+  color: #0891b2;
+}
+
+.mhn-permission-category-icon--notifications {
+  background-color: color-mix(in srgb, #d97706 9%, transparent);
+  color: #d97706;
 }
 
 .mhn-accordion-chevron {
@@ -9317,7 +9359,9 @@
 .mhn-permission-title {
   font-size: 14px;
   font-weight: 500;
-  color: #080809;
+  /* Was a hardcoded near-black `#080809` — invisible against the dark
+     theme (same bug as `.superTitle` above). */
+  color: var(--color-foreground);
   margin: 0 0 2px 0;
 }
 
@@ -9817,31 +9861,21 @@
 }
 
 /* ==========================================================================
-   SUPERVISION REQUESTS GRID & CARDS (Figma Image 33)
+   SUPERVISION REQUESTS LIST & CARDS
+
+   A vertical stack of compact rows now, not a grid of tall centered cards
+   — feedback 2026-08-30: "make request similar to card we have follow
+   user card similar" (`WhoToFollowWidget`'s `FollowSuggestionItem`: an
+   avatar + name/role on the left, an action on the right, reused directly
+   below via `.mhn-who-to-follow-row`/`-avatar`/`-name`). 8px gap matches
+   the project's one reference card-stack spacing (see `.mhn-feed-posts-
+   stack`).
    ========================================================================== */
 .mhn-supervision-requests-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   width: 100%;
-}
-
-@media (max-width: 1200px) {
-  .mhn-supervision-requests-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 900px) {
-  .mhn-supervision-requests-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 600px) {
-  .mhn-supervision-requests-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .mhn-supervision-req-card {
@@ -14899,6 +14933,69 @@ img.secure {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+
+/* Compact row card for Supervision/Profile guardian requests — reuses
+   `.mhn-who-to-follow-row`/`-avatar`/`-name` (`WhoToFollowWidget`'s own
+   row shape) instead of the old vertically-centered card, per feedback
+   2026-08-30: "make request similar to card we have follow user card
+   similar". `SupervisionRequestRow` is the one shared component both
+   `GuardianRelationshipRequestCard` and `SupervisionRequestsTab`'s other
+   request list render through. */
+.mhn-supervision-request-row {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+
+  background-color: var(--color-background);
+  padding: 12px 14px;
+  box-sizing: border-box;
+}
+
+.mhn-req-subtitle {
+  display: block;
+  font-size: 12px;
+  color: var(--color-muted-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mhn-req-btn-outline-sm {
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-background);
+  color: var(--color-neutral-700);
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.mhn-req-btn-solid-sm {
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: none;
+  background: var(--color-auth-action);
+  color: var(--color-background);
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.mhn-req-btn-outline-sm:disabled,
+.mhn-req-btn-solid-sm:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .mhn-updating-state {

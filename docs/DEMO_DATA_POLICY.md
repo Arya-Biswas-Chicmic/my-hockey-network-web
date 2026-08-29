@@ -53,6 +53,13 @@ error; fallback is for absent/empty display data, not for concealing transport o
 - `teams.json`: fallback Career entries when the Career response is empty.
 - `people-you-may-know.json`: fallback rows supplied to the shared `WhoToFollowWidget` only when its
   recommendation query has no records.
+- `supervision/index.ts` (`DEMO_GUARDIAN_REQUESTS`, `DEMO_SUPERVISION_LOGS`): 3 demo guardian-
+  relationship requests and 10 demo activity-log rows for Supervision's Requests/Logs tabs,
+  **appended after real API results always**, same "not an empty-state fallback" rule as the feed
+  records above — feedback 2026-08-30: "multiple request from demo data and in log tabs and add 10
+  logs". Demo request ids use the `demo-` prefix so `SupervisionRequestsTab` routes their Approve/
+  Decline to an info toast instead of the real guardian-relationship API, which has no backend
+  record for a fabricated id.
 
 All Profile fixture images are local WebP files under `apps/web/public/demo/profile/`. Demo IDs use
 the `demo-` prefix; mutations against them are handled locally and must never be sent to backend APIs.

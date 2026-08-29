@@ -5,6 +5,7 @@ import { getSupervisionControls, getSupervisionLogs, type SupervisionControlItem
 
 import { extractErrorMessage } from '@/utils/toast';
 import { useDebounce } from '@/hooks/use-debounce';
+import { DEMO_SUPERVISION_LOGS } from '@/demo-data/supervision';
 
 export interface ActivityLogView {
   id: string;
@@ -84,7 +85,13 @@ export function useSupervisionLogs(
     void loadWardControlsAndLogs();
   }, [selectedWardId]);
 
-  const filteredLogs = liveLogs.filter((log) => {
+  // Demo logs are appended after real ones, never replacing them — same
+  // "real first, demo after" convention as `useHomeFeed`'s demo posts —
+  // feedback 2026-08-30: "in log tabs and add 10 logs like accepted
+  // request, like the video etc".
+  const allLogs = [...liveLogs, ...DEMO_SUPERVISION_LOGS];
+
+  const filteredLogs = allLogs.filter((log) => {
     if (!debouncedLogsSearchQuery.trim()) return true;
     const q = debouncedLogsSearchQuery.toLowerCase();
     return (
