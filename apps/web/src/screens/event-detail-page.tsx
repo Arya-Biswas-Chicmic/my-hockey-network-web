@@ -38,8 +38,23 @@ export function EventDetailPage({ onNavigate, eventTitle = demoEventDetail.title
   const handleBack = () => (onBack ? onBack() : onNavigate?.('events'));
 
   return (
-    <PageShell maxWidth={1166} className="lg:my-0 lg:min-h-0 lg:flex-1">
-      {/* This page's own content is taller than the viewport once "About"/
+    <PageShell className="lg:my-0 lg:min-h-0 lg:flex-1">
+      {/* No `maxWidth` override here — `PageShell`'s own shared default
+          (932px, the same `--page-max-width` every other route including
+          Team/Group Detail renders at) is what gives this page the same
+          left/right gutter as those pages. This page used to pass
+          `maxWidth={1166}`, widening its own `.mhn-app-content` grid track
+          past what Team/Group Detail use, which is why its edges sat
+          visibly closer to the viewport (feedback 2026-08-31: "make this
+          view port consistent similar to team tab by making left and
+          right event spacing like group tab"). The 1166px feel of this
+          page's own banner/two-column layout still comes from its own
+          `max-w-[1166px]` below — exactly how Team/Group Detail's inner
+          `max-w-[1166px]` wrapper already works inside the same shared
+          932px shell, so this now matches them by construction rather
+          than by a page-specific width override.
+
+          This page's own content is taller than the viewport once "About"/
           "Things to know" render, but `.mhn-app-content` clips overflow at
           `lg:` (see its `lg:h-dvh lg:overflow-hidden` in `AppShell.tsx`) —
           without an internal scroll owner here, everything past one
@@ -53,7 +68,7 @@ export function EventDetailPage({ onNavigate, eventTitle = demoEventDetail.title
           sections already use — folded into that one class (feedback
           2026-08-31: "fix here only [by] adding [a] global factor") rather
           than each page re-typing the same four Tailwind utilities. */}
-      <section className="mhn-layout-col-center flex flex-col gap-6 pb-16 text-foreground">
+      <section className="mhn-layout-col-center mx-auto flex w-full max-w-[1166px] flex-col gap-6 pb-16 text-foreground">
         <header className="flex items-center gap-3">
           <Button type="button" variant="unstyled" className="flex size-8 items-center justify-center rounded-full hover:bg-muted" onClick={handleBack} aria-label="Back to events">
             <ChevronRight size={24} className="rotate-180" aria-hidden="true" />

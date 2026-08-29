@@ -4,6 +4,17 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Fixed Event Detail rendering wider (less left/right gutter) than Team/Group Detail at the same
+  window size (feedback 2026-08-31: "make this view port consistent similar to team tab by making
+  left and right event spacing like group tab"). It passed `maxWidth={1166}` to `PageShell`, widening
+  its own `--page-max-width`/`.mhn-app-content` grid track past the `932px` every other route
+  (including Team/Group Detail) renders at — those pages get their own 1166px two-column feel from an
+  *inner* `max-w-[1166px]` wrapper that is a no-op ceiling inside the shared 932px shell, not from a
+  page-specific `PageShell` override. Removed the override and moved the same `max-w-[1166px]
+  mx-auto` convention onto Event Detail's own inner section, so it now matches by construction
+  instead of diverging via a one-off width. Confirmed via `--page-max-width` reading `932px` on both
+  pages afterward, not just visually.
+
 - Consolidated the repeated "this column is the scrollable region of a fixed-height detail page"
   pattern (`lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain`, hand-typed identically at
   Home/Profile/Event Detail's own call sites) into `.mhn-layout-col-center` itself in `index.css`
