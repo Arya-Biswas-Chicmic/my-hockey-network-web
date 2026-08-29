@@ -2259,6 +2259,32 @@ FollowWidget`'s own row shape (`.mhn-who-to-follow-row`/`-avatar`/
     `typecheck`/`lint:check`/`check-component-reuse.mjs`/`test:run`
     (295/295) all pass.
 
+- Text-visibility regression sweep, Invite & Grow / Upcoming Events matched
+  to Figma (2026-08-30):
+  - **Root cause of the recurring "invisible text" reports** — many colored
+    buttons/badges/overlays used `color: var(--color-background)` for their
+    own text, reading it as a generic "high-contrast" token. It's actually
+    the page background color, so it silently broke wherever a surface's
+    color happened to converge with it. Replaced every such usage with the
+    new `--color-primary-foreground` token (white in both themes, meant
+    specifically for text on a primary/colored surface) and added a
+    regression test (`sidebar-widgets.test.tsx`) asserting `index.css`
+    never reintroduces `color: var(--color-background)` as a text color.
+  - **Invite & Grow** — illustration resized/repositioned to Figma nodes
+    1993:19396/1993:19390 exactly (136×126 at top:16/right:13, `normal`
+    blend mode in light theme, `color-dodge` kept for dark), description
+    text now theme-aware instead of a fixed `rgba(255,255,255,0.7)`.
+  - **Upcoming Events** date box restyled to Figma's gradient badge
+    (74×84, `linear-gradient(90deg, #053769, #2e75bb)`,
+    `--color-primary-foreground` text) and its info-line icons enlarged
+    13px → 16px.
+  - Verified live with a fresh parent-role test account (the prior
+    session couldn't reach `/supervision` at all): Settings/Help &
+    Support's two-panel layout and toggle contrast, and Supervision's
+    permission section titles/request rows/demo logs all render with the
+    fixed text-visibility rule. `typecheck`/`lint:check`/
+    `check-component-reuse.mjs`/`test:run` (304/304) all pass.
+
 ## Current quality gates
 
 - Obfuscation/security scan must report zero findings.

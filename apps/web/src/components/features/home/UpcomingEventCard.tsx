@@ -29,12 +29,12 @@ export const UpcomingEventCard: React.FC<UpcomingEventCardProps> = ({ event, onC
         <h4 className="mhn-event-title truncate text-sm font-semibold text-slate-100">{event.title}</h4>
 
         <div className="mhn-event-info-line mt-1 flex items-center gap-1.5 text-xs text-slate-400">
-          <Clock size={13} className="shrink-0 text-slate-400" aria-hidden="true" />
+          <Clock size={16} className="shrink-0 text-slate-400" aria-hidden="true" />
           <span className="truncate">{event.time}</span>
         </div>
 
         <div className="mhn-event-info-line mt-0.5 flex items-center gap-1.5 text-xs text-slate-400">
-          <MapPin size={13} className="shrink-0 text-slate-400" aria-hidden="true" />
+          <MapPin size={16} className="shrink-0 text-slate-400" aria-hidden="true" />
           <span className="truncate">{event.location}</span>
         </div>
       </div>

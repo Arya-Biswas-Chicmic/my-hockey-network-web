@@ -343,7 +343,7 @@
   width: 100%;
   height: 50px;
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-weight: 600;
   font-size: 16px;
   border-radius: 8px;
@@ -535,7 +535,7 @@
   width: 100%;
   height: 57px;
   background-color: var(--color-auth-action);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-weight: 600;
   font-size: 18px;
   border-radius: 8px;
@@ -684,7 +684,7 @@
 .guardian-panel-brand {
   font-size: 22px;
   font-weight: 700;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   letter-spacing: -0.01em;
   position: relative;
   z-index: 2;
@@ -771,7 +771,7 @@
 .guardian-feature-title {
   font-size: 15px;
   font-weight: 600;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   line-height: 1.3;
 }
 
@@ -916,7 +916,7 @@
   width: 100%;
   height: 57px;
   background-color: var(--color-auth-action);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-weight: 600;
   font-size: 18px;
   border-radius: 8px;
@@ -1009,7 +1009,7 @@
 
 .dev-switcher-btn {
   background: transparent;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   border: none;
   padding: 4px 12px;
   border-radius: 8px;
@@ -1134,7 +1134,7 @@
   max-width: 576;
   height: 57px;
   background-color: var(--color-auth-action);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-weight: 600;
   font-size: 18px;
   border-radius: 8px;
@@ -1281,7 +1281,7 @@
 .mhn-logo-title {
   font-size: 26px;
   font-weight: 900;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   letter-spacing: -0.03em;
   font-style: italic;
   line-height: 1;
@@ -1332,12 +1332,12 @@
 }
 
 .mhn-nav-item:hover {
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   background-color: rgba(255, 255, 255, 0.04);
 }
 
 .mhn-nav-item-active {
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-weight: 600;
 }
 
@@ -1401,7 +1401,7 @@
 .mhn-user-name {
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   max-width: 180px;
   white-space: nowrap;
   overflow: hidden;
@@ -2099,7 +2099,7 @@
   width: 100%;
   height: 44px;
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 15px;
   font-weight: 700;
   border-radius: 8px;
@@ -2362,7 +2362,7 @@
 
   border: none;
   background-color: #0091ff;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -2449,7 +2449,7 @@
   border-radius: 8px;
   border: none;
   background: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -2517,7 +2517,7 @@
   top: 8px;
   right: 8px;
   background: rgba(15, 23, 42, 0.7);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   border: none;
   border-radius: 50%;
   width: 26px;
@@ -2605,7 +2605,7 @@
 
 .mhn-modal-submit-btn.active {
   background-color: var(--color-auth-action);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(11, 102, 194, 0.3);
 }
@@ -3036,7 +3036,7 @@
 .mhn-like-badge-active {
   border-color: transparent;
   background-color: #ff483d;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
 }
 
 .mhn-repost-icon-active {
@@ -3373,22 +3373,21 @@
 
 .mhn-event-card-item {
   border: 1px solid var(--color-secondary);
-  border-radius: 8px;
-
-  padding: 12px 14px;
-  background-color: var(--color-background);
+  border-radius: 10px;
+  padding: 0;
+  background-color: var(--color-card);
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  overflow: hidden;
 }
 
 .mhn-event-date-box {
-  width: 54px;
-  height: 58px;
-  border-radius: 8px;
-
-  background-color: #102a4e;
-  color: var(--color-background);
+  width: 74px;
+  height: 84px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #053769 0%, #2e75bb 100%);
+  color: var(--color-primary-foreground);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3397,38 +3396,43 @@
 }
 
 .mhn-event-month {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  color: #93c5fd;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 15px;
+  letter-spacing: 0;
+  color: var(--color-primary-foreground);
   text-transform: uppercase;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .mhn-event-day {
-  font-size: 22px;
-  font-weight: 800;
-  line-height: 1;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: normal;
 }
 
 .mhn-event-details {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 8px;
+  padding: 12px 0;
+  min-width: 0;
 }
 
 .mhn-event-title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
+  line-height: 15px;
   color: var(--color-foreground);
-  margin: 0 0 2px 0;
+  margin: 0;
 }
 
 .mhn-event-info-line {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 12px;
+  line-height: 15px;
   color: var(--color-muted-foreground);
 }
 
@@ -3477,7 +3481,7 @@
 
 .mhn-invite-grow-desc {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-muted-foreground);
   line-height: 16px;
   margin: 0;
   font-weight: 400;
@@ -3487,7 +3491,7 @@
   height: 36px;
   width: fit-content;
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 14px;
   font-weight: 400;
   border-radius: 8px;
@@ -3507,13 +3511,12 @@
 
 .mhn-invite-grow-illustration {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
-  width: 96px;
-  height: 96px;
-  opacity: 0.9;
+  top: 16px;
+  right: 13px;
+  width: 136px;
+  height: 126px;
   pointer-events: none;
-  mix-blend-mode: color-dodge;
+  mix-blend-mode: normal;
 }
 
 .mhn-invite-illustration-img {
@@ -3972,7 +3975,7 @@
   background: rgba(15, 23, 42, 0.55);
   backdrop-filter: blur(2px);
   border: none;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4113,7 +4116,7 @@
   width: 100%;
   height: 44px;
   background-color: var(--color-auth-action);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 14px;
   font-weight: 700;
   border-radius: 8px;
@@ -4218,7 +4221,7 @@
   padding: 0 16px;
   border: 1px solid var(--color-auth-action);
   background-color: var(--color-auth-action);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 13px;
   font-weight: 600;
   border-radius: 8px;
@@ -4772,7 +4775,7 @@
 
 .mhn-btn-suggested-follow:hover {
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
 }
 
 .mhn-btn-suggested-following {
@@ -5027,11 +5030,11 @@
 
 .mhn-day-cell-active {
   background-color: #2563eb;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
 }
 
 .mhn-day-cell-active .mhn-day-number {
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-weight: 700;
 }
 
@@ -5196,7 +5199,7 @@
   height: 42px;
   padding: 0 22px;
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 14px;
   font-weight: 700;
   border-radius: 8px;
@@ -5271,7 +5274,7 @@
 
 .mhn-filter-pill-active {
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   border-color: var(--color-primary);
   font-weight: 600;
 }
@@ -5579,7 +5582,7 @@
 
 .mhn-chat-pill-active {
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
 }
 
 /* Chat List Items */
@@ -5761,7 +5764,7 @@
   border-radius: 50%;
   border: none;
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -6090,7 +6093,7 @@
      Active look is now the default; `:disabled` (empty input) dims it
      instead, matching every other disabled control in this codebase. */
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -6214,7 +6217,7 @@
 
 .mhn-notif-pill-active {
   background-color: var(--color-auth-action);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
 }
 
 /* Notifications List */
@@ -6411,7 +6414,7 @@
   height: 36px;
   border-radius: 50%;
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   border: 3px solid var(--color-background);
   display: flex;
   align-items: center;
@@ -7003,7 +7006,7 @@
   height: 48px;
   border-radius: 8px;
   background-color: var(--color-auth-action);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 15px;
   font-weight: 600;
   border: none;
@@ -7226,7 +7229,7 @@
 
 .mhn-percentile-badge-blue {
   background-color: #0088ff;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 11px;
   font-weight: 800;
   padding: 4px 8px;
@@ -7236,7 +7239,7 @@
 
 .mhn-percentile-badge-dark {
   background-color: #0b192c;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 11px;
   font-weight: 800;
   padding: 4px 8px;
@@ -7416,7 +7419,7 @@
 .mhn-badge-pill-cyan {
   font-size: 10px;
   font-weight: 800;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   background-color: #0284c7;
   padding: 2px 6px;
   border-radius: 4px;
@@ -8014,7 +8017,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
@@ -8041,7 +8044,7 @@
   font-size: 16px;
   font-weight: 900;
   letter-spacing: 4px;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
 }
 
 .mhn-heritage-sponsor {
@@ -8299,7 +8302,7 @@
 
 .mhn-toast-action-btn {
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 12px;
   font-weight: 600;
   padding: 6px 12px;
@@ -8685,7 +8688,7 @@
   border-radius: 8px;
   border: none;
   background-color: #0091ff;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -9702,7 +9705,7 @@
 
   border: none;
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -9780,7 +9783,7 @@
 
 .mhn-btn-supervision-link {
   background-color: #0284c7;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   border-color: #0284c7;
 }
 
@@ -9999,7 +10002,7 @@
   border-radius: 8px;
   border: none;
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -10319,7 +10322,7 @@
   border-radius: 50%;
   border: none;
   background-color: #0091FF;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10596,7 +10599,7 @@
 .mhn-supervision-code-btn {
   padding: 10px 20px;
   background-color: var(--color-auth-action);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   border-radius: 8px;
   border: none;
   font-weight: 700;
@@ -10767,7 +10770,7 @@
 .mhn-modal-btn-submit {
   padding: 10px 20px;
   background-color: var(--color-auth-action);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   border-radius: 8px;
 
   border: none;
@@ -11560,7 +11563,7 @@ img.secure {
   border-radius: 8px;
   border: none;
   background-color: var(--color-destructive);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
@@ -11611,7 +11614,7 @@ img.secure {
   border-radius: 8px;
   border: none;
   background-color: var(--color-destructive);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-weight: 600;
   font-size: 14px;
   white-space: nowrap;
@@ -11819,7 +11822,7 @@ img.secure {
 
 .mhn-no-data-action-btn {
   background-color: #0091FF;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-weight: 600;
   font-size: 14px;
   padding: 10px 24px;
@@ -11898,7 +11901,7 @@ img.secure {
 
 .mhn-server-down-retry-btn {
   background-color: var(--color-destructive);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-weight: 600;
   font-size: 14px;
   padding: 10px 24px;
@@ -11998,7 +12001,7 @@ img.secure {
 
 .mhn-server-down-modal-btn {
   background-color: #0091FF;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-weight: 700;
   font-size: 15px;
   padding: 14px 36px;
@@ -12082,7 +12085,7 @@ img.secure {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 13px;
   font-weight: 900;
   flex-shrink: 0;
@@ -12717,7 +12720,7 @@ img.secure {
   padding: 8px 20px;
   border-radius: 8px;
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   border: none;
   font-weight: 600;
   cursor: pointer;
@@ -12812,7 +12815,7 @@ img.secure {
   border-radius: 8px;
   border: none;
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -13711,7 +13714,7 @@ img.secure {
   height: 28px;
   border-radius: 50%;
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   border: 2px solid var(--color-background);
   cursor: pointer;
   display: flex;
@@ -13793,7 +13796,7 @@ img.secure {
   padding: 10px 24px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   cursor: pointer;
   transition: all 0.15s ease-in-out;
   display: inline-flex;
@@ -13865,7 +13868,7 @@ img.secure {
   padding: 8px 16px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   cursor: pointer;
 }
 
@@ -14202,7 +14205,7 @@ img.secure {
 .mhn-help-cat-pill.active {
   border: 1.5px solid var(--color-auth-action);
   background-color: var(--color-auth-action);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   box-shadow: 0 4px 12px rgba(11, 102, 194, 0.25);
 }
 
@@ -14303,7 +14306,7 @@ img.secure {
 
 .mhn-btn-ticket-submit {
   background-color: var(--color-auth-action);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   padding: 12px 28px;
   border-radius: 8px;
   font-size: 14px;
@@ -14484,7 +14487,7 @@ img.secure {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   z-index: 5;
 }
 
@@ -14499,7 +14502,7 @@ img.secure {
   bottom: 12px;
   left: 16px;
   background-color: rgba(15, 23, 42, 0.85);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 12px;
@@ -14556,7 +14559,7 @@ img.secure {
   height: 38px;
   padding: 0 24px;
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   border-radius: 8px;
   font-weight: 600;
   border: none;
@@ -14636,7 +14639,7 @@ img.secure {
   padding: 8px 24px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -14673,7 +14676,7 @@ img.secure {
 
 .mhn-btn-add-team-blue {
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   border: none;
   border-radius: 8px;
   padding: 8px 16px;
@@ -14963,7 +14966,7 @@ img.secure {
   border-radius: 8px;
   border: none;
   background: var(--color-auth-action);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 13px;
   font-weight: 600;
   display: inline-flex;
@@ -15020,7 +15023,7 @@ img.secure {
   border-radius: 8px;
   border: none;
   background: var(--color-auth-action);
-  color: var(--color-background);
+  color: var(--color-primary-foreground);
   font-size: 13px;
   font-weight: 600;
   display: inline-flex;
@@ -15324,6 +15327,28 @@ img.secure {
   ,.mhn-no-data-description
 ) {
   color: var(--color-muted-foreground);
+}
+
+/* Figma nodes 1993:19901 and 1993:19390 use brighter metadata on their
+   near-black cards than the general-purpose muted token. Keep these exact
+   values scoped to the two widgets while their primary/highlight text uses
+   the shared inverse foreground token in both themes. */
+:root.dark .mhn-event-card-item {
+  background: #070e1b;
+  border-color: #1b2330;
+  box-shadow: none;
+}
+
+:root.dark .mhn-event-info-line {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+:root.dark .mhn-invite-grow-desc {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+:root.dark .mhn-invite-grow-illustration {
+  mix-blend-mode: color-dodge;
 }
 
 /* Figma's footer icons/counts are near-white (`text-white`), not the dimmer
