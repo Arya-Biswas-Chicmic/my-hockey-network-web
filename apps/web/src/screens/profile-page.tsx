@@ -257,11 +257,11 @@ export const ProfilePage: React.FC<PageProps> = ({
               />
             )}
 
-            {activeProfileTab === ProfileTabEnum.MEDIA && <ProfileMediaTab />}
+            {activeProfileTab === ProfileTabEnum.MEDIA && <ProfileMediaTab isOwnProfile={isOwnProfile} />}
 
-            {activeProfileTab === ProfileTabEnum.STATS && <ProfileStatsTab />}
+            {activeProfileTab === ProfileTabEnum.STATS && <ProfileStatsTab isOwnProfile={isOwnProfile} />}
 
-            {activeProfileTab === ProfileTabEnum.EVENTS && <ProfileEventsTab />}
+            {activeProfileTab === ProfileTabEnum.EVENTS && <ProfileEventsTab isOwnProfile={isOwnProfile} />}
 
             {activeProfileTab === ProfileTabEnum.CAREER && (
               <ProfileCareerTab

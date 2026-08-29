@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/features/network/EmptyState';
 import { NetworkSkeletonGrid } from '@/components/features/network/NetworkSkeletonLoader';
 import { getConnectionDemoMembers } from '@/demo-data/connections';
 import { useDebounce } from '@/hooks/use-debounce';
+import { useProfileClickHandler } from '@/hooks/use-profile-click';
 import { useQuery } from '@/query';
 import { resolveMediaUrl } from '@/utils/mediaUtils';
 import { showErrorToast, showInfoToast, showSuccessToast } from '@/utils/toast';
@@ -49,6 +50,7 @@ function toConnectionMember(relationship: RelationshipItem, type: ConnectionMemb
 }
 
 export function ConnectionsView({ onMessageClick, isLoading = false, initialTab = 'following' }: Readonly<ConnectionsViewProps>) {
+  const handleProfileClick = useProfileClickHandler();
   const [activeTab, setActiveTab] = useState<ConnectionMember['type']>(initialTab);
   const [searchQuery, setSearchQuery] = useState('');
   const [followingIds, setFollowingIds] = useState<ReadonlySet<string>>(new Set());
@@ -123,11 +125,19 @@ export function ConnectionsView({ onMessageClick, isLoading = false, initialTab 
           <div className="mhn-connections-grid">
             {members.map((member) => (
               <article key={member.id} className="mhn-connection-member-card">
-                <div className="mhn-connection-avatar-ring"><Image src={member.avatarUrl || '/userPlaceholder.webp'} alt={member.name} width={84} height={84} className="mhn-connection-avatar-img" /></div>
-                <h3 className="mhn-connection-member-name">{member.name}</h3>
-                <p className="mhn-connection-member-role">{member.roleTag}</p>
-                {member.teamName ? <div className="mhn-connection-team-pill">{member.teamLogo ? <Image src={member.teamLogo} alt="" width={16} height={16} className="mhn-connection-team-logo" /> : null}<span>{member.teamName}</span></div> : null}
-                {member.location ? <p className="mhn-connection-location-line">{member.location}</p> : null}
+                <Button
+                  type="button"
+                  variant="unstyled"
+                  className="flex w-full flex-col items-center gap-0"
+                  onClick={() => handleProfileClick({ id: member.id, name: member.name, avatar: member.avatarUrl, roleTag: member.roleTag, teamName: member.teamName, location: member.location })}
+                  aria-label={`View ${member.name}'s profile`}
+                >
+                  <div className="mhn-connection-avatar-ring"><Image src={member.avatarUrl || '/userPlaceholder.webp'} alt={member.name} width={84} height={84} className="mhn-connection-avatar-img" /></div>
+                  <h3 className="mhn-connection-member-name">{member.name}</h3>
+                  <p className="mhn-connection-member-role">{member.roleTag}</p>
+                  {member.teamName ? <div className="mhn-connection-team-pill">{member.teamLogo ? <Image src={member.teamLogo} alt="" width={16} height={16} className="mhn-connection-team-logo" /> : null}<span>{member.teamName}</span></div> : null}
+                  {member.location ? <p className="mhn-connection-location-line">{member.location}</p> : null}
+                </Button>
                 <Button type="button" onClick={() => void handleMemberAction(member)} className="mhn-btn-connection-message">
                   {activeTab === 'following' ? 'Message' : followingIds.has(member.id) ? 'Following' : 'Follow'}
                 </Button>

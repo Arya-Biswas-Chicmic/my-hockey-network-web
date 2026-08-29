@@ -60,6 +60,15 @@ error; fallback is for absent/empty display data, not for concealing transport o
   logs". Demo request ids use the `demo-` prefix so `SupervisionRequestsTab` routes their Approve/
   Decline to an info toast instead of the real guardian-relationship API, which has no backend
   record for a fabricated id.
+- `other-profiles/index.ts` (`getOtherProfileDemoData`): rich profile records (bio, position,
+  jersey, DOB, follower counts, demo posts) for the "other user profile" popup
+  (`OtherUserProfileModal.tsx`), keyed by the SAME `demo-person-*` ids `people-you-may-know.json`
+  already uses and `demo-following-05` from `connections.json` — feedback 2026-08-30: "make a dummy
+  data in json as discussed so that we can show other user profile similar to our profile". Only
+  covers a handful of already-established identities (Connor McDavid, Sidney Crosby, Jack Hughes)
+  deliberately — clicking any OTHER demo person or a real API author still opens the popup, it just
+  falls back to whatever fields the click site itself had (name/avatar/role/team/location) with
+  every other field showing its normal empty state, never fabricated.
 
 All Profile fixture images are local WebP files under `apps/web/public/demo/profile/`. Demo IDs use
 the `demo-` prefix; mutations against them are handled locally and must never be sent to backend APIs.

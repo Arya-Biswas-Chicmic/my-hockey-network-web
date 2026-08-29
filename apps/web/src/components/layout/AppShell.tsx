@@ -4,6 +4,7 @@ import React, { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { MobileNavigation } from '@/components/layout/MobileNavigation';
+import { OtherUserProfileModal } from '@/components/features/profile/OtherUserProfileModal';
 import { cn } from '@/utils/cn';
 
 export interface AppShellProps {
@@ -56,6 +57,8 @@ export const AppShell: React.FC<AppShellProps> = ({
       <div className="mhn-app-content mhn-home-page-root min-h-dvh lg:flex lg:h-dvh lg:flex-col lg:overflow-hidden">
         {children}
       </div>
+
+      <OtherUserProfileModal />
     </div>
   );
 };

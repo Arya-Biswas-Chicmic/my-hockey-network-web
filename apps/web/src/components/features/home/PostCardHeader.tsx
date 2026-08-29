@@ -13,6 +13,7 @@ export interface PostCardHeaderProps {
   isFollowing: boolean;
   isFollowingLoading: boolean;
   onToggleFollow: () => void;
+  onAuthorClick?: () => void;
   isMenuOpen: boolean;
   onToggleMenu: () => void;
   onEditClick?: () => void;
@@ -31,6 +32,7 @@ export function PostCardHeader({
   isFollowing,
   isFollowingLoading,
   onToggleFollow,
+  onAuthorClick,
   isMenuOpen,
   onToggleMenu,
   onEditClick,
@@ -40,7 +42,13 @@ export function PostCardHeader({
 }: Readonly<PostCardHeaderProps>) {
   return (
     <div className="mhn-post-header">
-      <div className="mhn-post-author-group">
+      <Button
+        type="button"
+        variant="unstyled"
+        className="mhn-post-author-group"
+        onClick={onAuthorClick}
+        aria-label={`View ${authorName}'s profile`}
+      >
         <div className="mhn-author-avatar-box">
           <FallbackImage
             src={authorAvatar}
@@ -56,7 +64,7 @@ export function PostCardHeader({
             {authorRole} • {authorTime}
           </span>
         </div>
-      </div>
+      </Button>
 
       <div className="mhn-post-header-actions">
         {!isSelf && (

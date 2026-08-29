@@ -1,9 +1,21 @@
 'use client';
 
 import { Select } from '@/components/common/FormControls';
+import { NoDataFound } from '@/components/common/no-data-found';
 import { profileDemoData } from '@/demo-data/profile';
 
-export function ProfileStatsTab() {
+export interface ProfileStatsTabProps {
+  isOwnProfile: boolean;
+}
+
+/** `profileDemoData.stats` is always the VIEWER's own demo stats — must
+ * gate on `isOwnProfile` (see `ProfileMediaTab`'s comment for the same
+ * fix); otherwise viewing anyone else's profile showed your own stats. */
+export function ProfileStatsTab({ isOwnProfile }: Readonly<ProfileStatsTabProps>) {
+  if (!isOwnProfile) {
+    return <NoDataFound title="No Stats Yet" description="Player statistics aren't available for this profile yet." />;
+  }
+
   const { filters, summary, metrics } = profileDemoData.stats;
   return (
     <section className="rounded-lg border border-auth-stroke bg-auth-field p-4 text-foreground">

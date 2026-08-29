@@ -3,10 +3,18 @@
 import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Input, Select } from '@/components/common/FormControls';
+import { NoDataFound } from '@/components/common/no-data-found';
 import { EventCard } from '@/components/features/events/EventCard';
 import { profileDemoData } from '@/demo-data/profile';
 
-export function ProfileEventsTab() {
+export interface ProfileEventsTabProps {
+  isOwnProfile: boolean;
+}
+
+/** `profileDemoData.events` is always the VIEWER's own demo events — must
+ * gate on `isOwnProfile` (see `ProfileMediaTab`'s comment for the same
+ * fix); otherwise viewing anyone else's profile showed your own events. */
+export function ProfileEventsTab({ isOwnProfile }: Readonly<ProfileEventsTabProps>) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('Interested');
   const [interestedIds, setInterestedIds] = useState(() => new Set(profileDemoData.events.map((event) => event.id)));
@@ -16,6 +24,10 @@ export function ProfileEventsTab() {
     if (next.has(id)) next.delete(id); else next.add(id);
     return next;
   });
+
+  if (!isOwnProfile) {
+    return <NoDataFound title="No Events Yet" description="This profile has no upcoming or past events yet." />;
+  }
 
   return (
     <section className="rounded-lg border border-auth-stroke bg-auth-field p-4 text-foreground">

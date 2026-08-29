@@ -4,14 +4,27 @@ import { useState } from 'react';
 import { Expand, X } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { FallbackImage } from '@/components/ui/fallback-image';
+import { NoDataFound } from '@/components/common/no-data-found';
 import { getMyDemoMediaItems } from '@/demo-data/feed';
+
+export interface ProfileMediaTabProps {
+  isOwnProfile: boolean;
+}
 
 /** Same shared feed dataset the Home feed and Profile > Posts read from
  * (`@/demo-data/feed`) — a photo posted to the feed is the same photo shown
- * here, instead of an unrelated standalone media fixture. */
-export function ProfileMediaTab() {
+ * here, instead of an unrelated standalone media fixture. `getMyDemoMediaItems`
+ * is always the VIEWER's own demo photos, so this must gate on `isOwnProfile`
+ * — a prior version rendered them unconditionally, meaning viewing anyone
+ * else's profile silently showed your own media as if it were theirs
+ * (surfaced by the other-user profile popup exercising this path for real). */
+export function ProfileMediaTab({ isOwnProfile }: Readonly<ProfileMediaTabProps>) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const mediaItems = getMyDemoMediaItems();
+  const mediaItems = isOwnProfile ? getMyDemoMediaItems() : [];
+
+  if (!isOwnProfile) {
+    return <NoDataFound title="No Media Yet" description="This profile hasn't shared any photos or videos yet." />;
+  }
 
   return (
     <section aria-label="Profile media" className="grid grid-cols-2 gap-1 overflow-hidden rounded-lg border border-auth-stroke bg-auth-field p-1">

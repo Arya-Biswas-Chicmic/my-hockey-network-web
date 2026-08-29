@@ -41,6 +41,16 @@ export interface ProfileHeroCardProps {
   activeProfileTab: ProfileTabEnum;
   onProfileTabChange: (tab: ProfileTabEnum) => void;
   canViewGuardianInvites: boolean;
+  /** Rendered in place of the Edit Profile button when `canEditProfile` is
+   * false — the other-user popup's Follow/Message actions (feedback
+   * 2026-08-30: "instead of the edit profile we will have follow if not
+   * followed and message button if followed"). Own-profile callers simply
+   * don't pass this; the slot stays an empty spacer as before. */
+  otherProfileActions?: React.ReactNode;
+  /** Career entries need real save/delete backend wiring that doesn't make
+   * sense for someone else's profile — the other-user popup hides this tab
+   * rather than showing an "Add Team" CTA on a profile that isn't editable. */
+  hideCareerTab?: boolean;
 }
 
 export function formatDobDisplay(dob: string): string {
@@ -76,7 +86,10 @@ export function ProfileHeroCard({
   activeProfileTab,
   onProfileTabChange,
   canViewGuardianInvites,
+  otherProfileActions,
+  hideCareerTab = false,
 }: Readonly<ProfileHeroCardProps>) {
+  const visibleTabs = hideCareerTab ? PROFILE_TABS.filter((t) => t.tab !== ProfileTabEnum.CAREER) : PROFILE_TABS;
   const statGrid = [
     { label: 'AGE', value: age === null ? '—' : String(age) },
     { label: 'DOB', value: formatDobDisplay(dob) },
@@ -135,12 +148,12 @@ export function ProfileHeroCard({
       <div className="grid grid-cols-2 gap-2 px-6 py-6 max-[520px]:px-4">
         {canEditProfile ? (
           <Button variant="solid" onClick={onEditProfileClick} className="h-9 w-full py-0 text-sm">Edit Profile</Button>
-        ) : <span />}
+        ) : otherProfileActions ?? <span />}
         <Button variant="solid-outline" onClick={onShareProfileClick} className="h-9 w-full border-primary bg-transparent py-0 text-sm text-primary hover:bg-primary/10">Share Profile</Button>
       </div>
 
       <nav aria-label="Profile sections" className="flex overflow-x-auto border-t border-auth-stroke [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {PROFILE_TABS.map(({ tab, label }) => (
+        {visibleTabs.map(({ tab, label }) => (
           <Button
             key={tab}
             role="tab"

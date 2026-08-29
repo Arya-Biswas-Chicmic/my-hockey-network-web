@@ -2285,6 +2285,57 @@ FollowWidget`'s own row shape (`.mhn-who-to-follow-row`/`-avatar`/
     fixed text-visibility rule. `typecheck`/`lint:check`/
     `check-component-reuse.mjs`/`test:run` (304/304) all pass.
 
+- Other-user profile popup: click-to-profile navigation, reused hero/tabs,
+  demo data (2026-08-30):
+  - **Own vs. other navigation** — clicking a name/avatar anywhere (feed
+    post authors, Who to Follow rows, Connections cards) now goes to the
+    real `/profile` page if it's the viewer's own, or opens an in-place
+    popup for anyone else — feedback: "if mine than redirect to profile
+    page and if other user than redirect to other user profile... don't
+    make separate page". New `useProfileClickHandler` hook centralizes the
+    decision; feed posts pass their already-correct `isSelf` (computed by
+    `mapFeedPosts.ts`, which already special-cases the viewer's own demo
+    posts) rather than re-deriving identity from a plain id comparison,
+    which misclassified the viewer's own demo posts as someone else's.
+  - **`OtherUserProfileModal`** reuses the real Profile page's own
+    `ProfileHeroCard` + `ProfilePostsTab`/`ProfileMediaTab`/
+    `ProfileStatsTab`/`ProfileEventsTab` (no separate page, no Career tab
+    — that needs real save/delete wiring that doesn't apply to a profile
+    you can't edit) inside a wide `Modal` with a back arrow and a close
+    (X), both dismissing it. `ProfileHeroCard` gained an
+    `otherProfileActions` slot (Follow when not yet following, Message
+    once following) in place of Edit Profile, and a `hideCareerTab` flag.
+    Mounted once in `AppShell.tsx`, opened via a new
+    `otherProfileTarget`/`openOtherProfile`/`closeOtherProfile` trio on
+    the existing `shell-ui-store` so any component can trigger it without
+    prop-drilling.
+  - **New demo data** (`demo-data/other-profiles`) for a few already-
+    established identities (Connor McDavid, Sidney Crosby, Jack Hughes);
+    any other clicked person falls back to whatever the click site itself
+    had, with the rest of the profile showing its normal empty state.
+  - **Two real bugs found and fixed while building this**, both pre-
+    existing and newly exposed by exercising "view someone else" for the
+    first time:
+    1. `ProfileMediaTab`/`ProfileStatsTab`/`ProfileEventsTab` rendered
+       the VIEWER's own demo media/stats/events unconditionally,
+       regardless of whose profile was being viewed — the real
+       `/profile?userId=X` page had this bug already; now gated on a
+       required `isOwnProfile` prop, with an honest empty state
+       otherwise.
+    2. A fresh "Cannot update a component while rendering a different
+       component" React error — the exact same impure-setState-updater
+       bug already fixed once this session in `PostMedia.tsx`, reintroduced
+       in this new modal's own Follow-toggle handler; fixed the same way
+       (side effect moved out of the updater into the handler body).
+  - Verified live end-to-end with a fresh parent-role test account:
+    clicking one's own post navigates to the real profile; clicking
+    Connor McDavid (from Who to Follow) opens the rich popup, Follow
+    toggles to Message with no console error, and Media/Stats/Events all
+    show the correct honest empty state; clicking a Connections card
+    without a demo-data match still opens the popup using just that
+    card's own fields. `typecheck`/`lint:check`/`check-component-
+    reuse.mjs`/`test:run` (304/304) all pass.
+
 ## Current quality gates
 
 - Obfuscation/security scan must report zero findings.

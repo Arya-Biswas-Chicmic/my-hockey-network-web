@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { useFeedPostCard } from '@/hooks/use-feed-post-card';
+import { useProfileClickHandler } from '@/hooks/use-profile-click';
 import { PostCardHeader } from '@/components/features/home/PostCardHeader';
 import { PostCardContent } from '@/components/features/home/PostCardContent';
 import { PostCardActions } from '@/components/features/home/PostCardActions';
@@ -80,6 +81,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   onNavigate,
 }) => {
   const { checkSupervisionPermission, assertSupervisionPermission } = useAuth();
+  const handleProfileClick = useProfileClickHandler();
   const [isNotInterested, setIsNotInterested] = useState(false);
   const canReact = checkSupervisionPermission('react_to_posts');
   const canComment = checkSupervisionPermission('comment_on_posts');
@@ -133,6 +135,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         isFollowing={card.isFollowing}
         isFollowingLoading={card.isFollowingLoading}
         onToggleFollow={() => assertSupervisionPermission('follow_others', card.toggleFollow)}
+        onAuthorClick={() => handleProfileClick({ id: authorId || '', name: authorName, avatar: authorAvatar, roleTag: authorRole }, isSelf)}
         isMenuOpen={card.isMenuOpen}
         onToggleMenu={() => card.setIsMenuOpen((prev) => !prev)}
         onEditClick={card.openEditModal}
