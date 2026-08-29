@@ -73,6 +73,8 @@
   --color-auth-action: #0b66c2;
   --color-auth-action-bright: #439cf7;
   --color-auth-selected: #f0f7ff;
+  --color-switch-track-off: #d1d5db;
+  --color-switch-thumb: #ffffff;
   /* Hover and pressed states for solid primary controls. Before these existed,
      button hovers used seven near-identical dark blues (#09519b, #1452a8,
      #1558a6, #0d4fa8, #0f4c9c, #0f4288, #073f78) for the same semantic state. */
@@ -8804,24 +8806,30 @@
 
 .mhn-settings-content-area {
   flex: 1;
+  min-width: 0;
   padding-left: 10px;
 }
 
 .mhn-notification-settings-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 0;
 }
 
+/* A flat, bottom-bordered row — not its own boxed/filled card — matching
+   Figma and Supervision's own `.mhn-permission-row` toggle-row treatment
+   exactly (feedback 2026-08-30: "keep this consistent in the entire app
+   and keep setting UI exactly like the figma"). */
 .mhn-notification-setting-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  background-color: var(--color-surface-subtle);
-  border-radius: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-secondary);
+}
 
-  border: 1px solid var(--color-secondary);
+.mhn-notification-settings-list .mhn-notification-setting-row:last-child {
+  border-bottom: none;
 }
 
 .mhn-notification-item-title {
@@ -8838,39 +8846,43 @@
   margin: 0;
 }
 
-.mhn-toggle-switch {
-  /* 40x22 with a 2px inset (18px handle) — Figma's exact toggle size
-     (node 2176:19821), not a rounder, larger generic one. */
+.mhn-switch {
   width: 40px;
   height: 22px;
-  border-radius: 12px;
-  border: none;
+  border-radius: 999px;
+  border: 0;
+  background-color: var(--color-switch-track-off);
   cursor: pointer;
   position: relative;
   padding: 2px;
   transition: background-color 0.2s ease;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
-.mhn-toggle-on {
+.mhn-switch--checked {
   background-color: var(--color-primary);
 }
 
-.mhn-toggle-off {
-  background-color: var(--color-border-strong);
-}
-
-.mhn-toggle-handle {
+.mhn-switch-thumb {
+  display: block;
+  position: absolute;
+  top: 2px;
+  left: 2px;
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background-color: var(--color-background);
+  background-color: var(--color-switch-thumb);
   transition: transform 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.mhn-toggle-on .mhn-toggle-handle {
+.mhn-switch--checked .mhn-switch-thumb {
   transform: translateX(18px);
+}
+
+.mhn-switch:disabled {
+  cursor: not-allowed;
 }
 
 .mhn-general-settings-view {
@@ -11217,39 +11229,6 @@ img.secure {
   font-size: 12px;
   color: var(--color-foreground-subtle);
   text-align: left;
-}
-
-.mhn-parent-toggle-track {
-  width: 44px;
-  height: 24px;
-  border-radius: 12px;
-  background-color: var(--color-border-strong);
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  box-sizing: border-box;
-  flex-shrink: 0;
-  position: relative;
-}
-
-.mhn-parent-toggle-track.mhn-active {
-  background-color: #1d6ae5;
-}
-
-.mhn-parent-toggle-thumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background-color: var(--color-background);
-  transition: transform 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-  transform: translateX(0);
-}
-
-.mhn-parent-toggle-thumb.mhn-active {
-  transform: translateX(20px);
 }
 
 /* Choice Cards Hover Border & Alignment */
@@ -14128,7 +14107,7 @@ img.secure {
 /* Width/margin/padding now come from `.mhn-page-container` (feedback
    2026-08-29: "make sure each tab shares same padding"). */
 .mhn-help-main-layout {
-  max-width: 1080px;
+  max-width: 1120px;
 }
 
 .mhn-help-hero-banner {
@@ -14205,7 +14184,7 @@ img.secure {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .mhn-help-cat-pill {
@@ -14381,7 +14360,65 @@ img.secure {
 .mhn-support-card-green-text {
   font-size: 14px;
   font-weight: 600;
-  color: #166534;
+  color: var(--color-success);
+}
+
+@media (max-width: 768px) {
+  .mhn-compact-page-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .mhn-compact-page-header-actions,
+  .mhn-help-search-wrapper,
+  .mhn-help-search-input,
+  .mhn-settings-search-wrapper,
+  .mhn-settings-search-input {
+    width: 100%;
+  }
+
+  .mhn-settings-card-wrapper {
+    flex-direction: column;
+    gap: 16px;
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .mhn-help-main-layout .mhn-settings-card-wrapper {
+    overflow: visible;
+  }
+
+  .mhn-settings-sidebar {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+    padding: 0 0 12px;
+  }
+
+  .mhn-settings-subtab-btn {
+    width: auto;
+    min-width: max-content;
+  }
+
+  .mhn-settings-content-area {
+    padding-left: 0;
+  }
+
+  .mhn-help-cat-pill {
+    padding: 8px 12px;
+  }
+
+  .mhn-faq-trigger-btn {
+    align-items: flex-start;
+    padding: 14px;
+  }
+
+  .mhn-faq-trigger-btn .mhn-btn-loading-flex {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 .mhn-legal-links-flex {
@@ -15151,6 +15188,8 @@ img.secure {
   --color-auth-action: #0b66c2;
   --color-auth-action-bright: #439cf7;
   --color-auth-selected: #0a172d;
+  --color-switch-track-off: #d1d5db;
+  --color-switch-thumb: #ffffff;
   --color-primary-hover: color-mix(in srgb, var(--color-primary) 80%, white);
   --color-primary-active: color-mix(in srgb, var(--color-primary) 65%, white);
   --color-destructive-hover: #fca5a5;
@@ -16619,27 +16658,6 @@ img.secure {
 .mhn-toggle-row-between + .mhn-toggle-row-between {
   border-top: 1px solid var(--color-auth-stroke);
   padding-top: 12px;
-}
-
-.mhn-parent-toggle-track {
-  width: 40px;
-  height: 22px;
-  padding: 0;
-  border: 0;
-  background: #364153;
-}
-
-.mhn-parent-toggle-track.mhn-active {
-  background: var(--color-auth-action);
-}
-
-.mhn-parent-toggle-thumb {
-  width: 18px;
-  height: 18px;
-}
-
-.mhn-parent-toggle-thumb.mhn-active {
-  transform: translateX(18px);
 }
 
 .mhn-parent-step-success {

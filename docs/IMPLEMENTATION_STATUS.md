@@ -4,6 +4,18 @@ Last reviewed: 2026-08-30
 
 ## Completed
 
+- Completed the interrupted Settings/Help & Support pass from the supplied Figma/app screenshots.
+  Settings now opens on Notification, uses the flat divider-row treatment from the Figma panel, and
+  every switch surface (Settings, Supervision, parent/player protection, and the profile-menu theme
+  control) uses one accessible `ui/switch` primitive with the same 40×22 blue/white active state and
+  gray/white inactive state. Help & Support now keeps search in the compact top bar and uses the
+  requested Settings-style two-panel layout: FAQ (filters plus scrolling accordion list), Support
+  (the existing RHF/Zod ticket form), and Info (email, operating hours, and legal/guideline cards).
+  Added responsive stacking and focused interaction tests for the shared switch and Help navigation.
+  A follow-up boundary correction anchors each 18px thumb at an absolute 2px inset inside its 40×22
+  track, clips the track defensively, and verifies both states through CSS-contract, controlled-state,
+  authenticated-browser geometry, and interaction checks.
+
 - Corrected the Home/Profile feed end-of-scroll clipping reported on 2026-08-29. The authenticated
   content shell remains viewport-fixed, but the shared `mhn-home-main-layout` now owns an explicit
   `minmax(0, 1fr)` desktop row and the center column is the single height-bounded scroll owner with
@@ -91,7 +103,7 @@ Last reviewed: 2026-08-30
   tab" — a follow-up to the earlier shimmer-only fix, which had explicitly flagged this as the
   larger change it wasn't yet doing). Previously all 15 authenticated screens each rendered their
   own `<LeftSidebar>`/`<AppShell>` instance; Next's `(authenticated)/loading.tsx` Suspense fallback
-  swapped in over the *entire* previous tree on every navigation while the next route rendered, so
+  swapped in over the _entire_ previous tree on every navigation while the next route rendered, so
   the sidebar really did remount every time a tab was clicked, not just visually flicker.
   - Added `AuthenticatedShell` (`app/(authenticated)/authenticated-shell.tsx`), a client component
     that renders one `<AppShell>` wired via `useAppNavigation()`, wrapped around `{children}` in
@@ -105,7 +117,7 @@ Last reviewed: 2026-08-30
     `my-network-page`, `supervision-page`, and the unused `ComingSoonPage`.
   - **Caught and fixed a real regression from the first attempt**: making `layout.tsx` itself
     `'use client'` (needed for the hooks) silently disabled its own `export const dynamic =
-    'force-dynamic'` — Next only reads route segment config from Server Components — which flipped
+'force-dynamic'` — Next only reads route segment config from Server Components — which flipped
     ~15 routes from server-rendered-on-demand to statically prerendered in the production build.
     Not something this change was meant to touch. Fixed by keeping `layout.tsx` a plain Server
     Component and moving all the client-only logic into `authenticated-shell.tsx`. Confirmed via a
@@ -136,7 +148,7 @@ Last reviewed: 2026-08-30
     padding), not a fixed 32px — background `#112744`, glyph `var(--color-auth-action)` (`#0b66c2`,
     confirmed the same in both themes already) instead of the generic accent tokens, which read a
     visibly different blue. Found and removed a second, later-in-cascade `:root.dark
-    .mhn-dropdown-icon-box` rule that was silently winning over the first attempt at this fix.
+.mhn-dropdown-icon-box` rule that was silently winning over the first attempt at this fix.
   - View Profile avatar 32px→26px, family member avatars 28px→26px, family-switch icon frame
     26px→24px, row padding 10px→9px, `.mhn-dropdown-item-left` gap 12px→8px, row text weight
     600→500 (family member names specifically use 400, confirmed from the design's own "Inter:Regular"
@@ -166,13 +178,13 @@ Last reviewed: 2026-08-30
   cause: `(authenticated)/loading.tsx` — the Suspense fallback Next.js shows for every navigation
   between authenticated routes — renders `FullAppSkeletonLoader`, which includes `SidebarSkeleton`.
   Its placeholder boxes used the same `pulseGlow` shimmer animation as real content skeletons, so
-  clicking between Home/Messaging/Profile/etc. briefly showed the *entire* sidebar shimmering, even
+  clicking between Home/Messaging/Profile/etc. briefly showed the _entire_ sidebar shimmering, even
   though its nav labels and icons never actually change between routes. Made
   `.mhn-sidebar-skeleton-box` a static `var(--color-secondary)` fill instead — still the right shape
   for zero layout shift, no longer reads as "reloading." Verified the compiled rule directly (no
   reliable way to catch the sub-second Suspense flash live): `background: var(--color-secondary);
-  border-radius: 4px;`, no `animation`/gradient.
-  - **Note on scope**: this stops the *shimmer motion* specifically, which is what was reported.
+border-radius: 4px;`, no `animation`/gradient.
+  - **Note on scope**: this stops the _shimmer motion_ specifically, which is what was reported.
     The sidebar still technically unmounts and remounts on every route change (each page currently
     renders its own `<LeftSidebar>`/`<AppShell>` instance, rather than the App Router's shared
     `(authenticated)/layout.tsx` owning one persistent instance) — the skeleton will still flash in
@@ -283,14 +295,14 @@ Last reviewed: 2026-08-30
      `AuthenticatedGuard` and `GuestGuard` now render `<BrandLoader fullScreen />` while
      `hasBootstrapped` is false, and a root `app/loading.tsx` does the same for the root transition
      (safe to reintroduce at the root precisely because it is layout-agnostic — the previous root
-     loader was the *authenticated shell*, which is why it had to be removed).
+     loader was the _authenticated shell_, which is why it had to be removed).
   2. **Layout known → route skeleton.** Once the group is known, the existing shimmering skeletons
      take over: `FullAppSkeletonLoader` for authenticated routes, `AuthSkeletonLoader` for `(auth)`,
      `PublicProfileSkeletonLoader` for `(public)`, plus the per-route `profile`/`network` overrides.
-  Colours are token-driven so it follows the theme, and a `prefers-reduced-motion` block drops the
-  animation while keeping the brand visible rather than removing the loading affordance entirely.
-  Covered by 5 new tests (live-region semantics, custom label, empty `alt` so the mark is not
-  announced twice, `fullScreen` opt-in, decorative track hidden) plus an updated guard test.
+     Colours are token-driven so it follows the theme, and a `prefers-reduced-motion` block drops the
+     animation while keeping the brand visible rather than removing the loading affordance entirely.
+     Covered by 5 new tests (live-region semantics, custom label, empty `alt` so the mark is not
+     announced twice, `fullScreen` opt-in, decorative track hidden) plus an updated guard test.
 
 - Fixed onboarding still showing the authenticated app skeleton after the `loading.tsx` split. The
   route-group boundaries were correct, but the shimmer on `/onboarding` was not coming from
@@ -304,7 +316,7 @@ Last reviewed: 2026-08-30
   routes, where that shell is what loads next.
 
 - Split the single root `app/loading.tsx` into per-route-group loading boundaries. It rendered
-  `FullAppSkeletonLoader` — the *authenticated* shell — at the app root, so it also covered `(auth)`
+  `FullAppSkeletonLoader` — the _authenticated_ shell — at the app root, so it also covered `(auth)`
   and `(public)`: a signed-out visitor loading `/onboarding` or an indexable `/players/[id]` briefly
   saw a fake logged-in app (sidebar, feed, right rail) before the real centered page replaced it,
   with a visible layout jump. Now `(authenticated)/loading.tsx` owns the app-shell skeleton, and two
@@ -318,9 +330,9 @@ Last reviewed: 2026-08-30
   exported `AppShellSkeleton`; the component is a server component again with no pathname sniffing.
 - Fixed the profile dropdown being painted over by the feed. `.mhn-sidebar` is `position: sticky`,
   which creates a stacking context whether or not a `z-index` is set — so the dropdown's own
-  `z-index: 1000` only ever competed *inside* the sidebar and the feed column rendered on top.
+  `z-index: 1000` only ever competed _inside_ the sidebar and the feed column rendered on top.
   Giving `.mhn-sidebar` `z-index: 20` is what actually lifts it. Also reverted the `overflow-x:
-  hidden` added to `.mhn-home-main-layout` in the previous pass: it made the grid a clipping context,
+hidden` added to `.mhn-home-main-layout` in the previous pass: it made the grid a clipping context,
   which would cut off any popover anchored inside it. The `minmax(0, 1fr)` + `min-width: 0` fix is
   what stops the horizontal overflow, and it does so without clipping.
 - Tokenized the remaining skeleton colors. `.mhn-skeleton-shimmer`/`.animate-pulse` built their
@@ -334,9 +346,9 @@ Last reviewed: 2026-08-30
   - **Redundant press animations.** The `Button` primitive already applies `active:scale-[0.98]` to
     every button, yet five CSS rules added their own `:active` transform at four different depths
     (0.95, 0.96, 0.98, 0.99) — each fighting the global one. All five removed; the six `:active`
-    rules that change a press *colour* (a real effect the primitive does not provide) were kept.
+    rules that change a press _colour_ (a real effect the primitive does not provide) were kept.
   - **Outlier hover effects.** Four buttons did something no other button did — `transform:
-    scale(1.05)` (`.mhn-chat-input-action-btn`), `text-decoration: underline` on a button
+scale(1.05)` (`.mhn-chat-input-action-btn`), `text-decoration: underline` on a button
     (`.mhn-post-more-btn`), and shadow blooms (`.mhn-btn-post`, `.btn-google`). Removed, so every
     button hover is now a colour change only.
   - **Thirteen different hover colours for one state.** 38 hover/active rules hardcoded their own
@@ -369,12 +381,12 @@ Last reviewed: 2026-08-30
   - `.mhn-btn-modal-cancel`/`-submit` had been sharing the first of those five blocks; they now own
     their own rules, so changing the parent buttons no longer silently restyles the delete-post,
     delete-career, and supervision modals.
-  All four consuming screens (`WhoDoYouManageStep`, `CreatePlayerProtectStep`,
-  `PlayerDetailsFormFields`, `PlayerAddedSuccessStep`) use the same pair and now render identically.
+    All four consuming screens (`WhoDoYouManageStep`, `CreatePlayerProtectStep`,
+    `PlayerDetailsFormFields`, `PlayerAddedSuccessStep`) use the same pair and now render identically.
 
 - Swept hardcoded colors out of `apps/web/src/index.css` and onto theme tokens: **1,029 literal hex
   values across ~1,000 declarations replaced**, taking the file from 1,467 hex occurrences to 421
-  (of which 103 are the token *definitions* themselves, 17 are gradient/shadow stops deliberately
+  (of which 103 are the token _definitions_ themselves, 17 are gradient/shadow stops deliberately
   left alone, and 1 is a comment) — i.e. live rules went from ~1,370 hardcoded colors to 300.
   Done in three verified passes:
   1. The nine values that were byte-identical to an existing token's definition
@@ -390,15 +402,15 @@ Last reviewed: 2026-08-30
      (`--color-destructive-surface{,-strong}`, `--color-destructive-border`,
      `--color-destructive-bright`, `--color-accent-surface`, `--color-info-surface`) — 44
      replacements.
-  Each pass was checked by resolving every changed line's tokens back to their light-mode literals
-  and diffing against the original: **0 semantic mismatches**, so light mode is provably unchanged
-  and the gain is entirely in dark mode. `@theme`/`:root`/`:root.dark` definition blocks were
-  excluded programmatically so no token was rewritten to reference itself.
-  Also closed a real gap found on the way: `--color-destructive` and `--color-destructive-foreground`
-  had **no dark override at all**, so every error message and destructive control (24 usages) kept
-  light mode's `#dc2626` against the dark navy shell. Dark now uses `#f87171`/`#450a0a`.
-  Gradients and box-shadows were skipped on purpose — their hex often encodes an alpha ramp or a
-  deliberate blend rather than a semantic color, and swapping those blind would change appearance.
+     Each pass was checked by resolving every changed line's tokens back to their light-mode literals
+     and diffing against the original: **0 semantic mismatches**, so light mode is provably unchanged
+     and the gain is entirely in dark mode. `@theme`/`:root`/`:root.dark` definition blocks were
+     excluded programmatically so no token was rewritten to reference itself.
+     Also closed a real gap found on the way: `--color-destructive` and `--color-destructive-foreground`
+     had **no dark override at all**, so every error message and destructive control (24 usages) kept
+     light mode's `#dc2626` against the dark navy shell. Dark now uses `#f87171`/`#450a0a`.
+     Gradients and box-shadows were skipped on purpose — their hex often encodes an alpha ramp or a
+     deliberate blend rather than a semantic color, and swapping those blind would change appearance.
 
 - Fixed the parent add-player choice card's description overflowing past the card edge. The cause was
   not a missing width constraint: `.mhn-parent-choice-card` is a `common/Button`, and
@@ -423,7 +435,7 @@ Last reviewed: 2026-08-30
     properties (`cursor`, `display`, `align-items`, `justify-content`, `transition`) the token block
     does not set. `.mhn-parent-choice-icon-box` (and its `.mhn-blue`/`.mhn-gray` modifiers) went with
     them — it had no consumer anywhere in the codebase.
-  - Tokenized the *base* `.mhn-parent-card-title`, `-card-sub`, `-card-title-lg`, `-card-sub-sm`,
+  - Tokenized the _base_ `.mhn-parent-card-title`, `-card-sub`, `-card-title-lg`, `-card-sub-sm`,
     `-step-title`, and `-step-desc` rules to `--color-foreground`/`--color-muted-foreground`. These
     are shared well beyond the parent flow, and the dark fix that existed was scoped under
     `.mhn-parent-step-container` — so the help page and the profile career/identity sections, which
@@ -431,12 +443,12 @@ Last reviewed: 2026-08-30
     mode. Tokenizing the base rule fixes those too and made the four `:root.dark` overrides
     redundant; they were removed rather than left as no-ops.
   - Replaced the `.mhn-parent-chevron-blue`/`-gray` pair with a single state-driven
-    `.mhn-parent-chevron`. The old classes named a *color* to express selection state, forcing the
+    `.mhn-parent-chevron`. The old classes named a _color_ to express selection state, forcing the
     markup to know which literal color a selected card used; selection now drives the color through
     the card's existing `.mhn-active` class. Updated both consumers — `AddPlayerChoiceStep` and
     `SupervisionAddPlayerFlow`, which renders the same card.
-  `AddPlayerChoiceStep` itself was also de-duplicated: its two hand-copied card blocks became one
-  `ChoiceCard` sub-component driven by an options array, so the two cards cannot drift apart.
+    `AddPlayerChoiceStep` itself was also de-duplicated: its two hand-copied card blocks became one
+    `ChoiceCard` sub-component driven by an options array, so the two cards cannot drift apart.
 
 - Extracted `VerifyEmailForm`'s inline resend cooldown into two reusable pieces —
   `apps/web/src/hooks/use-countdown.ts` (`useCountdown`/`formatCountdown`) and
@@ -458,12 +470,12 @@ Last reviewed: 2026-08-30
     `--color-success-foreground`, `--color-success-surface`, and `--color-success-border` to
     `index.css`'s `@theme` block with `:root.dark` overrides, alongside the existing
     `--color-destructive`; the card now resolves entirely from tokens in both themes.
-  Also on the same screen: Confirm is disabled until all six digits are entered (it previously
-  submitted into a guaranteed validation failure), the resend notice carries `role="status"` and the
-  validation error `role="alert"` so both are announced, and the countdown is a `role="timer"`.
-  Covered by 24 new tests across `use-countdown.test.tsx`, `resend-countdown.test.tsx`, and
-  `verify-email-form.test.tsx`, including a regression guard asserting 30 seconds of timers consumes
-  exactly 30 counts.
+    Also on the same screen: Confirm is disabled until all six digits are entered (it previously
+    submitted into a guaranteed validation failure), the resend notice carries `role="status"` and the
+    validation error `role="alert"` so both are announced, and the countdown is a `role="timer"`.
+    Covered by 24 new tests across `use-countdown.test.tsx`, `resend-countdown.test.tsx`, and
+    `verify-email-form.test.tsx`, including a regression guard asserting 30 seconds of timers consumes
+    exactly 30 counts.
 
 - Consolidated four divergent date-of-birth parsers/age calculators into one shared module,
   `packages/validation/src/date.ts` (`parseDob`, `ageFromDate`, `isFutureDate`, `ageFromDob`), built
@@ -486,13 +498,13 @@ Last reviewed: 2026-08-30
     31/12/2026 birth date surfaced the misleading "Minimum age is 5 years" message. An explicit
     `isFutureDate` check replaces every age-sign test, and `createAccountFormSchema` gained the
     future-date rejection it never had.
-  Also fixed `createPostFormSchema`'s share/don't-share email lists splitting on `/[, \n;]+/`, which
-  left the `\r` on every entry of a CRLF-pasted list and reported each as an invalid address; the
-  pattern is now `/[,\s;]+/`. Covered by 29 new tests in
-  `packages/validation/src/__tests__/date.test.ts`. One deliberate behavior change:
-  `createAccountFormSchema` previously required strict two-digit `DD/MM/YYYY` and now also accepts
-  `D/M/YYYY`, matching what the parent "Add Player" form already accepted — the two forms
-  disagreeing on the same field shape was itself part of the inconsistency being removed.
+    Also fixed `createPostFormSchema`'s share/don't-share email lists splitting on `/[, \n;]+/`, which
+    left the `\r` on every entry of a CRLF-pasted list and reported each as an invalid address; the
+    pattern is now `/[,\s;]+/`. Covered by 29 new tests in
+    `packages/validation/src/__tests__/date.test.ts`. One deliberate behavior change:
+    `createAccountFormSchema` previously required strict two-digit `DD/MM/YYYY` and now also accepts
+    `D/M/YYYY`, matching what the parent "Add Player" form already accepted — the two forms
+    disagreeing on the same field shape was itself part of the inconsistency being removed.
 
 - Matched the first-load left sidebar and center feed skeleton motion to the calmer right-column
   pulse in `apps/web/src/index.css`: the sidebar skeleton now uses `pulseGlow`, and center feed
@@ -735,7 +747,7 @@ Last reviewed: 2026-08-30
   never extended `eslint-config-next` even though it was already a declared dependency. Rewrote it to
   extend `eslint-config-next/core-web-vitals` (matching the reviewed Admin Panel pattern) while
   preserving the project's existing rule overrides (`no-explicit-any: error`, the `react-hooks/
-  exhaustive-deps`/`immutability`/`set-state-in-effect` allowances). This also surfaced a real ESLint
+exhaustive-deps`/`immutability`/`set-state-in-effect` allowances). This also surfaced a real ESLint
   10 vs. `eslint-config-next@16.2.11` incompatibility (`scopeManager.addGlobals is not a function`);
   pinned `eslint` to `^9.30.1` in `apps/web/package.json` to match the Admin Panel's known-working
   version, and removed the now-unused `@eslint/js`, `globals`, and `typescript-eslint` devDependencies
@@ -777,13 +789,6 @@ Last reviewed: 2026-08-30
   `apps/web` and `apps/mobile`, lint, coverage, and production build) passes with exit code 0.
   `pnpm test:coverage`: 93/93 tests passing, 92.4%/85.77%/97.22%/93.18%
   statements/branches/functions/lines.
-
-
-
-
-
-
-
 
 - Verified, on explicit request: (1) the only raw inline SVG in `apps/web` lives in the two
   allowlisted brand/illustration icon files (`GuardianIcons.tsx`, `RequestSentIcons.tsx`), not
@@ -945,7 +950,7 @@ Last reviewed: 2026-08-30
 - Closed the server-side route-authorization open item as far as it can go from this codebase:
   added `apps/web/src/proxy.ts`, Next.js 16's Middleware replacement (`middleware.ts` is deprecated;
   confirmed via the dev-server deprecation warning and the bundled Next.js docs). Deliberately built
-  as an *optimistic* cookie-presence check rather than a real backend call, per Next.js's own
+  as an _optimistic_ cookie-presence check rather than a real backend call, per Next.js's own
   guidance (Proxy runs on every navigation including prefetches). Verified with `curl`: an
   unauthenticated request to `/home` gets an immediate server-side `307` to `/onboarding`, before any
   client code runs; a request carrying any cookie passes through un-redirected, leaving the real
@@ -1164,9 +1169,9 @@ Last reviewed: 2026-08-30
     copy-pasted nav buttons into one data-driven loop), `HeaderFamilyMenu`, `HeaderProfileDropdown`.
     Found and removed one genuinely dead function (`handleSwitchUser` — defined, never called, not
     exported) during extraction, same as the earlier `userPosts` removal precedent.
-  Verified after each file: typecheck, lint (`--max-warnings=0`), `pnpm check:component-reuse`, full
-  test suite, and production build all pass. Not attempted: `supervision-page.tsx` (232 lines, already
-  near the guideline).
+    Verified after each file: typecheck, lint (`--max-warnings=0`), `pnpm check:component-reuse`, full
+    test suite, and production build all pass. Not attempted: `supervision-page.tsx` (232 lines, already
+    near the guideline).
 - Investigated mobile item "connect remaining screens to shared services and TanStack Query" and
   found the actual scope narrower and differently shaped than assumed: `Home/index.tsx` and
   `Profile/index.tsx` are literal pre-feature placeholder screens (a "Hi" label and a demo icon;
@@ -1186,7 +1191,7 @@ Last reviewed: 2026-08-30
   the body — exactly the documented contract. But testing the same flow through this app's own
   same-origin proxy (`localhost:3000/api/backend/...`) still failed: `tokenDelivery: "mobile"`, no
   cookies at all. Root cause was in this repo, not the backend: `apps/web/src/app/api/backend/
-  [...path]/route.ts`'s `REQUEST_HEADERS` allowlist — the fixed set of headers the proxy forwards to
+[...path]/route.ts`'s `REQUEST_HEADERS` allowlist — the fixed set of headers the proxy forwards to
   the backend — never included `x-client-type`, so the proxy was silently stripping the one header
   that tells the backend "this is a web client" on every single proxied request, regardless of what
   the backend now correctly supports. Added it to the allowlist and re-verified the full loop through
@@ -1208,7 +1213,7 @@ Last reviewed: 2026-08-30
        `user.profile.avatarUrl` straight through with only an `||` falsy-check, never actually calling
        `resolveMediaUrl` at all. Fixed `home-page.tsx`'s specific bypass directly too.
     2. **The feed's sort dropdown had two options with the same `value: 'RECENT'`** (`screens/
-       home-page.tsx`) — a redundant fake "Sort by" placeholder option colliding with the real
+home-page.tsx`) — a redundant fake "Sort by" placeholder option colliding with the real
        "Newest First" option. React logged a duplicate-key warning, and the visible symptom was the
        dropdown always displaying "Sort by" instead of "Newest First" even when `RECENT` was the
        active sort (the browser's native `<select>` resolves a duplicate value to the first matching
@@ -1242,7 +1247,7 @@ Last reviewed: 2026-08-30
     approve" and landed on Home with a persistent "Your account is waiting for guardian approval —
     Check Approval" banner. `/auth/me` afterward: `isMinor: true`, `accessLevel: "LIMITED"`,
     `guardianship: { required: true, approved: false, pendingRequestId: "<uuid>", pendingRequestSentTo:
-    "<the entered parent email>", pendingRequestExpiresAt: "<+24h>" }` — all correctly recorded.
+"<the entered parent email>", pendingRequestExpiresAt: "<+24h>" }` — all correctly recorded.
     Traced the actual restriction mechanism: `packages/domain/src/permissions/feedPermissions.ts`'s
     `evaluateFeedPermissions()` returns `allowed: false` (reason `GUARDIAN_APPROVAL_REQUIRED`) whenever
     `guardianship.required && !approved`, and every one of `canCreatePost`/`canLikePost`/`canComment`/
@@ -1252,7 +1257,7 @@ Last reviewed: 2026-08-30
   - **Two real bugs found live-testing this, one fixed, one flagged:**
     1. **Fixed**: `screens/home-page.tsx`'s empty-feed "Create Post" button (`NoDataFound`'s
        `onAction`) called `setIsCreatePostOpen(true)` directly, completely bypassing
-       `requirePermission('CREATE_POST')` — while the *identical* action from the left-sidebar
+       `requirePermission('CREATE_POST')` — while the _identical_ action from the left-sidebar
        composer (`ProfileSummaryCard`'s `onPostClick`), on the same page, correctly went through it.
        Live-confirmed: the pending-minor account above could open the full post composer via this one
        button. Fixed by routing it through the same `requirePermission` check; re-verified live — now
@@ -1265,7 +1270,7 @@ Last reviewed: 2026-08-30
        `hooks/use-feed-permissions.ts`) silently does nothing from the minor's perspective — live-
        confirmed via network log that it briefly navigates to `/supervision` and is immediately
        bounced back to `/home` by `components/routing/parent-role-guard.tsx`'s `ParentRoleGuard`,
-       which is correctly parent-only for the Supervision *management* page itself. The bug is the
+       which is correctly parent-only for the Supervision _management_ page itself. The bug is the
        destination, not the guard: there is currently no page a minor can actually reach to check
        their own pending guardian-request status. Not fixed this pass because the right destination is
        a product decision (e.g. a read-only status view, or just re-fetching `/auth/me` and toasting
@@ -1321,15 +1326,15 @@ Last reviewed: 2026-08-30
      same day, now traced to its actual user-facing consequence rather than just "doesn't visibly
      break anything".
   2. `checkSupervisionPermission()` — the function every lock icon and `assertSupervisionPermission`
-     toast in the app goes through — failed *closed* (blocked) whenever `supervisionPermissions` was
+     toast in the app goes through — failed _closed_ (blocked) whenever `supervisionPermissions` was
      null or still loading, for anyone who wasn't Parent or Coach. Since step 1's 400 meant
      `supervisionPermissions` was permanently null for every adult player, every one of them was
      permanently blocked from every supervised action, forever, with no way to recover.
-  Fixed both: the fetch now also requires `user.profile?.isMinor`, and `checkSupervisionPermission`
-  now treats any non-minor account the same as Parent/Coach — always allowed, no fetch, nothing to
-  fail closed against. Live-verified with the actual reporting account: no more 400 to
-  `/supervision/me/permissions` (confirmed via network log — the call no longer happens at all), no
-  lock icons, and a real Like click went through end to end (0 → 1) with no error toast.
+     Fixed both: the fetch now also requires `user.profile?.isMinor`, and `checkSupervisionPermission`
+     now treats any non-minor account the same as Parent/Coach — always allowed, no fetch, nothing to
+     fail closed against. Live-verified with the actual reporting account: no more 400 to
+     `/supervision/me/permissions` (confirmed via network log — the call no longer happens at all), no
+     lock icons, and a real Like click went through end to end (0 → 1) with no error toast.
 - Confirmed the Figma MCP connection on request (`whoami` → authenticated as `Chicmic UI`,
   `ui@chicmicstudios.in`, with access to ~70 teams including one named "Shunya"). The user's linked
   node (`cqlBXHZtqPkKcLRmR6a1B8`, node `1418:8806`) turned out to resolve to a section called
@@ -1366,7 +1371,7 @@ Last reviewed: 2026-08-30
     no feed, list, or fabricated content to isolate (its own dev-only OTP auto-prefill was already a
     clearly-commented, separately-flagged temporary behavior in `OnboardingModal.tsx` before this
     pass). Flagging this explicitly rather than silently skipping the instruction: the "keep static
-    data in its own removable file" pattern applies to the *next* screen that actually needs
+    data in its own removable file" pattern applies to the _next_ screen that actually needs
     placeholder content, not retroactively to this one.
 - Fixed two sidebar-consistency issues reported by the user:
   1. **Icon misalignment.** `Sidebar.tsx`'s nav items visibly jittered left/right by label length
@@ -1386,7 +1391,7 @@ Last reviewed: 2026-08-30
      (`profile-page.tsx`, `my-network-page.tsx`, `events-page.tsx`, `messaging-page.tsx`,
      `notifications-page.tsx`, `settings-page.tsx`, `supervision-page.tsx`, `help-page.tsx`,
      `event-detail-page.tsx`) to the same `<div className="mhn-app-shell"><Sidebar .../><div
-     className="mhn-app-content ...">` shell pattern already used by Home, and adding
+className="mhn-app-content ...">` shell pattern already used by Home, and adding
      `.mhn-notifications-card` (and related) dark-theme coverage that Notifications was still
      missing. `Header.tsx` now has zero remaining usages anywhere in `apps/web/src/screens`
      (confirmed via grep). `components/common/index.ts` was updated to re-export `Sidebar` since
@@ -1400,8 +1405,8 @@ Last reviewed: 2026-08-30
     build (`next build --webpack`) compiled all 22 routes successfully, confirming the files
     themselves were never broken.
   - `pnpm --filter @my-hockey-network/web typecheck`, `lint:check`, `node
-    scripts/check-component-reuse.mjs`, and `pnpm --filter @my-hockey-network/web build` all pass.
-  - **Not done this pass**: the inner *content* of Settings/Supervision/Events/Messaging/Help/
+scripts/check-component-reuse.mjs`, and `pnpm --filter @my-hockey-network/web build` all pass.
+  - **Not done this pass**: the inner _content_ of Settings/Supervision/Events/Messaging/Help/
     Event-Detail still uses light-only `.mhn-*` classes (only their nav shell was swapped to
     `Sidebar` + dark-capable `mhn-app-shell`/`mhn-app-content` wrappers) — same "shell migrated,
     content not yet dark-themed" pattern already noted for Home's siblings earlier in this doc.
@@ -1419,7 +1424,7 @@ Last reviewed: 2026-08-30
     (the same reason `BrandIcons.tsx`'s `GoogleIcon` is inlined, not an
     image). `Sidebar.tsx` now imports these instead of
     `Home/MessageSquare/Search/CalendarCheck2/MessagesSquare/Shield/Bell/
-    Bookmark/User/Plus/ChevronDown` from lucide-react.
+Bookmark/User/Plus/ChevronDown` from lucide-react.
   - **Feed action icons.** `PostCardActions.tsx` previously rendered only 3
     actions (Like via `ThumbsUp`/`/like.png`, Comment via `/comment.png`,
     and a "Share" button that was actually Repost via `/share.png`) — Figma's
@@ -1527,14 +1532,14 @@ Last reviewed: 2026-08-30
       deleted a second, conflicting definition of the same count classes
       further down the stylesheet (`color: #1860C3` blue vs the nearby
       block's `color: #ef4444` red for the identical `.mhn-action-count-
-      liked` selector) — pre-existing duplicate CSS the cascade was
+liked` selector) — pre-existing duplicate CSS the cascade was
       silently resolving in a way that didn't match either intended color.
   - **"Spacing between the sidebar and the center content is way too
     much."** This was NOT the ~24px grid gutter tweaked in the pass above —
     live DOM measurement found a leftover
     `:root[data-theme='dark'] { padding-left: 184px }` rule (inside an
     entire `@media(min-width:1024px)` block) applied to every page root
-    (`.mhn-home-page-root` and 7 others), compensating for the *old*
+    (`.mhn-home-page-root` and 7 others), compensating for the _old_
     `Header.tsx` component once being styled as a fixed-position 184px-wide
     floating sidebar. `Header` has zero remaining usages anywhere in
     `apps/web/src/screens` (fully replaced by `Sidebar.tsx`, a normal flex
@@ -1544,7 +1549,7 @@ Last reviewed: 2026-08-30
     just Home. Removed the entire obsolete block (`.mhn-header*`,
     `.mhn-nav-item*`, the old `.mhn-profile-dropdown` positioning, the
     184px padding, and a stale `.mhn-home-main-layout`/`.mhn-network-main-
-    layout`/`.mhn-messaging-main-container` grid override that also
+layout`/`.mhn-messaging-main-container` grid override that also
     silently overrode the real light-mode layout with pre-Sidebar values —
     itself a violation of the earlier-agreed "colors only, same UX between
     themes" principle). Live-verified on Home, Profile, and Messaging.
@@ -1595,7 +1600,7 @@ Last reviewed: 2026-08-30
   long-removed `Header.tsx` top nav, on a hardcoded light background,
   regardless of theme (screenshot from the user: "skeleton is still working
   on the old as we don't have top bar now"). Replaced it with a new
-  `SidebarSkeleton.tsx` that renders through the *real* `.mhn-sidebar`/
+  `SidebarSkeleton.tsx` that renders through the _real_ `.mhn-sidebar`/
   `.mhn-sidebar-nav`/`.mhn-sidebar-footer` classes (logo, 10 nav-row
   placeholders, user-chip placeholder) inside the real `.mhn-app-shell`, so
   it's pixel-matched to the actual `Sidebar.tsx` and swaps in without a
@@ -1617,14 +1622,14 @@ Last reviewed: 2026-08-30
     Home. Switched to `usePathname()` (`next/navigation`, the pattern
     already used in `authenticated-guard.tsx`), which returns the same value
     in both places; the component now needs (and has) `'use client'`. Note:
-    a *separate*, unrelated hydration warning was already present on this
+    a _separate_, unrelated hydration warning was already present on this
     app before any of today's changes (confirmed via live testing — it did
     not go away after this fix) and is out of scope here; flagging it as a
     known pre-existing issue rather than silently leaving it undiscussed.
   - On the "scroll bar still not removed" half of the same message: could
     not reproduce an unwanted/stray scrollbar on any settled page after
     these fixes at a normal viewport (checked `document.documentElement.
-    scrollWidth`/`scrollHeight` against the viewport directly — no
+scrollWidth`/`scrollHeight` against the viewport directly — no
     horizontal or page-level vertical overflow on Home or Profile). The
     center feed column's own intentional scroll (added last pass, see
     above) is working and visibly styled. The old skeleton's un-constrained
@@ -1654,7 +1659,7 @@ Last reviewed: 2026-08-30
     symmetric outer margin, not an internal gap). Root cause: `.mhn-sidebar`
     was a plain flex child docked to the viewport's left edge, while only
     `.mhn-home-main-layout` (feed+right columns) had `margin: 24px auto` —
-    centering *itself* within whatever width was left after the sidebar. The
+    centering _itself_ within whatever width was left after the sidebar. The
     wider the monitor, the further that centered block drifted from the
     edge-pinned sidebar. Figma's own 3-column block (nav+feed+right) is
     itself centered with equal side margins, sidebar included (its nav
@@ -1669,7 +1674,7 @@ Last reviewed: 2026-08-30
     `FeedActionIcons.tsx` and built it as a new popover in
     `PostCardActions.tsx`, backed by new state/handlers in
     `use-feed-post-card.ts` (`isRepostMenuOpen`, `chooseRepost`,
-    `chooseQuote`) — clicking the button when *not yet* reposted opens the
+    `chooseQuote`) — clicking the button when _not yet_ reposted opens the
     choice; already-reposted still undoes directly with no menu (no
     ambiguity to resolve there). "Repost" reuses the existing, unmodified
     `handleShare` plain-repost/undo flow. "Quote" opens a new
@@ -1680,7 +1685,7 @@ Last reviewed: 2026-08-30
     functionality, not a stub. Both paths go through the same
     `requirePermission('SHARE_POSTS')` guardian-approval gate `handleShare`
     already had, plus the existing `assertSupervisionPermission('share_posts',
-    ...)` wrapper at the `FeedPostCard.tsx` call site.
+...)` wrapper at the `FeedPostCard.tsx` call site.
     - Found and fixed a real clipping bug while wiring this: the popover
       initially opened downward and was invisible (present in the DOM,
       `aria-expanded="true"`, but never rendered) — `.mhn-feed-post-card`
@@ -1694,18 +1699,18 @@ Last reviewed: 2026-08-30
   - **Skeleton loaders using hardcoded light-mode colors regardless of
     theme** ("skeleton color should be according to theme... it should
     change according to the theme"). Beyond last pass's sidebar-shaped
-    skeleton fix, the *content* skeletons (`HomeSkeletonLoader.tsx`,
+    skeleton fix, the _content_ skeletons (`HomeSkeletonLoader.tsx`,
     `ProfileSkeletonLoader.tsx`, `NetworkSkeletonLoader.tsx`, and everything
     built from the shared `.mhn-shimmer-box`/`.mhn-skeleton-line`/
     `.mhn-skeleton-avatar` classes) still rendered white cards with a
     light-gray shimmer unconditionally. Two-part fix: (1) added the ~7
-    skeleton *card* container classes (`.mhn-post-figma-card`,
+    skeleton _card_ container classes (`.mhn-post-figma-card`,
     `.mhn-feed-skeleton-card`, `.mhn-profile-skeleton-card`,
     `.mhn-widget-skeleton-card`, `.mhn-profile-skeleton-hero`,
-    `.mhn-network-skeleton-card`, `.mhn-skeleton-card`) to the *existing*
+    `.mhn-network-skeleton-card`, `.mhn-skeleton-card`) to the _existing_
     dark-theme card-background override list (the same one `.mhn-feed-post-
-    card` etc. already used) rather than inventing a new one; (2) switched
-    the 3 *shared* shimmer classes from a hardcoded light-gray gradient to
+card` etc. already used) rather than inventing a new one; (2) switched
+    the 3 _shared_ shimmer classes from a hardcoded light-gray gradient to
     one built from `--color-secondary`/`--color-border`/`--color-muted`
     tokens — since virtually every skeleton in the app is built by combining
     one of these 3 shared classes with a size-only modifier class (verified
@@ -1731,7 +1736,7 @@ Last reviewed: 2026-08-30
   - `.mhn-sidebar-footer`'s `border-top` (the line above the bottom profile
     chip).
   - `.mhn-feed-scope-tabs`'s full-row `border-bottom` — Figma only
-    underlines the *active* tab itself (already handled by
+    underlines the _active_ tab itself (already handled by
     `.mhn-feed-scope-tab-active`), not the whole tab row.
   - The visible, always-on scrollbar thumb added to `.mhn-layout-col-center`
     last pass (to fix "no scroll bar") itself read as a 4th unwanted line
@@ -1757,7 +1762,7 @@ Last reviewed: 2026-08-30
   tool unavailable all session — every finder/verify pass done directly per
   the code-review skill's own fallback instructions) and fixed the two
   confirmed bugs: `profile-page.tsx`'s posts-fallback effect showed demo
-  posts during the *loading* state, not just a genuinely-empty response
+  posts during the _loading_ state, not just a genuinely-empty response
   (violated `docs/DEMO_DATA_POLICY.md`); `useProfileViewModel`'s
   `followers`/`following` read from a field that exists on neither profile
   DTO, so they silently always resolved to the demo fixture's 1,000,000/268
@@ -1829,7 +1834,7 @@ Last reviewed: 2026-08-30
   1. `flex` shell + `flex: 1` content, each page self-centering via
      `margin: auto` — sidebar position stayed constant across routes, but
      the gap before the sidebar and the gap after the card were unequal
-     (only the *outer* shell margins were symmetric).
+     (only the _outer_ shell margins were symmetric).
   2. `width: fit-content` shell + a fixed 48px gutter — did get the two
      visible gaps equal, but (a) pages with wider content resized the
      whole shell and visibly shifted the sidebar navigating between routes
@@ -1844,7 +1849,7 @@ Last reviewed: 2026-08-30
      workaround at every level.
   3. **CSS Grid**, no `fit-content` anywhere: `.mhn-app-shell` is one grid,
      `minmax(0,1fr) 240px 48px minmax(0,var(--page-max-width,932px))
-     minmax(0,1fr)`. The two outer `1fr` columns are equal by definition —
+minmax(0,1fr)`. The two outer `1fr` columns are equal by definition —
      not something that depends on any content's actual size — so the two
      visible gaps stay equal with no per-page workaround needed.
      `--page-max-width` is set by the one new `PageShell` component
@@ -1881,7 +1886,7 @@ Last reviewed: 2026-08-30
 - Debugged "why is feed not scrolling till end" (2026-08-29): root cause was
   CSS, not the pagination code. `.mhn-home-main-layout`'s single implicit
   grid row sized itself to content instead of the viewport (`align-items:
-  start`, no explicit row height), so `.mhn-layout-col-center`'s `lg:h-full`
+start`, no explicit row height), so `.mhn-layout-col-center`'s `lg:h-full`
   had nothing definite to resolve against and the column's own box grew
   taller than `.mhn-app-content`'s clipped viewport — permanently hiding the
   bottom of the feed, including the infinite-scroll sentinel that triggers
@@ -1926,14 +1931,14 @@ Last reviewed: 2026-08-30
   `height: auto; overflow: visible`, no scroll mechanism of its own, so
   whatever fell below `.mhn-app-content`'s clipped viewport (usually the
   Invite & Earn card) was permanently unreachable. Fixed with `max-height:
-  100%; overflow-y: auto` (keeps `align-self: start` so it still doesn't
+100%; overflow-y: auto` (keeps `align-self: start` so it still doesn't
   stretch to match the feed's height). Also needed `min-height: 0` — grid
   items default to `min-height: auto` (their content's max-content size),
   which forced the shared `minmax(0, 1fr)` row to grow to fit this column's
   full content, defeating `.mhn-layout-col-center`'s own clipping too, the
   same failure mode `min-h-0` already prevents there. (A ~15,500px "both
   columns collapsed to full content height" reading seen mid-investigation
-  turned out to be the *test* browser's viewport having collapsed to 0×0
+  turned out to be the _test_ browser's viewport having collapsed to 0×0
   after a dev-server restart, tripping the `max-width: 1023px` mobile
   layout — not a real regression; see the comment on `.mhn-layout-col-right`
   for the dead end so it isn't rediscovered.)
@@ -1948,7 +1953,7 @@ Last reviewed: 2026-08-30
     screen": `.mhn-messaging-page-root` was the one page wrapper not
     participating in `.mhn-app-content`'s flex column (`min-height: 100vh`
     instead of `flex: 1 1 auto; min-height: 0`), and `.mhn-chat-sidebar-
-    card`/`.mhn-chat-conversation-card`/`.mhn-chat-messages-stream` used
+card`/`.mhn-chat-conversation-card`/`.mhn-chat-messages-stream` used
     guessed fixed pixel heights (640px/620px) instead of filling the actual
     available space. Replaced with the same `flex`/`min-height: 0`/
     `grid-template-rows: minmax(0, 1fr)` + `align-items: stretch` pattern
@@ -2000,20 +2005,19 @@ Last reviewed: 2026-08-30
   - **Invite & Grow real bugs, not just styling** — feedback was "I asked
     you add scrolling but no added so not able to see tha section": the
     scroll `max-height`/`overflow-y` fix from the right-rail work above
-    *was* in place, but `.mhn-layout-col-right`'s flex children had no
+    _was_ in place, but `.mhn-layout-col-right`'s flex children had no
     `flex-shrink: 0`, so the browser satisfied the overflow by silently
-    squashing the *last* child (Invite & Grow, down to ~42px) instead of
+    squashing the _last_ child (Invite & Grow, down to ~42px) instead of
     leaving every widget at its natural size and scrolling — the entire
     point of adding `overflow-y: auto`. Fixed with `.mhn-layout-col-right >
-    * { flex-shrink: 0; }`. Also matched Figma node 1806:16060 exactly
-    (border-only card, `#1d2432` border, `--color-primary` button) and
-    replaced the generic `/player.webp` illustration with the design's own
-    glowing-skater graphic, exported as one flattened PNG via
-    `download_assets` rather than hand-porting its ~30 nested
-    mix-blend-mode SVG layers.
+    - { flex-shrink: 0; }`. Also matched Figma node 1806:16060 exactly
+(border-only card, `#1d2432`border,`--color-primary`button) and
+replaced the generic`/player.webp`illustration with the design's own
+glowing-skater graphic, exported as one flattened PNG via`download_assets` rather than hand-porting its ~30 nested
+      mix-blend-mode SVG layers.
   - **Carousel scroll-to-slide** — `PostMedia.tsx`'s image carousel now
     uses a native CSS scroll-snap track (`overflow-x: auto; scroll-snap-
-    type: x mandatory`) instead of only prev/next buttons, so trackpad
+type: x mandatory`) instead of only prev/next buttons, so trackpad
     swipe / shift+wheel / touch drag change the image too — deliberately
     not a custom `onWheel` handler, which would fight the feed's own
     vertical scroll. The reported "counter and arrow rendering at the top
@@ -2049,7 +2053,7 @@ Last reviewed: 2026-08-30
   - **`PostMedia.tsx` React error** — "Cannot update a component
     (`Providers`) while rendering a different component (`PostMedia`)":
     the Register button's `setIsRegistered(prev => {...})` updater called
-    `showSuccessToast`/`showInfoToast` as a side effect *inside* the
+    `showSuccessToast`/`showInfoToast` as a side effect _inside_ the
     updater function — impure updaters can run during React's render
     phase. Fixed by reading `isRegistered` directly and moving the toast
     calls into the handler body, outside the updater.
@@ -2070,8 +2074,7 @@ Last reviewed: 2026-08-30
   - **Z-index scale, documented** — the event-register banner overlapping
     the top header traced to `.mhn-feed-scope-tabs` sitting at `z-index: 5`
     ; raised to `15`. Documented the scale directly in `index.css`:
-    in-post overlays = 10, in-page sticky headers = 15, `.mhn-sidebar` =
-    20.
+    in-post overlays = 10, in-page sticky headers = 15, `.mhn-sidebar` = 20.
   - **Shared "sticky header, scrolling content" pattern** — added
     `.mhn-page-sticky-header` / `.mhn-page-scroll-body` to `index.css`
     (feedback: "now top will be move only content below them will
@@ -2085,14 +2088,14 @@ Last reviewed: 2026-08-30
   - **Settings tab alignment** — the shared `Button` component's
     `buttonVariants` base classes always include Tailwind `justify-center`,
     which overrides `.mhn-settings-subtab-btn`'s plain-CSS `text-align:
-    left` (flex-item positioning isn't affected by `text-align`). Added an
+left` (flex-item positioning isn't affected by `text-align`). Added an
     explicit `justify-start` to each subtab button; `twMerge` (via `cn()`)
     resolves the conflict correctly. Search input `border-radius: 20px` →
     `8px`.
   - **Supervision's permanent shimmer** — `isControlsLoading` initialized
     `useState(true)` with no path to ever become `false` when zero managed
     players exist ("No managed players found"): `setIsControlsLoading
-    (false)` only ran inside the user-click-driven `handleSelectWard`, and
+(false)` only ran inside the user-click-driven `handleSelectWard`, and
     the separate auto-select-on-load path (`onWardsRefreshed`) never
     touched the flag at all. Fixed by defaulting to `false` and giving
     `onWardsRefreshed` the same load/`finally` pairing `handleSelectWard`
@@ -2181,10 +2184,10 @@ Last reviewed: 2026-08-30
     entirely rather than hiding them with CSS, backed by a new
     `.mhn-app-shell--compact` grid variant that drops the sidebar
     column. New shared `CompactPageHeader` component (back arrow + title
-    + optional right-side actions) used by Settings and Help & Support;
-    Supervision's existing ward-list panel header grew its own back
-    arrow instead, since Figma nests it there rather than in a separate
-    top bar.
+    - optional right-side actions) used by Settings and Help & Support;
+      Supervision's existing ward-list panel header grew its own back
+      arrow instead, since Figma nests it there rather than in a separate
+      top bar.
   - **Help & Support compacted further** — the old hero (icon badge +
     title + subtitle + a large centered search box) is gone, replaced by
     `CompactPageHeader` with the search box in its `actions` slot,
@@ -2192,7 +2195,7 @@ Last reviewed: 2026-08-30
     articles which looks in small area... increase their area so that
     we can easily see 3 4 faq"). Also found and fixed the actual reason
     the FAQ chevron read as a barely-visible dot: `.mhn-arrow-rotate`
-    hardcoded a `9px × 4.5px` box sized for a *different* small inline
+    hardcoded a `9px × 4.5px` box sized for a _different_ small inline
     caret icon on the event-detail page, and the FAQ chevron was
     reusing that same class — split into its own `.mhn-faq-arrow-rotate`
     at a real 24px instead of enlarging the shared class and breaking
@@ -2232,11 +2235,11 @@ Last reviewed: 2026-08-30
   - **Section border-radius** 12px, not 8px, and no more "thicker border
     while expanded" (Figma doesn't have that; only the chevron rotates).
   - **Request cards → the follow-card pattern** — `GuardianRelationship
-    RequestCard` (shared by Supervision's Requests tab and Profile's own
+RequestCard` (shared by Supervision's Requests tab and Profile's own
     Guardian Requests tab) and Supervision's separate content-approval
     list both rendered their own vertically-centered card. Replaced both
     with one new shared `SupervisionRequestRow`, which reuses `WhoTo
-    FollowWidget`'s own row shape (`.mhn-who-to-follow-row`/`-avatar`/
+FollowWidget`'s own row shape (`.mhn-who-to-follow-row`/`-avatar`/
     `-name`) — avatar + name/role-team-location on the left, Decline/
     Approve on the right — per feedback: "make request similar to card
     we have follow user card similar".

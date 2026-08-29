@@ -1,7 +1,18 @@
-import { Button } from '@/components/common/Button';
-import { FallbackImage } from '@/components/ui/fallback-image';
-import { HeaderFamilyMenu, type FamilyMember } from '@/components/common/HeaderFamilyMenu';
-import { ChevronRight, Eye, HelpCircle, LogOut, Moon, Settings } from 'lucide-react';
+import { Button } from "@/components/common/Button";
+import { Switch } from "@/components/ui/switch";
+import { FallbackImage } from "@/components/ui/fallback-image";
+import {
+  HeaderFamilyMenu,
+  type FamilyMember,
+} from "@/components/common/HeaderFamilyMenu";
+import {
+  ChevronRight,
+  Eye,
+  HelpCircle,
+  LogOut,
+  Moon,
+  Settings,
+} from "lucide-react";
 
 export interface HeaderProfileDropdownProps {
   activeUser: { name: string; avatar: string };
@@ -47,7 +58,10 @@ export function HeaderProfileDropdown({
       <div className="mhn-dropdown-backdrop" onClick={onClose} />
 
       <div className="mhn-profile-dropdown">
-        <Button className="mhn-dropdown-item" onClick={() => navigateAndClose('profile')}>
+        <Button
+          className="mhn-dropdown-item"
+          onClick={() => navigateAndClose("profile")}
+        >
           <div className="mhn-dropdown-item-left">
             <FallbackImage
               src={activeUser.avatar}
@@ -58,7 +72,11 @@ export function HeaderProfileDropdown({
             />
             <span className="mhn-dropdown-item-text">View Profile</span>
           </div>
-          <ChevronRight className="mhn-dropdown-chevron" size={16} aria-hidden="true" />
+          <ChevronRight
+            className="mhn-dropdown-chevron"
+            size={16}
+            aria-hidden="true"
+          />
         </Button>
 
         {isParent && (
@@ -78,14 +96,21 @@ export function HeaderProfileDropdown({
           />
         )}
 
-        <Button className="mhn-dropdown-item" onClick={() => navigateAndClose('settings')}>
+        <Button
+          className="mhn-dropdown-item"
+          onClick={() => navigateAndClose("settings")}
+        >
           <div className="mhn-dropdown-item-left">
             <div className="mhn-dropdown-icon-box">
               <Settings size={16} aria-hidden="true" />
             </div>
             <span className="mhn-dropdown-item-text">Settings & Privacy</span>
           </div>
-          <ChevronRight className="mhn-dropdown-chevron" size={16} aria-hidden="true" />
+          <ChevronRight
+            className="mhn-dropdown-chevron"
+            size={16}
+            aria-hidden="true"
+          />
         </Button>
 
         <div className="mhn-dropdown-item">
@@ -95,39 +120,48 @@ export function HeaderProfileDropdown({
             </div>
             <span className="mhn-dropdown-item-text">Dark Theme</span>
           </div>
-          <Button
-            type="button"
-            role="switch"
-            aria-checked={resolvedTheme === 'dark'}
-            aria-label={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} mode`}
-            className={`mhn-parent-toggle-track ${resolvedTheme === 'dark' ? 'mhn-active' : ''}`}
+          <Switch
+            checked={resolvedTheme === "dark"}
+            aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
             onClick={onToggleTheme}
-          >
-            <div className={`mhn-parent-toggle-thumb ${resolvedTheme === 'dark' ? 'mhn-active' : ''}`} />
-          </Button>
+          />
         </div>
 
         {/* Parent-only management route. Child approvals stay under Profile. */}
         {isParent && (
-          <Button className="mhn-dropdown-item" onClick={() => navigateAndClose('supervision')}>
+          <Button
+            className="mhn-dropdown-item"
+            onClick={() => navigateAndClose("supervision")}
+          >
             <div className="mhn-dropdown-item-left">
               <div className="mhn-dropdown-icon-box">
                 <Eye size={16} aria-hidden="true" />
               </div>
               <span className="mhn-dropdown-item-text">Supervision</span>
             </div>
-            <ChevronRight className="mhn-dropdown-chevron" size={16} aria-hidden="true" />
+            <ChevronRight
+              className="mhn-dropdown-chevron"
+              size={16}
+              aria-hidden="true"
+            />
           </Button>
         )}
 
-        <Button className="mhn-dropdown-item" onClick={() => navigateAndClose('help')}>
+        <Button
+          className="mhn-dropdown-item"
+          onClick={() => navigateAndClose("help")}
+        >
           <div className="mhn-dropdown-item-left">
             <div className="mhn-dropdown-icon-box">
               <HelpCircle size={16} aria-hidden="true" />
             </div>
             <span className="mhn-dropdown-item-text">Help & Support</span>
           </div>
-          <ChevronRight className="mhn-dropdown-chevron" size={16} aria-hidden="true" />
+          <ChevronRight
+            className="mhn-dropdown-chevron"
+            size={16}
+            aria-hidden="true"
+          />
         </Button>
 
         <div className="mhn-dropdown-divider" />

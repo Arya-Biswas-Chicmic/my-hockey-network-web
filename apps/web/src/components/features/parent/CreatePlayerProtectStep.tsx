@@ -1,9 +1,10 @@
-import React from 'react';
-import { Button } from '@/components/common/Button';
-import { Spinner } from '@/components/common/Spinner';
+import React from "react";
+import { Button } from "@/components/common/Button";
+import { Switch } from "@/components/ui/switch";
+import { Spinner } from "@/components/common/Spinner";
 
 export interface PlayerProtectFormData {
-  profileVisibility: 'CONNECTIONS' | 'PUBLIC';
+  profileVisibility: "CONNECTIONS" | "PUBLIC";
   requireApprovalAdultContact: boolean;
   requireApprovalConnections: boolean;
   requireApprovalTeamInvites: boolean;
@@ -19,37 +20,37 @@ interface CreatePlayerProtectStepProps {
   loading: boolean;
 }
 
-export const CreatePlayerProtectStep: React.FC<CreatePlayerProtectStepProps> = ({
-  playerNameFirst,
-  formData,
-  onChange,
-  onSubmit,
-  onBack,
-  loading,
-}) => {
+export const CreatePlayerProtectStep: React.FC<
+  CreatePlayerProtectStepProps
+> = ({ playerNameFirst, formData, onChange, onSubmit, onBack, loading }) => {
   return (
     <div className="mhn-parent-step-container mhn-parent-step-container-max440 mhn-parent-step-protect">
-      <h2 className="mhn-parent-step-title">Protect {playerNameFirst}&apos;s profile</h2>
-      <p className="mhn-parent-step-desc">You can change these settings anytime.</p>
+      <h2 className="mhn-parent-step-title">
+        Protect {playerNameFirst}&apos;s profile
+      </h2>
+      <p className="mhn-parent-step-desc">
+        You can change these settings anytime.
+      </p>
 
       {/* Profile Visibility Cards */}
       <div className="mhn-mb-14">
-        <div className="mhn-section-header-title">
-          PROFILE VISIBILITY
-        </div>
+        <div className="mhn-section-header-title">PROFILE VISIBILITY</div>
         <div className="mhn-col-flex-gap-8">
           <Button
             type="button"
             role="radio"
-            aria-checked={formData.profileVisibility === 'CONNECTIONS'}
-            className={`mhn-parent-visibility-card ${formData.profileVisibility === 'CONNECTIONS' ? 'mhn-selected' : ''}`}
-            onClick={() => onChange({ profileVisibility: 'CONNECTIONS' })}
+            aria-checked={formData.profileVisibility === "CONNECTIONS"}
+            className={`mhn-parent-visibility-card ${formData.profileVisibility === "CONNECTIONS" ? "mhn-selected" : ""}`}
+            onClick={() => onChange({ profileVisibility: "CONNECTIONS" })}
           >
-            <div className={`mhn-parent-radio-dot ${formData.profileVisibility === 'CONNECTIONS' ? 'mhn-selected' : ''}`} />
+            <div
+              className={`mhn-parent-radio-dot ${formData.profileVisibility === "CONNECTIONS" ? "mhn-selected" : ""}`}
+            />
             <div>
               <div className="mhn-parent-card-title-lg">Private</div>
               <div className="mhn-parent-card-sub-sm">
-                Only approved hockey relationships can see {playerNameFirst}&apos;s profile.
+                Only approved hockey relationships can see {playerNameFirst}
+                &apos;s profile.
               </div>
             </div>
           </Button>
@@ -57,15 +58,18 @@ export const CreatePlayerProtectStep: React.FC<CreatePlayerProtectStepProps> = (
           <Button
             type="button"
             role="radio"
-            aria-checked={formData.profileVisibility === 'PUBLIC'}
-            className={`mhn-parent-visibility-card ${formData.profileVisibility === 'PUBLIC' ? 'mhn-selected' : ''}`}
-            onClick={() => onChange({ profileVisibility: 'PUBLIC' })}
+            aria-checked={formData.profileVisibility === "PUBLIC"}
+            className={`mhn-parent-visibility-card ${formData.profileVisibility === "PUBLIC" ? "mhn-selected" : ""}`}
+            onClick={() => onChange({ profileVisibility: "PUBLIC" })}
           >
-            <div className={`mhn-parent-radio-dot ${formData.profileVisibility === 'PUBLIC' ? 'mhn-selected' : ''}`} />
+            <div
+              className={`mhn-parent-radio-dot ${formData.profileVisibility === "PUBLIC" ? "mhn-selected" : ""}`}
+            />
             <div>
               <div className="mhn-parent-card-title-lg">Hockey Network</div>
               <div className="mhn-parent-card-sub-sm">
-                Approved team and association members may see limited information.
+                Approved team and association members may see limited
+                information.
               </div>
             </div>
           </Button>
@@ -78,12 +82,30 @@ export const CreatePlayerProtectStep: React.FC<CreatePlayerProtectStepProps> = (
           CONTACT & CONNECTIONS
         </div>
         <div className="mhn-col-flex-gap-8">
-          {([
-            { key: 'requireApprovalAdultContact', label: 'Adult contact requests', sub: 'Require my approval' },
-            { key: 'requireApprovalConnections', label: 'Connections', sub: 'Require my approval' },
-            { key: 'requireApprovalTeamInvites', label: 'Team invitations', sub: 'Require my approval' },
-            { key: 'requireApprovalMedia', label: 'Media visibility', sub: 'Require my approval' },
-          ] as const).map((item) => {
+          {(
+            [
+              {
+                key: "requireApprovalAdultContact",
+                label: "Adult contact requests",
+                sub: "Require my approval",
+              },
+              {
+                key: "requireApprovalConnections",
+                label: "Connections",
+                sub: "Require my approval",
+              },
+              {
+                key: "requireApprovalTeamInvites",
+                label: "Team invitations",
+                sub: "Require my approval",
+              },
+              {
+                key: "requireApprovalMedia",
+                label: "Media visibility",
+                sub: "Require my approval",
+              },
+            ] as const
+          ).map((item) => {
             const isChecked = formData[item.key];
             return (
               <div key={item.key} className="mhn-toggle-row-between">
@@ -91,16 +113,11 @@ export const CreatePlayerProtectStep: React.FC<CreatePlayerProtectStepProps> = (
                   <div className="mhn-toggle-label">{item.label}</div>
                   <div className="mhn-toggle-sub">{item.sub}</div>
                 </div>
-                <Button
-                  type="button"
-                  role="switch"
-                  aria-checked={isChecked}
+                <Switch
+                  checked={isChecked}
                   aria-label={item.label}
-                  className={`mhn-parent-toggle-track ${isChecked ? 'mhn-active' : ''}`}
                   onClick={() => onChange({ [item.key]: !isChecked })}
-                >
-                  <div className={`mhn-parent-toggle-thumb ${isChecked ? 'mhn-active' : ''}`} />
-                </Button>
+                />
               </div>
             );
           })}
@@ -117,7 +134,11 @@ export const CreatePlayerProtectStep: React.FC<CreatePlayerProtectStepProps> = (
           {loading && <Spinner size="sm" color="#FFFFFF" />}
           <span>Create Player Profile</span>
         </Button>
-        <Button type="button" className="mhn-parent-btn-secondary" onClick={onBack}>
+        <Button
+          type="button"
+          className="mhn-parent-btn-secondary"
+          onClick={onBack}
+        >
           Back
         </Button>
       </div>

@@ -39,6 +39,9 @@ page → feature/container → feature component → existing platform primitive
 - `common/Spinner`, `Toast`, `PendingBanner`, `NoDataFound`, `ServerDown`: reusable feedback/state UI.
 - `ui/file-picker-button`: accessible reusable file selection through a native associated label and
   input rather than `ref.current.click()` or input-event mutation.
+- `ui/switch`: the single accessible 40×22 web switch for Settings, Supervision, onboarding
+  protection, and theme controls. Active is blue with a white thumb; inactive is gray with a white
+  thumb, matching the approved Figma states in both themes.
 - `supervision/guardian-relationship-request-card`: reusable presentation for both child-facing
   guardian invitations and parent-facing guardian requests. It receives typed request data and
   callbacks; routes/hooks choose the endpoint direction.
@@ -142,11 +145,11 @@ local/object-URL previews only): every remote or static image in `apps/web` rend
   `mhn-supervision-req-avatar-wrapper`) had `position: relative` added to `index.css` specifically to
   support this.
 - **Remote origins**: `next.config.ts` sets `images.remotePatterns: [{ protocol: 'https', hostname:
-  '**' }]` because uploaded media resolves to a backend-controlled signed-storage host that varies
+'**' }]` because uploaded media resolves to a backend-controlled signed-storage host that varies
   per environment (see `packages/core/src/api/mediaApi.ts`), matching the Admin Panel's own
   wide-open pattern for the same reason.
 - **Documented raw-`<img>` exceptions** (3, all with an `eslint-disable-next-line
-  @next/next/no-img-element` comment explaining why): `CreatePostModal.tsx`'s post-image preview
+@next/next/no-img-element` comment explaining why): `CreatePostModal.tsx`'s post-image preview
   (`FileReader.readAsDataURL` result, a local `data:` URI), `EditProfileModal.tsx`'s avatar preview
   (`URL.createObjectURL` result before upload), and `ImageCropModal.tsx`'s live crop preview (see
   below) — none is a Next-optimizable remote asset, matching Admin's identical exception in
@@ -276,7 +279,10 @@ no other restructuring:
 ```tsx
 const { cropImage, cropModal } = useImageCrop();
 const handleAvatarFileChange = async (files: File[]) => {
-  const cropped = await cropImage(files[0], { shape: 'circle', title: 'Adjust profile photo' });
+  const cropped = await cropImage(files[0], {
+    shape: "circle",
+    title: "Adjust profile photo",
+  });
   if (!cropped) return; // user cancelled
   // ...existing validation/upload logic using `cropped` instead of the raw file
 };
@@ -503,7 +509,7 @@ a DOB is validated:
 
 `validateProfileField`'s `dateOfBirth` branch and `packages/core`'s `calculateAge` both delegate
 here, so the signup, parent add-player, edit-profile, and Profile > Personal Details surfaces all
-apply identical rules. Age *limits* stay with each caller — they legitimately differ (parents 18+,
+apply identical rules. Age _limits_ stay with each caller — they legitimately differ (parents 18+,
 players 5–100), and the differing strictness noted below is preserved intentionally.
 
 ## Profile/Supervision form Zod schemas
