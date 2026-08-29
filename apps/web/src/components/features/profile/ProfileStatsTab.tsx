@@ -6,13 +6,17 @@ import { profileDemoData } from '@/demo-data/profile';
 
 export interface ProfileStatsTabProps {
   isOwnProfile: boolean;
+  /** See `ProfileMediaTab`'s doc comment — the other-user popup's own
+   * preview/demo context, never true on the real `/profile` page. */
+  showDemoFallback?: boolean;
 }
 
 /** `profileDemoData.stats` is always the VIEWER's own demo stats — must
- * gate on `isOwnProfile` (see `ProfileMediaTab`'s comment for the same
- * fix); otherwise viewing anyone else's profile showed your own stats. */
-export function ProfileStatsTab({ isOwnProfile }: Readonly<ProfileStatsTabProps>) {
-  if (!isOwnProfile) {
+ * gate on `isOwnProfile`/`showDemoFallback` (see `ProfileMediaTab`'s
+ * comment for the same fix); otherwise viewing anyone else's profile
+ * showed your own stats. */
+export function ProfileStatsTab({ isOwnProfile, showDemoFallback = false }: Readonly<ProfileStatsTabProps>) {
+  if (!isOwnProfile && !showDemoFallback) {
     return <NoDataFound title="No Stats Yet" description="Player statistics aren't available for this profile yet." />;
   }
 

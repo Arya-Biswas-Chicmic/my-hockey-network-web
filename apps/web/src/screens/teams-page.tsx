@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Search, Plus, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { FallbackImage } from '@/components/ui/fallback-image';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
 import { showSuccessToast } from '@/utils/toast';
+import { SearchWidget } from '@/components/features/home/SearchWidget';
 import { PageShell } from '@/components/layout/PageShell';
 
 interface PageProps {
@@ -132,17 +133,10 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           <h1 className="text-2xl font-bold text-slate-100">Teams</h1>
 
           <div className="flex items-center gap-3">
-            {/* Search Box */}
-            <div className="relative w-64">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
-              <Input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search"
-                className="w-full h-10 pl-9 pr-4 bg-[#0D1627] border border-[#182740] rounded-xl text-xs text-slate-100 placeholder:text-slate-400 outline-none focus:border-[#168BFF] transition-all"
-              />
-            </div>
+            {/* Search Box — shared `SearchWidget` (feedback 2026-08-30:
+                "make sure we are using same component everywhere for ...
+                search bar"). */}
+            <SearchWidget value={searchQuery} onChange={setSearchQuery} className="w-64 flex-none" />
 
             {/* + Create Team Button */}
             <Button

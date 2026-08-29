@@ -9,12 +9,16 @@ import { profileDemoData } from '@/demo-data/profile';
 
 export interface ProfileEventsTabProps {
   isOwnProfile: boolean;
+  /** See `ProfileMediaTab`'s doc comment — the other-user popup's own
+   * preview/demo context, never true on the real `/profile` page. */
+  showDemoFallback?: boolean;
 }
 
 /** `profileDemoData.events` is always the VIEWER's own demo events — must
- * gate on `isOwnProfile` (see `ProfileMediaTab`'s comment for the same
- * fix); otherwise viewing anyone else's profile showed your own events. */
-export function ProfileEventsTab({ isOwnProfile }: Readonly<ProfileEventsTabProps>) {
+ * gate on `isOwnProfile`/`showDemoFallback` (see `ProfileMediaTab`'s
+ * comment for the same fix); otherwise viewing anyone else's profile
+ * showed your own events. */
+export function ProfileEventsTab({ isOwnProfile, showDemoFallback = false }: Readonly<ProfileEventsTabProps>) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('Interested');
   const [interestedIds, setInterestedIds] = useState(() => new Set(profileDemoData.events.map((event) => event.id)));
@@ -25,7 +29,7 @@ export function ProfileEventsTab({ isOwnProfile }: Readonly<ProfileEventsTabProp
     return next;
   });
 
-  if (!isOwnProfile) {
+  if (!isOwnProfile && !showDemoFallback) {
     return <NoDataFound title="No Events Yet" description="This profile has no upcoming or past events yet." />;
   }
 

@@ -153,8 +153,13 @@ export function GroupDetailView({
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`text-sm font-semibold relative pb-2 transition-colors ${
+                    // `#168BFF` was a different, brighter blue than Figma's
+                    // canonical tab underline color — reads the shared
+                    // single-source pair instead (feedback 2026-08-30:
+                    // "somewhere ... dull blue color ... keep this in
+                    // constant change from single location").
                     isActive
-                      ? 'text-white after:content-[""] after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-[#168BFF]'
+                      ? 'text-[var(--tab-active-text)] after:content-[""] after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-[var(--tab-active-underline)]'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >

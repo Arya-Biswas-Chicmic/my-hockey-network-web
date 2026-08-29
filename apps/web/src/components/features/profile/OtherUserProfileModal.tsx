@@ -122,9 +122,19 @@ function OtherUserProfileContent({ target }: Readonly<{ target: OtherProfileClic
               onLoadMore={() => {}}
             />
           )}
-          {activeTab === ProfileTabEnum.MEDIA && <ProfileMediaTab isOwnProfile={false} />}
-          {activeTab === ProfileTabEnum.STATS && <ProfileStatsTab isOwnProfile={false} />}
-          {activeTab === ProfileTabEnum.EVENTS && <ProfileEventsTab isOwnProfile={false} />}
+          {/* Media/Stats/Events show generic demo filler in this popup
+              specifically — its whole conceit is a preview/demo profile,
+              unlike the real `/profile?userId=X` page where someone else's
+              actual profile still needs the honest empty state (feedback
+              2026-08-30: "for others also add some demo data: post, event,
+              stats, groups etc which will shown in others profile which
+              don't have data"). Posts is the one exception — a demo person
+              not in `other-profiles` data shows "No Feed Yet" rather than
+              fabricated posts attributed to them (feedback: "and if no
+              feed than show no feed yet"). */}
+          {activeTab === ProfileTabEnum.MEDIA && <ProfileMediaTab isOwnProfile={false} showDemoFallback />}
+          {activeTab === ProfileTabEnum.STATS && <ProfileStatsTab isOwnProfile={false} showDemoFallback />}
+          {activeTab === ProfileTabEnum.EVENTS && <ProfileEventsTab isOwnProfile={false} showDemoFallback />}
         </div>
       </div>
     </>

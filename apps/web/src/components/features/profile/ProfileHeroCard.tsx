@@ -161,7 +161,13 @@ export function ProfileHeroCard({
             onClick={() => onProfileTabChange(tab)}
             className={cn(
               'relative h-11 min-w-[74px] flex-1 px-3 text-sm font-medium text-muted-foreground after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:rounded-t-full after:bg-transparent',
-              activeProfileTab === tab && 'text-foreground after:bg-foreground',
+              // Reads `--tab-active-text`/`--tab-active-underline` directly —
+              // the same single-source pair every other tab bar in the app
+              // uses — rather than `after:bg-foreground` (a WHITE underline,
+              // not Figma's blue one) (feedback 2026-08-30: "somewhere ...
+              // white and offwhite color and somewhere dull blue color ...
+              // keep this in constant change from single location").
+              activeProfileTab === tab && 'font-bold text-[var(--tab-active-text)] after:bg-[var(--tab-active-underline)]',
             )}
           >{label}</Button>
         ))}
@@ -172,7 +178,7 @@ export function ProfileHeroCard({
             onClick={() => onProfileTabChange(ProfileTabEnum.GUARDIAN_REQUESTS)}
             className={cn(
               'relative h-11 min-w-[142px] px-3 text-sm font-medium text-muted-foreground after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:rounded-t-full after:bg-transparent',
-              activeProfileTab === ProfileTabEnum.GUARDIAN_REQUESTS && 'text-foreground after:bg-foreground',
+              activeProfileTab === ProfileTabEnum.GUARDIAN_REQUESTS && 'font-bold text-[var(--tab-active-text)] after:bg-[var(--tab-active-underline)]',
             )}
           >Guardian Requests</Button>
         ) : null}

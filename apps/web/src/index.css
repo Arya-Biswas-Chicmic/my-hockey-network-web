@@ -90,6 +90,23 @@
   --radius: 0.5rem;
 }
 
+/* The one place every "active tab" underline/text pair reads from — Figma
+   (node 1806:15281, Home's For You/Network/Groups tabs) uses bold white
+   text with a blue 3px underline; several other tab bars had drifted to
+   blue TEXT (Home's own implementation, ironically) or a white/black
+   underline (Profile, Supervision, Network) instead. Every `.mhn-*-tab-
+   active`-style rule below points at these two variables instead of
+   hardcoding `var(--color-foreground)`/`var(--color-primary)` (or a stray
+   literal color) per tab bar, so a future color change only ever needs to
+   happen here (feedback 2026-08-30: "somewhere ... white and offwhite
+   color and somewhere dull blue color ... keep this in constant change
+   from single location"). Plain `:root`, not inside `@theme` above — these
+   are aliases for other tokens, not new theme colors of their own. */
+:root {
+  --tab-active-text: var(--color-foreground);
+  --tab-active-underline: var(--color-primary);
+}
+
 @keyframes mhn-spin {
   0% {
     transform: rotate(0deg);
@@ -2901,6 +2918,14 @@
   padding: 0;
 }
 
+/* 12px left, flush with the avatar's own left edge and the footer action
+   row below (`.mhn-post-footer` — also 12px) — confirmed against Figma
+   node 1806:15295: avatar, caption text, and the like/comment/repost row
+   all share that one 12px inset; only the NAME (to the right of the
+   avatar) sits further in. A prior pass here indented this to 68px to
+   match the name instead, which was backwards — reverted (feedback
+   2026-08-30: "main feed text should aligned with photo and like button
+   check figma"). */
 .mhn-post-copy {
   padding: 4px 12px 8px;
 }
@@ -2911,6 +2936,12 @@
   line-height: 20px;
   margin: 0;
   font-weight: 600;
+  /* Renders `\n\n`-separated paragraphs in `content` as real line breaks
+     instead of collapsing them — needed once Explore's posts moved onto
+     this shared component (feedback 2026-08-30: "make same feed card used
+     everywhere"), since their multi-paragraph copy previously relied on
+     hand-rolled `<p>` tags this component doesn't have. */
+  white-space: pre-line;
 }
 
 .mhn-post-more-btn {
@@ -9220,10 +9251,13 @@
 
 .mhn-tab-active {
   background-color: transparent;
-  color: var(--color-foreground);
+  color: var(--tab-active-text);
   font-weight: 700;
 }
 
+/* Was a white (`--color-foreground`) underline — Figma (node 1806:15281)
+   reserves blue for every active-tab underline, text stays white. Reads
+   the shared single-source pair (see `:root` near the top of this file). */
 .mhn-tab-active::after {
   content: '';
   position: absolute;
@@ -9231,7 +9265,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background-color: var(--color-foreground);
+  background-color: var(--tab-active-underline);
 }
 
 .mhn-supervision-tab-body {
@@ -13012,8 +13046,8 @@ img.secure {
 }
 
 .mhn-connections-tab-btn.active {
-  border-bottom-color: var(--color-primary);
-  color: var(--color-foreground);
+  border-bottom-color: var(--tab-active-underline);
+  color: var(--tab-active-text);
   font-weight: 700;
 }
 
@@ -16098,9 +16132,15 @@ img.secure {
   cursor: pointer;
 }
 
+/* Was `color: var(--color-primary)` — blue TEXT, when Figma (node
+   1806:15281) uses bold WHITE text and reserves blue for the underline
+   only. The JSX already added a `text-white` Tailwind utility expecting
+   that (see `HomeTabs.tsx`), but this same-specificity plain-CSS rule won
+   the cascade and overrode it. Reads the shared single-source pair (see
+   `:root` near the top of this file) like every other tab bar now does. */
 .mhn-feed-scope-tab-active {
-  color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
+  color: var(--tab-active-text);
+  border-bottom-color: var(--tab-active-underline);
 }
 
 /* Who to Follow widget (Home sidebar, replaces the fabricated-data Matches

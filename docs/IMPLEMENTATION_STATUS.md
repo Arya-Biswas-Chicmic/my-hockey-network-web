@@ -4,6 +4,29 @@ Last reviewed: 2026-08-30
 
 ## Completed
 
+- Other-profile popup demo data, Career edit-modal, feed alignment, tab-color theming, and shared
+  search widget pass (feature/other_profile). `ProfileMediaTab`/`ProfileStatsTab`/`ProfileEventsTab`
+  gained a `showDemoFallback` flag: the real `/profile` page still shows an honest empty state for a
+  real other user's unset data, while the other-user profile popup opts in to generic demo filler so
+  Connections/Explore previews never look broken. `ProfilePostsTab` now renders a "No Feed Yet" empty
+  state instead of nothing when a profile has no posts. Fixed `ProfileCareerSection`'s edit flow: it
+  previously reopened the "add new" form at the top of the list; editing an existing entry now opens
+  the pre-filled form inline at that team's own position (extracted a shared `renderCareerForm()` to
+  deduplicate the add/edit JSX). Reverted an incorrect feed-caption-indent experiment: `.mhn-post-copy`
+  and the post footer row are flush at a 12px inset matching the avatar's own left edge (Figma node
+  1806:15295) — only the author name sits further right, past the avatar; a prior pass had indented
+  the caption to 68px to match the name instead, which was backwards. Migrated the Explore page's two
+  hand-rolled, hardcoded post cards onto the shared `FeedPostCard` component (the same one Home's feed
+  uses), which fixed a real bug where clicking an author's name in Explore did nothing (no
+  `onAuthorClick` wiring existed on the old hand-rolled markup) and made Explore's post alignment
+  identical to Home by construction. Introduced shared `--tab-active-text`/`--tab-active-underline`
+  CSS variables (Figma node 1806-15281) and applied them across every active-tab implementation (Home
+  category tabs, Supervision, Connections, Group Detail, Profile hero tab bar) instead of each tab bar
+  hardcoding its own mix of white/off-white text and a dull-blue underline. Consolidated the
+  Events/Groups/Teams/Notifications/Saved/Explore page search inputs onto the one shared
+  `SearchWidget` component (previously each had its own hand-rolled box with hardcoded colors and a
+  12px radius instead of the shared 8px/token-based look).
+
 - Completed the interrupted Settings/Help & Support pass from the supplied Figma/app screenshots.
   Settings now opens on Notification, uses the flat divider-row treatment from the Figma panel, and
   every switch surface (Settings, Supervision, parent/player protection, and the profile-menu theme

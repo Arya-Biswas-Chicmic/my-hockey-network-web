@@ -35,7 +35,7 @@ export const CategoryTabs = <T extends string = string>({
             aria-selected={isActive}
             onClick={() => onChange(tab.key)}
             className={`mhn-feed-scope-tab text-sm font-semibold transition-colors outline-none ${
-              isActive ? 'mhn-feed-scope-tab-active text-white' : 'text-slate-400 hover:text-slate-200'
+              isActive ? 'mhn-feed-scope-tab-active' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <span>{tab.label}</span>

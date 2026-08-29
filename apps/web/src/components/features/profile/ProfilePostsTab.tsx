@@ -2,6 +2,7 @@
 
 import { FeedPostCard } from '@/components/features/home/FeedPostCard';
 import { Spinner } from '@/components/common/Spinner';
+import { NoDataFound } from '@/components/common/no-data-found';
 import { useInfiniteScrollSentinel } from '@/hooks/use-infinite-scroll-sentinel';
 import type { PostItem } from '@my-hockey-network/core';
 
@@ -42,6 +43,13 @@ export function ProfilePostsTab({
     isFetchingNextPage,
     onLoadMore,
   });
+
+  // Feedback 2026-08-30: "if no feed than show no feed yet" — this used to
+  // render nothing at all (an empty `<section>`) when there were no posts.
+  if (posts.length === 0) {
+    return <NoDataFound title="No Feed Yet" description="This profile hasn't posted anything yet." />;
+  }
+
   return (
     <section aria-label="Profile posts" className="flex flex-col gap-2">
       <div className="flex flex-col gap-2">
