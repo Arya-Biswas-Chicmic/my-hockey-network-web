@@ -2820,6 +2820,7 @@
 .mhn-author-meta {
   display: flex;
   flex-direction: column;
+  gap: 4px;
   min-width: 0;
   padding: 4px 4px 4px 8px;
 }
@@ -3545,7 +3546,7 @@
   top: 16px;
   right: 13px;
   width: 136px;
-  height: 126px;
+  height: 124px;
   pointer-events: none;
   mix-blend-mode: normal;
 }
@@ -3555,6 +3556,14 @@
   height: 100%;
   object-fit: contain;
   object-position: right bottom;
+}
+
+.mhn-invite-illustration-img-dark {
+  display: none;
+}
+
+.mhn-invite-illustration-img-light {
+  display: block;
 }
 
 .like-count-icon {
@@ -15424,6 +15433,14 @@ img.secure {
 
 :root.dark .mhn-invite-grow-illustration {
   mix-blend-mode: color-dodge;
+}
+
+:root.dark .mhn-invite-illustration-img-dark {
+  display: block;
+}
+
+:root.dark .mhn-invite-illustration-img-light {
+  display: none;
 }
 
 /* Figma's footer icons/counts are near-white (`text-white`), not the dimmer

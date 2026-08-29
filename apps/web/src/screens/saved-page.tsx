@@ -1,98 +1,67 @@
-import React, { useState } from 'react';
-import {
-  Bookmark,
-  Heart,
-  MessageCircle,
-  Repeat,
-  Clock,
-  MapPin,
-} from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Bookmark } from 'lucide-react';
 import { PendingBanner } from '@/components/common/PendingBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
-import { FallbackImage } from '@/components/ui/fallback-image';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/common/Button';
-import { showInfoToast } from '@/utils/toast';
+import { FeedPostCard } from '@/components/features/home/FeedPostCard';
 import { SearchWidget } from '@/components/features/home/SearchWidget';
 import { PageShell } from '@/components/layout/PageShell';
-import { getSavedDemoFeedRecords, type DemoFeedRecord } from '@/demo-data/feed';
+import { resolveMediaUrl } from '@/utils/mediaUtils';
+import { getSavedDemoFeedRecords, toFeedPostProps, type DemoFeedRecord } from '@/demo-data/feed';
 
 interface PageProps {
   onNavigate?: (screen: string) => void;
   onLogout?: () => void;
 }
 
-interface SavedItem {
-  id: string;
-  type: 'post' | 'event';
-  authorName?: string;
-  authorAvatar?: string;
-  authorSubtitle?: string;
-  title?: string;
-  content?: string;
-  image?: string;
-  date?: string;
-  location?: string;
-  likesCount?: number;
-  commentsCount?: number;
-  repostCount?: number;
-}
-
 // Saved reads from the same shared feed dataset every other surface does
 // (`@/demo-data/feed`) instead of its own disconnected fixture — product
 // direction 2026-08-29: "out of 20 other feeds show like I have saved
 // those so saved data will show those feeds only so single data base will
-// be used in multiple locations." A record with an `eventDateTag` renders
-// as the "event" card variant; everything else renders as a post.
-function toSavedItem(record: DemoFeedRecord): SavedItem {
-  if (record.eventDateTag) {
-    return {
-      id: record.id,
-      type: 'event',
-      title: record.content,
-      image: record.postImage || record.images?.[0],
-      date: record.eventDateTag,
-      location: record.eventLocation,
-    };
-  }
-  return {
-    id: record.id,
-    type: 'post',
-    authorName: record.authorName,
-    authorAvatar: record.authorAvatar,
-    authorSubtitle: [record.authorRole, record.authorTime].filter(Boolean).join(' · '),
-    content: record.content,
-    image: record.postImage || record.images?.[0],
-    likesCount: record.likesCount,
-    commentsCount: record.commentsCount,
-    repostCount: record.repostCount ?? 0,
-  };
-}
-
-const INITIAL_SAVED_ITEMS: SavedItem[] = getSavedDemoFeedRecords().map(toSavedItem);
-
+// be used in multiple locations." Renders through the exact same
+// `FeedPostCard` component Home/Explore/Profile use (via the shared
+// `toFeedPostProps` adapter) instead of a hand-rolled card with its own
+// colors/sizing — feedback 2026-08-30/31: "make sure feed component looks
+// exacty same and it should used everywhere." An `eventDateTag` record
+// renders as a normal post with the small event-date badge on its media
+// (`PostMedia`'s existing overlay), matching how Home already renders the
+// same event-tagged records — not a separate one-off "event card" layout.
 export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { permissions } = useFeedPermissions(onNavigate);
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'all' | 'posts' | 'events'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [savedItems, setSavedItems] = useState<SavedItem[]>(INITIAL_SAVED_ITEMS);
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
+
+  const viewer = useMemo(
+    () => ({
+      name: user?.profile?.displayName || undefined,
+      avatar: user?.profile?.avatarUrl ? resolveMediaUrl(user.profile.avatarUrl) : undefined,
+      role: user?.profile?.roleTag || user?.primaryRole || undefined,
+    }),
+    [user],
+  );
+
+  const savedRecords = useMemo(
+    () => getSavedDemoFeedRecords().filter((record) => !removedIds.has(record.id)),
+    [removedIds],
+  );
 
   const handleRemoveSaved = (id: string) => {
-    setSavedItems((prev) => prev.filter((item) => item.id !== id));
-    showInfoToast('Item removed from Saved');
+    setRemovedIds((prev) => new Set(prev).add(id));
   };
 
-  const postsCount = savedItems.filter((item) => item.type === 'post').length;
-  const eventsCount = savedItems.filter((item) => item.type === 'event').length;
+  const postsCount = savedRecords.filter((record) => !record.eventDateTag).length;
+  const eventsCount = savedRecords.filter((record) => record.eventDateTag).length;
 
-  const filteredItems = savedItems.filter((item) => {
+  const filteredRecords = savedRecords.filter((record) => {
     const matchesSearch =
       !searchQuery.trim() ||
-      (item.content && item.content.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (item.title && item.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (item.authorName && item.authorName.toLowerCase().includes(searchQuery.toLowerCase()));
+      `${record.authorName} ${record.content}`.toLowerCase().includes(searchQuery.toLowerCase());
 
-    if (activeTab === 'posts') return matchesSearch && item.type === 'post';
-    if (activeTab === 'events') return matchesSearch && item.type === 'event';
+    if (activeTab === 'posts') return matchesSearch && !record.eventDateTag;
+    if (activeTab === 'events') return matchesSearch && Boolean(record.eventDateTag);
     return matchesSearch;
   });
 
@@ -134,7 +103,7 @@ export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            All ({savedItems.length})
+            All ({savedRecords.length})
           </Button>
           <Button
             onClick={() => setActiveTab('posts')}
@@ -163,7 +132,7 @@ export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
             vertical card stack (feedback 2026-08-30: "spacing between two
             feed this is ideal spacing I need everywhere"). */}
         <div className="flex flex-col gap-2 max-w-[760px] mt-2">
-          {filteredItems.length === 0 ? (
+          {filteredRecords.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
               <Bookmark size={36} className="text-slate-500" />
               <h3 className="text-base font-bold text-slate-200">No Saved Items</h3>
@@ -172,102 +141,13 @@ export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               </p>
             </div>
           ) : (
-            filteredItems.map((item) => (
-              <article
-                key={item.id}
-                className="bg-[#0A1220] border border-[#162238] rounded-2xl p-4 flex flex-col gap-3 shadow-lg transition-all hover:border-[#1F3352]"
-              >
-                {item.type === 'post' ? (
-                  <>
-                    {/* Post Author Header */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 border border-[#1E2D4A]">
-                          <FallbackImage
-                            src={item.authorAvatar || '/userPlaceholder.webp'}
-                            alt={item.authorName || ''}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="flex flex-col">
-                          <h4 className="text-sm font-bold text-slate-100">{item.authorName}</h4>
-                          <span className="text-xs text-slate-400">{item.authorSubtitle}</span>
-                        </div>
-                      </div>
-
-                      <Button
-                        onClick={() => handleRemoveSaved(item.id)}
-                        className="text-slate-400 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-slate-800/40"
-                        title="Remove from saved"
-                      >
-                        <Bookmark size={18} fill="#168BFF" className="text-[#168BFF]" />
-                      </Button>
-                    </div>
-
-                    {/* Post Content */}
-                    <p className="text-sm text-slate-200 leading-relaxed">{item.content}</p>
-
-                    {/* Optional Post Image */}
-                    {item.image && (
-                      <div className="relative w-full rounded-xl overflow-hidden bg-slate-900 aspect-[16/9] border border-[#182740] mt-1">
-                        <FallbackImage
-                          src={item.image}
-                          alt="Saved Post Media"
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    )}
-
-                    {/* Post Actions Footer */}
-                    <div className="flex items-center justify-between border-t border-[#162238] pt-3 text-slate-400 text-xs">
-                      <div className="flex items-center gap-6 font-semibold">
-                        <span className="flex items-center gap-1.5"><Heart size={16} /> {item.likesCount}</span>
-                        <span className="flex items-center gap-1.5"><MessageCircle size={16} /> {item.commentsCount}</span>
-                        <span className="flex items-center gap-1.5"><Repeat size={16} /> {item.repostCount}</span>
-                      </div>
-
-                      <span className="text-[11px] font-medium text-slate-400">Saved Post</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Event Saved Header */}
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex gap-4">
-                        <div className="relative w-28 aspect-[16/9] rounded-lg overflow-hidden shrink-0 bg-slate-900 border border-[#182740]">
-                          <FallbackImage
-                            src={item.image || '/classic.webp'}
-                            alt={item.title || ''}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <h4 className="text-sm font-bold text-slate-100 line-clamp-1">{item.title}</h4>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                            <Clock size={13} />
-                            <span>{item.date}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                            <MapPin size={13} />
-                            <span>{item.location}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <Button
-                        onClick={() => handleRemoveSaved(item.id)}
-                        className="text-[#168BFF] p-1.5 rounded-lg hover:bg-slate-800/40 shrink-0"
-                        title="Remove from saved"
-                      >
-                        <Bookmark size={18} fill="#168BFF" />
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </article>
+            filteredRecords.map((record) => (
+              <FeedPostCard
+                key={record.id}
+                {...toFeedPostProps(record, viewer)}
+                onNavigate={onNavigate}
+                onDeleteSuccess={handleRemoveSaved}
+              />
             ))
           )}
         </div>

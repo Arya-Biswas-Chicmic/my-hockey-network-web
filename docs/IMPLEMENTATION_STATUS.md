@@ -1,8 +1,23 @@
 # Implementation status
 
-Last reviewed: 2026-08-30
+Last reviewed: 2026-08-31
 
 ## Completed
+
+- Verified `FeedPostCard`/`PostCardHeader` against Figma node 1806:15295 ("Post") and confirmed the
+  Header of post spacing (avatar 48px, `pt-12px pl-12px pr-4px pb-8px`), the name/subtitle container
+  padding, and the caption/footer 12px-flush inset all already match exactly — measured via live
+  `getBoundingClientRect()` on desktop, tablet, and mobile widths, not just a screenshot. Added the one
+  real gap the spec called for that was missing: 4px between the author name and its subtitle line
+  (`.mhn-author-meta` gained `gap: 4px`) — previously they sat with no breathing room between them.
+  Migrated the Saved page off its own hand-rolled, hardcoded post/event card markup (own colors,
+  own 40px avatar, own "Remove from Saved" button, no profile-click wiring) onto the same shared
+  `FeedPostCard` component Home/Explore/Profile's Posts tab already use, via the existing
+  `toFeedPostProps` adapter in `@/demo-data/feed` — Saved is now the last surface to read the single
+  shared feed dataset through the shared card component rather than projecting it into a bespoke shape.
+  This also gives Saved profile-click navigation and a working "..." menu (Delete/Not interested) as
+  the replacement for its old bespoke remove button, for free. `FeedPostCard` is confirmed as the only
+  post-card implementation left in the web app outside chat/comment UI, which is a different domain.
 
 - Other-profile popup demo data, Career edit-modal, feed alignment, tab-color theming, and shared
   search widget pass (feature/other_profile). `ProfileMediaTab`/`ProfileStatsTab`/`ProfileEventsTab`
