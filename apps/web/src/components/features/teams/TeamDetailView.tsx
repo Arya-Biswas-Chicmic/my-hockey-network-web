@@ -86,14 +86,19 @@ export function TeamDetailView({ teamId, teamName, teamLogo, initialTab = 'posts
               </div>
             </div>
 
-            <nav className="flex items-center gap-8 overflow-x-auto border-t border-border px-5" aria-label="Team details">
+            {/* Each tab is an equal-width flex column spanning the full
+                card width edge to edge (Figma's own tab list is
+                `flex-[193_0_0]` per tab, not left-clustered with dead
+                space after the last label) — feedback 2026-08-31: "make
+                top bar filled entire width". */}
+            <nav className="flex items-center overflow-x-auto border-t border-border" aria-label="Team details">
               {tabs.map((tab) => (
                 <Button
                   key={tab.id}
                   type="button"
                   variant="unstyled"
                   className={cn(
-                    'relative shrink-0 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground',
+                    'relative flex-1 py-3 text-center text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground',
                     activeTab === tab.id && 'text-[var(--tab-active-text)] after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[var(--tab-active-underline)]',
                   )}
                   onClick={() => setActiveTab(tab.id)}

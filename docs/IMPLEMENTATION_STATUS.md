@@ -4,6 +4,12 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Fixed Team Detail's tab bar (Posts/Members/Events/Media/About) leaving dead space after "About"
+  instead of spanning the card's full width (feedback 2026-08-31: "make top bar filled entire width,
+  check marked area"). Each tab was `shrink-0` with a `gap-8`, clustering left; switched to `flex-1`
+  per tab (matching Figma's own `flex-[193_0_0]` equal-width tab list) so the row fills the card
+  edge-to-edge with no side padding, same as the design.
+
 - Fixed Event Detail rendering wider (less left/right gutter) than Team/Group Detail at the same
   window size (feedback 2026-08-31: "make this view port consistent similar to team tab by making
   left and right event spacing like group tab"). It passed `maxWidth={1166}` to `PageShell`, widening
