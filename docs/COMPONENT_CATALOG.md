@@ -350,6 +350,12 @@ it uses `Dialog`, `SearchWidget`, `FallbackImage`, and `common/Button`, and rece
 shell for `/groups` and Network; its tab content lives in `features/groups/GroupDetailContent.tsx`
 and reuses `FeedPostCard` for Posts and `EventCard` for Events. Group tab fixtures and listing cards
 must remain centralized in `demo-data/groups` rather than being copied into screens.
+`components/features/teams/TeamDetailView.tsx` is the equivalent Team Detail shell, opened inline
+from `screens/teams-page.tsx` (mirrors how Group Detail is opened from `screens/groups-page.tsx` —
+neither is a separate route); its tab content lives in `features/teams/TeamDetailContent.tsx`, reuses
+`FeedPostCard` for Posts, `EventCard` (`compact`) for Events, and the existing `WhoToFollowWidget`
+verbatim for the sidebar (Figma's sidebar there is that exact widget, not a team-specific one). Team
+tab fixtures live in `demo-data/teams`, same convention as `demo-data/groups`.
 
 ### `common/Button` sets `whitespace-nowrap`
 

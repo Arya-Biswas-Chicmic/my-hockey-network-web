@@ -7,6 +7,8 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
 import { showSuccessToast } from '@/utils/toast';
 import { SearchWidget } from '@/components/features/home/SearchWidget';
+import { TeamDetailView } from '@/components/features/teams/TeamDetailView';
+import type { TeamDetailTab } from '@/demo-data/teams';
 import { PageShell } from '@/components/layout/PageShell';
 
 interface PageProps {
@@ -85,6 +87,11 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [discoverTeams] = useState<TeamItem[]>(DISCOVER_TEAMS);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
+  const [selectedTeam, setSelectedTeam] = useState<{ id: string; name: string; logo: string; tab: TeamDetailTab } | null>(null);
+
+  const openTeamDetail = (team: TeamItem, tab: TeamDetailTab = 'posts') => {
+    setSelectedTeam({ id: team.id, name: team.name, logo: team.logo, tab });
+  };
 
   const handleCreateTeam = () => {
     if (!newTeamName.trim()) return;
@@ -127,6 +134,20 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         />
       )}
 
+      {selectedTeam ? (
+        <PageShell className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-16">
+          <TeamDetailView
+            key={selectedTeam.id}
+            teamId={selectedTeam.id}
+            teamName={selectedTeam.name}
+            teamLogo={selectedTeam.logo}
+            initialTab={selectedTeam.tab}
+            onBackToTeams={() => setSelectedTeam(null)}
+            onEventClick={() => onNavigate?.('event-detail')}
+            onNavigate={onNavigate}
+          />
+        </PageShell>
+      ) : (
       <PageShell className="mhn-teams-main-container flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-16">
         {/* Top Header Row */}
         <div className="flex items-center justify-between gap-4">
@@ -180,8 +201,16 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
               key={team.id}
               className="flex items-center gap-4 py-3.5 border-b border-[#162238]/60 last:border-none transition-colors"
             >
-              {/* Team Crest Logo */}
-              <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 bg-slate-900 border border-[#1E2D4A]">
+              {/* Team Crest Logo — opens Team Detail on its Posts tab,
+                  same as clicking the name (feedback: "build this team
+                  page detail page design", Figma node 1686:8399). */}
+              <Button
+                type="button"
+                variant="unstyled"
+                className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 bg-slate-900 border border-[#1E2D4A]"
+                onClick={() => openTeamDetail(team, 'posts')}
+                aria-label={`View ${team.name}`}
+              >
                 <FallbackImage
                   src={team.logo}
                   alt={team.name}
@@ -189,26 +218,34 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
                   fallbackSrc="/columbus.webp"
                   className="object-cover"
                 />
-              </div>
+              </Button>
 
               {/* Team Details & Sub-links */}
               <div className="flex flex-col gap-1 min-w-0 flex-1">
-                <h3 className="text-base font-bold text-slate-100 truncate">
-                  {team.name}
-                </h3>
+                <Button
+                  type="button"
+                  variant="unstyled"
+                  className="text-left hover:text-slate-300 transition-colors"
+                  onClick={() => openTeamDetail(team, 'posts')}
+                >
+                  <h3 className="text-base font-bold text-slate-100 truncate">
+                    {team.name}
+                  </h3>
+                </Button>
 
-                {/* Sub-links row: Posts · Staff · Roster */}
+                {/* Sub-links row: Posts · Members · Events — each opens
+                    Team Detail directly on that tab. */}
                 <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <Button className="hover:text-slate-200 transition-colors font-medium">
+                  <Button className="hover:text-slate-200 transition-colors font-medium" onClick={() => openTeamDetail(team, 'posts')}>
                     Posts
                   </Button>
                   <span>·</span>
-                  <Button className="hover:text-slate-200 transition-colors font-medium">
-                    Staff
+                  <Button className="hover:text-slate-200 transition-colors font-medium" onClick={() => openTeamDetail(team, 'members')}>
+                    Members
                   </Button>
                   <span>·</span>
-                  <Button className="hover:text-slate-200 transition-colors font-medium">
-                    Roster
+                  <Button className="hover:text-slate-200 transition-colors font-medium" onClick={() => openTeamDetail(team, 'events')}>
+                    Events
                   </Button>
                 </div>
               </div>
@@ -216,6 +253,7 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           ))}
         </div>
       </PageShell>
+      )}
 
       {/* Create Team Modal */}
       {isCreateModalOpen && (

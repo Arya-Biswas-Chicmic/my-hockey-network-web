@@ -4,6 +4,19 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Built the Team Detail page (Figma nodes 1686:8399 hero/Posts, 1696:9258 Members, 1696:10222 Events,
+  1884:14732 Media, 1733:21876 About), opened inline from `screens/teams-page.tsx` — same pattern as
+  Group Detail (no separate route). `TeamDetailView`/`TeamDetailContent` mirror `GroupDetailView`/
+  `GroupDetailContent`'s hero-card-plus-tabs shape: Posts reuses `FeedPostCard`, Events reuses
+  `EventCard` in `compact` mode for the horizontal list layout Figma shows, Media reuses the same
+  image-grid panel pattern as Group Detail, and the sidebar reuses the existing `WhoToFollowWidget`
+  verbatim (Figma's sidebar there is that exact Home widget). Members is a new tab: a searchable
+  roster list (avatar, name, position/jersey, per-row Follow) not covered by any existing pattern.
+  Team fixtures live in `demo-data/teams`, mirroring `demo-data/groups`'s
+  `DemoGroupDetail`/`getDemoGroupDetail` shape (`DemoTeamDetail`/`getDemoTeamDetail`). The Teams list's
+  "Posts · Staff · Roster" row sub-links were updated to "Posts · Members · Events" to match the real
+  tab set and now open Team Detail directly on that tab.
+
 - Fixed Event Detail's own content being unreachable past one viewport height (bug report
   2026-08-31: "event page details scrolling is not working"). `.mhn-app-content` is `lg:h-dvh
   lg:overflow-hidden` — every route needs its own internal scroll owner inside that, and the
