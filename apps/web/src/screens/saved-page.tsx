@@ -8,8 +8,7 @@ import {
   Clock,
   MapPin,
 } from 'lucide-react';
-import { PendingBanner } from '@/components/common/PendingBanner';
-import { useFeedPermissions } from '@/hooks/use-feed-permissions';
+import { FeedPermissionBanner } from '@/components/common/FeedPermissionBanner';
 import { FallbackImage } from '@/components/ui/fallback-image';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
@@ -72,7 +71,6 @@ function toSavedItem(record: DemoFeedRecord): SavedItem {
 const INITIAL_SAVED_ITEMS: SavedItem[] = getSavedDemoFeedRecords().map(toSavedItem);
 
 export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
-  const { permissions } = useFeedPermissions(onNavigate);
   const [activeTab, setActiveTab] = useState<'all' | 'posts' | 'events'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [savedItems, setSavedItems] = useState<SavedItem[]>(INITIAL_SAVED_ITEMS);
@@ -99,21 +97,7 @@ export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
   return (
     <>
-      {!permissions.allowed && permissions.message && (
-        <PendingBanner
-          message={permissions.message}
-          actionText={permissions.ctaText || 'Complete Profile'}
-          onActionClick={() => {
-            if (permissions.ctaAction === 'COMPLETE_PROFILE') {
-              if (onNavigate) onNavigate('profile');
-            } else if (permissions.ctaAction === 'GUARDIAN_APPROVAL') {
-              if (onNavigate) onNavigate('supervision');
-            } else if (permissions.ctaAction === 'LOGIN') {
-              if (onNavigate) onNavigate('login');
-            }
-          }}
-        />
-      )}
+      <FeedPermissionBanner onNavigate={onNavigate} />
 
       <PageShell className="mhn-saved-main-container flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-16">
         {/* Top Header Row */}

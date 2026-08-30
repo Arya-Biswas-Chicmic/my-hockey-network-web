@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { Button } from '@/components/common/Button';
+import { BackButton } from '@/components/common/BackButton';
 import { Form } from '@/components/ui/form';
 import { FormInput, FormDateInput, FormSelect } from '@/components/form/fields';
 import { GUARDIAN_RELATION_OPTIONS } from '@/utils/guardianUtils';
@@ -95,9 +96,7 @@ export function PlayerDetailsFormFields({
           <Button type="submit" className="mhn-parent-btn-primary" disabled={isSubmitting}>
             {submitLabel}
           </Button>
-          <Button type="button" className="mhn-parent-btn-secondary" onClick={onBack}>
-            Back
-          </Button>
+          <BackButton onClick={onBack} />
         </div>
       </Form>
     </div>

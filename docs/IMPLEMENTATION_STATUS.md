@@ -4,6 +4,39 @@ Last reviewed: 2026-08-30
 
 ## Completed
 
+- Removed the `PendingBanner` duplication. The component itself was already shared, but its *usage*
+  was not: all 10 authenticated screens inlined the same `!permissions.allowed &&
+  permissions.message` guard plus an identical 8-line CTA dispatch — 9 of the 10 blocks byte-for-byte
+  identical, with `profile-page` differing on a single line (it opens its edit modal instead of
+  navigating to itself). An 11th copy of the same if/else chain lived inside
+  `use-feed-permissions.ts`'s toast handler, so the banner and the toast could silently drift on
+  where they sent a user for the same reason.
+  Added `common/FeedPermissionBanner`, which owns the visibility rule and the CTA routing and calls
+  the hook itself, so a screen renders `<FeedPermissionBanner onNavigate={onNavigate} />` and nothing
+  else. Profile passes `onCompleteProfile` to keep its in-place behaviour. The dispatch is now one
+  exported `resolveFeedPermissionCta(ctaAction, onNavigate)` in the hook module, used by both the
+  banner and the toast handler — typed with the domain's `FeedCtaAction` union rather than a loose
+  string, which the typecheck caught.
+  Eight screens were then calling `useFeedPermissions` purely to feed the banner, so those dead hook
+  calls and imports were removed; `home-page` and `profile-page` keep theirs for `requirePermission`.
+  Net effect: ~120 lines of duplicated JSX deleted, and the banner's behaviour has one owner.
+  Covered by 9 new tests including all three CTA routes and the Profile override.
+
+- Added the missing back control to the parent add-player choice step and extracted the shared
+  `common/BackButton`. `AddPlayerChoiceStep` ("How would you like to add them?") was the only
+  mid-flow step in the wizard without a way back — every step *after* it could return *to* it, so a
+  parent who reached it and changed their mind was stranded. Verified against git history that this
+  was never present rather than recently removed. The new `onBack` prop is optional and the control
+  only renders when the flow supplies one, so the component stays usable at a flow entry point.
+  The three existing hand-rolled back buttons now use the shared component too, which closes a real
+  drift: `CreatePlayerProtectStep` and `PlayerDetailsFormFields` used `.mhn-parent-btn-secondary`
+  while `LinkExistingPlayerStep` used `.mhn-btn-outline`, so the same action rendered as two
+  different buttons depending on the step. Covered by 6 new tests.
+  Noted but not changed: `features/auth/signup/CreateAccountModal.tsx` declares an `onBack?` prop
+  that is never used inside the component and never passed by `OnboardingModal` — dead since the file
+  was created. Left alone pending a decision on whether that step should have a back affordance at
+  all, rather than silently deleting a prop or wiring a new user-facing control.
+
 - Completed the interrupted Settings/Help & Support pass from the supplied Figma/app screenshots.
   Settings now opens on Notification, uses the flat divider-row treatment from the Figma panel, and
   every switch surface (Settings, Supervision, parent/player protection, and the profile-menu theme

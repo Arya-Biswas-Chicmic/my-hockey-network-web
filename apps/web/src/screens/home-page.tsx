@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { isEmailValid } from '@my-hockey-network/validation';
-import { PendingBanner } from '@/components/common';
+import { FeedPermissionBanner } from '@/components/common/FeedPermissionBanner';
 import { PageShell } from '@/components/layout/PageShell';
 import { RightSidebar } from '@/components/layout/RightSidebar';
 import {
@@ -39,7 +39,7 @@ interface PostPrivacySettings {
 
 export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const { user } = useAuth();
-  const { permissions, requirePermission } = useFeedPermissions(onNavigate);
+  const { requirePermission } = useFeedPermissions(onNavigate);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const createPostMutation = useCreatePostMutation();
   const createPostRequestId = useShellUiStore((state) => state.createPostRequestId);
@@ -159,21 +159,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
   return (
     <>
-      {!permissions.allowed && permissions.message && (
-        <PendingBanner
-          message={permissions.message}
-          actionText={permissions.ctaText || 'Complete Profile'}
-          onActionClick={() => {
-            if (permissions.ctaAction === 'COMPLETE_PROFILE') {
-              if (onNavigate) onNavigate('profile');
-            } else if (permissions.ctaAction === 'GUARDIAN_APPROVAL') {
-              if (onNavigate) onNavigate('supervision');
-            } else if (permissions.ctaAction === 'LOGIN') {
-              if (onNavigate) onNavigate('login');
-            }
-          }}
-        />
-      )}
+      <FeedPermissionBanner onNavigate={onNavigate} />
 
       <PageShell className="mhn-home-main-layout lg:my-0 lg:min-h-0 lg:flex-1">
         {/* CENTER MAIN FEED COLUMN */}

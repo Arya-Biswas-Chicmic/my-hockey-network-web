@@ -1,7 +1,6 @@
 import React from 'react';
 import { useSearchParams } from 'next/navigation';
-import { PendingBanner } from '@/components/common/PendingBanner';
-import { useFeedPermissions } from '@/hooks/use-feed-permissions';
+import { FeedPermissionBanner } from '@/components/common/FeedPermissionBanner';
 import { ConnectionsView, type ConnectionMember } from '@/components/features/network/ConnectionsView';
 import { PageShell } from '@/components/layout/PageShell';
 
@@ -22,27 +21,12 @@ interface PageProps {
  * Figma reference has no right rail either, so this doesn't add one.
  */
 export const ConnectionsPage: React.FC<PageProps> = ({ onNavigate }) => {
-  const { permissions } = useFeedPermissions(onNavigate);
   const searchParams = useSearchParams();
   const initialTab: ConnectionMember['type'] = searchParams.get('tab') === 'followers' ? 'followers' : 'following';
 
   return (
     <>
-      {!permissions.allowed && permissions.message && (
-        <PendingBanner
-          message={permissions.message}
-          actionText={permissions.ctaText || 'Complete Profile'}
-          onActionClick={() => {
-            if (permissions.ctaAction === 'COMPLETE_PROFILE') {
-              if (onNavigate) onNavigate('profile');
-            } else if (permissions.ctaAction === 'GUARDIAN_APPROVAL') {
-              if (onNavigate) onNavigate('supervision');
-            } else if (permissions.ctaAction === 'LOGIN') {
-              if (onNavigate) onNavigate('login');
-            }
-          }}
-        />
-      )}
+      <FeedPermissionBanner onNavigate={onNavigate} />
 
       <PageShell className="mhn-connections-page-container lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-16">
         <ConnectionsView

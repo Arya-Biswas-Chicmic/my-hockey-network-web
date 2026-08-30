@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { PendingBanner } from '@/components/common/PendingBanner';
+import { FeedPermissionBanner } from '@/components/common/FeedPermissionBanner';
 import { CreatePostModal } from '@/components/features/home/CreatePostModal';
 import { EditProfileModal, ProfileSkeletonLoader } from '@/components/features/profile';
 import { DeleteCareerModal } from '@/components/common/DeleteCareerModal';
@@ -51,7 +51,7 @@ export const ProfilePage: React.FC<PageProps> = ({
 }) => {
   const { user, setUserProfile, loadAuthMe } = useAuth();
   const searchParams = useSearchParams();
-  const { permissions, requirePermission } = useFeedPermissions(onNavigate);
+  const { requirePermission } = useFeedPermissions(onNavigate);
   const profileScrollRef = useRef<HTMLElement>(null);
 
   const {
@@ -193,21 +193,10 @@ export const ProfilePage: React.FC<PageProps> = ({
 
   return (
     <div className="mhn-profile-page-root">
-      {!permissions.allowed && permissions.message && (
-        <PendingBanner
-          message={permissions.message}
-          actionText={permissions.ctaText || 'Complete Profile'}
-          onActionClick={() => {
-            if (permissions.ctaAction === 'COMPLETE_PROFILE') {
-              setIsEditProfileOpen(true);
-            } else if (permissions.ctaAction === 'GUARDIAN_APPROVAL') {
-              if (onNavigate) onNavigate('supervision');
-            } else if (permissions.ctaAction === 'LOGIN') {
-              if (onNavigate) onNavigate('login');
-            }
-          }}
-        />
-      )}
+      <FeedPermissionBanner
+        onNavigate={onNavigate}
+        onCompleteProfile={() => setIsEditProfileOpen(true)}
+      />
 
       <PageShell className="mhn-home-main-layout lg:my-0 lg:min-h-0 lg:flex-1">
         <section ref={profileScrollRef} className="mhn-layout-col-center flex flex-col gap-4 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">

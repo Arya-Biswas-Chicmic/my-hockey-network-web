@@ -468,6 +468,36 @@ matched the real route name.
 Skeleton fills use `.mhn-skeleton-shimmer`, whose gradient is token-driven and follows the theme.
 Never hardcode a skeleton colour.
 
+## `common/FeedPermissionBanner`
+
+The guardian/permission pending banner for authenticated screens. Renders `common/PendingBanner` when
+the current user is not allowed to use the feed, and `null` otherwise — screens do **not** re-implement
+the `!permissions.allowed && permissions.message` guard or the CTA dispatch, which is how 10 identical
+copies accumulated before it existed.
+
+```tsx
+<FeedPermissionBanner onNavigate={onNavigate} />
+```
+
+Pass `onCompleteProfile` only where the screen can satisfy "complete your profile" in place rather
+than navigating (Profile opens its edit modal). CTA routing lives in `resolveFeedPermissionCta`
+(exported from `hooks/use-feed-permissions.ts`) and is shared with that hook's toast handler, so the
+banner and the toast can never disagree about where a CTA leads.
+
+A screen only needs `useFeedPermissions` directly if it uses `requirePermission` or one of the
+`can*` flags — not merely to show this banner.
+
+## `common/BackButton`
+
+The shared "previous step" control for multi-step flows (`common/BackButton.tsx`). Wraps
+`common/Button` with the token-backed `.mhn-parent-btn-secondary` treatment and `type="button"`, so
+it never submits the RHF form it sits inside. Props: `onClick`, optional `label` (defaults to
+"Back"), `disabled`, `className`.
+
+Use it instead of hand-rolling another back button. The four call sites had already drifted before
+extraction — two used `.mhn-parent-btn-secondary`, one used `.mhn-btn-outline`, and the add-player
+choice step had no back control at all.
+
 ## Cooldown / countdown primitives
 
 `apps/web/src/hooks/use-countdown.ts` (`useCountdown`, `formatCountdown`) is the single countdown

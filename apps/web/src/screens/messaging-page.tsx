@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { PendingBanner } from '@/components/common/PendingBanner';
-import { useFeedPermissions } from '@/hooks/use-feed-permissions';
+import { FeedPermissionBanner } from '@/components/common/FeedPermissionBanner';
 import { ChatSidebar, ChatItem } from '@/components/features/messaging/ChatSidebar';
 import { ChatConversation, MessageItem } from '@/components/features/messaging/ChatConversation';
 import { PageShell } from '@/components/layout/PageShell';
@@ -125,7 +124,6 @@ const INITIAL_CONVERSATIONS: Record<
 };
 
 export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
-  const { permissions } = useFeedPermissions(onNavigate);
   const [selectedChatId, setSelectedChatId] = useState<string>('hockey-club');
   const [chats] = useState<ChatItem[]>(DEFAULT_CHATS);
   const [conversations, setConversations] = useState(INITIAL_CONVERSATIONS);
@@ -161,21 +159,7 @@ export const MessagingPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
   return (
     <div className="mhn-messaging-page-root">
         {/* Pending Guardian Notice Banner */}
-        {!permissions.allowed && permissions.message && (
-          <PendingBanner
-            message={permissions.message}
-            actionText={permissions.ctaText || 'Complete Profile'}
-            onActionClick={() => {
-              if (permissions.ctaAction === 'COMPLETE_PROFILE') {
-                if (onNavigate) onNavigate('profile');
-              } else if (permissions.ctaAction === 'GUARDIAN_APPROVAL') {
-                if (onNavigate) onNavigate('supervision');
-              } else if (permissions.ctaAction === 'LOGIN') {
-                if (onNavigate) onNavigate('login');
-              }
-            }}
-          />
-        )}
+        <FeedPermissionBanner onNavigate={onNavigate} />
 
         {/* Main 2-Column Content Layout */}
         <PageShell className="mhn-messaging-main-container">

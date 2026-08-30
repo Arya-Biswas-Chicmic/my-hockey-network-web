@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "@/components/common/Button";
+import { BackButton } from "@/components/common/BackButton";
 import { Switch } from "@/components/ui/switch";
 import { Spinner } from "@/components/common/Spinner";
 
@@ -134,13 +135,7 @@ export const CreatePlayerProtectStep: React.FC<
           {loading && <Spinner size="sm" color="#FFFFFF" />}
           <span>Create Player Profile</span>
         </Button>
-        <Button
-          type="button"
-          className="mhn-parent-btn-secondary"
-          onClick={onBack}
-        >
-          Back
-        </Button>
+        <BackButton onClick={onBack} />
       </div>
     </div>
   );
