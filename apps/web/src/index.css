@@ -2555,7 +2555,7 @@
 .mhn-modal-toolbar {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   padding-top: 8px;
   padding-bottom: 16px;
 }
@@ -2575,11 +2575,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
+  color: var(--color-primary);
 }
 
 .mhn-modal-icon-btn:hover {
   background: var(--color-secondary);
+  color: var(--color-primary-hover);
 }
 
 .mhn-modal-submit-row {
@@ -9760,7 +9762,7 @@
   background-color: var(--color-primary-hover);
 }
 
-.mhn-btn-modal-cancel {
+.mhn-form-actions-stack .mhn-btn-modal-cancel {
   width: 100%;
   height: 48px;
   background-color: var(--color-background);
@@ -9776,7 +9778,7 @@
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.mhn-btn-modal-cancel:hover {
+.mhn-form-actions-stack .mhn-btn-modal-cancel:hover {
   border-color: var(--color-border-strong);
   background-color: var(--color-surface-subtle);
 }
@@ -11581,17 +11583,33 @@ img.secure {
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
+  margin-top: 24px;
 }
 
+.mhn-delete-modal-actions .mhn-btn-modal-cancel,
 .mhn-btn-modal-cancel {
-  padding: 10px 18px;
+  width: auto;
+  height: 42px;
+  padding: 0 20px;
   border-radius: 8px;
   border: 1px solid var(--color-border-strong);
   background-color: var(--color-background);
   color: var(--color-foreground-muted);
   font-weight: 600;
   font-size: 14px;
+  white-space: nowrap;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.mhn-delete-modal-actions .mhn-btn-modal-cancel:hover:not(:disabled),
+.mhn-btn-modal-cancel:hover:not(:disabled) {
+  background-color: var(--color-surface-subtle);
+  border-color: var(--color-border-strong);
+  color: var(--color-foreground);
 }
 
 .mhn-btn-modal-cancel:disabled {
@@ -11599,18 +11617,29 @@ img.secure {
   opacity: 0.6;
 }
 
+.mhn-delete-modal-actions .mhn-btn-modal-danger,
 .mhn-btn-modal-danger {
-  padding: 10px 20px;
+  width: auto;
+  height: 42px;
+  padding: 0 22px;
   border-radius: 8px;
   border: none;
   background-color: var(--color-destructive);
   color: var(--color-primary-foreground);
   font-weight: 600;
   font-size: 14px;
+  white-space: nowrap;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.mhn-delete-modal-actions .mhn-btn-modal-danger:hover:not(:disabled),
+.mhn-btn-modal-danger:hover:not(:disabled) {
+  opacity: 0.9;
 }
 
 .mhn-btn-modal-danger:disabled {

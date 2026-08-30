@@ -15,7 +15,8 @@ import {
 } from '@/components/features/home';
 import { QueryKeys, PostAudienceEnum } from '@my-hockey-network/contracts';
 import { useAuth } from '@/hooks/use-auth';
-import { globalQueryClient, invalidateQueryPrefix } from '@/query';
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidateQueryPrefix } from '@/query';
 import { useCreatePostMutation } from '@/hooks/use-post-mutations';
 import { resolveMediaUrl } from '@/utils/mediaUtils';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
@@ -38,6 +39,7 @@ interface PostPrivacySettings {
 }
 
 export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { permissions, requirePermission } = useFeedPermissions(onNavigate);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
@@ -109,8 +111,15 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
       const res = await createPostMutation.mutateAsync({ dto, imageFile });
 
-      globalQueryClient.removeQueries({ queryKey: [QueryKeys.FEED_POSTS] });
-      await invalidateQueryPrefix(globalQueryClient, QueryKeys.FEED_POSTS);
+      queryClient.removeQueries({
+        predicate: (query) =>
+          String(query.queryKey[0] ?? '').startsWith(QueryKeys.FEED_POSTS) ||
+          String(query.queryKey[0] ?? '').startsWith(QueryKeys.USER_POSTS),
+      });
+      await Promise.all([
+        invalidateQueryPrefix(queryClient, QueryKeys.FEED_POSTS),
+        invalidateQueryPrefix(queryClient, QueryKeys.USER_POSTS),
+      ]);
 
       await refreshFeed();
 
