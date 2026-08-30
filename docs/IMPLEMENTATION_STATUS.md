@@ -2473,3 +2473,4 @@ end-to-end.
   single-field `ForgotPassword` form was. `Home/index.tsx` and `Profile/index.tsx` are pre-feature
   placeholder screens with no backend data at all (not a connection gap); building their real content
   is separate, larger work and out of scope for a "connect to shared services" item.
+- Fixed the cancel button layout bug in the delete team entry modal to prevent horizontal overflow, moved the post composer toolbar buttons to the left, styled them blue, and updated the post creation flow to invalidate and refetch the posts feeds.

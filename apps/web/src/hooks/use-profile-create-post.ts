@@ -6,9 +6,16 @@ import { isEmailValid } from '@my-hockey-network/validation';
 import { globalQueryClient, invalidateQueryPrefix } from '@/query';
 import { useCreatePostMutation } from '@/hooks/use-post-mutations';
 
+import { showSuccessToast } from '@/utils/toast';
+import { SUCCESS_MESSAGES } from '@my-hockey-network/constants';
+
+interface UseProfileCreatePostOptions {
+  onPostCreated?: () => void | Promise<void>;
+}
+
 /** Profile screen's "create post" flow (the composer opened from the Posts
  * tab). Extracted from `screens/profile-page.tsx`. */
-export function useProfileCreatePost() {
+export function useProfileCreatePost(options?: UseProfileCreatePostOptions) {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const createPostMutation = useCreatePostMutation();
 
@@ -44,8 +51,17 @@ export function useProfileCreatePost() {
       // imageFile (not the postImage preview string, which is a local blob: URL the backend
       // can't resolve) is what actually gets uploaded — see useCreatePostMutation.
       await createPostMutation.mutateAsync({ dto, imageFile });
-      globalQueryClient.removeQueries({ queryKey: [QueryKeys.FEED_POSTS] });
-      await invalidateQueryPrefix(globalQueryClient, QueryKeys.FEED_POSTS);
+      globalQueryClient.removeQueries({
+        predicate: (query) =>
+          String(query.queryKey[0] ?? '').startsWith(QueryKeys.FEED_POSTS) ||
+          String(query.queryKey[0] ?? '').startsWith(QueryKeys.USER_POSTS),
+      });
+      await Promise.all([
+        invalidateQueryPrefix(globalQueryClient, QueryKeys.FEED_POSTS),
+        invalidateQueryPrefix(globalQueryClient, QueryKeys.USER_POSTS),
+      ]);
+      await options?.onPostCreated?.();
+      showSuccessToast(SUCCESS_MESSAGES.POST_CREATED);
       setIsCreatePostOpen(false);
     } catch (err: unknown) {
       console.error('❌ [ProfilePage] Create Post Error:', err);

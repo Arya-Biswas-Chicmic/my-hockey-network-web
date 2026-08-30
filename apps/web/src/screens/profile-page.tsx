@@ -172,7 +172,11 @@ export const ProfilePage: React.FC<PageProps> = ({
     setLiveUserPosts([...postsQuery.items, ...demoOwnPosts]);
   }, [postsQuery.items, isOwnProfile]);
 
-  const createPost = useProfileCreatePost();
+  const createPost = useProfileCreatePost({
+    onPostCreated: () => {
+      void postsQuery.refetch();
+    },
+  });
   const handleOpenCreatePost = () => {
     if (requirePermission()) {
       createPost.openCreatePostModal();
