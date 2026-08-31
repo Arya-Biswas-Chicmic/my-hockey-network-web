@@ -14,7 +14,6 @@ import {
 import { SupervisionRequestRow } from "@/components/supervision/supervision-request-row";
 import { resolveMediaUrl } from "@/utils/mediaUtils";
 import { showInfoToast } from "@/utils/toast";
-import { DEMO_GUARDIAN_REQUESTS } from "@/demo-data/supervision";
 import type { PendingSupervisionRequest } from "@/hooks/use-supervision-requests";
 
 export interface SupervisionRequestsTabProps {
@@ -61,10 +60,7 @@ export function SupervisionRequestsTab({
   // see docs/DEMO_DATA_POLICY.md) — feedback 2026-08-30: "multiple request
   // from demo data". Non-empty, so the empty state below only shows if
   // this dataset itself is ever cleared.
-  const guardianRequests = [
-    ...(guardianRequestsQuery.data ?? []),
-    ...DEMO_GUARDIAN_REQUESTS,
-  ];
+  const guardianRequests = guardianRequestsQuery.data ?? [];
   const hasNoRequests =
     livePendingRequests.length === 0 && guardianRequests.length === 0;
 
