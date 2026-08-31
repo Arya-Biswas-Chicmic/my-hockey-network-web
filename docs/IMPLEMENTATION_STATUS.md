@@ -4,6 +4,7 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Cleared the search bar automatically after successfully creating a new post from the home feed so that the user's new post is visible in the unfiltered feed.
 - Fixed the right sidebar search loading skeleton flash when typing. Sourced the `hasInitialLoaded` status in `useHomeFeed` to ensure the full-page layout skeleton does not unmount the page layout and search widgets during subsequent queries/filtering.
 - Integrated granular height/weight parameters (`heightCm`, `weightKg`, `heightFeet`, `heightInches`, `weightLb`) into `UpdateProfileDTO`, the Zod validation schema, and the profile update save flow. Extracted the height string parsing regex into the shared `REGEX_PATTERNS.HEIGHT_FEET_INCHES` constant.
 - Fixed the full-profile loading flash when clicking the Guardian Requests tab in the profile section. The tab handler was calling `onNavigate(paths.profileGuardianRequests)` which triggered `router.push('/profile/guardian-requests')` — a real Next.js route change that fired the `/profile/loading.tsx` Suspense boundary and rendered a full `ProfileSkeletonLoader`. Changed the handler to push `/profile?tab=GUARDIAN_REQUESTS` (a query-param update on the same route) so no Suspense boundary is crossed and the tab switches instantly without any loading screen.
