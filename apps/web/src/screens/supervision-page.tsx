@@ -155,7 +155,7 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
                       networkPermissions={permissions.networkPermissions}
                       messagingPermissions={permissions.messagingPermissions}
                       notificationPermissions={permissions.notificationPermissions}
-                      updatingControlKey={permissions.updatingControlKey}
+                      updatingControlKeys={permissions.updatingControlKeys}
                       onToggle={(controlKey, currentVal, setter) =>
                         void permissions.handleToggleControl(wards.selectedWardId, controlKey, currentVal, setter)
                       }

@@ -107,7 +107,7 @@ export function useSupervisionPermissions(showToast: (message: string, type: Toa
   // never runs and this stayed `true` forever, showing the permissions
   // skeleton indefinitely instead of the real (empty) state.
   const [isControlsLoading, setIsControlsLoading] = useState(false);
-  const [updatingControlKey, setUpdatingControlKey] = useState<string | null>(null);
+  const [updatingControlKeys, setUpdatingControlKeys] = useState<Record<string, boolean>>({});
 
   const fetchControlsForWard = async (wardId: string) => {
     if (!wardId) return;
@@ -186,13 +186,13 @@ export function useSupervisionPermissions(showToast: (message: string, type: Toa
     currentVal: boolean | string,
     setter: Dispatch<SetStateAction<T>>,
   ) => {
-    if (!selectedWardId || updatingControlKey) return;
+    if (!selectedWardId || updatingControlKeys[controlKey]) return;
     const newVal = typeof currentVal === 'boolean' ? !currentVal : currentVal;
 
     const backendControl = CONTROL_KEY_TO_BACKEND_ENUM[controlKey] || controlKey.toUpperCase();
     const targetPropKey = STATE_KEY_MAP[controlKey] || controlKey;
 
-    setUpdatingControlKey(controlKey);
+    setUpdatingControlKeys((prev) => ({ ...prev, [controlKey]: true }));
     setter((prev) => ({ ...prev, [controlKey]: newVal, [targetPropKey]: newVal }) as T);
 
     try {
@@ -203,7 +203,11 @@ export function useSupervisionPermissions(showToast: (message: string, type: Toa
       setter((prev) => ({ ...prev, [controlKey]: currentVal, [targetPropKey]: currentVal }) as T);
       showToast(extractErrorMessage(err, ERROR_MESSAGES.FAILED_UPDATE_PERMISSION), ToastTypeEnum.ERROR);
     } finally {
-      setUpdatingControlKey(null);
+      setUpdatingControlKeys((prev) => {
+        const next = { ...prev };
+        delete next[controlKey];
+        return next;
+      });
     }
   };
 
@@ -218,7 +222,7 @@ export function useSupervisionPermissions(showToast: (message: string, type: Toa
     setNotificationPermissions,
     isControlsLoading,
     setIsControlsLoading,
-    updatingControlKey,
+    updatingControlKeys,
     fetchControlsForWard,
     handleToggleControl,
   };

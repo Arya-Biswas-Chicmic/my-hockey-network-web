@@ -3,9 +3,9 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { Bell, ChevronDown, Home, MessageCircle, Users } from "lucide-react";
 
-import { Button } from "@/components/common/Button";
 import { Dropdown } from "@/components/common/FormControls";
 import { Switch } from "@/components/ui/switch";
+import { Spinner } from "@/components/common/Spinner";
 import { PermissionSkeletonLoader } from "@/components/supervision/permission-skeleton-loader";
 import type { PermissionState } from "@/hooks/use-supervision-permissions";
 
@@ -53,13 +53,19 @@ function PermissionToggleRow({
         <h4 className="mhn-permission-title">{title}</h4>
         <p className="mhn-permission-subtitle">{subtitle}</p>
       </div>
-      <Switch
-        checked={isOn}
-        onClick={() => onToggle(controlKey, isOn)}
-        disabled={isUpdating}
-        className={isUpdating ? "mhn-updating-state" : ""}
-        aria-label={title}
-      />
+      {isUpdating ? (
+        <div className="flex h-[22px] w-[40px] items-center justify-center">
+          <Spinner size="sm" />
+        </div>
+      ) : (
+        <Switch
+          checked={isOn}
+          onClick={() => onToggle(controlKey, isOn)}
+          disabled={isUpdating}
+          className={isUpdating ? "mhn-updating-state" : ""}
+          aria-label={title}
+        />
+      )}
     </div>
   );
 }
@@ -70,7 +76,7 @@ export interface SupervisionPermissionsTabProps {
   networkPermissions: PermissionState;
   messagingPermissions: PermissionState;
   notificationPermissions: PermissionState;
-  updatingControlKey: string | null;
+  updatingControlKeys: Record<string, boolean>;
   onToggle: <T extends PermissionState>(
     controlKey: string,
     currentVal: boolean | string,
@@ -94,7 +100,7 @@ export function SupervisionPermissionsTab({
   networkPermissions,
   messagingPermissions,
   notificationPermissions,
-  updatingControlKey,
+  updatingControlKeys,
   onToggle,
   setHomePermissions,
   setNetworkPermissions,
@@ -142,7 +148,7 @@ export function SupervisionPermissionsTab({
               subtitle="Can see posts from their network"
               controlKey="view_feed"
               isOn={Boolean(homePermissions.viewFeed)}
-              isUpdating={updatingControlKey === "view_feed"}
+              isUpdating={!!updatingControlKeys["view_feed"]}
               onToggle={(k, v) => onToggle(k, v, setHomePermissions)}
             />
             <PermissionToggleRow
@@ -150,7 +156,7 @@ export function SupervisionPermissionsTab({
               subtitle="Can publish posts to their network"
               controlKey="create_posts"
               isOn={Boolean(homePermissions.createPosts)}
-              isUpdating={updatingControlKey === "create_posts"}
+              isUpdating={!!updatingControlKeys["create_posts"]}
               onToggle={(k, v) => onToggle(k, v, setHomePermissions)}
             />
             <PermissionToggleRow
@@ -158,7 +164,7 @@ export function SupervisionPermissionsTab({
               subtitle="Can leave comments on others' posts"
               controlKey="comment_on_posts"
               isOn={Boolean(homePermissions.commentOnPosts)}
-              isUpdating={updatingControlKey === "comment_on_posts"}
+              isUpdating={!!updatingControlKeys["comment_on_posts"]}
               onToggle={(k, v) => onToggle(k, v, setHomePermissions)}
             />
             <PermissionToggleRow
@@ -166,7 +172,7 @@ export function SupervisionPermissionsTab({
               subtitle="Can like, celebrate, or react to content"
               controlKey="react_to_posts"
               isOn={Boolean(homePermissions.reactToPosts)}
-              isUpdating={updatingControlKey === "react_to_posts"}
+              isUpdating={!!updatingControlKeys["react_to_posts"]}
               onToggle={(k, v) => onToggle(k, v, setHomePermissions)}
             />
             <PermissionToggleRow
@@ -174,7 +180,7 @@ export function SupervisionPermissionsTab({
               subtitle="Can reshare content to their feed"
               controlKey="share_posts"
               isOn={Boolean(homePermissions.sharePosts)}
-              isUpdating={updatingControlKey === "share_posts"}
+              isUpdating={!!updatingControlKeys["share_posts"]}
               onToggle={(k, v) => onToggle(k, v, setHomePermissions)}
             />
           </div>
@@ -204,30 +210,38 @@ export function SupervisionPermissionsTab({
           <div className="mhn-accordion-body">
             <PermissionToggleRow
               title="Follow others"
-              subtitle="Can follow people and pages"
+              subtitle="Can follow other athletes"
               controlKey="follow_others"
               isOn={Boolean(networkPermissions.followOthers)}
-              isUpdating={updatingControlKey === "follow_others"}
+              isUpdating={!!updatingControlKeys["follow_others"]}
               onToggle={(k, v) => onToggle(k, v, setNetworkPermissions)}
             />
 
             <div className="mhn-permission-row">
               <div className="mhn-permission-meta">
-                <h4 className="mhn-permission-title">Who can follow them</h4>
+                <h4 className="mhn-permission-title">
+                  Who can follow them
+                </h4>
                 <p className="mhn-permission-subtitle">
                   Controls who can subscribe to their updates
                 </p>
               </div>
-              <Dropdown
-                value={String(networkPermissions.whoCanFollowThem)}
-                options={["Everyone", "Connections Only", "Nobody"]}
-                onChange={(val) =>
-                  onToggle("who_can_follow_them", val, setNetworkPermissions)
-                }
-                disabled={updatingControlKey === "who_can_follow_them"}
-                placeholder=""
-                className="mhn-w-180"
-              />
+              {updatingControlKeys["who_can_follow_them"] ? (
+                <div className="flex h-10 w-[180px] items-center justify-center">
+                  <Spinner size="sm" />
+                </div>
+              ) : (
+                <Dropdown
+                  value={String(networkPermissions.whoCanFollowThem)}
+                  options={["Everyone", "Connections Only", "Nobody"]}
+                  onChange={(val) =>
+                    onToggle("who_can_follow_them", val, setNetworkPermissions)
+                  }
+                  disabled={!!updatingControlKeys["who_can_follow_them"]}
+                  placeholder=""
+                  className="mhn-w-180"
+                />
+              )}
             </div>
 
             <div className="mhn-permission-row">
@@ -239,16 +253,26 @@ export function SupervisionPermissionsTab({
                   Limits incoming connection requests
                 </p>
               </div>
-              <Dropdown
-                value={String(networkPermissions.whoCanSendRequests)}
-                options={["Everyone", "Connections Only", "Nobody"]}
-                onChange={(val) =>
-                  onToggle("who_can_send_requests", val, setNetworkPermissions)
-                }
-                disabled={updatingControlKey === "who_can_send_requests"}
-                placeholder=""
-                className="mhn-w-180"
-              />
+              {updatingControlKeys["who_can_send_requests"] ? (
+                <div className="flex h-10 w-[180px] items-center justify-center">
+                  <Spinner size="sm" />
+                </div>
+              ) : (
+                <Dropdown
+                  value={String(networkPermissions.whoCanSendRequests)}
+                  options={["Everyone", "Connections Only", "Nobody"]}
+                  onChange={(val) =>
+                    onToggle(
+                      "who_can_send_requests",
+                      val,
+                      setNetworkPermissions,
+                    )
+                  }
+                  disabled={!!updatingControlKeys["who_can_send_requests"]}
+                  placeholder=""
+                  className="mhn-w-180"
+                />
+              )}
             </div>
 
             <PermissionToggleRow
@@ -256,7 +280,7 @@ export function SupervisionPermissionsTab({
               subtitle="Can accept incoming requests from others"
               controlKey="accept_requests"
               isOn={Boolean(networkPermissions.acceptRequests)}
-              isUpdating={updatingControlKey === "accept_requests"}
+              isUpdating={!!updatingControlKeys["accept_requests"]}
               onToggle={(k, v) => onToggle(k, v, setNetworkPermissions)}
             />
           </div>
@@ -286,26 +310,26 @@ export function SupervisionPermissionsTab({
           <div className="mhn-accordion-body">
             <PermissionToggleRow
               title="Send messages"
-              subtitle="Can initiate and reply to conversations"
+              subtitle="Can initiate direct messages"
               controlKey="send_messages"
               isOn={Boolean(messagingPermissions.sendMessages)}
-              isUpdating={updatingControlKey === "send_messages"}
+              isUpdating={!!updatingControlKeys["send_messages"]}
               onToggle={(k, v) => onToggle(k, v, setMessagingPermissions)}
             />
             <PermissionToggleRow
               title="Receive messages"
-              subtitle="Others can send them messages"
+              subtitle="Can get messages from others"
               controlKey="receive_messages"
               isOn={Boolean(messagingPermissions.receiveMessages)}
-              isUpdating={updatingControlKey === "receive_messages"}
+              isUpdating={!!updatingControlKeys["receive_messages"]}
               onToggle={(k, v) => onToggle(k, v, setMessagingPermissions)}
             />
             <PermissionToggleRow
               title="Create group chats"
-              subtitle="Can start group conversations"
+              subtitle="Can start conversations with multiple players"
               controlKey="create_group_chats"
               isOn={Boolean(messagingPermissions.createGroupChats)}
-              isUpdating={updatingControlKey === "create_group_chats"}
+              isUpdating={!!updatingControlKeys["create_group_chats"]}
               onToggle={(k, v) => onToggle(k, v, setMessagingPermissions)}
             />
 
@@ -316,16 +340,26 @@ export function SupervisionPermissionsTab({
                   Controls who can start a conversation
                 </p>
               </div>
-              <Dropdown
-                value={String(messagingPermissions.whoCanMessageThem)}
-                options={["Connections Only", "Everyone", "Nobody"]}
-                onChange={(val) =>
-                  onToggle("who_can_message_them", val, setMessagingPermissions)
-                }
-                disabled={updatingControlKey === "who_can_message_them"}
-                placeholder=""
-                className="mhn-w-180"
-              />
+              {updatingControlKeys["who_can_message_them"] ? (
+                <div className="flex h-10 w-[180px] items-center justify-center">
+                  <Spinner size="sm" />
+                </div>
+              ) : (
+                <Dropdown
+                  value={String(messagingPermissions.whoCanMessageThem)}
+                  options={["Connections Only", "Everyone", "Nobody"]}
+                  onChange={(val) =>
+                    onToggle(
+                      "who_can_message_them",
+                      val,
+                      setMessagingPermissions,
+                    )
+                  }
+                  disabled={!!updatingControlKeys["who_can_message_them"]}
+                  placeholder=""
+                  className="mhn-w-180"
+                />
+              )}
             </div>
           </div>
         )}
@@ -353,35 +387,35 @@ export function SupervisionPermissionsTab({
         {expandedCategories.notifications && (
           <div className="mhn-accordion-body">
             <PermissionToggleRow
-              title="Message notifications"
-              subtitle="Get notified when they receive a message"
+              title="Direct messages"
+              subtitle="Require approval when adults start a chat with them"
               controlKey="message_notifications"
               isOn={Boolean(notificationPermissions.messageNotifications)}
-              isUpdating={updatingControlKey === "message_notifications"}
+              isUpdating={!!updatingControlKeys["message_notifications"]}
               onToggle={(k, v) => onToggle(k, v, setNotificationPermissions)}
             />
             <PermissionToggleRow
-              title="Connection request notifications"
-              subtitle="Get notified about incoming requests"
+              title="New connections"
+              subtitle="Require approval for all outgoing & incoming requests"
               controlKey="connection_notifications"
               isOn={Boolean(notificationPermissions.connectionNotifications)}
-              isUpdating={updatingControlKey === "connection_notifications"}
+              isUpdating={!!updatingControlKeys["connection_notifications"]}
               onToggle={(k, v) => onToggle(k, v, setNotificationPermissions)}
             />
             <PermissionToggleRow
-              title="Activity notifications"
-              subtitle="Reactions, comments on their posts"
+              title="Team activity"
+              subtitle="Require approval when they are invited to join a team"
               controlKey="activity_notifications"
               isOn={Boolean(notificationPermissions.activityNotifications)}
-              isUpdating={updatingControlKey === "activity_notifications"}
+              isUpdating={!!updatingControlKeys["activity_notifications"]}
               onToggle={(k, v) => onToggle(k, v, setNotificationPermissions)}
             />
             <PermissionToggleRow
-              title="Mention notifications"
-              subtitle="Get notified when someone mentions them"
+              title="Mentions & tags"
+              subtitle="Require approval when tagged in media by other players"
               controlKey="mention_notifications"
               isOn={Boolean(notificationPermissions.mentionNotifications)}
-              isUpdating={updatingControlKey === "mention_notifications"}
+              isUpdating={!!updatingControlKeys["mention_notifications"]}
               onToggle={(k, v) => onToggle(k, v, setNotificationPermissions)}
             />
           </div>
