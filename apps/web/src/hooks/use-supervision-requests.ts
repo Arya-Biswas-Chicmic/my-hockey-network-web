@@ -70,6 +70,7 @@ export function useSupervisionRequests({
   const loadPendingRequests = async () => {
     try {
       setIsRequestsLoading(true);
+      setLivePendingRequests([]);
       let list: PendingSupervisionRequest[] = [];
 
       const isRealUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(selectedWardId);

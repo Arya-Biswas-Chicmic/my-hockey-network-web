@@ -190,6 +190,7 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
                       logs={logs.filteredLogs}
                       searchQuery={logs.logsSearchQuery}
                       onSearchQueryChange={logs.setLogsSearchQuery}
+                      isLoading={logs.isLogsLoading}
                     />
                   )}
                 </div>

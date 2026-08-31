@@ -4,6 +4,8 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Configured loading skeleton/shimmer indicators for the Supervision Permissions, Requests, and Logs tabs to trigger immediately and clear stale data when switching between children/players.
+- Removed mock data from the Supervision "Logs" tab and configured it to load live logs exclusively via the backend API.
 - Added hover states to `.mhn-parent-choice-card` that mirror `.mhn-active` styles for visual feedback.
 - Centered the player details onboarding form block (`.mhn-parent-step-container`) horizontally inside the wizard panel by setting `margin: 0 auto` and added `32px` top/bottom padding.
 - Styled `.mhn-select-input` (used by native FormSelect) to match `.auth-input` height (48px) and left padding (1rem) for form fields alignment, following the native select approach used in the profile stats section.

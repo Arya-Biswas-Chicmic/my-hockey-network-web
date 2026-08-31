@@ -5,7 +5,6 @@ import { getSupervisionControls, getSupervisionLogs, type SupervisionControlItem
 
 import { extractErrorMessage } from '@/utils/toast';
 import { useDebounce } from '@/hooks/use-debounce';
-import { DEMO_SUPERVISION_LOGS } from '@/demo-data/supervision';
 
 export interface ActivityLogView {
   id: string;
@@ -35,17 +34,26 @@ export function useSupervisionLogs(
   setMessagingPermissions: Dispatch<SetStateAction<BooleanPermissions>>,
 ) {
   const [liveLogs, setLiveLogs] = useState<ActivityLogView[]>([]);
+  const [isLogsLoading, setIsLogsLoading] = useState(false);
   const [logsSearchQuery, setLogsSearchQuery] = useState('');
   const debouncedLogsSearchQuery = useDebounce(logsSearchQuery, 800);
 
   useEffect(() => {
-    if (!selectedWardId) return;
+    if (!selectedWardId) {
+      setLiveLogs([]);
+      return;
+    }
 
     const isRealUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(selectedWardId);
-    if (!isRealUuid) return;
+    if (!isRealUuid) {
+      setLiveLogs([]);
+      return;
+    }
 
     async function loadWardControlsAndLogs() {
       try {
+        setIsLogsLoading(true);
+        setLiveLogs([]);
         const controlsRes = await getSupervisionControls(selectedWardId);
         const controls = controlsRes.controls;
         if (Array.isArray(controls)) {
@@ -67,29 +75,25 @@ export function useSupervisionLogs(
         }
 
         const logsRes = await getSupervisionLogs(selectedWardId);
-        const logItems = logsRes.items;
-        if (Array.isArray(logItems) && logItems.length > 0) {
-          const mappedLogs = logItems.map((log: SupervisionLogItem) => ({
-            id: log.id,
-            dateTime: new Date(log.createdAt).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-            activity: log.summary || log.eventType || 'Supervision activity log',
-            initiatedBy: 'Parent',
-            actionText: 'View',
-          }));
-          setLiveLogs(mappedLogs);
-        }
+        const logItems = logsRes.items ?? [];
+        const mappedLogs = logItems.map((log: SupervisionLogItem) => ({
+          id: log.id,
+          dateTime: new Date(log.createdAt).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          activity: log.summary || log.eventType || 'Supervision activity log',
+          initiatedBy: 'Parent',
+          actionText: 'View',
+        }));
+        setLiveLogs(mappedLogs);
       } catch (err: unknown) {
         console.warn('❌ [SupervisionPage] Controls/Logs load notice:', extractErrorMessage(err));
+      } finally {
+        setIsLogsLoading(false);
       }
     }
     void loadWardControlsAndLogs();
   }, [selectedWardId]);
 
-  // Demo logs are appended after real ones, never replacing them — same
-  // "real first, demo after" convention as `useHomeFeed`'s demo posts —
-  // feedback 2026-08-30: "in log tabs and add 10 logs like accepted
-  // request, like the video etc".
-  const allLogs = [...liveLogs, ...DEMO_SUPERVISION_LOGS];
+  const allLogs = liveLogs;
 
   const filteredLogs = allLogs.filter((log) => {
     if (!debouncedLogsSearchQuery.trim()) return true;
@@ -101,5 +105,5 @@ export function useSupervisionLogs(
     );
   });
 
-  return { filteredLogs, logsSearchQuery, setLogsSearchQuery };
+  return { filteredLogs, logsSearchQuery, setLogsSearchQuery, isLogsLoading };
 }
