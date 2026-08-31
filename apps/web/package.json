@@ -9,6 +9,8 @@
     "dev": "next dev",
     "prebuild": "pnpm scan",
     "build": "next build --webpack",
+    "build:web": "next build --webpack",
+
     "prestart": "pnpm scan",
     "start": "next start",
     "pretypecheck": "pnpm scan",
