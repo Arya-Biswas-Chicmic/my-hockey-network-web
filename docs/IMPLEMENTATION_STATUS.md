@@ -4,6 +4,19 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Implemented a global transition loading state using `<BrandLoader>` to display while starting or stopping an impersonation session, eliminating any millisecond-level flicker before the web page reloads.
+- Updated impersonation store to force a full browser page reload and redirect to the dashboard page ("/") upon starting or stopping an impersonation session.
+- Normalized position abbreviation lookups inside `useProfileViewModel` to be case-insensitive, ensuring that string keys such as "CENTER" reliably map to "C".
+- Tailored `ProfileHeroCard` layout to differentiate players from parents/guardians: players show a 6-item grid (AGE, DOB, HEIGHT, WEIGHT, POSITION, SHOOTS) while non-players show a 2-column grid containing only AGE and DOB.
+- Integrated the user's bio and city/location directly in the profile hero identity section for both players and parents/guardians.
+- Refactored profile submission in `useEditProfileForm` hook to use TanStack Query's `useMutation`, cleaning up manual promise handling and try/catch logic.
+- Fixed a modal layout flicker bug during Edit Profile saves: introduced an `isSuccess` guard in `useEditProfileForm` to prevent the form-sync `useEffect` from instantly clearing the success message when the parent `user` state updates.
+- Converted the previously read-only, disabled Height field in the Edit Profile modal to a dropdown `FormSelect` using static height choices from 4'0" to 7'0" (covering teen to adult ranges).
+- Updated backend API payloads, form schemas, and contracts (`AuthMeResponse['profile']`, `UpdateProfileDTO`, and `editProfileFormSchema`) to fully support editing and saving of player height.
+- Configured automated invalidation of the `USER_PROFILE` query cache on all profile-saving actions to ensure live details update immediately across the UI.
+- Removed mock career data from the Profile "Career" tab, replacing the `demoCareerEntries` fallback with a direct map over live `careerEntries` (displaying an empty state when none exist).
+- Re-wired the Profile "Child Requests" tab (for parent accounts) to use the exact same `useSupervisionRequests` API flow and shared modal states (`handleApproveCodeSubmit`, `handleDeclineCodeSubmit`) as the Supervision section's "Requested" tab.
+- Removed the standalone `use-child-approvals.ts` hook and redundant `childApprovalModalConfig` state entirely, opting for a clean reuse of the existing profile-level approval modal instead.
 - Migrated `useSupervisionLogs` from a sequential `useEffect`-based fetch to a single `useQuery` call, giving the hook automatic caching, deduplication, and TanStack Query loading states.
 - Removed the redundant `getSupervisionControls` fetch from `useSupervisionLogs`; controls are already fetched by `use-supervision-permissions.ts` on ward selection, so the duplicate call and its permission-setter fan-out were deleted entirely.
 - Gated the Requests tab skeleton loader behind a real ward-UUID check so the spinner only appears when switching between players, not on the initial tab visit without a selection.
@@ -67,9 +80,9 @@ permissions.message` guard plus an identical 8-line CTA dispatch — 9 of the 10
   left and right event spacing like group tab"). It passed `maxWidth={1166}` to `PageShell`, widening
   its own `--page-max-width`/`.mhn-app-content` grid track past the `932px` every other route
   (including Team/Group Detail) renders at — those pages get their own 1166px two-column feel from an
-  *inner* `max-w-[1166px]` wrapper that is a no-op ceiling inside the shared 932px shell, not from a
+  _inner_ `max-w-[1166px]` wrapper that is a no-op ceiling inside the shared 932px shell, not from a
   page-specific `PageShell` override. Removed the override and moved the same `max-w-[1166px]
-  mx-auto` convention onto Event Detail's own inner section, so it now matches by construction
+mx-auto` convention onto Event Detail's own inner section, so it now matches by construction
   instead of diverging via a one-off width. Confirmed via `--page-max-width` reading `932px` on both
   pages afterward, not just visually.
 
@@ -105,7 +118,7 @@ permissions.message` guard plus an identical 8-line CTA dispatch — 9 of the 10
 
 - Fixed Event Detail's own content being unreachable past one viewport height (bug report
   2026-08-31: "event page details scrolling is not working"). `.mhn-app-content` is `lg:h-dvh
-  lg:overflow-hidden` — every route needs its own internal scroll owner inside that, and the
+lg:overflow-hidden` — every route needs its own internal scroll owner inside that, and the
   rebuilt `event-detail-page.tsx` had none, so "About"/"Things to know"/the Organiser &amp;
   Attendant list past the fold were silently clipped and unreachable by any scroll gesture, not
   just visually cut off. Wrapped the page's content in a `mhn-layout-col-center` section with

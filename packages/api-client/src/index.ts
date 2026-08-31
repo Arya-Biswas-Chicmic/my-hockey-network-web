@@ -8,6 +8,7 @@ export interface AuthStorageAdapter {
   getCsrfToken(): Promise<string | null> | string | null;
   saveSession(session: Partial<OtpVerifyResponse>): Promise<void> | void;
   clearSession(): Promise<void> | void;
+  getActingFor?(): Promise<string | null> | string | null;
 }
 
 export interface ApiClientOptions {
@@ -91,15 +92,19 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     headers.set(HttpHeader.ACCEPT, 'application/json');
     headers.set(HttpHeader.ACCEPT_LANGUAGE, 'en');
     headers.set(HttpHeader.X_CLIENT_TYPE, options.clientType);
-    const [accessToken, csrfToken] = await Promise.all([
+    const [accessToken, csrfToken, actingFor] = await Promise.all([
       storage.getAccessToken(),
       storage.getCsrfToken(),
+      storage.getActingFor ? storage.getActingFor() : null,
     ]);
     if (accessToken) {
       if (!headers.has(HttpHeader.AUTHORIZATION)) headers.set(HttpHeader.AUTHORIZATION, `Bearer ${accessToken}`);
     }
     if (csrfToken) {
       if (!headers.has(HttpHeader.X_CSRF_TOKEN)) headers.set(HttpHeader.X_CSRF_TOKEN, csrfToken);
+    }
+    if (actingFor) {
+      headers.set(HttpHeader.X_ACTING_FOR, actingFor);
     }
     return headers;
   };

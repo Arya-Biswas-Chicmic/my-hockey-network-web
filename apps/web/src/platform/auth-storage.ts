@@ -16,4 +16,10 @@ export const webAuthStorage: AuthStorageAdapter = {
   clearSession: () => {
     csrfToken = null;
   },
+  getActingFor: () => {
+    if (typeof window !== 'undefined') {
+      return window.sessionStorage.getItem('mhn_acting_for');
+    }
+    return null;
+  },
 };
