@@ -242,6 +242,32 @@ export const ProfilePage: React.FC<PageProps> = ({
     });
   };
 
+  const handleApproveChildApprovalItem = (id: string) => {
+    void childApprovals.handleApproveApprovalItem(id);
+  };
+
+  const handleDeclineChildApprovalItem = (id: string) => {
+    void childApprovals.handleDeclineApprovalItem(id);
+  };
+
+  const handleOpenApproveModal = (targetName: string, code: string) => {
+    guardianApproval.setGuardianApprovalModalConfig({
+      isOpen: true,
+      targetName,
+      code,
+      action: "approve",
+    });
+  };
+
+  const handleOpenDeclineModal = (targetName: string) => {
+    guardianApproval.setGuardianApprovalModalConfig({
+      isOpen: true,
+      targetName,
+      code: "",
+      action: "decline",
+    });
+  };
+
   return (
     <div className="mhn-profile-page-root">
       <FeedPermissionBanner
@@ -364,31 +390,13 @@ export const ProfilePage: React.FC<PageProps> = ({
                       isLoading={childApprovals.isRequestsLoading}
                       actionLoading={childApprovals.requestActionLoading}
                       notice={childApprovals.requestNotice}
-                      onApprove={(id) =>
-                        void childApprovals.handleApproveApprovalItem(id)
-                      }
-                      onDecline={(id) =>
-                        void childApprovals.handleDeclineApprovalItem(id)
-                      }
+                      onApprove={handleApproveChildApprovalItem}
+                      onDecline={handleDeclineChildApprovalItem}
                       guardianRequestsQuery={guardianRequestsQuery}
                       isGuardianProcessing={guardianApproval.isProcessing}
                       onDeclineByCode={handleDeclineChildRequestByCode}
-                      onOpenApproveModal={(targetName, code) =>
-                        guardianApproval.setGuardianApprovalModalConfig({
-                          isOpen: true,
-                          targetName,
-                          code,
-                          action: "approve",
-                        })
-                      }
-                      onOpenDeclineModal={(targetName) =>
-                        guardianApproval.setGuardianApprovalModalConfig({
-                          isOpen: true,
-                          targetName,
-                          code: "",
-                          action: "decline",
-                        })
-                      }
+                      onOpenApproveModal={handleOpenApproveModal}
+                      onOpenDeclineModal={handleOpenDeclineModal}
                     />
                   )}
               </div>
