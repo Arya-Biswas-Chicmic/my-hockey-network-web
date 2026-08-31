@@ -22,12 +22,8 @@ const configuredUrl =
   candidateFiles
     .map((file) => path.join(root, file))
     .map((file) => readVariable(file, 'API_BASE_URL') || readVariable(file, 'EXPO_PUBLIC_API_BASE_URL'))
-    .find(Boolean);
-
-if (!configuredUrl) {
-  throw new Error(
-    'Missing API base URL. Set API_BASE_URL or configure apps/web/.env.local or apps/mobile/.env.',
-  );
-}
+    .find(Boolean) ||
+  'https://my-hockey-api.projectlabs.in/v1';
 
 export const API_BASE_URL = configuredUrl.replace(/\/+$/, '');
+
