@@ -4,6 +4,8 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Centered the player details onboarding form block (`.mhn-parent-step-container`) horizontally inside the wizard panel by setting `margin: 0 auto` and added `32px` top/bottom padding.
+- Styled `.mhn-select-input` (used by native FormSelect) to match `.auth-input` height (48px) and left padding (1rem) for form fields alignment, following the native select approach used in the profile stats section.
 - Removed mock data from the Supervision "Requested" tab.
 - Redesigned the Supervision "Requested" tab (formerly "Requests") from a list of rows to a grid of centered request cards (`.mhn-supervision-req-card`) with custom team logo and location pin assets.
 - Constrained the height of `.mhn-supervision-tab-body` (the container for permissions, requests, and logs tabs) using a screen-relative max-height (`calc(100vh - 150px)`) and enabled scrolling.

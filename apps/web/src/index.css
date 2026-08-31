@@ -16485,7 +16485,8 @@ img.secure {
 .mhn-parent-step-container {
   width: 100%;
   max-width: 450px;
-  margin: 0;
+  margin: 0 auto;
+  padding: 32px 0;
   color: var(--color-foreground);
 }
 
@@ -17050,3 +17051,23 @@ img.secure {
   opacity: 1;
   color: var(--color-auth-action-bright);
 }
+
+.mhn-select-input {
+  height: 48px;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--color-auth-stroke);
+  background-color: var(--color-background);
+  padding-left: 1rem;
+  padding-right: 2rem;
+  font-size: 14px;
+  color: var(--color-foreground);
+  outline: none;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.mhn-select-input:focus {
+  border-color: var(--color-primary);
+}
+

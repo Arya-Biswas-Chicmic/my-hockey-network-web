@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-import { Button } from '@/components/common/Button';
-import { BackButton } from '@/components/common/BackButton';
-import { Form } from '@/components/ui/form';
-import { FormInput, FormDateInput, FormSelect } from '@/components/form/fields';
-import { GUARDIAN_RELATION_OPTIONS } from '@/utils/guardianUtils';
+import { Button } from "@/components/common/Button";
+import { BackButton } from "@/components/common/BackButton";
+import { Form } from "@/components/ui/form";
+import { FormInput, FormDateInput, FormSelect } from "@/components/form/fields";
+import { GUARDIAN_RELATION_OPTIONS } from "@/utils/guardianUtils";
 import {
   parentOnboardingPlayerDetailsFormSchema,
   type PlayerDetailsFormValues,
-} from '@my-hockey-network/validation';
+} from "@my-hockey-network/validation";
 
 export type { PlayerDetailsFormValues };
 
@@ -25,10 +25,10 @@ export interface PlayerDetailsFormFieldsProps {
 }
 
 const EMPTY_VALUES: PlayerDetailsFormValues = {
-  fullName: '',
-  dateOfBirth: '',
-  guardianRelation: 'MOTHER',
-  email: '',
+  fullName: "",
+  dateOfBirth: "",
+  guardianRelation: "MOTHER",
+  email: "",
 };
 
 /**
@@ -43,12 +43,12 @@ export function PlayerDetailsFormFields({
   onSubmit,
   onBack,
   isSubmitting = false,
-  submitLabel = 'Continue',
-  containerClassName = 'mhn-parent-step-container',
+  submitLabel = "Continue",
+  containerClassName = "mhn-parent-step-container",
 }: Readonly<PlayerDetailsFormFieldsProps>) {
   const form = useForm<PlayerDetailsFormValues>({
     resolver: zodResolver(parentOnboardingPlayerDetailsFormSchema),
-    mode: 'onChange',
+    mode: "onChange",
     defaultValues: { ...EMPTY_VALUES, ...defaultValues },
   });
 
@@ -57,10 +57,17 @@ export function PlayerDetailsFormFields({
   return (
     <div className={containerClassName}>
       <h2 className="mhn-parent-step-title">Player Details</h2>
-      <p className="mhn-parent-step-desc">Tell us a little about your player.</p>
+      <p className="mhn-parent-step-desc">
+        Tell us a little about your player.
+      </p>
 
-      <Form methods={form} onSubmit={handleSubmit} className="mhn-col-flex-gap-18" noValidate>
-        <FormInput<PlayerDetailsFormValues, 'fullName'>
+      <Form
+        methods={form}
+        onSubmit={handleSubmit}
+        className="mhn-col-flex-gap-18"
+        noValidate
+      >
+        <FormInput<PlayerDetailsFormValues, "fullName">
           name="fullName"
           label="Full Name"
           required
@@ -69,21 +76,21 @@ export function PlayerDetailsFormFields({
           isNameInput
         />
 
-        <FormDateInput<PlayerDetailsFormValues, 'dateOfBirth'>
+        <FormDateInput<PlayerDetailsFormValues, "dateOfBirth">
           name="dateOfBirth"
           label="DOB"
           required
           showAgeBadge={false}
         />
 
-        <FormSelect<PlayerDetailsFormValues, 'guardianRelation'>
+        <FormSelect<PlayerDetailsFormValues, "guardianRelation">
           name="guardianRelation"
           label="Relationship to player"
           required
           options={GUARDIAN_RELATION_OPTIONS}
         />
 
-        <FormInput<PlayerDetailsFormValues, 'email'>
+        <FormInput<PlayerDetailsFormValues, "email">
           name="email"
           label="Email"
           required
@@ -93,7 +100,11 @@ export function PlayerDetailsFormFields({
         />
 
         <div className="mhn-parent-actions-stack">
-          <Button type="submit" className="mhn-parent-btn-primary" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            className="mhn-parent-btn-primary"
+            disabled={isSubmitting}
+          >
             {submitLabel}
           </Button>
           <BackButton onClick={onBack} />
