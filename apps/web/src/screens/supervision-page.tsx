@@ -71,12 +71,7 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
     showToast,
   });
 
-  const logs = useSupervisionLogs(
-    wards.selectedWardId,
-    permissions.setHomePermissions,
-    permissions.setNetworkPermissions,
-    permissions.setMessagingPermissions,
-  );
+  const logs = useSupervisionLogs(wards.selectedWardId);
 
   const handleSelectWard = async (wardId: string) => {
     wards.setSelectedWardId(wardId);

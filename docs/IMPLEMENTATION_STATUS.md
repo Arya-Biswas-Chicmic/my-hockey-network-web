@@ -4,7 +4,11 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Migrated `useSupervisionLogs` from a sequential `useEffect`-based fetch to a single `useQuery` call, giving the hook automatic caching, deduplication, and TanStack Query loading states.
+- Removed the redundant `getSupervisionControls` fetch from `useSupervisionLogs`; controls are already fetched by `use-supervision-permissions.ts` on ward selection, so the duplicate call and its permission-setter fan-out were deleted entirely.
+- Gated the Requests tab skeleton loader behind a real ward-UUID check so the spinner only appears when switching between players, not on the initial tab visit without a selection.
 - Refactored permission updating state to track `updatingControlKeys` Record rather than a single string, enabling other switches and dropdowns to remain active and clickable in parallel during toggling.
+
 - Configured loading spinners for PermissionToggleRow switches and dropdown selectors in the Supervision "Permissions" tab when actively saving changes.
 - Refactored `SupervisionLogItem` interface schema and logs mapping parser to match the actual backend API payload parameters (`type`, `params`, `actorDisplayName`).
 - Enabled the Next page button in the Supervision "Logs" tab dynamically when the backend API returns a `hasMore: true` pagination flag.
