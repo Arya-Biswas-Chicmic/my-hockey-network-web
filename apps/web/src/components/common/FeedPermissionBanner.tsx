@@ -35,7 +35,7 @@ export const FeedPermissionBanner: React.FC<FeedPermissionBannerProps> = ({
   return (
     <PendingBanner
       message={permissions.message}
-      actionText={permissions.ctaText || ''}
+      actionText={permissions.ctaText || 'Complete Profile'}
       onActionClick={() => {
         if (permissions.ctaAction === 'COMPLETE_PROFILE' && onCompleteProfile) {
           onCompleteProfile();

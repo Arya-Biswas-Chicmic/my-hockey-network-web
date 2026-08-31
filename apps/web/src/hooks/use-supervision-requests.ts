@@ -68,11 +68,14 @@ export function useSupervisionRequests({
   const [requestNotice, setRequestNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const loadPendingRequests = async () => {
+    const isRealUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(selectedWardId);
     try {
-      setIsRequestsLoading(true);
+      // Only show the skeleton loader when a specific ward is selected;
+      // loading without a ward selection happens silently.
+      if (isRealUuid) setIsRequestsLoading(true);
+      setLivePendingRequests([]);
       let list: PendingSupervisionRequest[] = [];
 
-      const isRealUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(selectedWardId);
       const approvalsRes = await getApprovals({ status: 'PENDING', minorId: isRealUuid ? selectedWardId : undefined, limit: 20 });
       const approvalItems = approvalsRes.items;
       if (Array.isArray(approvalItems)) {
@@ -86,6 +89,7 @@ export function useSupervisionRequests({
       setIsRequestsLoading(false);
     }
   };
+
 
   useEffect(() => {
     if (activeMainTab === requestsTabValue) {

@@ -4,9 +4,29 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
-- Removed the `PendingBanner` duplication. The component itself was already shared, but its *usage*
+- Migrated `useSupervisionLogs` from a sequential `useEffect`-based fetch to a single `useQuery` call, giving the hook automatic caching, deduplication, and TanStack Query loading states.
+- Removed the redundant `getSupervisionControls` fetch from `useSupervisionLogs`; controls are already fetched by `use-supervision-permissions.ts` on ward selection, so the duplicate call and its permission-setter fan-out were deleted entirely.
+- Gated the Requests tab skeleton loader behind a real ward-UUID check so the spinner only appears when switching between players, not on the initial tab visit without a selection.
+- Refactored permission updating state to track `updatingControlKeys` Record rather than a single string, enabling other switches and dropdowns to remain active and clickable in parallel during toggling.
+
+- Configured loading spinners for PermissionToggleRow switches and dropdown selectors in the Supervision "Permissions" tab when actively saving changes.
+- Refactored `SupervisionLogItem` interface schema and logs mapping parser to match the actual backend API payload parameters (`type`, `params`, `actorDisplayName`).
+- Enabled the Next page button in the Supervision "Logs" tab dynamically when the backend API returns a `hasMore: true` pagination flag.
+- Configured loading skeleton/shimmer indicators for the Supervision Permissions, Requests, and Logs tabs to trigger immediately and clear stale data when switching between children/players.
+- Removed mock data from the Supervision "Logs" tab and configured it to load live logs exclusively via the backend API.
+- Added hover states to `.mhn-parent-choice-card` that mirror `.mhn-active` styles for visual feedback.
+- Centered the player details onboarding form block (`.mhn-parent-step-container`) horizontally inside the wizard panel by setting `margin: 0 auto` and added `32px` top/bottom padding.
+- Styled `.mhn-select-input` (used by native FormSelect) to match `.auth-input` height (48px) and left padding (1rem) for form fields alignment, following the native select approach used in the profile stats section.
+- Removed mock data from the Supervision "Requested" tab.
+- Redesigned the Supervision "Requested" tab (formerly "Requests") from a list of rows to a grid of centered request cards (`.mhn-supervision-req-card`) with custom team logo and location pin assets.
+- Constrained the height of `.mhn-supervision-tab-body` (the container for permissions, requests, and logs tabs) using a screen-relative max-height (`calc(100vh - 150px)`) and enabled scrolling.
+- Fixed text color and active state for supervision ward listing to work seamlessly in dark and light modes.
+- Added vertical scrolling (`overflow-y: auto`) with flex height constraints to the supervision tab contents (Permissions, Requests, Logs).
+- Refactored pending guardian invite property from `items` to `invites` to correctly match the updated API response format in both the frontend core client and related UI components.
+
+- Removed the `PendingBanner` duplication. The component itself was already shared, but its _usage_
   was not: all 10 authenticated screens inlined the same `!permissions.allowed &&
-  permissions.message` guard plus an identical 8-line CTA dispatch — 9 of the 10 blocks byte-for-byte
+permissions.message` guard plus an identical 8-line CTA dispatch — 9 of the 10 blocks byte-for-byte
   identical, with `profile-page` differing on a single line (it opens its edit modal instead of
   navigating to itself). An 11th copy of the same if/else chain lived inside
   `use-feed-permissions.ts`'s toast handler, so the banner and the toast could silently drift on
@@ -24,7 +44,7 @@ Last reviewed: 2026-08-31
 
 - Added the missing back control to the parent add-player choice step and extracted the shared
   `common/BackButton`. `AddPlayerChoiceStep` ("How would you like to add them?") was the only
-  mid-flow step in the wizard without a way back — every step *after* it could return *to* it, so a
+  mid-flow step in the wizard without a way back — every step _after_ it could return _to_ it, so a
   parent who reached it and changed their mind was stranded. Verified against git history that this
   was never present rather than recently removed. The new `onBack` prop is optional and the control
   only renders when the flow supplies one, so the component stays usable at a flow entry point.
@@ -2490,7 +2510,7 @@ FollowWidget`'s own row shape (`.mhn-who-to-follow-row`/`-avatar`/
     show the correct honest empty state; clicking a Connections card
     without a demo-data match still opens the popup using just that
     card's own fields. `typecheck`/`lint:check`/`check-component-
-    reuse.mjs`/`test:run` (304/304) all pass.
+reuse.mjs`/`test:run` (304/304) all pass.
 
 ## Current quality gates
 

@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import type { UseQueryResult } from '@tanstack/react-query';
-import type { GuardianRelationshipRequest } from '@my-hockey-network/core';
+import type { UseQueryResult } from "@tanstack/react-query";
+import type { GuardianRelationshipRequest } from "@my-hockey-network/core";
 
-import { NoDataFound } from '@/components/common/no-data-found';
-import { GuardianRequestSkeleton } from '@/components/supervision/guardian-request-skeleton';
+import { NoDataFound } from "@/components/common/no-data-found";
+import { GuardianRequestSkeleton } from "@/components/supervision/guardian-request-skeleton";
 import {
   getGuardianRequestCode,
   getGuardianRequestName,
   GuardianRelationshipRequestCard,
-} from '@/components/supervision/guardian-relationship-request-card';
+} from "@/components/supervision/guardian-relationship-request-card";
 
 export interface ProfileGuardianRequestsTabProps {
   query: UseQueryResult<GuardianRelationshipRequest[]>;
@@ -23,7 +23,13 @@ export interface ProfileGuardianRequestsTabProps {
  * child, then the child approves here). Extracted from
  * `screens/profile-page.tsx`.
  */
-export function ProfileGuardianRequestsTab({ query, disabled, onApprove, onDecline }: Readonly<ProfileGuardianRequestsTabProps>) {
+export function ProfileGuardianRequestsTab({
+  query,
+  disabled,
+  onApprove,
+  onDecline,
+}: Readonly<ProfileGuardianRequestsTabProps>) {
+
   return (
     <div className="mhn-posts-container-card mhn-p-24">
       <div className="mhn-posts-header-bar mhn-mb-20">
