@@ -14,6 +14,7 @@ import {
   GuardianRelationshipRequestCard,
 } from "@/components/supervision/guardian-relationship-request-card";
 import { showInfoToast } from "@/utils/toast";
+import { REGEX_PATTERNS } from "@my-hockey-network/constants";
 
 export interface ProfileChildApprovalsTabProps {
   items: PendingSupervisionRequest[];
@@ -32,8 +33,33 @@ export interface ProfileChildApprovalsTabProps {
 function formatActionType(actionType: string): string {
   return actionType
     .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+    .replaceAll("_", " ")
+    .replace(REGEX_PATTERNS.CAPITALIZE_WORDS, (c) => c.toUpperCase());
+}
+
+function resolveDisplayName(item: PendingSupervisionRequest): string {
+  const minor = item.child || item.minorCard || item.minor || {};
+  if (item.isApprovalItem) {
+    return (
+      item.requester?.displayName ||
+      item.minorCard?.displayName ||
+      item.minor?.displayName ||
+      "Connection Request"
+    );
+  }
+  return minor?.displayName || item.displayName || item.name || "Minor Athlete";
+}
+
+function resolveRawAvatar(item: PendingSupervisionRequest): string | null | undefined {
+  const minor = item.child || item.minorCard || item.minor || {};
+  if (item.isApprovalItem) {
+    return (
+      item.requester?.avatarUrl ||
+      item.minorCard?.avatarUrl ||
+      item.minor?.avatarUrl
+    );
+  }
+  return minor.avatarUrl || item.avatarUrl;
 }
 
 /**
@@ -67,7 +93,8 @@ export function ProfileChildApprovalsTab({
 
       {isLoading || guardianRequestsQuery.isLoading ? (
         <GuardianRequestSkeleton />
-      ) : items.length === 0 && (guardianRequestsQuery.data ?? []).length === 0 ? (
+      ) : items.length === 0 &&
+        (guardianRequestsQuery.data ?? []).length === 0 ? (
         <NoDataFound
           title="No Pending Approval Requests"
           description="No pending requests submitted by your children."
@@ -75,21 +102,24 @@ export function ProfileChildApprovalsTab({
       ) : (
         <div className="mhn-supervision-requests-grid">
           {items.map((item) => {
-            const minor = item.child || item.minorCard || item.minor || {};
-            const displayName = item.isApprovalItem ? (item.requester?.displayName || item.minorCard?.displayName || item.minor?.displayName || "Connection Request") : (minor?.displayName || item.displayName || item.name || "Minor Athlete");
-            const rawAvatar = item.isApprovalItem ? (item.requester?.avatarUrl || item.minorCard?.avatarUrl || item.minor?.avatarUrl) : (minor.avatarUrl || item.avatarUrl);
+            const displayName = resolveDisplayName(item);
+            const rawAvatar = resolveRawAvatar(item);
             const avatarUrl = resolveMediaUrl(
               rawAvatar,
               "/userPlaceholder.webp",
             );
-            const badgeText = item.isApprovalItem && item.action ? `${formatActionType(item.action as string)} approval` : undefined;
+            const badgeText =
+              item.isApprovalItem && item.action
+                ? `${formatActionType(item.action as string)} approval`
+                : undefined;
 
-
-
-            const subjectTitle = item.isApprovalItem && item.subject
-              ? `${item.subject.kind || "Post"} ${item.subject.audience ? `(${item.subject.audience})` : ""}`.trim()
+            const subjectTitle =
+              item.isApprovalItem && item.subject
+                ? `${item.subject.kind || "Post"} ${item.subject.audience ? `(${item.subject.audience})` : ""}`.trim()
+                : undefined;
+            const subjectBody = item.isApprovalItem
+              ? item.subject?.body
               : undefined;
-            const subjectBody = item.isApprovalItem ? item.subject?.body : undefined;
 
             return (
               <SupervisionRequestRow
@@ -119,7 +149,9 @@ export function ProfileChildApprovalsTab({
                 declineLabel="Ignore"
                 onDecline={(selectedRequest) => {
                   if (isDemo) {
-                    showInfoToast("This is demo data — connect the API to decline real requests.");
+                    showInfoToast(
+                      "This is demo data — connect the API to decline real requests.",
+                    );
                     return;
                   }
                   const code = getGuardianRequestCode(selectedRequest);
@@ -131,12 +163,14 @@ export function ProfileChildApprovalsTab({
                 }}
                 onApprove={(selectedRequest) => {
                   if (isDemo) {
-                    showInfoToast("This is demo data — connect the API to approve real requests.");
+                    showInfoToast(
+                      "This is demo data — connect the API to approve real requests.",
+                    );
                     return;
                   }
                   onOpenApproveModal(
                     getGuardianRequestName(selectedRequest),
-                    getGuardianRequestCode(selectedRequest) || ""
+                    getGuardianRequestCode(selectedRequest) || "",
                   );
                 }}
               />

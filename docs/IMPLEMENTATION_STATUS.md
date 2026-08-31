@@ -4,6 +4,11 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Refactored ProfileChildApprovalsTab to extract inline display name and raw avatar fallback lookups into clean, reusable resolveDisplayName and resolveRawAvatar helper functions.
+- Added explicit error logging to the catch block in the onDeclineByCode callback on the Profile page.
+- Extracted the inline capitalization word regex /w/g to a shared CAPITALIZE_WORDS property inside REGEX_PATTERNS in packages/constants/src/index.ts.
+- Extracted the inline inputMode and pattern strings for numeric validation checks to a shared NUMERIC_INPUT_CONFIG constant object in packages/constants/src/index.ts.
+- Extracted the inline numeric input cleaning logic to a reusable sanitizeNumericInput utility function inside packages/validation/src/profileValidation.ts and wired it into FormControls.
 - Integrated the weight value into the handleSaveProfile submission DTO object so it is correctly sent to the API.
 - Restricted the weight input field in the edit profile modal to only accept numeric digit inputs by configuring it with text type, numeric input mode, and digit input pattern matching.
 - Rearranged the profile hero card subtitle format to display Jersey Number first, followed by Position and then Team Name (e.g. "#83 • D • @Team").

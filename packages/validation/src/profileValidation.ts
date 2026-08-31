@@ -195,3 +195,11 @@ export function maskEmail(email: string): string {
   const visible = localPart.slice(0, 4);
   return `${visible}****${domainPart}`;
 }
+
+/**
+ * Strips all non-digit characters from numeric input in real time.
+ */
+export function sanitizeNumericInput(value: string): string {
+  if (!value) return '';
+  return String(value).replace(/\D/g, '');
+}

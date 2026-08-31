@@ -361,7 +361,7 @@ export const ProfilePage: React.FC<PageProps> = ({
                       onDecline={(id) => void childApprovals.handleDeclineApprovalItem(id)}
                       guardianRequestsQuery={guardianRequestsQuery}
                       isGuardianProcessing={guardianApproval.isProcessing}
-                      onDeclineByCode={(code) => void childApprovals.handleDeclineCodeSubmit(code).catch(() => {})}
+                      onDeclineByCode={(code) => void childApprovals.handleDeclineCodeSubmit(code).catch((err) => console.error("Failed to decline request by code:", err))}
                       onOpenApproveModal={(targetName, code) => guardianApproval.setGuardianApprovalModalConfig({ isOpen: true, targetName, code, action: "approve" })}
                       onOpenDeclineModal={(targetName) => guardianApproval.setGuardianApprovalModalConfig({ isOpen: true, targetName, code: "", action: "decline" })}
                     />
