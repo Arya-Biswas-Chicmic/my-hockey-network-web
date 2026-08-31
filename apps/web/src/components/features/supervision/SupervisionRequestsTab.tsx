@@ -1,24 +1,24 @@
-'use client';
+"use client";
 
-import type { UseQueryResult } from '@tanstack/react-query';
-import type { GuardianRelationshipRequest } from '@my-hockey-network/core';
+import type { UseQueryResult } from "@tanstack/react-query";
+import type { GuardianRelationshipRequest } from "@my-hockey-network/core";
 
-import { Button } from '@/components/common/Button';
-import { NoDataFound } from '@/components/common/no-data-found';
-import { GuardianRequestSkeleton } from '@/components/supervision/guardian-request-skeleton';
+import { Button } from "@/components/common/Button";
+import { NoDataFound } from "@/components/common/no-data-found";
+import { GuardianRequestSkeleton } from "@/components/supervision/guardian-request-skeleton";
 import {
   getGuardianRequestCode,
   getGuardianRequestName,
   GuardianRelationshipRequestCard,
-} from '@/components/supervision/guardian-relationship-request-card';
-import { SupervisionRequestRow } from '@/components/supervision/supervision-request-row';
-import { resolveMediaUrl } from '@/utils/mediaUtils';
-import { showInfoToast } from '@/utils/toast';
-import { DEMO_GUARDIAN_REQUESTS } from '@/demo-data/supervision';
-import type { PendingSupervisionRequest } from '@/hooks/use-supervision-requests';
+} from "@/components/supervision/guardian-relationship-request-card";
+import { SupervisionRequestRow } from "@/components/supervision/supervision-request-row";
+import { resolveMediaUrl } from "@/utils/mediaUtils";
+import { showInfoToast } from "@/utils/toast";
+import { DEMO_GUARDIAN_REQUESTS } from "@/demo-data/supervision";
+import type { PendingSupervisionRequest } from "@/hooks/use-supervision-requests";
 
 export interface SupervisionRequestsTabProps {
-  requestNotice: { type: 'success' | 'error'; message: string } | null;
+  requestNotice: { type: "success" | "error"; message: string } | null;
   guardianRequestsQuery: UseQueryResult<GuardianRelationshipRequest[]>;
   livePendingRequests: PendingSupervisionRequest[];
   isRequestsLoading: boolean;
@@ -61,20 +61,30 @@ export function SupervisionRequestsTab({
   // see docs/DEMO_DATA_POLICY.md) — feedback 2026-08-30: "multiple request
   // from demo data". Non-empty, so the empty state below only shows if
   // this dataset itself is ever cleared.
-  const guardianRequests = [...(guardianRequestsQuery.data ?? []), ...DEMO_GUARDIAN_REQUESTS];
-  const hasNoRequests = livePendingRequests.length === 0 && guardianRequests.length === 0;
+  const guardianRequests = [
+    ...(guardianRequestsQuery.data ?? []),
+    ...DEMO_GUARDIAN_REQUESTS,
+  ];
+  const hasNoRequests =
+    livePendingRequests.length === 0 && guardianRequests.length === 0;
 
   return (
     <div className="mhn-supervision-requests-stack">
       {requestNotice && (
-        <div className={`mhn-notice-banner ${requestNotice.type === 'success' ? 'mhn-notice-success' : 'mhn-notice-error'}`}>
+        <div
+          className={`mhn-notice-banner ${requestNotice.type === "success" ? "mhn-notice-success" : "mhn-notice-error"}`}
+        >
           {requestNotice.message}
         </div>
       )}
       {guardianRequestsQuery.error && (
         <div className="mhn-notice-banner mhn-notice-error">
           <span>Guardian requests could not be loaded.</span>
-          <Button type="button" className="ml-2 underline" onClick={() => void guardianRequestsQuery.refetch()}>
+          <Button
+            type="button"
+            className="ml-2 underline"
+            onClick={() => void guardianRequestsQuery.refetch()}
+          >
             Try Again
           </Button>
         </div>
@@ -97,41 +107,70 @@ export function SupervisionRequestsTab({
               const child = req.child || req.minorCard || req.minor || {};
 
               const displayName = isApprovalItem
-                ? (req.requester?.displayName || req.minorCard?.displayName || req.minor?.displayName || 'Connection Request')
-                : (child.displayName || req.displayName || req.name || 'Minor Athlete');
+                ? req.requester?.displayName ||
+                  req.minorCard?.displayName ||
+                  req.minor?.displayName ||
+                  "Connection Request"
+                : child.displayName ||
+                  req.displayName ||
+                  req.name ||
+                  "Minor Athlete";
 
               const rawAvatar = isApprovalItem
-                ? (req.requester?.avatarUrl || req.minorCard?.avatarUrl || req.minor?.avatarUrl)
-                : (child.avatarUrl || req.avatarUrl);
+                ? req.requester?.avatarUrl ||
+                  req.minorCard?.avatarUrl ||
+                  req.minor?.avatarUrl
+                : child.avatarUrl || req.avatarUrl;
 
-              const avatarUrl = resolveMediaUrl(rawAvatar, '/userPlaceholder.webp');
+              const avatarUrl = resolveMediaUrl(
+                rawAvatar,
+                "/userPlaceholder.webp",
+              );
 
               const roleTag = isApprovalItem
-                ? (req.requester?.roleTag || req.minorCard?.roleTag || (req.requester?.primaryRole ? String(req.requester.primaryRole) : 'Parent'))
-                : (child.roleTag || (child.position ? `${child.position}${child.jerseyNumber ? ` • #${child.jerseyNumber}` : ''}` : child.primaryRole || child.profileType || 'PLAYER'));
+                ? req.requester?.roleTag ||
+                  req.minorCard?.roleTag ||
+                  (req.requester?.primaryRole
+                    ? String(req.requester.primaryRole)
+                    : "Parent")
+                : child.roleTag ||
+                  (child.position
+                    ? `${child.position}${child.jerseyNumber ? ` • #${child.jerseyNumber}` : ""}`
+                    : child.primaryRole || child.profileType || "PLAYER");
 
               const teamName = isApprovalItem
-                ? (req.requester?.teamName || req.minorCard?.teamName)
-                : (child.teamName || req.teamName);
+                ? req.requester?.teamName || req.minorCard?.teamName
+                : child.teamName || req.teamName;
 
               const location = isApprovalItem
-                ? (req.requester?.location || req.minorCard?.location || req.minor?.city)
-                : (child.location || req.location || child.city);
+                ? req.requester?.location ||
+                  req.minorCard?.location ||
+                  req.minor?.city
+                : child.location || req.location || child.city;
 
               const code = req.code || req.devCode || req.inviteCode;
-              const subtitle = [roleTag, teamName, location].filter(Boolean).join(' • ');
 
               return (
                 <SupervisionRequestRow
                   key={reqId}
                   avatarUrl={avatarUrl}
                   displayName={displayName}
-                  subtitle={subtitle}
-                  badgeText={isApprovalItem && req.action ? `${String(req.action).replace(/_/g, ' ')} approval` : undefined}
-                  subjectTitle={isApprovalItem && req.subject ? `${req.subject.kind || 'Post'} ${req.subject.audience ? `(${req.subject.audience})` : ''}`.trim() : undefined}
+                  roleTag={roleTag}
+                  teamName={teamName ?? ""}
+                  location={location ?? ""}
+                  badgeText={
+                    isApprovalItem && req.action
+                      ? `${String(req.action).replace(/_/g, " ")} approval`
+                      : undefined
+                  }
+                  subjectTitle={
+                    isApprovalItem && req.subject
+                      ? `${req.subject.kind || "Post"} ${req.subject.audience ? `(${req.subject.audience})` : ""}`.trim()
+                      : undefined
+                  }
                   subjectBody={isApprovalItem ? req.subject?.body : undefined}
-                  declineLabel={isApprovalItem ? 'Ignore' : 'Decline'}
-                  approveLabel={isApprovalItem ? 'Accept' : 'Approve'}
+                  declineLabel="Ignore"
+                  approveLabel="Accept"
                   disabled={requestActionLoading}
                   onDecline={() => {
                     if (isApprovalItem) {
@@ -146,26 +185,30 @@ export function SupervisionRequestsTab({
                       onApproveApprovalItem(reqId);
                     } else {
                       // Empty code is deliberate here — matches original behavior exactly.
-                      onOpenApproveModal(displayName, '');
+                      onOpenApproveModal(displayName, "");
                     }
                   }}
                 />
               );
             })}
             {guardianRequests.map((request) => {
-              const isDemo = request.id.startsWith('demo-');
+              const isDemo = request.id.startsWith("demo-");
               return (
                 <GuardianRelationshipRequestCard
                   key={request.id}
                   request={request}
                   disabled={requestActionLoading}
+                  approveLabel="Accept"
+                  declineLabel="Ignore"
                   onDecline={(selectedRequest) => {
                     // Demo items have no real backend record to decline —
                     // route to a toast instead of the live API/modal flow,
                     // same "honest, clearly labeled placeholder" pattern
                     // used for messaging attachments elsewhere.
                     if (isDemo) {
-                      showInfoToast('This is demo data — connect the guardian-relationship API to decline real requests.');
+                      showInfoToast(
+                        "This is demo data — connect the guardian-relationship API to decline real requests.",
+                      );
                       return;
                     }
                     const code = getGuardianRequestCode(selectedRequest);
@@ -177,10 +220,15 @@ export function SupervisionRequestsTab({
                   }}
                   onApprove={(selectedRequest) => {
                     if (isDemo) {
-                      showInfoToast('This is demo data — connect the guardian-relationship API to approve real requests.');
+                      showInfoToast(
+                        "This is demo data — connect the guardian-relationship API to approve real requests.",
+                      );
                       return;
                     }
-                    onOpenApproveModal(getGuardianRequestName(selectedRequest), getGuardianRequestCode(selectedRequest));
+                    onOpenApproveModal(
+                      getGuardianRequestName(selectedRequest),
+                      getGuardianRequestCode(selectedRequest),
+                    );
                   }}
                 />
               );

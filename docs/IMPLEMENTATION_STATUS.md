@@ -4,6 +4,7 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Redesigned the Supervision "Requested" tab (formerly "Requests") from a list of rows to a grid of centered request cards (`.mhn-supervision-req-card`) with custom team logo and location pin assets.
 - Constrained the height of `.mhn-supervision-tab-body` (the container for permissions, requests, and logs tabs) using a screen-relative max-height (`calc(100vh - 150px)`) and enabled scrolling.
 - Fixed text color and active state for supervision ward listing to work seamlessly in dark and light modes.
 - Added vertical scrolling (`overflow-y: auto`) with flex height constraints to the supervision tab contents (Permissions, Requests, Logs).

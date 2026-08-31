@@ -136,7 +136,7 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
                     onClick={() => setActiveMainTab(SupervisionMainTabEnum.REQUESTS)}
                     className={`mhn-supervision-tab-btn ${activeMainTab === SupervisionMainTabEnum.REQUESTS ? 'mhn-tab-active' : ''}`}
                   >
-                    Requests
+                    Requested
                   </Button>
                   <Button
                     type="button"
