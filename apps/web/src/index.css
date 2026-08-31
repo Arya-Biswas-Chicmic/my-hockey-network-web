@@ -16640,7 +16640,8 @@ img.secure {
   white-space: normal;
 }
 
-.mhn-parent-choice-card.mhn-active {
+.mhn-parent-choice-card.mhn-active,
+.mhn-parent-choice-card:hover {
   border: 1px solid var(--color-auth-action);
   background: var(--color-auth-selected);
 }
@@ -16667,7 +16668,9 @@ img.secure {
 }
 
 .mhn-parent-choice-card.mhn-active .mhn-parent-card-title,
-.mhn-parent-choice-card.mhn-active .mhn-parent-chevron {
+.mhn-parent-choice-card.mhn-active .mhn-parent-chevron,
+.mhn-parent-choice-card:hover .mhn-parent-card-title,
+.mhn-parent-choice-card:hover .mhn-parent-chevron {
   color: var(--color-auth-action-bright);
 }
 
