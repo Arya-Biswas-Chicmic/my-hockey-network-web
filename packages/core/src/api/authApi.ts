@@ -59,8 +59,12 @@ export interface UpdateProfileDTO {
   shootsCatches?: string;
   jerseyNumber?: number;
   genderCategory?: string;
-  height?: string;
-  weight?: number;
+  /** Granular height/weight fields accepted by PATCH /v1/auth/me */
+  heightCm?: number;
+  heightFeet?: number;
+  heightInches?: number;
+  weightKg?: number;
+  weightLb?: number;
   avatarUrl?: string;
   avatarKey?: string;
   coverImageKey?: string;

@@ -112,6 +112,8 @@ export const REGEX_PATTERNS = {
   CAPITALIZE_WORDS: /\b\w/g,
   /** Matches any character that is NOT a digit (0-9). Use with `replace` to strip non-numeric chars. */
   NON_DIGITS: /\D/g,
+  /** Parses a height string produced by HEIGHT_OPTIONS, e.g. "5' 11\"" → group 1 = feet, group 2 = inches. */
+  HEIGHT_FEET_INCHES: /^(\d+)'\s*(\d+)/,
 } as const;
 
 export const NUMERIC_INPUT_CONFIG = {

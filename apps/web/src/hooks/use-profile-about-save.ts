@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { QueryKeys, type AuthMeResponse } from '@my-hockey-network/contracts';
-import { ERROR_MESSAGES } from '@my-hockey-network/constants';
+import { ERROR_MESSAGES, REGEX_PATTERNS } from '@my-hockey-network/constants';
 import { globalQueryClient, invalidateQueryPrefix } from '@/query';
 import { showErrorToast } from '@/utils/toast';
 import { useUpdateProfileMutation } from '@/hooks/use-update-profile';
@@ -92,6 +92,33 @@ export function useProfileAboutSave({ setUserProfile, loadAuthMe }: UseProfileAb
 
     const validPosition = data?.position && ALLOWED_POSITIONS.includes(data.position) ? data.position : 'Center';
 
+    // Derive granular height fields from the dropdown value (e.g. "5' 11\"" → feet=5, inches=11, cm≈180).
+    // Fall back to the numeric fields already on the form data (pre-populated from the API response).
+    let heightFeet: number | undefined = data?.heightFeet;
+    let heightInches: number | undefined = data?.heightInches;
+    let heightCm: number | undefined = data?.heightCm;
+    if (data?.height) {
+      // Format from HEIGHT_OPTIONS: `${feet}' ${remainingInches}"`
+      const match = data.height.match(REGEX_PATTERNS.HEIGHT_FEET_INCHES);
+      if (match) {
+        heightFeet = parseInt(match[1], 10);
+        heightInches = parseInt(match[2], 10);
+        heightCm = Math.round((heightFeet * 12 + heightInches) * 2.54);
+      }
+    }
+
+    // Derive weightLb / weightKg from the numeric weight input (stored as a string).
+    // Fall back to the numeric fields already on the form data.
+    let weightLb: number | undefined = data?.weightLb;
+    let weightKg: number | undefined = data?.weightKg;
+    if (data?.weight !== '' && data?.weight !== null && data?.weight !== undefined) {
+      const parsedLb = Number(data.weight);
+      if (!isNaN(parsedLb) && parsedLb > 0) {
+        weightLb = parsedLb;
+        weightKg = Math.round(parsedLb * 0.453592 * 10) / 10;
+      }
+    }
+
     const dto = {
       displayName: data?.displayName || undefined,
       firstName: data?.firstName || undefined,
@@ -103,8 +130,11 @@ export function useProfileAboutSave({ setUserProfile, loadAuthMe }: UseProfileAb
       shootsCatches: data?.shootsCatches || undefined,
       jerseyNumber: data?.jerseyNumber !== '' && data?.jerseyNumber !== null && data?.jerseyNumber !== undefined ? Number(data?.jerseyNumber) : undefined,
       genderCategory: data?.genderCategory || undefined,
-      height: data?.height || undefined,
-      weight: data?.weight !== '' && data?.weight !== null && data?.weight !== undefined ? Number(data?.weight) : undefined,
+      heightCm,
+      heightFeet,
+      heightInches,
+      weightKg,
+      weightLb,
       avatarKey: avatarKeyToSend,
       avatarUrl: avatarUrlToSend,
     };

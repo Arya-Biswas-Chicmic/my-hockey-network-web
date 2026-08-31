@@ -3,6 +3,8 @@ import type { CareerEntry } from './profile.types';
 
 export interface HeightValue {
   cm?: number;
+  feet?: number;
+  inches?: number;
   formatted?: string;
 }
 

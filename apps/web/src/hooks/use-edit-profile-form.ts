@@ -95,6 +95,13 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
         genderCategory: String(profRecord.genderCategory || profRecord.gender || ''),
         height: parseInitialHeight(profRecord.height as string | HeightValue | null | undefined),
         weight: parseInitialWeight(profRecord.weight as string | WeightValue | null | undefined),
+        // Granular numeric height/weight fields — sourced from the HeightValue/WeightValue
+        // objects returned by the API and sent back as-is on save.
+        heightCm: (profRecord.height as HeightValue | null | undefined)?.cm ?? undefined,
+        heightFeet: (profRecord.height as HeightValue | null | undefined)?.feet ?? undefined,
+        heightInches: (profRecord.height as HeightValue | null | undefined)?.inches ?? undefined,
+        weightKg: (profRecord.weight as WeightValue | null | undefined)?.kg ?? undefined,
+        weightLb: (profRecord.weight as WeightValue | null | undefined)?.lb ?? undefined,
         preferredLanguage: String(profRecord.preferredLanguage || 'en'),
         defaultVisibility: String(profRecord.defaultVisibility || 'CONNECTIONS'),
         avatarUrl: resolveMediaUrl(profRecord.avatarUrl as string | undefined, '/userPlaceholder.webp'),
