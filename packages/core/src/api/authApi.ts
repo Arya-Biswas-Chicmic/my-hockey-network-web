@@ -60,7 +60,7 @@ export interface UpdateProfileDTO {
   jerseyNumber?: number;
   genderCategory?: string;
   height?: string;
-  weight?: string;
+  weight?: number;
   avatarUrl?: string;
   avatarKey?: string;
   coverImageKey?: string;

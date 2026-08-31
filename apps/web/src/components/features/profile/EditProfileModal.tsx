@@ -43,8 +43,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   profileData,
 }) => {
   const profileRecord = (profileData || {}) as Record<string, unknown>;
-  const heightDisplay = String(profileRecord.height || "—");
-  const weightDisplay = String(profileRecord.weight || "—");
   const { positions } = useReferenceData();
   const {
     form,
@@ -166,7 +164,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 />
                 <FormInput<EditProfileFormValues, "weight">
                   name="weight"
-                  label="Weight"
+                  label="Weight (lb)"
                   type="text"
                   inputMode="numeric"
                   pattern="[0-9]*"
@@ -174,7 +172,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   containerClassName={fieldContainerClassName}
                   errorClassName="text-xs text-destructive"
                   disableAutoSanitize
-                  placeholder="Enter weight"
+                  placeholder="Enter weight in lb"
                 />
               </div>
               <FormSelect<EditProfileFormValues, "position">

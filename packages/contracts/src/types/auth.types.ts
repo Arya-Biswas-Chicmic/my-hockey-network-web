@@ -1,6 +1,17 @@
 import type { AuthIntentEnum, ChannelTypeEnum, UserRoleEnum, UserStatusEnum } from '../enums';
 import type { CareerEntry } from './profile.types';
 
+export interface HeightValue {
+  cm?: number;
+  formatted?: string;
+}
+
+export interface WeightValue {
+  kg?: number;
+  lb?: number;
+  formatted?: string;
+}
+
 export type ChannelType = ChannelTypeEnum | 'EMAIL' | 'SMS';
 export type AuthIntent = AuthIntentEnum | 'SIGNUP' | 'SIGNIN';
 export type UserRole = UserRoleEnum | 'PLAYER' | 'PARENT' | 'COACH' | 'STAFF';
@@ -104,8 +115,8 @@ export interface AuthMeResponse {
     shootsCatches?: string;
     jerseyNumber?: number | string | null;
     genderCategory?: string;
-    height?: string | null;
-    weight?: string | null;
+    height?: string | HeightValue | null;
+    weight?: string | WeightValue | null;
     preferredLanguage?: string;
     defaultVisibility?: string;
     teamName?: string | null;

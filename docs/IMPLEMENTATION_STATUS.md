@@ -4,6 +4,9 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Updated weight type in UpdateProfileDTO to be number (matching backend expectation) and converted the weight form value to a number before submitting in handleSaveProfile.
+- Simplified the edit profile form values initialization logic by extracting the height/weight parsing code block into clean helper functions: parseInitialHeight and parseInitialWeight.
+- Mapped the new height and weight object structures from the API payload (e.g. { cm, formatted } and { kg, lb, formatted }) correctly in both the profile view model and the edit profile form values.
 - Refactored ProfileChildApprovalsTab to extract inline display name and raw avatar fallback lookups into clean, reusable resolveDisplayName and resolveRawAvatar helper functions.
 - Added explicit error logging to the catch block in the onDeclineByCode callback on the Profile page.
 - Extracted the inline capitalization word regex /w/g to a shared CAPITALIZE_WORDS property inside REGEX_PATTERNS in packages/constants/src/index.ts.
