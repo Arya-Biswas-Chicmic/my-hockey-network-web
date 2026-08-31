@@ -4,6 +4,9 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Removed mock career data from the Profile "Career" tab, replacing the `demoCareerEntries` fallback with a direct map over live `careerEntries` (displaying an empty state when none exist).
+- Re-wired the Profile "Child Requests" tab (for parent accounts) to use the exact same `useSupervisionRequests` API flow and shared modal states (`handleApproveCodeSubmit`, `handleDeclineCodeSubmit`) as the Supervision section's "Requested" tab.
+- Removed the standalone `use-child-approvals.ts` hook and redundant `childApprovalModalConfig` state entirely, opting for a clean reuse of the existing profile-level approval modal instead.
 - Migrated `useSupervisionLogs` from a sequential `useEffect`-based fetch to a single `useQuery` call, giving the hook automatic caching, deduplication, and TanStack Query loading states.
 - Removed the redundant `getSupervisionControls` fetch from `useSupervisionLogs`; controls are already fetched by `use-supervision-permissions.ts` on ward selection, so the duplicate call and its permission-setter fan-out were deleted entirely.
 - Gated the Requests tab skeleton loader behind a real ward-UUID check so the spinner only appears when switching between players, not on the initial tab visit without a selection.

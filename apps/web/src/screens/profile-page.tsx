@@ -147,9 +147,6 @@ export const ProfilePage: React.FC<PageProps> = ({
     saveTeam,
     deleteTeam,
   } = useProfileCareer(targetProfileRes);
-  const [demoCareerEntries, setDemoCareerEntries] = useState<CareerEntry[]>(
-    profileDemoData.teams,
-  );
   const [deletingEntryTarget, setDeletingEntryTarget] =
     useState<CareerEntry | null>(null);
 
@@ -177,41 +174,7 @@ export const ProfilePage: React.FC<PageProps> = ({
     profileDemoData.profile,
   );
 
-  const displayedCareerEntries =
-    careerEntries === null
-      ? null
-      : careerEntries.length > 0
-        ? careerEntries
-        : demoCareerEntries;
 
-  const handleCareerSave = async (
-    values: CareerFormValues,
-    editingTeamId: string | null,
-  ) => {
-    if (!editingTeamId?.startsWith("demo-"))
-      return saveTeam(values, editingTeamId);
-    setDemoCareerEntries((entries) =>
-      entries.map((entry) =>
-        entry.id === editingTeamId
-          ? {
-              ...entry,
-              teamName: values.teamName,
-              position: values.position,
-              location: values.location,
-              note: values.note,
-              startDate: values.startYear
-                ? `${values.startYear}-01-01T00:00:00.000Z`
-                : null,
-              endDate:
-                values.isCurrentPlaying || !values.endYear
-                  ? null
-                  : `${values.endYear}-12-31T00:00:00.000Z`,
-            }
-          : entry,
-      ),
-    );
-    return true;
-  };
 
   const about = useProfileAboutSave({ setUserProfile, loadAuthMe });
 
@@ -364,10 +327,10 @@ export const ProfilePage: React.FC<PageProps> = ({
 
                 {activeProfileTab === ProfileTabEnum.CAREER && (
                   <ProfileCareerTab
-                    careerEntries={displayedCareerEntries}
+                    careerEntries={careerEntries}
                     isSavingTeam={isSavingTeam}
                     isDeletingTeamId={isDeletingTeamId}
-                    onSaveTeam={handleCareerSave}
+                    onSaveTeam={saveTeam}
                     onRequestDelete={setDeletingEntryTarget}
                   />
                 )}
@@ -473,13 +436,7 @@ export const ProfilePage: React.FC<PageProps> = ({
         isLoading={!!isDeletingTeamId}
         onConfirm={async () => {
           if (deletingEntryTarget) {
-            if (deletingEntryTarget.id.startsWith("demo-")) {
-              setDemoCareerEntries((entries) =>
-                entries.filter((entry) => entry.id !== deletingEntryTarget.id),
-              );
-            } else {
-              await deleteTeam(deletingEntryTarget.id);
-            }
+            await deleteTeam(deletingEntryTarget.id);
             setDeletingEntryTarget(null);
           }
         }}
