@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
+import { FeedPermissionBanner } from '@/components/common/FeedPermissionBanner';
 import { MoreHorizontal, Plus, X } from 'lucide-react';
-import { PendingBanner } from '@/components/common/PendingBanner';
-import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { FallbackImage } from '@/components/ui/fallback-image';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/FormControls';
@@ -96,7 +95,6 @@ const DISCOVER_TEAMS: TeamItem[] = [
 ];
 
 export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
-  const { permissions } = useFeedPermissions(onNavigate);
   const [activeTab, setActiveTab] = useState<'your-teams' | 'discover'>('your-teams');
   const [searchQuery, setSearchQuery] = useState('');
   const [teams, setTeams] = useState<TeamItem[]>(YOUR_TEAMS);
@@ -136,21 +134,7 @@ export const TeamsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
   return (
     <>
-      {!permissions.allowed && permissions.message && (
-        <PendingBanner
-          message={permissions.message}
-          actionText={permissions.ctaText || 'Complete Profile'}
-          onActionClick={() => {
-            if (permissions.ctaAction === 'COMPLETE_PROFILE') {
-              if (onNavigate) onNavigate('profile');
-            } else if (permissions.ctaAction === 'GUARDIAN_APPROVAL') {
-              if (onNavigate) onNavigate('supervision');
-            } else if (permissions.ctaAction === 'LOGIN') {
-              if (onNavigate) onNavigate('login');
-            }
-          }}
-        />
-      )}
+      <FeedPermissionBanner onNavigate={onNavigate} />
 
       {selectedTeam ? (
         <PageShell className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-16">

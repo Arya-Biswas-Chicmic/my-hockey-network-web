@@ -1,10 +1,17 @@
 import React from 'react';
 import { Button } from '@/components/common/Button';
+import { BackButton } from '@/components/common/BackButton';
 import { ChevronRight, Link2, Plus } from 'lucide-react';
 
 interface AddPlayerChoiceStepProps {
   onCreateNew: () => void;
   onLinkExisting: () => void;
+  /**
+   * Returns to the previous step. Every other mid-flow step in this wizard
+   * offers this; without it a parent who reached the choice step could not get
+   * back to "Who do you manage?".
+   */
+  onBack?: () => void;
 }
 
 interface ChoiceOption {
@@ -44,6 +51,7 @@ function ChoiceCard({ icon, title, description, onSelect, active }: ChoiceOption
 export const AddPlayerChoiceStep: React.FC<AddPlayerChoiceStepProps> = ({
   onCreateNew,
   onLinkExisting,
+  onBack,
 }) => {
   const options: ChoiceOption[] = [
     {
@@ -72,6 +80,12 @@ export const AddPlayerChoiceStep: React.FC<AddPlayerChoiceStepProps> = ({
           <ChoiceCard key={option.id} {...option} />
         ))}
       </div>
+
+      {onBack && (
+        <div className="mhn-parent-actions-stack">
+          <BackButton onClick={onBack} />
+        </div>
+      )}
     </div>
   );
 };

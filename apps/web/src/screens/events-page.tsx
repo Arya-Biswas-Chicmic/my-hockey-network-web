@@ -6,8 +6,7 @@ import {
   Plus,
   ChevronDown,
 } from 'lucide-react';
-import { PendingBanner } from '@/components/common/PendingBanner';
-import { useFeedPermissions } from '@/hooks/use-feed-permissions';
+import { FeedPermissionBanner } from '@/components/common/FeedPermissionBanner';
 import { EventCard } from '@/components/features/events/EventCard';
 import { Button } from '@/components/common/Button';
 
@@ -86,7 +85,6 @@ const INITIAL_EVENTS: EventItem[] = [
 ];
 
 export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
-  const { permissions } = useFeedPermissions(onNavigate);
   const [activeTopTab, setActiveTopTab] = useState<'personal' | 'network' | 'explore'>('personal');
   const [activeFilterPill, setActiveFilterPill] = useState<string>('interested');
   const [searchQuery, setSearchQuery] = useState('');
@@ -122,21 +120,7 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
   return (
     <>
-      {!permissions.allowed && permissions.message && (
-        <PendingBanner
-          message={permissions.message}
-          actionText={permissions.ctaText || 'Complete Profile'}
-          onActionClick={() => {
-            if (permissions.ctaAction === 'COMPLETE_PROFILE') {
-              if (onNavigate) onNavigate('profile');
-            } else if (permissions.ctaAction === 'GUARDIAN_APPROVAL') {
-              if (onNavigate) onNavigate('supervision');
-            } else if (permissions.ctaAction === 'LOGIN') {
-              if (onNavigate) onNavigate('login');
-            }
-          }}
-        />
-      )}
+      <FeedPermissionBanner onNavigate={onNavigate} />
 
       <PageShell className="mhn-events-main-container flex flex-col lg:min-h-0 lg:flex-1">
         {/* Sticky header: title/search/filters + tabs + filter pills stay in

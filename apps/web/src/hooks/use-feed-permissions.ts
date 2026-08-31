@@ -12,8 +12,30 @@ import {
   canFollowOthers as checkCanFollowOthers,
   canSendMessages as checkCanSendMessages,
   canCreateGroupChats as checkCanCreateGroupChats,
+  type FeedCtaAction,
   type FeedPermissionResult,
 } from '@my-hockey-network/domain';
+
+/**
+ * Maps a permission CTA to its destination. Shared by the toast handler below
+ * and `common/FeedPermissionBanner`, so the banner and the toast can never send
+ * a user to different places for the same reason — they were previously two
+ * separate copies of this if/else chain.
+ */
+export function resolveFeedPermissionCta(
+  ctaAction: FeedCtaAction,
+  onNavigate?: (screen: string) => void,
+): void {
+  if (!onNavigate) return;
+
+  if (ctaAction === 'COMPLETE_PROFILE') {
+    onNavigate('profile');
+  } else if (ctaAction === 'GUARDIAN_APPROVAL') {
+    onNavigate('supervision');
+  } else if (ctaAction === 'LOGIN') {
+    onNavigate('login');
+  }
+}
 
 export interface UseFeedPermissionsResult {
   permissions: FeedPermissionResult;
@@ -54,15 +76,7 @@ export function useFeedPermissions(onNavigate?: (route: string) => void): UseFee
   ): boolean => {
     if (!permissions.allowed) {
       const ctaHandler = onNavigate
-        ? () => {
-            if (permissions.ctaAction === 'COMPLETE_PROFILE') {
-              onNavigate('profile');
-            } else if (permissions.ctaAction === 'GUARDIAN_APPROVAL') {
-              onNavigate('supervision');
-            } else if (permissions.ctaAction === 'LOGIN') {
-              onNavigate('login');
-            }
-          }
+        ? () => resolveFeedPermissionCta(permissions.ctaAction, onNavigate)
         : undefined;
 
       if (permissions.message) {

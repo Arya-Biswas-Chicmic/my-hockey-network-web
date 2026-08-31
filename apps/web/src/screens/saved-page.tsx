@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Bookmark } from 'lucide-react';
-import { PendingBanner } from '@/components/common/PendingBanner';
+import { FeedPermissionBanner } from '@/components/common/FeedPermissionBanner';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/common/Button';
@@ -67,21 +67,7 @@ export const SavedPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
   return (
     <>
-      {!permissions.allowed && permissions.message && (
-        <PendingBanner
-          message={permissions.message}
-          actionText={permissions.ctaText || 'Complete Profile'}
-          onActionClick={() => {
-            if (permissions.ctaAction === 'COMPLETE_PROFILE') {
-              if (onNavigate) onNavigate('profile');
-            } else if (permissions.ctaAction === 'GUARDIAN_APPROVAL') {
-              if (onNavigate) onNavigate('supervision');
-            } else if (permissions.ctaAction === 'LOGIN') {
-              if (onNavigate) onNavigate('login');
-            }
-          }}
-        />
-      )}
+      <FeedPermissionBanner onNavigate={onNavigate} />
 
       <PageShell className="mhn-saved-main-container flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-16">
         {/* Top Header Row */}

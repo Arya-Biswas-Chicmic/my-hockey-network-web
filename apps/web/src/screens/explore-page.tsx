@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { PendingBanner } from '@/components/common/PendingBanner';
-import { useFeedPermissions } from '@/hooks/use-feed-permissions';
+import { FeedPermissionBanner } from '@/components/common/FeedPermissionBanner';
 import { FallbackImage } from '@/components/ui/fallback-image';
 import { Button } from '@/components/common/Button';
 import { FeedPostCard } from '@/components/features/home/FeedPostCard';
@@ -36,7 +35,6 @@ const INITIAL_SUGGESTIONS: SuggestedUser[] = [
 ];
 
 export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
-  const { permissions } = useFeedPermissions(onNavigate);
   const [activeExploreTab, setActiveExploreTab] = useState<'popular' | 'suggested' | 'verified'>('popular');
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<SuggestedUser[]>(INITIAL_SUGGESTIONS);
@@ -49,21 +47,7 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
 
   return (
     <>
-      {!permissions.allowed && permissions.message && (
-        <PendingBanner
-          message={permissions.message}
-          actionText={permissions.ctaText || 'Complete Profile'}
-          onActionClick={() => {
-            if (permissions.ctaAction === 'COMPLETE_PROFILE') {
-              if (onNavigate) onNavigate('profile');
-            } else if (permissions.ctaAction === 'GUARDIAN_APPROVAL') {
-              if (onNavigate) onNavigate('supervision');
-            } else if (permissions.ctaAction === 'LOGIN') {
-              if (onNavigate) onNavigate('login');
-            }
-          }}
-        />
-      )}
+      <FeedPermissionBanner onNavigate={onNavigate} />
 
       <PageShell className="mhn-explore-main-container grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8 items-start lg:min-h-0 lg:flex-1">
         {/* CENTER FEED COLUMN */}

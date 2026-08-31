@@ -34,12 +34,12 @@ interface CreatePostVariables {
 }
 
 /**
- * Uploads the attached image (if any) and creates the post. Does not touch
- * the feed cache itself — invalidate `QueryKeys.FEED_POSTS` from the
- * caller's `onSuccess`, since the caller also owns search/sort reset and
- * re-fetch timing today.
+ * Uploads the attached image (if any) and creates the post.
+ * Automatically invalidates both the Home feed (QueryKeys.FEED_POSTS)
+ * and Profile posts listings (QueryKeys.USER_POSTS) on success.
  */
 export function useCreatePostMutation() {
+  const queryClient = useQueryClient();
   return useMutation<CreatePostApiResponse, unknown, CreatePostVariables>({
     mutationFn: async ({ dto, imageFile }) => {
       let mediaIds: string[] | undefined;
@@ -59,13 +59,20 @@ export function useCreatePostMutation() {
 
       return createPost({ ...dto, mediaIds });
     },
+    onSuccess: () => {
+      void invalidateQueryPrefix(queryClient, QueryKeys.FEED_POSTS);
+      void invalidateQueryPrefix(queryClient, QueryKeys.USER_POSTS);
+    },
   });
 }
 
-/** Invalidates the feed after a successful like/unlike, comment, edit, or delete. */
+/** Invalidates the feed and profile posts listings after a successful like/unlike, comment, edit, or delete. */
 function useInvalidateFeed() {
   const queryClient = useQueryClient();
-  return () => invalidateQueryPrefix(queryClient, QueryKeys.FEED_POSTS);
+  return () => {
+    void invalidateQueryPrefix(queryClient, QueryKeys.FEED_POSTS);
+    void invalidateQueryPrefix(queryClient, QueryKeys.USER_POSTS);
+  };
 }
 
 export function useLikePostMutation() {

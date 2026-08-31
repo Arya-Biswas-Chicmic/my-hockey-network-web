@@ -4,6 +4,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { Button } from '@/components/common/Button';
+import { BackButton } from '@/components/common/BackButton';
 import { Input } from '@/components/common/FormControls';
 import { Spinner } from '@/components/common/Spinner';
 import { linkPlayerFormSchema, type LinkPlayerFormValues } from '@my-hockey-network/validation';
@@ -58,9 +59,7 @@ export function LinkExistingPlayerStep({ onSend, onBack, onNavigateHelp, isSendi
           {isSending && <Spinner size="sm" color="#FFFFFF" />}
           <span>{isSending ? 'Sending Invitation...' : 'Send Invitation'}</span>
         </Button>
-        <Button className="mhn-btn-outline" onClick={onBack}>
-          Back
-        </Button>
+        <BackButton onClick={onBack} disabled={isSending} />
       </div>
 
       <div className="mhn-trouble-footer">

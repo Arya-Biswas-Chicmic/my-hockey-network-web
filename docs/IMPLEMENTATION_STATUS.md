@@ -4,6 +4,58 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Migrated `useSupervisionLogs` from a sequential `useEffect`-based fetch to a single `useQuery` call, giving the hook automatic caching, deduplication, and TanStack Query loading states.
+- Removed the redundant `getSupervisionControls` fetch from `useSupervisionLogs`; controls are already fetched by `use-supervision-permissions.ts` on ward selection, so the duplicate call and its permission-setter fan-out were deleted entirely.
+- Gated the Requests tab skeleton loader behind a real ward-UUID check so the spinner only appears when switching between players, not on the initial tab visit without a selection.
+- Refactored permission updating state to track `updatingControlKeys` Record rather than a single string, enabling other switches and dropdowns to remain active and clickable in parallel during toggling.
+
+- Configured loading spinners for PermissionToggleRow switches and dropdown selectors in the Supervision "Permissions" tab when actively saving changes.
+- Refactored `SupervisionLogItem` interface schema and logs mapping parser to match the actual backend API payload parameters (`type`, `params`, `actorDisplayName`).
+- Enabled the Next page button in the Supervision "Logs" tab dynamically when the backend API returns a `hasMore: true` pagination flag.
+- Configured loading skeleton/shimmer indicators for the Supervision Permissions, Requests, and Logs tabs to trigger immediately and clear stale data when switching between children/players.
+- Removed mock data from the Supervision "Logs" tab and configured it to load live logs exclusively via the backend API.
+- Added hover states to `.mhn-parent-choice-card` that mirror `.mhn-active` styles for visual feedback.
+- Centered the player details onboarding form block (`.mhn-parent-step-container`) horizontally inside the wizard panel by setting `margin: 0 auto` and added `32px` top/bottom padding.
+- Styled `.mhn-select-input` (used by native FormSelect) to match `.auth-input` height (48px) and left padding (1rem) for form fields alignment, following the native select approach used in the profile stats section.
+- Removed mock data from the Supervision "Requested" tab.
+- Redesigned the Supervision "Requested" tab (formerly "Requests") from a list of rows to a grid of centered request cards (`.mhn-supervision-req-card`) with custom team logo and location pin assets.
+- Constrained the height of `.mhn-supervision-tab-body` (the container for permissions, requests, and logs tabs) using a screen-relative max-height (`calc(100vh - 150px)`) and enabled scrolling.
+- Fixed text color and active state for supervision ward listing to work seamlessly in dark and light modes.
+- Added vertical scrolling (`overflow-y: auto`) with flex height constraints to the supervision tab contents (Permissions, Requests, Logs).
+- Refactored pending guardian invite property from `items` to `invites` to correctly match the updated API response format in both the frontend core client and related UI components.
+
+- Removed the `PendingBanner` duplication. The component itself was already shared, but its _usage_
+  was not: all 10 authenticated screens inlined the same `!permissions.allowed &&
+permissions.message` guard plus an identical 8-line CTA dispatch — 9 of the 10 blocks byte-for-byte
+  identical, with `profile-page` differing on a single line (it opens its edit modal instead of
+  navigating to itself). An 11th copy of the same if/else chain lived inside
+  `use-feed-permissions.ts`'s toast handler, so the banner and the toast could silently drift on
+  where they sent a user for the same reason.
+  Added `common/FeedPermissionBanner`, which owns the visibility rule and the CTA routing and calls
+  the hook itself, so a screen renders `<FeedPermissionBanner onNavigate={onNavigate} />` and nothing
+  else. Profile passes `onCompleteProfile` to keep its in-place behaviour. The dispatch is now one
+  exported `resolveFeedPermissionCta(ctaAction, onNavigate)` in the hook module, used by both the
+  banner and the toast handler — typed with the domain's `FeedCtaAction` union rather than a loose
+  string, which the typecheck caught.
+  Eight screens were then calling `useFeedPermissions` purely to feed the banner, so those dead hook
+  calls and imports were removed; `home-page` and `profile-page` keep theirs for `requirePermission`.
+  Net effect: ~120 lines of duplicated JSX deleted, and the banner's behaviour has one owner.
+  Covered by 9 new tests including all three CTA routes and the Profile override.
+
+- Added the missing back control to the parent add-player choice step and extracted the shared
+  `common/BackButton`. `AddPlayerChoiceStep` ("How would you like to add them?") was the only
+  mid-flow step in the wizard without a way back — every step _after_ it could return _to_ it, so a
+  parent who reached it and changed their mind was stranded. Verified against git history that this
+  was never present rather than recently removed. The new `onBack` prop is optional and the control
+  only renders when the flow supplies one, so the component stays usable at a flow entry point.
+  The three existing hand-rolled back buttons now use the shared component too, which closes a real
+  drift: `CreatePlayerProtectStep` and `PlayerDetailsFormFields` used `.mhn-parent-btn-secondary`
+  while `LinkExistingPlayerStep` used `.mhn-btn-outline`, so the same action rendered as two
+  different buttons depending on the step. Covered by 6 new tests.
+  Noted but not changed: `features/auth/signup/CreateAccountModal.tsx` declares an `onBack?` prop
+  that is never used inside the component and never passed by `OnboardingModal` — dead since the file
+  was created. Left alone pending a decision on whether that step should have a back affordance at
+  all, rather than silently deleting a prop or wiring a new user-facing control.
 - Fixed Team Detail's tab bar (Posts/Members/Events/Media/About) leaving dead space after "About"
   instead of spanning the card's full width (feedback 2026-08-31: "make top bar filled entire width,
   check marked area"). Each tab was `shrink-0` with a `gap-8`, clustering left; switched to `flex-1`
@@ -2458,7 +2510,7 @@ FollowWidget`'s own row shape (`.mhn-who-to-follow-row`/`-avatar`/
     show the correct honest empty state; clicking a Connections card
     without a demo-data match still opens the popup using just that
     card's own fields. `typecheck`/`lint:check`/`check-component-
-    reuse.mjs`/`test:run` (304/304) all pass.
+reuse.mjs`/`test:run` (304/304) all pass.
 
 ## Current quality gates
 
@@ -2564,3 +2616,4 @@ end-to-end.
   single-field `ForgotPassword` form was. `Home/index.tsx` and `Profile/index.tsx` are pre-feature
   placeholder screens with no backend data at all (not a connection gap); building their real content
   is separate, larger work and out of scope for a "connect to shared services" item.
+- Fixed the cancel button layout bug in the delete team entry modal to prevent horizontal overflow, moved the post composer toolbar buttons to the left, styled them blue, and updated the post creation flow to invalidate and refetch the posts feeds.

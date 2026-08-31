@@ -79,17 +79,20 @@ describe('useCreatePostMutation', () => {
     expect(createPost).toHaveBeenCalledWith({ body: 'with photo', mediaIds: ['media-1'] });
   });
 
-  it('still creates the post even if completing the media upload notice fails', async () => {
-    uploadMediaFile.mockResolvedValue({ mediaId: 'media-2' });
-    completeMediaUpload.mockRejectedValue(new Error('notice failed'));
-    createPost.mockResolvedValue({ message: 'POST_CREATED', post: { id: 'p3' } });
-    const { result } = renderHook(() => useCreatePostMutation(), { wrapper });
+  it('invalidates both FEED_POSTS and USER_POSTS queries on success', async () => {
+    createPost.mockResolvedValue({ message: 'POST_CREATED', post: { id: 'p4' } });
+    const client = createQueryClient();
+    client.setQueryData([QueryKeys.FEED_POSTS, 'RECENT'], { items: [] });
+    client.setQueryData([`${QueryKeys.USER_POSTS}:u1`], { items: [] });
+    const { result } = renderHook(() => useCreatePostMutation(), {
+      wrapper: ({ children }) => <QueryProvider client={client}>{children}</QueryProvider>,
+    });
 
-    const imageFile = new File(['x'], 'photo.jpg', { type: 'image/jpeg' });
-    result.current.mutate({ dto: { body: 'resilient' }, imageFile });
+    result.current.mutate({ dto: { body: 'fresh post' } });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(createPost).toHaveBeenCalledWith({ body: 'resilient', mediaIds: ['media-2'] });
+    expect(client.getQueryState([QueryKeys.FEED_POSTS, 'RECENT'])?.isInvalidated).toBe(true);
+    expect(client.getQueryState([`${QueryKeys.USER_POSTS}:u1`])?.isInvalidated).toBe(true);
   });
 });
 

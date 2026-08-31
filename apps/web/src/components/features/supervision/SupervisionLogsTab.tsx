@@ -10,10 +10,18 @@ export interface SupervisionLogsTabProps {
   logs: ActivityLogView[];
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
+  isLoading?: boolean;
+  hasMore?: boolean;
 }
 
 /** Supervision > Logs tab. Extracted from `screens/supervision-page.tsx`. */
-export function SupervisionLogsTab({ logs, searchQuery, onSearchQueryChange }: Readonly<SupervisionLogsTabProps>) {
+export function SupervisionLogsTab({
+  logs,
+  searchQuery,
+  onSearchQueryChange,
+  isLoading = false,
+  hasMore = false,
+}: Readonly<SupervisionLogsTabProps>) {
   return (
     <div className="mhn-supervision-logs-wrapper">
       <div className="mhn-logs-top-controls">
@@ -46,25 +54,36 @@ export function SupervisionLogsTab({ logs, searchQuery, onSearchQueryChange }: R
             </tr>
           </thead>
           <tbody>
-            {logs.map((log) => (
-              <tr key={log.id}>
-                <td className="mhn-td-date">{log.dateTime}</td>
-                <td className="mhn-td-activity">{log.activity}</td>
-                <td className="mhn-td-initiated">{log.initiatedBy}</td>
-                <td className="mhn-td-action"><Button className="mhn-log-action-link">{log.actionText}</Button></td>
-              </tr>
-            ))}
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, idx) => (
+                <tr key={`skeleton-${idx}`}>
+                  <td><div className="mhn-shimmer-box h-4 w-28 rounded" /></td>
+                  <td><div className="mhn-shimmer-box h-4 w-56 rounded" /></td>
+                  <td><div className="mhn-shimmer-box h-4 w-16 rounded" /></td>
+                  <td><div className="mhn-shimmer-box h-8 w-16 rounded" /></td>
+                </tr>
+              ))
+            ) : (
+              logs.map((log) => (
+                <tr key={log.id}>
+                  <td className="mhn-td-date">{log.dateTime}</td>
+                  <td className="mhn-td-activity">{log.activity}</td>
+                  <td className="mhn-td-initiated">{log.initiatedBy}</td>
+                  <td className="mhn-td-action"><Button className="mhn-log-action-link">{log.actionText}</Button></td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
       <div className="mhn-logs-pagination-footer">
         <span className="mhn-logs-count-info">
-          {logs.length === 0 ? '0 items' : `1 - ${logs.length} of ${logs.length} items`}
+          {isLoading ? 'Loading items...' : logs.length === 0 ? '0 items' : `1 - ${logs.length} of ${logs.length} items`}
         </span>
         <div className="mhn-logs-pagination-buttons">
           <Button className="mhn-page-btn" disabled>Previous</Button>
-          <Button className="mhn-page-btn">Next</Button>
+          <Button className="mhn-page-btn" disabled={!hasMore || isLoading}>Next</Button>
         </div>
       </div>
     </div>

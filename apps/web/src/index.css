@@ -2572,7 +2572,7 @@
 .mhn-modal-toolbar {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   padding-top: 8px;
   padding-bottom: 16px;
 }
@@ -2592,11 +2592,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
+  color: var(--color-primary);
 }
 
 .mhn-modal-icon-btn:hover {
   background: var(--color-secondary);
+  color: var(--color-primary-hover);
 }
 
 .mhn-modal-submit-row {
@@ -9217,7 +9219,7 @@
 }
 
 .mhn-ward-active {
-  background-color: #eaf3ff;
+  background-color: var(--color-auth-selected);
 }
 
 .mhn-ward-avatar {
@@ -9305,6 +9307,8 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-height: calc(100vh - 150px);
+  overflow: auto;
 }
 
 .mhn-supervision-permissions-stack {
@@ -9826,7 +9830,7 @@
   background-color: var(--color-primary-hover);
 }
 
-.mhn-btn-modal-cancel {
+.mhn-form-actions-stack .mhn-btn-modal-cancel {
   width: 100%;
   height: 48px;
   background-color: var(--color-background);
@@ -9842,7 +9846,7 @@
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.mhn-btn-modal-cancel:hover {
+.mhn-form-actions-stack .mhn-btn-modal-cancel:hover {
   border-color: var(--color-border-strong);
   background-color: var(--color-surface-subtle);
 }
@@ -9953,9 +9957,9 @@
    stack`).
    ========================================================================== */
 .mhn-supervision-requests-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
   width: 100%;
 }
 
@@ -11686,17 +11690,33 @@ img.secure {
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
+  margin-top: 24px;
 }
 
+.mhn-delete-modal-actions .mhn-btn-modal-cancel,
 .mhn-btn-modal-cancel {
-  padding: 10px 18px;
+  width: auto;
+  height: 42px;
+  padding: 0 20px;
   border-radius: 8px;
   border: 1px solid var(--color-border-strong);
   background-color: var(--color-background);
   color: var(--color-foreground-muted);
   font-weight: 600;
   font-size: 14px;
+  white-space: nowrap;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.mhn-delete-modal-actions .mhn-btn-modal-cancel:hover:not(:disabled),
+.mhn-btn-modal-cancel:hover:not(:disabled) {
+  background-color: var(--color-surface-subtle);
+  border-color: var(--color-border-strong);
+  color: var(--color-foreground);
 }
 
 .mhn-btn-modal-cancel:disabled {
@@ -11704,18 +11724,29 @@ img.secure {
   opacity: 0.6;
 }
 
+.mhn-delete-modal-actions .mhn-btn-modal-danger,
 .mhn-btn-modal-danger {
-  padding: 10px 20px;
+  width: auto;
+  height: 42px;
+  padding: 0 22px;
   border-radius: 8px;
   border: none;
   background-color: var(--color-destructive);
   color: var(--color-primary-foreground);
   font-weight: 600;
   font-size: 14px;
+  white-space: nowrap;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.mhn-delete-modal-actions .mhn-btn-modal-danger:hover:not(:disabled),
+.mhn-btn-modal-danger:hover:not(:disabled) {
+  opacity: 0.9;
 }
 
 .mhn-btn-modal-danger:disabled {
@@ -15637,6 +15668,14 @@ img.secure {
   background: var(--color-background);
 }
 
+:root.dark .mhn-flow-title {
+  color: var(--color-foreground);
+}
+
+:root.dark .mhn-flow-subtitle {
+  color: var(--color-muted-foreground);
+}
+
 :root.dark .onboarding-title {
   color: var(--color-foreground);
 }
@@ -16565,7 +16604,8 @@ img.secure {
 .mhn-parent-step-container {
   width: 100%;
   max-width: 450px;
-  margin: 0;
+  margin: 0 auto;
+  padding: 32px 0;
   color: var(--color-foreground);
 }
 
@@ -16719,7 +16759,8 @@ img.secure {
   white-space: normal;
 }
 
-.mhn-parent-choice-card.mhn-active {
+.mhn-parent-choice-card.mhn-active,
+.mhn-parent-choice-card:hover {
   border: 1px solid var(--color-auth-action);
   background: var(--color-auth-selected);
 }
@@ -16746,7 +16787,9 @@ img.secure {
 }
 
 .mhn-parent-choice-card.mhn-active .mhn-parent-card-title,
-.mhn-parent-choice-card.mhn-active .mhn-parent-chevron {
+.mhn-parent-choice-card.mhn-active .mhn-parent-chevron,
+.mhn-parent-choice-card:hover .mhn-parent-card-title,
+.mhn-parent-choice-card:hover .mhn-parent-chevron {
   color: var(--color-auth-action-bright);
 }
 
@@ -17130,3 +17173,23 @@ img.secure {
   opacity: 1;
   color: var(--color-auth-action-bright);
 }
+
+.mhn-select-input {
+  height: 48px;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--color-auth-stroke);
+  background-color: var(--color-background);
+  padding-left: 1rem;
+  padding-right: 2rem;
+  font-size: 14px;
+  color: var(--color-foreground);
+  outline: none;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.mhn-select-input:focus {
+  border-color: var(--color-primary);
+}
+
