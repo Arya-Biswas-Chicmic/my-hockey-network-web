@@ -1,3 +1,4 @@
+import { useImpersonationStore } from '@/stores/impersonation-store';
 import { FallbackImage } from '@/components/ui/fallback-image';
 import { ChevronDown, ChevronRight, Users } from 'lucide-react';
 import { SwitchAccountIcon } from '@/components/icons/DropdownIcons';
@@ -6,6 +7,7 @@ export interface FamilyMember {
   id: string;
   name: string;
   avatar: string;
+  canOperate: boolean;
 }
 
 export interface HeaderFamilyMenuProps {
@@ -28,6 +30,8 @@ export function HeaderFamilyMenu({
   onSelectMember,
   onShowMore,
 }: Readonly<HeaderFamilyMenuProps>) {
+  const startImpersonation = useImpersonationStore((state) => state.startImpersonation);
+
   if (!isFamilyLoading && familyMembers.length === 0) return null;
 
   return (
@@ -61,7 +65,13 @@ export function HeaderFamilyMenu({
                 <div
                   key={member.id}
                   className="mhn-family-member-item mhn-family-member-item-clickable"
-                  onClick={() => onSelectMember(member.id)}
+                  onClick={() => {
+                    if (member.canOperate) {
+                      startImpersonation(member.id, member.name);
+                    } else {
+                      onSelectMember(member.id);
+                    }
+                  }}
                 >
                   <div className="mhn-dropdown-item-left mhn-family-member-left">
                     <FallbackImage src={member.avatar} alt={member.name} width={26} height={26} className="mhn-family-member-img" />
@@ -69,9 +79,11 @@ export function HeaderFamilyMenu({
                       {member.name.length > 18 ? `${member.name.trim().split(/\s+/).slice(0, 2).join(' ')}...` : member.name}
                     </span>
                   </div>
-                  <div className="mhn-family-switch-btn" title={`View ${member.name} in Supervision`}>
-                    <SwitchAccountIcon size={24} aria-hidden="true" />
-                  </div>
+                  {member.canOperate && (
+                    <div className="mhn-family-switch-btn" title={`Impersonate ${member.name}`}>
+                      <SwitchAccountIcon size={24} aria-hidden="true" />
+                    </div>
+                  )}
                 </div>
               ))}
               {familyMembers.length > 3 && (

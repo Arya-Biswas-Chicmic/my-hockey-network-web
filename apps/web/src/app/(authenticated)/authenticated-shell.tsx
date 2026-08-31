@@ -1,10 +1,13 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
+import { ImpersonationBanner } from "@/components/common/ImpersonationBanner";
+import { useImpersonationStore } from "@/stores/impersonation-store";
+import { BrandLoader } from "@/components/common/BrandLoader";
 
-import { AppShell } from '@/components/layout/AppShell';
-import { useAppNavigation } from '@/hooks/use-app-navigation';
-import { useShellUiStore } from '@/stores/shell-ui-store';
+import { AppShell } from "@/components/layout/AppShell";
+import { useAppNavigation } from "@/hooks/use-app-navigation";
+import { useShellUiStore } from "@/stores/shell-ui-store";
 
 /**
  * Owns the one `<LeftSidebar>`/`<MobileNavigation>` instance for the whole
@@ -25,13 +28,29 @@ import { useShellUiStore } from '@/stores/shell-ui-store';
  * so `layout.tsx` stays a plain server component and only this leaf is
  * client-rendered.
  */
-export function AuthenticatedShell({ children }: Readonly<{ children: ReactNode }>) {
+export function AuthenticatedShell({
+  children,
+}: Readonly<{ children: ReactNode }>) {
   const { onNavigate, onLogout } = useAppNavigation();
   const requestCreatePost = useShellUiStore((state) => state.requestCreatePost);
+  const isSwitching = useImpersonationStore((state) => state.isSwitching);
+
+  if (isSwitching) {
+    return <BrandLoader fullScreen label="Switching session..." />;
+  }
 
   return (
-    <AppShell onTabChange={onNavigate} onLogout={onLogout} onCreatePostClick={requestCreatePost}>
-      {children}
-    </AppShell>
+    <div className="flex flex-col h-dvh w-screen overflow-hidden">
+      <div className="flex-1 min-h-0 relative">
+        <ImpersonationBanner />
+        <AppShell
+          onTabChange={onNavigate}
+          onLogout={onLogout}
+          onCreatePostClick={requestCreatePost}
+        >
+          {children}
+        </AppShell>
+      </div>
+    </div>
   );
 }

@@ -11,4 +11,5 @@ export enum HttpHeader {
   MHN_CSRF = 'mhn_csrf',
   X_REFRESH_TOKEN = 'X-Refresh-Token',
   X_ACCESS_TOKEN = 'x-access-token',
+  X_ACTING_FOR = 'X-Acting-For',
 }

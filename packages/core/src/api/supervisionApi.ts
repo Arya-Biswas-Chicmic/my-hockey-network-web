@@ -26,6 +26,7 @@ export interface SupervisionChildItem {
   linkedAt?: string;
   avatarUrl?: string | null;
   accessLevel?: string;
+  canOperate?: boolean;
 }
 
 export interface SupervisionControlItem {
