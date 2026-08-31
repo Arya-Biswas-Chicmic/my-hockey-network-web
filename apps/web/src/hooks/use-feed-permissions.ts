@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { getMySupervisionPermissions } from '@my-hockey-network/core';
-import { ERROR_MESSAGES } from '@my-hockey-network/constants';
 import {
   evaluateFeedPermissions,
+  canViewFeed as checkCanViewFeed,
   canCreatePost as checkCanCreatePost,
   canLikePost as checkCanLikePost,
   canComment as checkCanComment,
@@ -12,6 +12,7 @@ import {
   canFollowOthers as checkCanFollowOthers,
   canSendMessages as checkCanSendMessages,
   canCreateGroupChats as checkCanCreateGroupChats,
+  supervisionBlockedMessage,
   type FeedCtaAction,
   type FeedPermissionResult,
 } from '@my-hockey-network/domain';
@@ -40,6 +41,7 @@ export function resolveFeedPermissionCta(
 export interface UseFeedPermissionsResult {
   permissions: FeedPermissionResult;
   supervisionControls: Record<string, boolean | string> | null;
+  canViewFeed: boolean;
   canCreatePost: boolean;
   canLikePost: boolean;
   canComment: boolean;
@@ -61,6 +63,7 @@ export function useFeedPermissions(onNavigate?: (route: string) => void): UseFee
 
   const permissions = useMemo(() => evaluateFeedPermissions(user, supervisionControls), [user, supervisionControls]);
 
+  const canViewFeed = useMemo(() => checkCanViewFeed(user, supervisionControls), [user, supervisionControls]);
   const canCreatePost = useMemo(() => checkCanCreatePost(user, supervisionControls), [user, supervisionControls]);
   const canLikePost = useMemo(() => checkCanLikePost(user, supervisionControls), [user, supervisionControls]);
   const canComment = useMemo(() => checkCanComment(user, supervisionControls), [user, supervisionControls]);
@@ -91,7 +94,9 @@ export function useFeedPermissions(onNavigate?: (route: string) => void): UseFee
     }
 
     if (actionKey && supervisionControls && supervisionControls[actionKey] === false) {
-      showToast(ERROR_MESSAGES.PARENT_DISABLED_FEATURE, 'error');
+      // Same copy the gate and the auth context use, so a blocked action reads
+      // identically however the user happened to trigger it.
+      showToast(supervisionBlockedMessage(actionKey), 'error');
       return false;
     }
 
@@ -103,6 +108,7 @@ export function useFeedPermissions(onNavigate?: (route: string) => void): UseFee
   return {
     permissions,
     supervisionControls,
+    canViewFeed,
     canCreatePost,
     canLikePost,
     canComment,

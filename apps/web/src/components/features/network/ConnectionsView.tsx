@@ -1,4 +1,7 @@
 'use client';
+import { useAuth } from '@/hooks/use-auth';
+import { supervisionBlockedMessage } from '@my-hockey-network/domain';
+import { PermissionControlKey } from '@my-hockey-network/contracts';
 
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
@@ -51,6 +54,8 @@ function toConnectionMember(relationship: RelationshipItem, type: ConnectionMemb
 
 export function ConnectionsView({ onMessageClick, isLoading = false, initialTab = 'following' }: Readonly<ConnectionsViewProps>) {
   const handleProfileClick = useProfileClickHandler();
+  const { checkSupervisionPermission } = useAuth();
+  const canFollow = checkSupervisionPermission(PermissionControlKey.FOLLOW_OTHERS);
   const [activeTab, setActiveTab] = useState<ConnectionMember['type']>(initialTab);
   const [searchQuery, setSearchQuery] = useState('');
   const [followingIds, setFollowingIds] = useState<ReadonlySet<string>>(new Set());
@@ -83,6 +88,10 @@ export function ConnectionsView({ onMessageClick, isLoading = false, initialTab 
     if (member.id.startsWith('demo-')) {
       setFollowingIds((current) => new Set(current).add(member.id));
       showInfoToast(`${member.name} is preview data. The live Follow API was not called.`);
+      return;
+    }
+    if (!canFollow) {
+      showErrorToast(null, supervisionBlockedMessage(PermissionControlKey.FOLLOW_OTHERS));
       return;
     }
     try {
