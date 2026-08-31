@@ -1,21 +1,30 @@
-import { forwardRef, useId } from 'react';
+import { forwardRef, useId } from "react";
 import type {
   InputHTMLAttributes,
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
-} from 'react';
-import Image from 'next/image';
+} from "react";
+import Image from "next/image";
 
-import { sanitizeEmailInput, sanitizeNameInput, normalizeNameBlur } from '@my-hockey-network/validation';
-import { FormField } from '@/components/common/FormField';
-import { LoginChevronDownIcon } from '@/components/icons/LoginIcons';
+import {
+  sanitizeEmailInput,
+  sanitizeNameInput,
+  normalizeNameBlur,
+  sanitizeNumericInput,
+} from "@my-hockey-network/validation";
+import { NUMERIC_INPUT_CONFIG } from "@my-hockey-network/constants";
+import { FormField } from "@/components/common/FormField";
+import { LoginChevronDownIcon } from "@/components/icons/LoginIcons";
 
 export interface EnhancedInputProps extends InputHTMLAttributes<HTMLInputElement> {
   isNameInput?: boolean;
   isEmailInput?: boolean;
   disableAutoSanitize?: boolean;
   /** Receives the normalized value without mutating the browser event. */
-  onValueChange?: (value: string, event: React.SyntheticEvent<HTMLInputElement>) => void;
+  onValueChange?: (
+    value: string,
+    event: React.SyntheticEvent<HTMLInputElement>,
+  ) => void;
 }
 
 export const Input = forwardRef<HTMLInputElement, EnhancedInputProps>(
@@ -35,35 +44,41 @@ export const Input = forwardRef<HTMLInputElement, EnhancedInputProps>(
     },
     ref,
   ) => {
-    const idLower = String(id || '').toLowerCase();
-    const nameLower = String(name || '').toLowerCase();
+    const idLower = String(id || "").toLowerCase();
+    const nameLower = String(name || "").toLowerCase();
 
     const isEmail =
       !disableAutoSanitize &&
       (isEmailInput ||
-        type === 'email' ||
-        idLower.includes('email') ||
-        nameLower.includes('email'));
+        type === "email" ||
+        idLower.includes("email") ||
+        nameLower.includes("email"));
 
     const isName =
       !disableAutoSanitize &&
       !isEmail &&
       (isNameInput ||
-        idLower.includes('name') ||
-        nameLower.includes('name') ||
-        idLower.includes('displayname') ||
-        nameLower.includes('displayname') ||
-        idLower.includes('fullname') ||
-        nameLower.includes('fullname') ||
-        idLower.includes('firstname') ||
-        nameLower.includes('firstname') ||
-        idLower.includes('lastname') ||
-        nameLower.includes('lastname') ||
-        idLower.includes('team') ||
-        nameLower.includes('team'));
+        idLower.includes("name") ||
+        nameLower.includes("name") ||
+        idLower.includes("displayname") ||
+        nameLower.includes("displayname") ||
+        idLower.includes("fullname") ||
+        nameLower.includes("fullname") ||
+        idLower.includes("firstname") ||
+        nameLower.includes("firstname") ||
+        idLower.includes("lastname") ||
+        nameLower.includes("lastname") ||
+        idLower.includes("team") ||
+        nameLower.includes("team"));
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       let nextValue = e.currentTarget.value;
+      if (
+        props.inputMode === NUMERIC_INPUT_CONFIG.INPUT_MODE ||
+        props.pattern === NUMERIC_INPUT_CONFIG.PATTERN
+      ) {
+        nextValue = sanitizeNumericInput(nextValue);
+      }
       if (isEmail) {
         nextValue = sanitizeEmailInput(nextValue);
       } else if (isName) {
@@ -85,7 +100,7 @@ export const Input = forwardRef<HTMLInputElement, EnhancedInputProps>(
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (isEmail && (e.key === ' ' || e.code === 'Space')) {
+      if (isEmail && (e.key === " " || e.code === "Space")) {
         e.preventDefault();
         return;
       }
@@ -106,12 +121,13 @@ export const Input = forwardRef<HTMLInputElement, EnhancedInputProps>(
     );
   },
 );
-Input.displayName = 'Input';
+Input.displayName = "Input";
 
-export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(
-  (props, ref) => <select ref={ref} {...props} />,
-);
-Select.displayName = 'Select';
+export const Select = forwardRef<
+  HTMLSelectElement,
+  SelectHTMLAttributes<HTMLSelectElement>
+>((props, ref) => <select ref={ref} {...props} />);
+Select.displayName = "Select";
 
 export interface DropdownOption {
   value: string;
@@ -130,47 +146,59 @@ export interface DropdownProps {
   className?: string;
   id?: string;
   name?: string;
-  variant?: 'default' | 'compact-centered';
+  variant?: "default" | "compact-centered";
 }
 
 export function Dropdown({
   label,
-  placeholder = 'Select',
-  value = '',
+  placeholder = "Select",
+  value = "",
   options,
   onChange,
   disabled = false,
   error,
   required = false,
-  className = '',
+  className = "",
   id,
   name,
-  variant = 'default',
-}: DropdownProps) {
+  variant = "default",
+}: Readonly<DropdownProps>) {
   const generatedId = useId();
   const selectId = id || generatedId;
   const normalizedOptions = options.map((option) =>
-    typeof option === 'string' ? { value: option, label: option } : option,
+    typeof option === "string" ? { value: option, label: option } : option,
   );
-  const selectedLabel = normalizedOptions.find((option) => option.value === value)?.label || placeholder;
-  const isCompactCentered = variant === 'compact-centered';
+  const selectedLabel =
+    normalizedOptions.find((option) => option.value === value)?.label ||
+    placeholder;
+  const isCompactCentered = variant === "compact-centered";
 
   return (
-    <FormField label={label} required={required} error={error} className={className} htmlFor={selectId}>
-      <div className={`mhn-dropdown-wrapper ${isCompactCentered ? 'mhn-dropdown-wrapper--compact-centered' : ''}`}>
+    <FormField
+      label={label}
+      required={required}
+      error={error}
+      className={className}
+      htmlFor={selectId}
+    >
+      <div
+        className={`mhn-dropdown-wrapper ${isCompactCentered ? "mhn-dropdown-wrapper--compact-centered" : ""}`}
+      >
         <Select
           id={selectId}
           name={name}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           disabled={disabled}
-          className={`mhn-dropdown-select ${isCompactCentered ? 'mhn-dropdown-select--compact-centered' : ''} ${error ? 'mhn-dropdown-error' : ''} ${disabled ? 'mhn-dropdown-disabled' : ''}`}
+          className={`mhn-dropdown-select ${isCompactCentered ? "mhn-dropdown-select--compact-centered" : ""} ${error ? "mhn-dropdown-error" : ""} ${disabled ? "mhn-dropdown-disabled" : ""}`}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${selectId}-error` : undefined}
         >
           {placeholder && <option value="">{placeholder}</option>}
           {normalizedOptions.map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
           ))}
         </Select>
         {isCompactCentered ? (
@@ -179,17 +207,25 @@ export function Dropdown({
             <LoginChevronDownIcon size={8} />
           </span>
         ) : (
-          <Image src="/arrowBottom.webp" alt="" aria-hidden="true" width={16} height={16} className="mhn-dropdown-arrow-icon" />
+          <Image
+            src="/arrowBottom.webp"
+            alt=""
+            aria-hidden="true"
+            width={16}
+            height={16}
+            className="mhn-dropdown-arrow-icon"
+          />
         )}
       </div>
     </FormField>
   );
 }
 
-export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
-  (props, ref) => <textarea ref={ref} {...props} />,
-);
-Textarea.displayName = 'Textarea';
+export const Textarea = forwardRef<
+  HTMLTextAreaElement,
+  TextareaHTMLAttributes<HTMLTextAreaElement>
+>((props, ref) => <textarea ref={ref} {...props} />);
+Textarea.displayName = "Textarea";
 
-export { FormField } from '@/components/common/FormField';
-export type { FormFieldProps } from '@/components/common/FormField';
+export { FormField } from "@/components/common/FormField";
+export type { FormFieldProps } from "@/components/common/FormField";

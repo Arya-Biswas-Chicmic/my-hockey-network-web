@@ -4,6 +4,28 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Refactored ProfileChildApprovalsTab to extract inline display name and raw avatar fallback lookups into clean, reusable resolveDisplayName and resolveRawAvatar helper functions.
+- Added explicit error logging to the catch block in the onDeclineByCode callback on the Profile page.
+- Extracted the inline capitalization word regex /w/g to a shared CAPITALIZE_WORDS property inside REGEX_PATTERNS in packages/constants/src/index.ts.
+- Extracted the inline inputMode and pattern strings for numeric validation checks to a shared NUMERIC_INPUT_CONFIG constant object in packages/constants/src/index.ts.
+- Extracted the inline numeric input cleaning logic to a reusable sanitizeNumericInput utility function inside packages/validation/src/profileValidation.ts and wired it into FormControls.
+- Integrated the weight value into the handleSaveProfile submission DTO object so it is correctly sent to the API.
+- Restricted the weight input field in the edit profile modal to only accept numeric digit inputs by configuring it with text type, numeric input mode, and digit input pattern matching.
+- Rearranged the profile hero card subtitle format to display Jersey Number first, followed by Position and then Team Name (e.g. "#83 • D • @Team").
+- Enhanced FormControls Input component to restrict input value to only digits when numeric keyboard inputs (inputMode="numeric" or pattern="[0-9]*") are active.
+- Enabled the weight field as an editable form text input in the edit profile modal, updating the respective API DTO and validation schema properties to support updating weight.
+- Limited the Jersey Number form inputs (in edit profile modal, athletic section, and intro section) to exactly 2 digits by switching the input type to text, using a numeric input mode, and applying a maxLength of 2.
+- Normalized position abbreviation lookups inside `useProfileViewModel` to be case-insensitive, ensuring that string keys such as "CENTER" reliably map to "C".
+- Tailored `ProfileHeroCard` layout to differentiate players from parents/guardians: players show a 6-item grid (AGE, DOB, HEIGHT, WEIGHT, POSITION, SHOOTS) while non-players show a 2-column grid containing only AGE and DOB.
+- Integrated the user's bio and city/location directly in the profile hero identity section for both players and parents/guardians.
+- Refactored profile submission in `useEditProfileForm` hook to use TanStack Query's `useMutation`, cleaning up manual promise handling and try/catch logic.
+- Fixed a modal layout flicker bug during Edit Profile saves: introduced an `isSuccess` guard in `useEditProfileForm` to prevent the form-sync `useEffect` from instantly clearing the success message when the parent `user` state updates.
+- Converted the previously read-only, disabled Height field in the Edit Profile modal to a dropdown `FormSelect` using static height choices from 4'0" to 7'0" (covering teen to adult ranges).
+- Updated backend API payloads, form schemas, and contracts (`AuthMeResponse['profile']`, `UpdateProfileDTO`, and `editProfileFormSchema`) to fully support editing and saving of player height.
+- Configured automated invalidation of the `USER_PROFILE` query cache on all profile-saving actions to ensure live details update immediately across the UI.
+- Removed mock career data from the Profile "Career" tab, replacing the `demoCareerEntries` fallback with a direct map over live `careerEntries` (displaying an empty state when none exist).
+- Re-wired the Profile "Child Requests" tab (for parent accounts) to use the exact same `useSupervisionRequests` API flow and shared modal states (`handleApproveCodeSubmit`, `handleDeclineCodeSubmit`) as the Supervision section's "Requested" tab.
+- Removed the standalone `use-child-approvals.ts` hook and redundant `childApprovalModalConfig` state entirely, opting for a clean reuse of the existing profile-level approval modal instead.
 - Extended `FOLLOW_OTHERS` enforcement to every follow surface. Only the post card's follow button
   was gated; five others were not — `use-who-to-follow.ts` (behind the Home "Who to follow" widget),
   `useFollowSuggestions`' local fallback path, `network/SuggestedUserCard`, `network/ConnectionsView`,
@@ -150,7 +172,6 @@ Last reviewed: 2026-08-31
   commenting previously got a fully working input that only rejected them **on submit**, after they
   had typed the whole comment — it now shows the reason up front via `blockedAs="notice"`.
   Covered by 9 new tests. The notice styling is token-driven, so it follows the theme.
-
 - Migrated `useSupervisionLogs` from a sequential `useEffect`-based fetch to a single `useQuery` call, giving the hook automatic caching, deduplication, and TanStack Query loading states.
 - Removed the redundant `getSupervisionControls` fetch from `useSupervisionLogs`; controls are already fetched by `use-supervision-permissions.ts` on ward selection, so the duplicate call and its permission-setter fan-out were deleted entirely.
 - Gated the Requests tab skeleton loader behind a real ward-UUID check so the spinner only appears when switching between players, not on the initial tab visit without a selection.
@@ -203,11 +224,16 @@ permissions.message` guard plus an identical 8-line CTA dispatch — 9 of the 10
   that is never used inside the component and never passed by `OnboardingModal` — dead since the file
   was created. Left alone pending a decision on whether that step should have a back affordance at
   all, rather than silently deleting a prop or wiring a new user-facing control.
+- Added a "Child Requests" tab to the Profile page for PARENT users, beside the Career tab. The tab uses `useChildApprovals` (backed by `useQuery`) to fetch all pending child approval requests via `getApprovals({ status: 'PENDING' })` and renders them in the same `SupervisionRequestRow` card grid as the Supervision Requested tab. Parents can Approve or Decline each request inline.
 - Fixed Team Detail's tab bar (Posts/Members/Events/Media/About) leaving dead space after "About"
   instead of spanning the card's full width (feedback 2026-08-31: "make top bar filled entire width,
   check marked area"). Each tab was `shrink-0` with a `gap-8`, clustering left; switched to `flex-1`
   per tab (matching Figma's own `flex-[193_0_0]` equal-width tab list) so the row fills the card
   edge-to-edge with no side padding, same as the design.
+- Migrated `useSupervisionLogs` from a sequential `useEffect`-based fetch to a single `useQuery` call, giving the hook automatic caching, deduplication, and TanStack Query loading states.
+- Removed the redundant `getSupervisionControls` fetch from `useSupervisionLogs`; controls are already fetched by `use-supervision-permissions.ts` on ward selection, so the duplicate call and its permission-setter fan-out were deleted entirely.
+- Gated the Requests tab skeleton loader behind a real ward-UUID check so the spinner only appears when switching between players, not on the initial tab visit without a selection.
+- Refactored permission updating state to track `updatingControlKeys` Record rather than a single string, enabling other switches and dropdowns to remain active and clickable in parallel during toggling.
 
 - Fixed Event Detail rendering wider (less left/right gutter) than Team/Group Detail at the same
   window size (feedback 2026-08-31: "make this view port consistent similar to team tab by making
