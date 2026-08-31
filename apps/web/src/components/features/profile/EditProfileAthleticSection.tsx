@@ -32,7 +32,7 @@ export function EditProfileAthleticSection() {
           containerClassName=""
         />
 
-        <FormInput<EditProfileFormValues, 'jerseyNumber'> name="jerseyNumber" label="Jersey Number (#)" type="number" min="0" max="99" placeholder="e.g. 97" inputClassName="mhn-edit-profile-input" containerClassName="" errorClassName="mhn-edit-profile-field-error" disableAutoSanitize />
+        <FormInput<EditProfileFormValues, 'jerseyNumber'> name="jerseyNumber" label="Jersey Number (#)" type="text" inputMode="numeric" pattern="[0-9]*" maxLength={2} showCharacterCount={false} placeholder="e.g. 97" inputClassName="mhn-edit-profile-input" containerClassName="" errorClassName="mhn-edit-profile-field-error" disableAutoSanitize />
       </div>
     </div>
   );

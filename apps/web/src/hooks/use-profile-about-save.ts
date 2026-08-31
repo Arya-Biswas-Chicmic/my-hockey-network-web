@@ -104,6 +104,7 @@ export function useProfileAboutSave({ setUserProfile, loadAuthMe }: UseProfileAb
       jerseyNumber: data?.jerseyNumber !== '' && data?.jerseyNumber !== null && data?.jerseyNumber !== undefined ? Number(data?.jerseyNumber) : undefined,
       genderCategory: data?.genderCategory || undefined,
       height: data?.height || undefined,
+      weight: data?.weight || undefined,
       avatarKey: avatarKeyToSend,
       avatarUrl: avatarUrlToSend,
     };

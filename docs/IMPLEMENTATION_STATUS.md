@@ -4,6 +4,12 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Integrated the weight value into the handleSaveProfile submission DTO object so it is correctly sent to the API.
+- Restricted the weight input field in the edit profile modal to only accept numeric digit inputs by configuring it with text type, numeric input mode, and digit input pattern matching.
+- Rearranged the profile hero card subtitle format to display Jersey Number first, followed by Position and then Team Name (e.g. "#83 • D • @Team").
+- Enhanced FormControls Input component to restrict input value to only digits when numeric keyboard inputs (inputMode="numeric" or pattern="[0-9]*") are active.
+- Enabled the weight field as an editable form text input in the edit profile modal, updating the respective API DTO and validation schema properties to support updating weight.
+- Limited the Jersey Number form inputs (in edit profile modal, athletic section, and intro section) to exactly 2 digits by switching the input type to text, using a numeric input mode, and applying a maxLength of 2.
 - Normalized position abbreviation lookups inside `useProfileViewModel` to be case-insensitive, ensuring that string keys such as "CENTER" reliably map to "C".
 - Tailored `ProfileHeroCard` layout to differentiate players from parents/guardians: players show a 6-item grid (AGE, DOB, HEIGHT, WEIGHT, POSITION, SHOOTS) while non-players show a 2-column grid containing only AGE and DOB.
 - Integrated the user's bio and city/location directly in the profile hero identity section for both players and parents/guardians.

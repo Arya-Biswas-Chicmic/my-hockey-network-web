@@ -105,6 +105,7 @@ export interface AuthMeResponse {
     jerseyNumber?: number | string | null;
     genderCategory?: string;
     height?: string | null;
+    weight?: string | null;
     preferredLanguage?: string;
     defaultVisibility?: string;
     teamName?: string | null;

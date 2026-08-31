@@ -71,6 +71,7 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
         jerseyNumber: profRecord.jerseyNumber !== null && profRecord.jerseyNumber !== undefined ? String(profRecord.jerseyNumber) : '',
         genderCategory: String(profRecord.genderCategory || profRecord.gender || ''),
         height: String(profRecord.height || ''),
+        weight: String(profRecord.weight || ''),
         preferredLanguage: String(profRecord.preferredLanguage || 'en'),
         defaultVisibility: String(profRecord.defaultVisibility || 'CONNECTIONS'),
         avatarUrl: resolveMediaUrl(profRecord.avatarUrl as string | undefined, '/userPlaceholder.webp'),

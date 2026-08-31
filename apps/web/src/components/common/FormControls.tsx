@@ -64,6 +64,9 @@ export const Input = forwardRef<HTMLInputElement, EnhancedInputProps>(
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       let nextValue = e.currentTarget.value;
+      if (props.inputMode === 'numeric' || props.pattern === '[0-9]*') {
+        nextValue = nextValue.replace(/\D/g, '');
+      }
       if (isEmail) {
         nextValue = sanitizeEmailInput(nextValue);
       } else if (isName) {

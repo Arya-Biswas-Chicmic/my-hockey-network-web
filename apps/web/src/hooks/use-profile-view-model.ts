@@ -128,8 +128,10 @@ export function useProfileViewModel(
       };
       const normalizedKey = livePosition.toLowerCase();
       const position = livePosition ? positionAbbreviations[normalizedKey] || livePosition : liveRole;
-      const jersey = liveJersey ? ` • #${liveJersey}` : '';
-      return `${position}${jersey}${teamString}`;
+      if (liveJersey) {
+        return `#${liveJersey} • ${position}${teamString}`;
+      }
+      return `${position}${teamString}`;
     }
     return `${liveRole}${teamString}`;
   })();
