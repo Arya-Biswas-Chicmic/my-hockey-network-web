@@ -4,12 +4,35 @@ import { useCallback, useEffect, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 import { resolveMediaUrl } from '@/utils/mediaUtils';
-import type { AuthMeResponse } from '@my-hockey-network/contracts';
+import type { AuthMeResponse, HeightValue, WeightValue } from '@my-hockey-network/contracts';
 import { QueryKeys } from '@my-hockey-network/contracts';
 import { editProfileFormSchema, type EditProfileFormValues } from '@my-hockey-network/validation';
 import { globalQueryClient, invalidateQueryPrefix } from '@/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
+import { REGEX_PATTERNS } from '@my-hockey-network/constants';
+
+function parseInitialHeight(height: string | HeightValue | null | undefined): string {
+  if (!height) return '';
+  let hStr = typeof height === 'object' ? height.formatted || '' : String(height);
+  hStr = hStr.trim();
+  if (hStr && !hStr.includes("' ")) {
+    hStr = hStr.replace("'", "' ");
+  }
+  return hStr;
+}
+
+function parseInitialWeight(weight: string | WeightValue | null | undefined): string {
+  if (!weight) return '';
+  if (typeof weight === 'object') {
+    // Prefer the raw lb number directly; fall back to stripping non-digits from the formatted string.
+    const fallback = weight.formatted
+      ? weight.formatted.replace(new RegExp(REGEX_PATTERNS.NON_DIGITS.source, 'g'), '')
+      : '';
+    return weight.lb !== undefined ? String(weight.lb) : fallback;
+  }
+  return String(weight).replace(new RegExp(REGEX_PATTERNS.NON_DIGITS.source, 'g'), '');
+}
 
 export interface EditProfileFormData extends EditProfileFormValues {
   avatarKey?: string;
@@ -70,8 +93,15 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
         shootsCatches: String(profRecord.shootsCatches || profRecord.shoots || ''),
         jerseyNumber: profRecord.jerseyNumber !== null && profRecord.jerseyNumber !== undefined ? String(profRecord.jerseyNumber) : '',
         genderCategory: String(profRecord.genderCategory || profRecord.gender || ''),
-        height: String(profRecord.height || ''),
-        weight: String(profRecord.weight || ''),
+        height: parseInitialHeight(profRecord.height as string | HeightValue | null | undefined),
+        weight: parseInitialWeight(profRecord.weight as string | WeightValue | null | undefined),
+        // Granular numeric height/weight fields — sourced from the HeightValue/WeightValue
+        // objects returned by the API and sent back as-is on save.
+        heightCm: (profRecord.height as HeightValue | null | undefined)?.cm ?? undefined,
+        heightFeet: (profRecord.height as HeightValue | null | undefined)?.feet ?? undefined,
+        heightInches: (profRecord.height as HeightValue | null | undefined)?.inches ?? undefined,
+        weightKg: (profRecord.weight as WeightValue | null | undefined)?.kg ?? undefined,
+        weightLb: (profRecord.weight as WeightValue | null | undefined)?.lb ?? undefined,
         preferredLanguage: String(profRecord.preferredLanguage || 'en'),
         defaultVisibility: String(profRecord.defaultVisibility || 'CONNECTIONS'),
         avatarUrl: resolveMediaUrl(profRecord.avatarUrl as string | undefined, '/userPlaceholder.webp'),
@@ -129,15 +159,17 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
   });
 
   // Sync form data whenever modal opens or user object updates, unless we just saved successfully
+  // Prefer `profileData` (which is `activeProfile` from the page and contains the full API shape
+  // including structured height/weight objects) over the bare auth-context `user?.profile`.
   useEffect(() => {
     if (isOpen && !isSuccess) {
-      const init = extractProfileValues();
+      const init = extractProfileValues(profileData ?? user ?? null);
       form.reset(init);
       setSubmissionError(null);
       setSaveSuccessMsg(null);
       setShowDiscardConfirm(false);
     }
-  }, [form, isOpen, user, extractProfileValues, isSuccess]);
+  }, [form, isOpen, user, profileData, extractProfileValues, isSuccess]);
 
   // Reset success state when modal closes
   useEffect(() => {

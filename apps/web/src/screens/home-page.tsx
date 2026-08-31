@@ -123,6 +123,7 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
         invalidateQueryPrefix(queryClient, QueryKeys.USER_POSTS),
       ]);
 
+      setSearchQuery('');
       await refreshFeed();
 
       const isPendingApproval = Boolean(
