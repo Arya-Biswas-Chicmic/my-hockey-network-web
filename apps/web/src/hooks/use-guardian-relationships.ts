@@ -22,7 +22,7 @@ interface GuardianQueryOptions {
 export function usePendingGuardianInvites(options?: GuardianQueryOptions) {
   return useQuery<GuardianRelationshipRequest[]>({
     queryKey: guardianInviteQueryKey,
-    queryFn: async () => (await getPendingGuardianInvites()).items ?? [],
+    queryFn: async () => (await getPendingGuardianInvites()).invites ?? [],
     enabled: options?.enabled ?? true,
     staleTime: 60_000,
   });

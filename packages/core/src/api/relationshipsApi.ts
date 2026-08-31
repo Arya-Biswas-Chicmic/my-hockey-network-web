@@ -216,8 +216,8 @@ export async function sendGuardianInvite(childEmail: string, clientType: 'web' |
 /**
  * Get Pending Guardian Invites (for Child)
  */
-export async function getPendingGuardianInvites(clientType: 'web' | 'mobile' = 'web'): Promise<{ items: GuardianRelationshipRequest[] }> {
-  return apiFetch<{ items: GuardianRelationshipRequest[] }>(API_ENDPOINTS.RELATIONSHIPS.GUARDIAN_INVITES_PENDING, { method: 'GET' }, clientType);
+export async function getPendingGuardianInvites(clientType: 'web' | 'mobile' = 'web'): Promise<{ invites: GuardianRelationshipRequest[] }> {
+  return apiFetch<{ invites: GuardianRelationshipRequest[] }>(API_ENDPOINTS.RELATIONSHIPS.GUARDIAN_INVITES_PENDING, { method: 'GET' }, clientType);
 }
 
 /**

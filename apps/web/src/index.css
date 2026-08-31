@@ -9156,7 +9156,7 @@
 }
 
 .mhn-ward-active {
-  background-color: #eaf3ff;
+  background-color: var(--color-auth-selected);
 }
 
 .mhn-ward-avatar {
@@ -15551,6 +15551,14 @@ img.secure {
 :root.dark :is(.onboarding-screen, .onboarding-modal) {
   background-color: var(--color-background);
   background: var(--color-background);
+}
+
+:root.dark .mhn-flow-title {
+  color: var(--color-foreground);
+}
+
+:root.dark .mhn-flow-subtitle {
+  color: var(--color-muted-foreground);
 }
 
 :root.dark .onboarding-title {
