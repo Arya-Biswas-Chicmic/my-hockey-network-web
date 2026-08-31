@@ -4,6 +4,7 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Cleared all impersonation session storage values and reset the impersonation store state upon user logout.
 - Implemented a global transition loading state using `<BrandLoader>` to display while starting or stopping an impersonation session, eliminating any millisecond-level flicker before the web page reloads.
 - Updated impersonation store to force a full browser page reload and redirect to the dashboard page ("/") upon starting or stopping an impersonation session.
 - Unified the state configuration logic of `handleOpenApproveModal` and `handleOpenDeclineModal` on the profile page into a single, reusable `handleOpenGuardianApprovalModal` function.
