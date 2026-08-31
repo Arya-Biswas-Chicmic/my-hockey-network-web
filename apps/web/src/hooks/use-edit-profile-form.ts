@@ -10,6 +10,7 @@ import { editProfileFormSchema, type EditProfileFormValues } from '@my-hockey-ne
 import { globalQueryClient, invalidateQueryPrefix } from '@/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
+import { REGEX_PATTERNS } from '@my-hockey-network/constants';
 
 function parseInitialHeight(height: string | HeightValue | null | undefined): string {
   if (!height) return '';
@@ -24,9 +25,13 @@ function parseInitialHeight(height: string | HeightValue | null | undefined): st
 function parseInitialWeight(weight: string | WeightValue | null | undefined): string {
   if (!weight) return '';
   if (typeof weight === 'object') {
-    return weight.lb !== undefined ? String(weight.lb) : (weight.formatted ? weight.formatted.replace(/\D/g, '') : '');
+    // Prefer the raw lb number directly; fall back to stripping non-digits from the formatted string.
+    const fallback = weight.formatted
+      ? weight.formatted.replace(new RegExp(REGEX_PATTERNS.NON_DIGITS.source, 'g'), '')
+      : '';
+    return weight.lb !== undefined ? String(weight.lb) : fallback;
   }
-  return String(weight).replace(/\D/g, '');
+  return String(weight).replace(new RegExp(REGEX_PATTERNS.NON_DIGITS.source, 'g'), '');
 }
 
 export interface EditProfileFormData extends EditProfileFormValues {

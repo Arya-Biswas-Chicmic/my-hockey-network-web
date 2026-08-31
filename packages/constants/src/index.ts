@@ -110,6 +110,8 @@ export const REGEX_PATTERNS = {
   // Letters, spaces, hyphens, and apostrophes — e.g. "Mary-Jane O'Brien". ASCII only.
   NAME: /^[A-Za-z]+(?:[ '-][A-Za-z]+)*$/,
   CAPITALIZE_WORDS: /\b\w/g,
+  /** Matches any character that is NOT a digit (0-9). Use with `replace` to strip non-numeric chars. */
+  NON_DIGITS: /\D/g,
 } as const;
 
 export const NUMERIC_INPUT_CONFIG = {
