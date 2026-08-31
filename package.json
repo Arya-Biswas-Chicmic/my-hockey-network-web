@@ -45,7 +45,8 @@
     "preverify": "pnpm check:obscure",
     "verify": "pnpm package-manager:check && pnpm docs:check && pnpm security:check && pnpm components:check && pnpm typecheck && pnpm lint:check && pnpm test:coverage && pnpm build:web",
     "preprepare": "pnpm check:obscure",
-    "prepare": "husky",
+    "prepare": "husky || true",
+
     "dev:web": "pnpm --filter @my-hockey-network/web dev",
     "build:web": "pnpm --filter @my-hockey-network/web build",
     "start:web": "pnpm --filter @my-hockey-network/web start",
