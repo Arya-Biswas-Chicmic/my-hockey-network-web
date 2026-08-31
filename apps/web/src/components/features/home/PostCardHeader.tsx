@@ -1,7 +1,9 @@
 import { Button } from '@/components/common/Button';
+import { supervisionBlockedMessage } from '@my-hockey-network/domain';
+import { PermissionControlKey } from '@my-hockey-network/contracts';
 import { Spinner } from '@/components/common/Spinner';
 import { FallbackImage } from '@/components/ui/fallback-image';
-import { LockKeyhole, MoreHorizontal, Pencil, Trash2, EyeOff, Flag } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2, EyeOff, Flag } from 'lucide-react';
 
 export interface PostCardHeaderProps {
   authorName: string;
@@ -72,14 +74,9 @@ export function PostCardHeader({
             onClick={onToggleFollow}
             disabled={isFollowingLoading}
             className={`mhn-btn-follow ${isFollowing ? 'mhn-btn-following' : ''}`}
-            title={!canFollow ? 'Parent did not give permission' : undefined}
+            title={!canFollow ? supervisionBlockedMessage(PermissionControlKey.FOLLOW_OTHERS) : undefined}
           >
-            {!canFollow ? (
-              <span className="mhn-follow-label">
-                <LockKeyhole size={12} aria-hidden={true} />
-                Follow
-              </span>
-            ) : isFollowingLoading ? (
+            {isFollowingLoading ? (
               <Spinner size="sm" />
             ) : isFollowing ? (
               'Following'

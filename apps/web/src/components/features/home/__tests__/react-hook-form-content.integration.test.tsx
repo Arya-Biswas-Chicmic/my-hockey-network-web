@@ -23,6 +23,9 @@ vi.mock('../../../../hooks/use-auth', () => ({
     user: {
       profile: { displayName: 'Test Player', avatarUrl: null, type: 'PLAYER' },
     },
+    // The comment composer is wrapped in `PermissionGate`, which reads this.
+    checkSupervisionPermission: () => true,
+    showToast: vi.fn(),
   }),
 }));
 

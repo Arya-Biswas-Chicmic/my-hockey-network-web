@@ -102,7 +102,11 @@ export function ProfileIntroSection({
         <FormInput<ProfileIntroFormValues, 'jerseyNumber'>
           name="jerseyNumber"
           label="Jersey Number"
-          type="number"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={2}
+          showCharacterCount={false}
           placeholder="e.g. 97"
           containerClassName="mhn-about-field-group"
           inputClassName="mhn-about-input-box"

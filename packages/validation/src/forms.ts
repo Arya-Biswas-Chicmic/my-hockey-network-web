@@ -58,6 +58,8 @@ export const editProfileFormSchema = z.object({
   shootsCatches: z.string(),
   jerseyNumber: z.string(),
   genderCategory: z.string(),
+  height: z.string().optional(),
+  weight: z.string().optional(),
   preferredLanguage: z.string(),
   defaultVisibility: z.string(),
   avatarUrl: z.string(),

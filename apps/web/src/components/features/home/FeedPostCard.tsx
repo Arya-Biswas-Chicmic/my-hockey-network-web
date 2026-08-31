@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PermissionControlKey } from '@my-hockey-network/contracts';
 import { useAuth } from '@/hooks/use-auth';
 import { useFeedPermissions } from '@/hooks/use-feed-permissions';
 import { useFeedPostCard } from '@/hooks/use-feed-post-card';
@@ -83,10 +84,10 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
   const { checkSupervisionPermission, assertSupervisionPermission } = useAuth();
   const handleProfileClick = useProfileClickHandler();
   const [isNotInterested, setIsNotInterested] = useState(false);
-  const canReact = checkSupervisionPermission('react_to_posts');
-  const canComment = checkSupervisionPermission('comment_on_posts');
-  const canShare = checkSupervisionPermission('share_posts');
-  const canFollow = checkSupervisionPermission('follow_others');
+  const canReact = checkSupervisionPermission(PermissionControlKey.REACT_TO_POSTS);
+  const canComment = checkSupervisionPermission(PermissionControlKey.COMMENT_ON_POSTS);
+  const canShare = checkSupervisionPermission(PermissionControlKey.SHARE_POSTS);
+  const canFollow = checkSupervisionPermission(PermissionControlKey.FOLLOW_OTHERS);
 
   const { requirePermission } = useFeedPermissions(onNavigate);
 
@@ -134,7 +135,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         canFollow={canFollow}
         isFollowing={card.isFollowing}
         isFollowingLoading={card.isFollowingLoading}
-        onToggleFollow={() => assertSupervisionPermission('follow_others', card.toggleFollow)}
+        onToggleFollow={() => assertSupervisionPermission(PermissionControlKey.FOLLOW_OTHERS, card.toggleFollow)}
         onAuthorClick={() => handleProfileClick({ id: authorId || '', name: authorName, avatar: authorAvatar, roleTag: authorRole }, isSelf)}
         isMenuOpen={card.isMenuOpen}
         onToggleMenu={() => card.setIsMenuOpen((prev) => !prev)}
@@ -162,10 +163,10 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         isLiked={card.isLiked}
         likes={card.likes}
         isLiking={card.isLiking}
-        onLike={() => assertSupervisionPermission('react_to_posts', card.handleLike)}
+        onLike={() => assertSupervisionPermission(PermissionControlKey.REACT_TO_POSTS, card.handleLike)}
         showComments={card.showComments}
         onToggleComments={() =>
-          assertSupervisionPermission('comment_on_posts', () => {
+          assertSupervisionPermission(PermissionControlKey.COMMENT_ON_POSTS, () => {
             if (demoMode) {
               showInfoToast('Comments will be available when this preview is connected to the API.');
               return;
@@ -181,7 +182,7 @@ export const FeedPostCard: React.FC<FeedPostProps> = ({
         reposts={card.reposts}
         isSharing={card.isSharing}
         isRepostMenuOpen={card.isRepostMenuOpen}
-        onRepostButtonClick={() => assertSupervisionPermission('share_posts', card.handleRepostButtonClick)}
+        onRepostButtonClick={() => assertSupervisionPermission(PermissionControlKey.SHARE_POSTS, card.handleRepostButtonClick)}
         onCloseRepostMenu={card.closeRepostMenu}
         onChooseRepost={card.chooseRepost}
         onChooseQuote={card.chooseQuote}

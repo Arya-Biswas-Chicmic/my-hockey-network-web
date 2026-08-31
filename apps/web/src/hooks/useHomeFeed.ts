@@ -6,6 +6,7 @@ import { getHomeFeedDemoPosts } from '@/demo-data/home';
 import { useInfiniteListQuery } from '@/query/use-infinite-query';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useAuth } from '@/hooks/use-auth';
+import { canViewFeed } from '@my-hockey-network/domain';
 import { getApiErrorStatus, extractErrorMessage } from '@/utils/toast';
 import { HomeFeedTab } from '@/types/home.types';
 import { SEARCH_DEBOUNCE_MS } from '@/constants/home.constants';
@@ -24,7 +25,7 @@ export interface FeedErrorState {
  * same way `ProfilePostsTab` already does for `getUserPosts`).
  */
 export function useHomeFeed() {
-  const { user, loadAuthMe } = useAuth();
+  const { user, loadAuthMe, supervisionPermissions } = useAuth();
   const [activeFeedTab, setActiveFeedTab] = useState<HomeFeedTab>(HomeFeedTab.FOR_YOU);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, SEARCH_DEBOUNCE_MS);
@@ -57,9 +58,18 @@ export function useHomeFeed() {
     [profileId, debouncedSearchQuery, sortBy],
   );
 
+  // A guardian who disables VIEW_FEED expects the child not to read the feed,
+  // so the request is never made rather than fetched and then hidden — post
+  // content should not reach a browser that is not allowed to show it.
+  const mayViewFeed = useMemo(
+    () => canViewFeed(user, (supervisionPermissions as Record<string, boolean | string> | null) ?? null),
+    [user, supervisionPermissions],
+  );
+  const shouldFetchFeed = isAuthResolved && mayViewFeed;
+
   const feedQuery = useInfiniteListQuery<FeedPostProps>(
-    isAuthResolved ? queryKey : null,
-    isAuthResolved
+    shouldFetchFeed ? queryKey : null,
+    shouldFetchFeed
       ? (cursor) =>
           FeedService.fetchFeedPage({
             profileId,

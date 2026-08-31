@@ -6,6 +6,17 @@ Last reviewed: 2026-08-31
 
 - Implemented a global transition loading state using `<BrandLoader>` to display while starting or stopping an impersonation session, eliminating any millisecond-level flicker before the web page reloads.
 - Updated impersonation store to force a full browser page reload and redirect to the dashboard page ("/") upon starting or stopping an impersonation session.
+- Refactored ProfileChildApprovalsTab to extract inline display name and raw avatar fallback lookups into clean, reusable resolveDisplayName and resolveRawAvatar helper functions.
+- Added explicit error logging to the catch block in the onDeclineByCode callback on the Profile page.
+- Extracted the inline capitalization word regex /w/g to a shared CAPITALIZE_WORDS property inside REGEX_PATTERNS in packages/constants/src/index.ts.
+- Extracted the inline inputMode and pattern strings for numeric validation checks to a shared NUMERIC_INPUT_CONFIG constant object in packages/constants/src/index.ts.
+- Extracted the inline numeric input cleaning logic to a reusable sanitizeNumericInput utility function inside packages/validation/src/profileValidation.ts and wired it into FormControls.
+- Integrated the weight value into the handleSaveProfile submission DTO object so it is correctly sent to the API.
+- Restricted the weight input field in the edit profile modal to only accept numeric digit inputs by configuring it with text type, numeric input mode, and digit input pattern matching.
+- Rearranged the profile hero card subtitle format to display Jersey Number first, followed by Position and then Team Name (e.g. "#83 • D • @Team").
+- Enhanced FormControls Input component to restrict input value to only digits when numeric keyboard inputs (inputMode="numeric" or pattern="[0-9]*") are active.
+- Enabled the weight field as an editable form text input in the edit profile modal, updating the respective API DTO and validation schema properties to support updating weight.
+- Limited the Jersey Number form inputs (in edit profile modal, athletic section, and intro section) to exactly 2 digits by switching the input type to text, using a numeric input mode, and applying a maxLength of 2.
 - Normalized position abbreviation lookups inside `useProfileViewModel` to be case-insensitive, ensuring that string keys such as "CENTER" reliably map to "C".
 - Tailored `ProfileHeroCard` layout to differentiate players from parents/guardians: players show a 6-item grid (AGE, DOB, HEIGHT, WEIGHT, POSITION, SHOOTS) while non-players show a 2-column grid containing only AGE and DOB.
 - Integrated the user's bio and city/location directly in the profile hero identity section for both players and parents/guardians.
@@ -17,6 +28,153 @@ Last reviewed: 2026-08-31
 - Removed mock career data from the Profile "Career" tab, replacing the `demoCareerEntries` fallback with a direct map over live `careerEntries` (displaying an empty state when none exist).
 - Re-wired the Profile "Child Requests" tab (for parent accounts) to use the exact same `useSupervisionRequests` API flow and shared modal states (`handleApproveCodeSubmit`, `handleDeclineCodeSubmit`) as the Supervision section's "Requested" tab.
 - Removed the standalone `use-child-approvals.ts` hook and redundant `childApprovalModalConfig` state entirely, opting for a clean reuse of the existing profile-level approval modal instead.
+
+- Extended `FOLLOW_OTHERS` enforcement to every follow surface. Only the post card's follow button
+  was gated; five others were not — `use-who-to-follow.ts` (behind the Home "Who to follow" widget),
+  `useFollowSuggestions`' local fallback path, `network/SuggestedUserCard`, `network/ConnectionsView`,
+  and `explore-page`. A restricted child could follow from any of them. Gated in the shared hook
+  where possible so each surface is covered once, with the same pattern as the other blocked actions
+  (real control kept, dimmed, not `disabled`, reason toasted from `supervisionBlockedMessage`).
+  `explore-page`'s toggle is local state over placeholder data with no API call, but is gated too:
+  flipping a button to "Following" would misrepresent what the guardian allows even with no request
+  behind it.
+- `FeedPermissionBanner` no longer renders for blocks the user cannot act on. The domain gives the
+  three actionable reasons a CTA (`UNAUTHENTICATED` → Sign In, `PROFILE_INCOMPLETE` → Complete
+  Profile, `GUARDIAN_APPROVAL_REQUIRED` → Check Approval) and deliberately gives
+  `SUPERVISION_CONTROL_RESTRICTED` none. Those restrictions are already explained where the blocked
+  content would be (`PermissionCard` in Home's feed column, `PermissionNotice` for a single control),
+  so the banner was putting the same sentence on screen twice. The rule is now the absence of
+  `ctaAction` rather than a per-screen opt-out flag, so it holds everywhere without a caller having
+  to remember to pass anything. Covered by 5 new tests.
+
+- Replaced the hardcoded display strings in Supervision's My Network and Messaging audience dropdowns
+  with a contract enum, fixing a two-way data bug. The three `AUDIENCE` controls
+  (`WHO_CAN_FOLLOW`, `WHO_CAN_SEND_CONNECTION_REQUESTS`, `WHO_CAN_MESSAGE_THEM`) listed
+  `["Everyone", "Connections Only", "Nobody"]` as their option **values**, but the backend stores and
+  returns `HOCKEY_NETWORK`/`CONNECTIONS`/`HIDDEN`. So a saved control never matched any option (the
+  dropdown rendered unselected), and picking one posted the display string verbatim to
+  `updateSupervisionControls`.
+  Added `VisibilityAudienceEnum` (`PUBLIC`, `HOCKEY_NETWORK`, `CONNECTIONS`, `HIDDEN`) plus
+  `VISIBILITY_AUDIENCE_LABELS` and two option lists to `packages/contracts`. The dropdowns now use
+  `{ value, label }` options, so the parent reads "Connections Only" while the API receives
+  `CONNECTIONS`. `PUBLIC` is deliberately excluded from the contact controls — the live payload's
+  `allowedValues` offers it for `PROFILE_VISIBILITY` only.
+  Also fixed the state defaults in `use-supervision-permissions.ts`, which held labels
+  (`'Everyone'`, `'Connections Only'`) and would have been posted verbatim if a parent changed any
+  control before the real ones loaded. Covered by 5 new tests including the round trip.
+
+- Gated the post card's "Send" action behind `SHARE_POSTS`. Sending a post externally is sharing, so
+  it belongs to the same control as the repost button beside it — but it was the one share action a
+  guardian could not restrict, leaving an obvious way around a disabled `SHARE_POSTS`. It now follows
+  the same pattern as every other gated action: the real share icon is kept (not swapped for a
+  padlock), the control is dimmed via `.mhn-action-item-blocked`, it stays focusable rather than
+  `disabled`, and clicking it toasts the reason from `supervisionBlockedMessage`. Covered by 4 new
+  tests, including one asserting Send and Repost are governed by the same control.
+  The neighbouring "Save" action was deliberately left ungated: no save/bookmark control exists in
+  `SupervisionControlKeyEnum` or in the `GET /supervision/me/permissions` payload, so restricting it
+  would mean inventing a permission the backend does not model.
+
+- Added `common/PermissionCard`, the full-panel blocked state for a surface that is entirely
+  unavailable, and used it for the Home feed when `VIEW_FEED` is disabled. It reuses
+  `ServerDownScreen`'s anatomy — status pill, icon circle, title, description, optional action — so
+  the two read as one family, with three deliberate differences: it renders **inline rather than as
+  an overlay** (a guardian restriction is a normal state of the page, not an interruption), it uses
+  the accent palette instead of destructive because it is not an error, and its action is opt-in
+  since there is frequently nothing the child can do about the setting. Marked `role="note"`, not
+  `role="alert"`, for the same reason.
+  This completes the three-tier permission UI: `FeedPermissionBanner` (page-level, "this account
+  cannot use the feed"), `PermissionCard` (whole surface unavailable), and `PermissionNotice` /
+  `PermissionGate` (a single blocked control inside a working screen). All three draw their copy from
+  `supervisionBlockedMessage`. Covered by 6 new tests.
+
+- Added the blocked-feed message to Home and extracted `PermissionNotice` from `PermissionGate`.
+  The Home screen now swaps its whole centre column when `canViewFeed` is false — the tabs go with
+  the feed, since a tab bar over an empty column reads as a loading failure rather than a
+  restriction — and renders the shared notice in their place. The copy comes from
+  `supervisionBlockedMessage(VIEW_FEED)` ("Your parent hasn't enabled viewing the feed yet."), so it
+  matches every other blocked action rather than being a screen-local string.
+  `PermissionNotice` exists because the screen has already branched on the permission; wrapping an
+  empty fragment in a `PermissionGate` would have re-run the same check to decide whether to render
+  a message the caller had already decided to show. Covered by 3 new tests, including one asserting
+  the notice does not consult the permission itself.
+
+- Implemented the `VIEW_FEED` supervision control, which was evaluated but never enforced. The domain
+  already returned `allowed: false` for a disabled `VIEW_FEED`, and the Home screen surfaced the
+  pending banner correctly — but it rendered that banner *above a fully populated feed*, so a
+  supervised child whose guardian had turned viewing off could still read every post. Nothing
+  consumed the result as a render gate.
+  - Added `canViewFeed(user, controls)` to `packages/domain` alongside the other `can*` predicates,
+    and exposed it from `useFeedPermissions`.
+  - `home-page.tsx` now renders `<Feed>` only when `canViewFeed` is true; the banner above already
+    states the reason, so the blocked state renders nothing rather than repeating it.
+  - `useHomeFeed` folds the same check into its existing query gate, so the request is **never
+    made** rather than fetched and then hidden — post content should not reach a browser that is not
+    allowed to display it.
+  Covered by three new tests (blocked, enabled, and unsupervised) against the real endpoint payload.
+
+- Fixed supervision controls resolving to "blocked" for every action regardless of what the guardian
+  had actually enabled — found by checking the live `GET /supervision/me/permissions` payload against
+  the frontend's lookups.
+  - **Key-casing bug.** The endpoint returns SCREAMING_SNAKE control keys (`COMMENT_ON_POSTS`), and
+    `getMySupervisionPermissions` correctly flattens the response array into a map on those keys. But
+    call sites passed lowercase (`'comment_on_posts'`), and `checkSupervisionPermission` normalised a
+    key only to snake_case and camelCase — never to the uppercase form the payload uses. Every
+    lowercase lookup returned `undefined`, and `undefined === true` is false, so React/comment/share/
+    follow all read as blocked even when enabled. The lookup now derives the SCREAMING_SNAKE form too.
+  - **`create_posts` never matched at all.** The enum and API use the singular `CREATE_POST`; the
+    plural call-site string could not resolve under any normalisation. Fixed by switching the feed
+    call sites (`FeedPostCard`, `ProfileSummaryCard`) from loose strings to the canonical
+    `PermissionControlKey` enum, so this class of typo becomes a type error rather than a silent
+    permanent block.
+  Covered by a regression test built from the real endpoint payload, asserting the enum covers every
+  control the API returns, that `CREATE_POST` is singular, and that the domain predicates read
+  enabled/disabled correctly from that exact map.
+
+- Blocked supervised actions now keep their own icon instead of being swapped for a padlock. Five
+  feed controls (like, comment, repost, follow, post) replaced their real icon with `LockKeyhole`
+  when a guardian had the control disabled, so the child could no longer tell *what* the button
+  was — a like and a comment looked identical. The like spark, comment bubble, and repost arrows now
+  stay put and the control is simply dimmed (`.mhn-action-item-blocked`).
+  The controls are deliberately **not** `disabled`: their click handlers already route through
+  `assertSupervisionPermission`, which toasts the reason, and a disabled button is removed from the
+  tab order and suppresses its own tooltip (the Button primitive sets
+  `disabled:pointer-events-none`) — so disabling would have blocked the child with no way to learn
+  why. `aria-label` also carries the reason for screen-reader users, since a `title` alone is not
+  announced reliably.
+  `PermissionGate`'s notice now uses the same `/info.webp` mark as `PendingBanner` rather than a
+  lock, so page-level and per-action permission messaging read as one system.
+
+- Removed a fabricated CTA from the permission banner. `FeedPermissionBanner` fell back to
+  `ctaText || 'Complete Profile'`, but the domain deliberately pairs `ctaText` with `ctaAction` and
+  gives the `SUPERVISION_CONTROL_RESTRICTED` state **neither** — a parent-disabled control is not
+  something the child can act on. The fallback therefore showed a supervised child a "Complete
+  Profile" button for a restriction completing their profile could not lift, and (since `ctaAction`
+  was also null) clicking it did nothing. `PendingBanner`'s action is now optional and omitted when
+  there is no action to offer, so that state renders as a plain informational notice. The test that
+  had pinned the fallback was replaced with one asserting no button renders for a restricted
+  control.
+  Also tokenized `.mhn-pending-banner`'s colours (`#ebf4ff`/`#d0e2ff`/`#354766`/`#0057C2`), which the
+  earlier sweep missed: the banner had no dark override at all, so it rendered a light blue panel on
+  the dark shell.
+
+- Added the shared supervision permission gate, `common/PermissionGate.tsx`, unifying three parallel
+  mechanisms that all answered "may this child do X?" differently:
+  - the `can*` flags from `useFeedPermissions`,
+  - `checkSupervisionPermission` from the auth context, and
+  - ad-hoc `title="Parent did not give permission"` attributes hardcoded in five feed components.
+  They also produced three different sentences for the same state ("Parent did not give permission",
+  "Your parent did not give permission for this feature.", and `PARENT_DISABLED_FEATURE`). The copy
+  now lives once in the domain as `SUPERVISION_BLOCKED_MESSAGES`/`supervisionBlockedMessage()`, keyed
+  by the existing `PermissionControlKey` enum, with per-action wording ("Your parent hasn't enabled
+  commenting yet.") instead of one generic line. The auth context, `useFeedPermissions`, and all five
+  components now read from it.
+  The gate has two halves: `<PermissionGate control={...}>` for wrapping UI (`blockedAs` =
+  `children` | `notice` | `hide`) and `useGatedAction(control)` for click handlers, which returns
+  `allowed`, `title`, and a `run()` that toasts the reason rather than failing silently.
+  First real application: the post comment composer. A child whose guardian had not enabled
+  commenting previously got a fully working input that only rejected them **on submit**, after they
+  had typed the whole comment — it now shows the reason up front via `blockedAs="notice"`.
+  Covered by 9 new tests. The notice styling is token-driven, so it follows the theme.
 - Migrated `useSupervisionLogs` from a sequential `useEffect`-based fetch to a single `useQuery` call, giving the hook automatic caching, deduplication, and TanStack Query loading states.
 - Removed the redundant `getSupervisionControls` fetch from `useSupervisionLogs`; controls are already fetched by `use-supervision-permissions.ts` on ward selection, so the duplicate call and its permission-setter fan-out were deleted entirely.
 - Gated the Requests tab skeleton loader behind a real ward-UUID check so the spinner only appears when switching between players, not on the initial tab visit without a selection.
@@ -69,11 +227,16 @@ permissions.message` guard plus an identical 8-line CTA dispatch — 9 of the 10
   that is never used inside the component and never passed by `OnboardingModal` — dead since the file
   was created. Left alone pending a decision on whether that step should have a back affordance at
   all, rather than silently deleting a prop or wiring a new user-facing control.
+- Added a "Child Requests" tab to the Profile page for PARENT users, beside the Career tab. The tab uses `useChildApprovals` (backed by `useQuery`) to fetch all pending child approval requests via `getApprovals({ status: 'PENDING' })` and renders them in the same `SupervisionRequestRow` card grid as the Supervision Requested tab. Parents can Approve or Decline each request inline.
 - Fixed Team Detail's tab bar (Posts/Members/Events/Media/About) leaving dead space after "About"
   instead of spanning the card's full width (feedback 2026-08-31: "make top bar filled entire width,
   check marked area"). Each tab was `shrink-0` with a `gap-8`, clustering left; switched to `flex-1`
   per tab (matching Figma's own `flex-[193_0_0]` equal-width tab list) so the row fills the card
   edge-to-edge with no side padding, same as the design.
+- Migrated `useSupervisionLogs` from a sequential `useEffect`-based fetch to a single `useQuery` call, giving the hook automatic caching, deduplication, and TanStack Query loading states.
+- Removed the redundant `getSupervisionControls` fetch from `useSupervisionLogs`; controls are already fetched by `use-supervision-permissions.ts` on ward selection, so the duplicate call and its permission-setter fan-out were deleted entirely.
+- Gated the Requests tab skeleton loader behind a real ward-UUID check so the spinner only appears when switching between players, not on the initial tab visit without a selection.
+- Refactored permission updating state to track `updatingControlKeys` Record rather than a single string, enabling other switches and dropdowns to remain active and clickable in parallel during toggling.
 
 - Fixed Event Detail rendering wider (less left/right gutter) than Team/Group Detail at the same
   window size (feedback 2026-08-31: "make this view port consistent similar to team tab by making

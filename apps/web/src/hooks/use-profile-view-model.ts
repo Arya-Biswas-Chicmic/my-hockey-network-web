@@ -120,15 +120,18 @@ export function useProfileViewModel(
     const teamString = primaryTeam ? ` • @${primaryTeam}` : '';
     if (isPlayer) {
       const positionAbbreviations: Record<string, string> = {
-        'Left Wing': 'LW',
-        'Right Wing': 'RW',
-        Center: 'C',
-        Defense: 'D',
-        Goaltender: 'G',
+        'left wing': 'LW',
+        'right wing': 'RW',
+        'center': 'C',
+        'defense': 'D',
+        'goaltender': 'G',
       };
-      const position = livePosition ? positionAbbreviations[livePosition] || livePosition : liveRole;
-      const jersey = liveJersey ? ` • #${liveJersey}` : '';
-      return `${position}${jersey}${teamString}`;
+      const normalizedKey = livePosition.toLowerCase();
+      const position = livePosition ? positionAbbreviations[normalizedKey] || livePosition : liveRole;
+      if (liveJersey) {
+        return `#${liveJersey} • ${position}${teamString}`;
+      }
+      return `${position}${teamString}`;
     }
     return `${liveRole}${teamString}`;
   })();

@@ -1,8 +1,10 @@
 import { Button } from '@/components/common/Button';
+import { supervisionBlockedMessage } from '@my-hockey-network/domain';
+import { PermissionControlKey } from '@my-hockey-network/contracts';
 import React from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useProfileCardData } from '@/hooks/use-profile-card-data';
-import { LockKeyhole, MapPin } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { FallbackImage } from '@/components/ui/fallback-image';
 
 interface ProfileSummaryCardProps {
@@ -31,7 +33,7 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
   onPostClick
 }) => {
   const { user, checkSupervisionPermission, assertSupervisionPermission } = useAuth();
-  const canCreatePost = checkSupervisionPermission('create_posts');
+  const canCreatePost = checkSupervisionPermission(PermissionControlKey.CREATE_POST);
   const profile = useProfileCardData({ name, role, avatarUrl, coverUrl, location, teamName, followers, following });
   const { name: resolvedName, role: resolvedRole, avatar: resolvedAvatar, cover: resolvedCover,
     location: resolvedLocation, teamName: effectiveTeamName, followers: resolvedFollowers,
@@ -109,13 +111,10 @@ export const ProfileSummaryCard: React.FC<ProfileSummaryCardProps> = ({
 
       {/* Post Action Button */}
       <Button
-        onClick={() => assertSupervisionPermission('create_posts', onPostClick || (() => {}))}
+        onClick={() => assertSupervisionPermission(PermissionControlKey.CREATE_POST, onPostClick || (() => {}))}
         className="mhn-btn-post"
-        title={!canCreatePost ? 'Parent did not give permission' : undefined}
+        title={!canCreatePost ? supervisionBlockedMessage(PermissionControlKey.CREATE_POST) : undefined}
       >
-        {!canCreatePost && (
-          <LockKeyhole size={14} strokeWidth={2.5} className="mhn-mr-6" />
-        )}
         Post
       </Button>
     </div>

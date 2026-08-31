@@ -36,6 +36,8 @@ export enum ProfileTabEnum {
    * from the page, not deleted) still type-checks. */
   ABOUT = "about",
   GUARDIAN_REQUESTS = "guardian-requests",
+  /** Visible only to PARENT users on their own profile — lists pending child approval requests. */
+  CHILD_APPROVAL_REQUESTS = "child-approval-requests",
 }
 
 export enum ProfileAboutSectionEnum {

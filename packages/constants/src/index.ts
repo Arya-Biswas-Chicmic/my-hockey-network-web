@@ -109,6 +109,12 @@ export const REGEX_PATTERNS = {
   DATE_DDMMYYYY: /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012])\/(19|20)\d\d$/,
   // Letters, spaces, hyphens, and apostrophes — e.g. "Mary-Jane O'Brien". ASCII only.
   NAME: /^[A-Za-z]+(?:[ '-][A-Za-z]+)*$/,
+  CAPITALIZE_WORDS: /\b\w/g,
+} as const;
+
+export const NUMERIC_INPUT_CONFIG = {
+  PATTERN: '[0-9]*',
+  INPUT_MODE: 'numeric',
 } as const;
 
 export * from './messages';

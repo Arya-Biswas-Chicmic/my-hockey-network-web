@@ -103,6 +103,7 @@ export function useProfileGuardianApproval() {
 
   return {
     guardianApprovalModalConfig,
+    setGuardianApprovalModalConfig,
     isProcessing: acceptGuardianInviteMutation.isPending || declineGuardianInviteMutation.isPending,
     handleRequestDecline,
     handleRequestApprove,

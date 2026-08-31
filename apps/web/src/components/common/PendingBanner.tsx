@@ -10,9 +10,14 @@ interface PendingBannerProps {
 
 export const PendingBanner: React.FC<PendingBannerProps> = ({
   message = "Guardian invitation pending. Your guardian has not yet accepted your request to connect.",
-  actionText = "Manage Invitations",
+  actionText,
   onActionClick
 }) => {
+  // Some states are purely informational — a parent-disabled supervision
+  // control is not something the child can act on — so the banner renders as a
+  // notice with no button rather than offering an action that leads nowhere.
+  const hasAction = Boolean(actionText && onActionClick);
+
   return (
     <div className="mhn-pending-banner">
       <div className="mhn-pending-banner-content">
@@ -21,12 +26,14 @@ export const PendingBanner: React.FC<PendingBannerProps> = ({
         </div>
         <span className="mhn-pending-banner-text">{message}</span>
       </div>
-      <Button
-        onClick={onActionClick}
-        className="mhn-pending-banner-action"
-      >
-        {actionText}
-      </Button>
+      {hasAction && (
+        <Button
+          onClick={onActionClick}
+          className="mhn-pending-banner-action"
+        >
+          {actionText}
+        </Button>
+      )}
     </div>
   );
 };

@@ -481,6 +481,57 @@ matched the real route name.
 Skeleton fills use `.mhn-skeleton-shimmer`, whose gradient is token-driven and follows the theme.
 Never hardcode a skeleton colour.
 
+## `common/PermissionGate` — supervised-action gating
+
+The single way to gate an action behind a guardian's supervision controls. Use it instead of reading
+`checkSupervisionPermission`/`can*` flags in a component or hardcoding a "parent did not give
+permission" string — that is how three mechanisms and three different messages accumulated.
+
+```tsx
+// Declarative: replace blocked UI with the reason.
+<PermissionGate control={PermissionControlKey.COMMENT_ON_POSTS} blockedAs="notice">
+  <CommentComposer />
+</PermissionGate>
+
+// Imperative: keep the control visible, explain on click.
+const like = useGatedAction(PermissionControlKey.REACT_TO_POSTS);
+<Button title={like.title} onClick={() => like.run(handleLike)} />
+```
+
+`blockedAs` is `children` (default — render the action anyway and let `useGatedAction` explain on
+click), `notice` (inline panel), or `hide`.
+
+`PermissionCard` is the full-panel version, built on the same anatomy as `ServerDownScreen` (status
+pill / icon circle / title / description / optional action) so the two read as one family. Use it when
+a **whole surface** is unavailable — Home renders it in place of the feed column when `VIEW_FEED` is
+off. Two deliberate differences from `ServerDownScreen`: it renders **inline, not as an overlay** (a
+guardian restriction is a normal state of the app, not an interruption), it uses the accent palette
+rather than destructive, and its action is opt-in since there is often nothing the child can do. It is
+`role="note"`, never `role="alert"`.
+
+`PermissionNotice` is that inline panel on its own, for a screen that has **already** branched on the
+permission and only needs the message — Home swaps its whole feed column on `canViewFeed`, so it
+renders `<PermissionNotice control={PermissionControlKey.VIEW_FEED} />` rather than wrapping an empty
+fragment in a gate that would re-check the same thing. It takes the same `control`/`message` props and
+draws its copy from the same source.
+
+**Do not `disabled` a blocked action, and do not swap its icon for a padlock.** Keep the control's
+own icon so it stays recognisable, dim it with `.mhn-action-item-blocked`, and let the click handler
+toast the reason. A disabled button leaves the tab order and — via the Button primitive's
+`disabled:pointer-events-none` — cannot show its own `title`, so the user is blocked with no way to
+find out why. Put the reason in `aria-label` too; a `title` alone is not reliably announced. Blocked copy comes from `supervisionBlockedMessage`
+in `packages/domain`, keyed by `PermissionControlKey`; add new wording there, never at the call site.
+
+**Always pass `PermissionControlKey`, never a bare string.** `GET /supervision/me/permissions` returns
+SCREAMING_SNAKE keys, and a mistyped literal (`'create_posts'` for the singular `CREATE_POST`) silently
+resolves to `undefined` — which is not `true`, so the action reads as permanently blocked with no
+error anywhere. The enum makes that a type error.
+`FeedPermissionBanner` is the page-level counterpart for "this account cannot use the feed at all" —
+`PermissionGate` is per-action. The banner renders **only for blocks the user can act on** (those the
+domain gives a `ctaAction`: sign in, complete profile, check guardian approval). A supervision
+restriction has no action by design, and is explained where the blocked content would be, so the
+banner stays silent rather than repeating it.
+
 ## `common/FeedPermissionBanner`
 
 The guardian/permission pending banner for authenticated screens. Renders `common/PendingBanner` when

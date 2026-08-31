@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { supervisionBlockedMessage } from '@my-hockey-network/domain';
+import { PermissionControlKey } from '@my-hockey-network/contracts';
+import { useAuth } from '@/hooks/use-auth';
 import { FeedPermissionBanner } from '@/components/common/FeedPermissionBanner';
 import { FallbackImage } from '@/components/ui/fallback-image';
 import { Button } from '@/components/common/Button';
@@ -39,7 +42,17 @@ export const ExplorePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<SuggestedUser[]>(INITIAL_SUGGESTIONS);
 
+  // Local-state only (this list is placeholder data, not an API-backed follow),
+  // but still gated: a restricted child flipping a button to "Following" would
+  // misrepresent what their guardian allows, even with no request behind it.
+  const { checkSupervisionPermission, showToast } = useAuth();
+  const canFollow = checkSupervisionPermission(PermissionControlKey.FOLLOW_OTHERS);
+
   const toggleFollowUser = (id: string) => {
+    if (!canFollow) {
+      showToast(supervisionBlockedMessage(PermissionControlKey.FOLLOW_OTHERS), 'error');
+      return;
+    }
     setSuggestions((prev) =>
       prev.map((item) => (item.id === id ? { ...item, isFollowing: !item.isFollowing } : item))
     );
