@@ -17,7 +17,7 @@ export function useHeaderFamily(user: AuthMeResponse | null | undefined, userNam
   const rawAvatar = user?.profile?.avatarUrl;
   const resolvedAvatar = resolveMediaUrl(rawAvatar, '/userPlaceholder.webp');
   const [activeUser, setActiveUser] = useState({ name: resolvedName, avatar: resolvedAvatar });
-  const [familyMembers, setFamilyMembers] = useState<Array<{ id: string; name: string; avatar: string }>>([]);
+  const [familyMembers, setFamilyMembers] = useState<Array<{ id: string; name: string; avatar: string; canOperate: boolean }>>([]);
   const isParent = isParentUser(user ?? null);
 
   const { data: supervisionData, isLoading: isFamilyLoading } = useQuery(
@@ -41,6 +41,7 @@ export function useHeaderFamily(user: AuthMeResponse | null | undefined, userNam
           id: child.id,
           name: child.displayName || child.firstName || 'Child',
           avatar: resolveMediaUrl(child.avatarUrl, '/userPlaceholder.webp'),
+          canOperate: Boolean(child.canOperate),
         }));
         setFamilyMembers(mapped);
       } else {

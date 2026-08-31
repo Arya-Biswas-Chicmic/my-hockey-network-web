@@ -8,6 +8,7 @@ import { webAuthStorage } from '@/platform/auth-storage';
 import { globalQueryClient } from '@/query';
 import { showToast as showCentralToast } from '@/utils/toast';
 import { getLocalAvatar } from '@/utils/local-avatar-storage';
+import { useImpersonationStore } from '@/stores/impersonation-store';
 
 export interface AuthContextType {
   user: AuthMeResponse | null;
@@ -233,6 +234,13 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
       // Clear auth storage session
       await webAuthStorage.clearSession();
+
+      // Clear impersonation data on logout
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem('mhn_acting_for');
+        window.sessionStorage.removeItem('mhn_acting_for_name');
+      }
+      useImpersonationStore.setState({ impersonatingProfileId: null, impersonatingName: null });
 
       updateUser(null);
       setSession(null);

@@ -4,6 +4,9 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Cleared all impersonation session storage values and reset the impersonation store state upon user logout.
+- Implemented a global transition loading state using `<BrandLoader>` to display while starting or stopping an impersonation session, eliminating any millisecond-level flicker before the web page reloads.
+- Updated impersonation store to force a full browser page reload and redirect to the dashboard page ("/") upon starting or stopping an impersonation session.
 - Unified the state configuration logic of `handleOpenApproveModal` and `handleOpenDeclineModal` on the profile page into a single, reusable `handleOpenGuardianApprovalModal` function.
 - Extracted all remaining inline handlers of `ProfileChildApprovalsTab` (`onApprove`, `onDecline`, `onOpenApproveModal`, `onOpenDeclineModal`) to dedicated, component-scoped helper functions in `profile-page.tsx` for cleaner JSX structure.
 - Extracted the inline `onDeclineByCode` handler inside `ProfileChildApprovalsTab` to a dedicated, component-scoped `handleDeclineChildRequestByCode` function in `profile-page.tsx` for cleaner JSX structure.
@@ -39,6 +42,7 @@ Last reviewed: 2026-08-31
 - Removed mock career data from the Profile "Career" tab, replacing the `demoCareerEntries` fallback with a direct map over live `careerEntries` (displaying an empty state when none exist).
 - Re-wired the Profile "Child Requests" tab (for parent accounts) to use the exact same `useSupervisionRequests` API flow and shared modal states (`handleApproveCodeSubmit`, `handleDeclineCodeSubmit`) as the Supervision section's "Requested" tab.
 - Removed the standalone `use-child-approvals.ts` hook and redundant `childApprovalModalConfig` state entirely, opting for a clean reuse of the existing profile-level approval modal instead.
+
 - Extended `FOLLOW_OTHERS` enforcement to every follow surface. Only the post card's follow button
   was gated; five others were not — `use-who-to-follow.ts` (behind the Home "Who to follow" widget),
   `useFollowSuggestions`' local fallback path, `network/SuggestedUserCard`, `network/ConnectionsView`,
@@ -253,9 +257,9 @@ permissions.message` guard plus an identical 8-line CTA dispatch — 9 of the 10
   left and right event spacing like group tab"). It passed `maxWidth={1166}` to `PageShell`, widening
   its own `--page-max-width`/`.mhn-app-content` grid track past the `932px` every other route
   (including Team/Group Detail) renders at — those pages get their own 1166px two-column feel from an
-  *inner* `max-w-[1166px]` wrapper that is a no-op ceiling inside the shared 932px shell, not from a
+  _inner_ `max-w-[1166px]` wrapper that is a no-op ceiling inside the shared 932px shell, not from a
   page-specific `PageShell` override. Removed the override and moved the same `max-w-[1166px]
-  mx-auto` convention onto Event Detail's own inner section, so it now matches by construction
+mx-auto` convention onto Event Detail's own inner section, so it now matches by construction
   instead of diverging via a one-off width. Confirmed via `--page-max-width` reading `932px` on both
   pages afterward, not just visually.
 
@@ -291,7 +295,7 @@ permissions.message` guard plus an identical 8-line CTA dispatch — 9 of the 10
 
 - Fixed Event Detail's own content being unreachable past one viewport height (bug report
   2026-08-31: "event page details scrolling is not working"). `.mhn-app-content` is `lg:h-dvh
-  lg:overflow-hidden` — every route needs its own internal scroll owner inside that, and the
+lg:overflow-hidden` — every route needs its own internal scroll owner inside that, and the
   rebuilt `event-detail-page.tsx` had none, so "About"/"Things to know"/the Organiser &amp;
   Attendant list past the fold were silently clipped and unreachable by any scroll gesture, not
   just visually cut off. Wrapped the page's content in a `mhn-layout-col-center` section with
