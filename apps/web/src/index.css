@@ -9241,6 +9241,8 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-height: calc(100vh - 150px);
+  overflow: auto;
 }
 
 .mhn-supervision-permissions-stack {

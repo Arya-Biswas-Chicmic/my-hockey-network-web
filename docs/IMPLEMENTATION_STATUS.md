@@ -1,9 +1,10 @@
 # Implementation status
 
-Last reviewed: 2026-08-30
+Last reviewed: 2026-08-31
 
 ## Completed
 
+- Constrained the height of `.mhn-supervision-tab-body` (the container for permissions, requests, and logs tabs) using a screen-relative max-height (`calc(100vh - 150px)`) and enabled scrolling.
 - Fixed text color and active state for supervision ward listing to work seamlessly in dark and light modes.
 - Added vertical scrolling (`overflow-y: auto`) with flex height constraints to the supervision tab contents (Permissions, Requests, Logs).
 - Refactored pending guardian invite property from `items` to `invites` to correctly match the updated API response format in both the frontend core client and related UI components.
