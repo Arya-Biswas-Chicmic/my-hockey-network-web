@@ -4,6 +4,7 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Styled the outer container of the Guardian Requests tab on the profile page to use the same `rounded-lg border border-auth-stroke bg-auth-field p-5 text-foreground` styles as the Career tab, matching the design theme exactly.
 - Cleared the search bar automatically after successfully creating a new post from the home feed so that the user's new post is visible in the unfiltered feed.
 - Fixed the right sidebar search loading skeleton flash when typing. Sourced the `hasInitialLoaded` status in `useHomeFeed` to ensure the full-page layout skeleton does not unmount the page layout and search widgets during subsequent queries/filtering.
 - Integrated granular height/weight parameters (`heightCm`, `weightKg`, `heightFeet`, `heightInches`, `weightLb`) into `UpdateProfileDTO`, the Zod validation schema, and the profile update save flow. Extracted the height string parsing regex into the shared `REGEX_PATTERNS.HEIGHT_FEET_INCHES` constant.
