@@ -33,7 +33,7 @@ function wrapper({ children }: { children: ReactNode }) {
 
 describe('guardian relationship query hooks', () => {
   it('uses the child-facing guardian-invites endpoint for Profile', async () => {
-    getPendingGuardianInvites.mockResolvedValue({ items: [{ id: 'invite-1' }] });
+    getPendingGuardianInvites.mockResolvedValue({ invites: [{ id: 'invite-1' }] });
     const { result } = renderHook(() => usePendingGuardianInvites(), { wrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));

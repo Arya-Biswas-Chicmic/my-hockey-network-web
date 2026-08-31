@@ -1,11 +1,14 @@
-'use client';
+"use client";
 
-import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
-import { getSupervisionControls, getSupervisionLogs, type SupervisionControlItem, type SupervisionLogItem } from '@my-hockey-network/core';
+import { useState, useMemo } from "react";
+import {
+  getSupervisionLogs,
+  type SupervisionLogItem,
+} from "@my-hockey-network/core";
+import { QueryKeys } from "@my-hockey-network/contracts";
 
-import { extractErrorMessage } from '@/utils/toast';
-import { useDebounce } from '@/hooks/use-debounce';
-import { DEMO_SUPERVISION_LOGS } from '@/demo-data/supervision';
+import { useDebounce } from "@/hooks/use-debounce";
+import { useQuery } from "@/query";
 
 export interface ActivityLogView {
   id: string;
@@ -15,91 +18,102 @@ export interface ActivityLogView {
   actionText: string;
 }
 
-type BooleanPermissions = Record<string, boolean | string>;
+const UUID_RE =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+function formatLogActivity(log: SupervisionLogItem): string {
+  const type = log.type;
+  const params = log.params || {};
+
+  switch (type) {
+    case "PROFILE_UPDATED": {
+      const fields = Array.isArray(params.fields) ? params.fields : [];
+      if (fields.length > 0) {
+        return `Updated profile fields: ${fields.join(", ")}`;
+      }
+      return "Updated profile details";
+    }
+    case "APPROVAL_DECIDED": {
+      const action = params.action || "";
+      const status = params.status || "DECIDED";
+      const statusText = status.toLowerCase();
+      if (action === "RECEIVE_CONNECTION_REQUEST") {
+        return `${statusText === "approved" ? "Approved" : "Declined"} connection request`;
+      }
+      if (action === "SET_PUBLIC_PROFILE") {
+        return `${statusText === "approved" ? "Approved" : "Declined"} post publication`;
+      }
+      return `${statusText === "approved" ? "Approved" : "Declined"} action request`;
+    }
+    case "CONNECTION_REQUEST_RECEIVED":
+      return "Received a connection request";
+    case "PROFILE_VISIBILITY_CHANGED":
+      return "Changed profile visibility";
+    default:
+      return type
+        .toLowerCase()
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+}
 
 /**
  * Supervision > Logs tab. Extracted from `screens/supervision-page.tsx`.
  *
- * Note: the effect below re-fetches supervision controls via a second,
- * differently-shaped mapping (`c.control === 'VIEW_FEED'` raw string
- * checks) alongside fetching logs — this duplicates part of what
- * `use-supervision-permissions.ts`'s `fetchControlsForWard` already does
- * on ward selection. That redundancy predates this decomposition; it's
- * preserved as-is here rather than silently removed, since collapsing it
- * is a behavior change outside a decomposition/RHF-conversion pass.
+ * Fetches logs for the selected ward via `useQuery`. Controls are fetched
+ * separately by `use-supervision-permissions.ts` and are not duplicated here.
  */
-export function useSupervisionLogs(
-  selectedWardId: string,
-  setHomePermissions: Dispatch<SetStateAction<BooleanPermissions>>,
-  setNetworkPermissions: Dispatch<SetStateAction<BooleanPermissions>>,
-  setMessagingPermissions: Dispatch<SetStateAction<BooleanPermissions>>,
-) {
-  const [liveLogs, setLiveLogs] = useState<ActivityLogView[]>([]);
-  const [logsSearchQuery, setLogsSearchQuery] = useState('');
+export function useSupervisionLogs(selectedWardId: string) {
+  const [logsSearchQuery, setLogsSearchQuery] = useState("");
+
+  const isRealUuid = UUID_RE.test(selectedWardId ?? "");
+  const queryEnabled = Boolean(selectedWardId) && isRealUuid;
+
+  const logsQuery = useQuery(
+    queryEnabled ? `${QueryKeys.SUPERVISION_LOGS}:${selectedWardId}` : null,
+    queryEnabled ? () => getSupervisionLogs(selectedWardId) : null,
+    { staleTime: 30 * 1000, enabled: queryEnabled },
+  );
+
   const debouncedLogsSearchQuery = useDebounce(logsSearchQuery, 800);
+  const logItems = logsQuery.data?.items ?? [];
+  const hasMore = !!logsQuery.data?.hasMore;
+  const isLogsLoading = logsQuery.isLoading;
 
-  useEffect(() => {
-    if (!selectedWardId) return;
+  const mappedLogs: ActivityLogView[] = useMemo(
+    () =>
+      logItems.map((log: SupervisionLogItem) => ({
+        id: log.id,
+        dateTime: new Date(log.createdAt).toLocaleString([], {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        activity: formatLogActivity(log),
+        initiatedBy: log.actorDisplayName || log.actorRoleLabel || "Parent",
+        actionText: "View",
+      })),
+    [logItems],
+  );
 
-    const isRealUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(selectedWardId);
-    if (!isRealUuid) return;
-
-    async function loadWardControlsAndLogs() {
-      try {
-        const controlsRes = await getSupervisionControls(selectedWardId);
-        const controls = controlsRes.controls;
-        if (Array.isArray(controls)) {
-          controls.forEach((c: SupervisionControlItem) => {
-            if (c.control === 'VIEW_FEED') setHomePermissions((prev) => ({ ...prev, viewFeed: !!c.value }));
-            if (c.control === 'CREATE_POST') setHomePermissions((prev) => ({ ...prev, createPosts: !!c.value }));
-            if (c.control === 'COMMENT_ON_POSTS') setHomePermissions((prev) => ({ ...prev, commentOnPosts: !!c.value }));
-            if (c.control === 'REACT_TO_POSTS') setHomePermissions((prev) => ({ ...prev, reactToPosts: !!c.value }));
-            if (c.control === 'SHARE_POSTS') setHomePermissions((prev) => ({ ...prev, sharePosts: !!c.value }));
-            if (c.control === 'FOLLOW_OTHERS') setNetworkPermissions((prev) => ({ ...prev, followOthers: !!c.value }));
-            if (c.control === 'ACCEPT_CONNECTIONS') setNetworkPermissions((prev) => ({ ...prev, acceptRequests: !!c.value }));
-            if (c.control === 'WHO_CAN_FOLLOW') setNetworkPermissions((prev) => ({ ...prev, whoCanFollowThem: String(c.value) }));
-            if (c.control === 'WHO_CAN_SEND_CONNECTION_REQUESTS') setNetworkPermissions((prev) => ({ ...prev, whoCanSendRequests: String(c.value) }));
-            if (c.control === 'SEND_MESSAGES') setMessagingPermissions((prev) => ({ ...prev, sendMessages: !!c.value }));
-            if (c.control === 'RECEIVE_MESSAGES') setMessagingPermissions((prev) => ({ ...prev, receiveMessages: !!c.value }));
-            if (c.control === 'CREATE_GROUP_CHATS') setMessagingPermissions((prev) => ({ ...prev, createGroupChats: !!c.value }));
-            if (c.control === 'WHO_CAN_MESSAGE_THEM') setMessagingPermissions((prev) => ({ ...prev, whoCanMessageThem: String(c.value) }));
-          });
-        }
-
-        const logsRes = await getSupervisionLogs(selectedWardId);
-        const logItems = logsRes.items;
-        if (Array.isArray(logItems) && logItems.length > 0) {
-          const mappedLogs = logItems.map((log: SupervisionLogItem) => ({
-            id: log.id,
-            dateTime: new Date(log.createdAt).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-            activity: log.summary || log.eventType || 'Supervision activity log',
-            initiatedBy: 'Parent',
-            actionText: 'View',
-          }));
-          setLiveLogs(mappedLogs);
-        }
-      } catch (err: unknown) {
-        console.warn('❌ [SupervisionPage] Controls/Logs load notice:', extractErrorMessage(err));
-      }
-    }
-    void loadWardControlsAndLogs();
-  }, [selectedWardId]);
-
-  // Demo logs are appended after real ones, never replacing them — same
-  // "real first, demo after" convention as `useHomeFeed`'s demo posts —
-  // feedback 2026-08-30: "in log tabs and add 10 logs like accepted
-  // request, like the video etc".
-  const allLogs = [...liveLogs, ...DEMO_SUPERVISION_LOGS];
-
-  const filteredLogs = allLogs.filter((log) => {
-    if (!debouncedLogsSearchQuery.trim()) return true;
+  const filteredLogs = useMemo(() => {
+    if (!debouncedLogsSearchQuery.trim()) return mappedLogs;
     const q = debouncedLogsSearchQuery.toLowerCase();
-    return (
-      (log.activity && log.activity.toLowerCase().includes(q)) ||
-      (log.initiatedBy && log.initiatedBy.toLowerCase().includes(q)) ||
-      (log.dateTime && log.dateTime.toLowerCase().includes(q))
+    return mappedLogs.filter(
+      (log) =>
+        (log.activity && log.activity.toLowerCase().includes(q)) ||
+        (log.initiatedBy && log.initiatedBy.toLowerCase().includes(q)) ||
+        (log.dateTime && log.dateTime.toLowerCase().includes(q)),
     );
-  });
+  }, [mappedLogs, debouncedLogsSearchQuery]);
 
-  return { filteredLogs, logsSearchQuery, setLogsSearchQuery };
+  return {
+    filteredLogs,
+    logsSearchQuery,
+    setLogsSearchQuery,
+    isLogsLoading,
+    hasMore,
+  };
 }

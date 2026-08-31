@@ -71,12 +71,7 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
     showToast,
   });
 
-  const logs = useSupervisionLogs(
-    wards.selectedWardId,
-    permissions.setHomePermissions,
-    permissions.setNetworkPermissions,
-    permissions.setMessagingPermissions,
-  );
+  const logs = useSupervisionLogs(wards.selectedWardId);
 
   const handleSelectWard = async (wardId: string) => {
     wards.setSelectedWardId(wardId);
@@ -136,7 +131,7 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
                     onClick={() => setActiveMainTab(SupervisionMainTabEnum.REQUESTS)}
                     className={`mhn-supervision-tab-btn ${activeMainTab === SupervisionMainTabEnum.REQUESTS ? 'mhn-tab-active' : ''}`}
                   >
-                    Requests
+                    Requested
                   </Button>
                   <Button
                     type="button"
@@ -155,7 +150,7 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
                       networkPermissions={permissions.networkPermissions}
                       messagingPermissions={permissions.messagingPermissions}
                       notificationPermissions={permissions.notificationPermissions}
-                      updatingControlKey={permissions.updatingControlKey}
+                      updatingControlKeys={permissions.updatingControlKeys}
                       onToggle={(controlKey, currentVal, setter) =>
                         void permissions.handleToggleControl(wards.selectedWardId, controlKey, currentVal, setter)
                       }
@@ -190,6 +185,8 @@ export const SupervisionPage: React.FC<SupervisionPageProps> = ({ onNavigate, on
                       logs={logs.filteredLogs}
                       searchQuery={logs.logsSearchQuery}
                       onSearchQueryChange={logs.setLogsSearchQuery}
+                      isLoading={logs.isLogsLoading}
+                      hasMore={logs.hasMore}
                     />
                   )}
                 </div>

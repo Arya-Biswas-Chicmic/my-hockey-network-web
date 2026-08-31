@@ -9156,7 +9156,7 @@
 }
 
 .mhn-ward-active {
-  background-color: #eaf3ff;
+  background-color: var(--color-auth-selected);
 }
 
 .mhn-ward-avatar {
@@ -9241,6 +9241,8 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-height: calc(100vh - 150px);
+  overflow: auto;
 }
 
 .mhn-supervision-permissions-stack {
@@ -9889,9 +9891,9 @@
    stack`).
    ========================================================================== */
 .mhn-supervision-requests-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
   width: 100%;
 }
 
@@ -15553,6 +15555,14 @@ img.secure {
   background: var(--color-background);
 }
 
+:root.dark .mhn-flow-title {
+  color: var(--color-foreground);
+}
+
+:root.dark .mhn-flow-subtitle {
+  color: var(--color-muted-foreground);
+}
+
 :root.dark .onboarding-title {
   color: var(--color-foreground);
 }
@@ -16475,7 +16485,8 @@ img.secure {
 .mhn-parent-step-container {
   width: 100%;
   max-width: 450px;
-  margin: 0;
+  margin: 0 auto;
+  padding: 32px 0;
   color: var(--color-foreground);
 }
 
@@ -16629,7 +16640,8 @@ img.secure {
   white-space: normal;
 }
 
-.mhn-parent-choice-card.mhn-active {
+.mhn-parent-choice-card.mhn-active,
+.mhn-parent-choice-card:hover {
   border: 1px solid var(--color-auth-action);
   background: var(--color-auth-selected);
 }
@@ -16656,7 +16668,9 @@ img.secure {
 }
 
 .mhn-parent-choice-card.mhn-active .mhn-parent-card-title,
-.mhn-parent-choice-card.mhn-active .mhn-parent-chevron {
+.mhn-parent-choice-card.mhn-active .mhn-parent-chevron,
+.mhn-parent-choice-card:hover .mhn-parent-card-title,
+.mhn-parent-choice-card:hover .mhn-parent-chevron {
   color: var(--color-auth-action-bright);
 }
 
@@ -17040,3 +17054,23 @@ img.secure {
   opacity: 1;
   color: var(--color-auth-action-bright);
 }
+
+.mhn-select-input {
+  height: 48px;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--color-auth-stroke);
+  background-color: var(--color-background);
+  padding-left: 1rem;
+  padding-right: 2rem;
+  font-size: 14px;
+  color: var(--color-foreground);
+  outline: none;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.mhn-select-input:focus {
+  border-color: var(--color-primary);
+}
+
