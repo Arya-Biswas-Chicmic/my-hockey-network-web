@@ -1,10 +1,15 @@
-'use client';
+"use client";
 
-import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
-import { getSupervisionControls, getSupervisionLogs, type SupervisionControlItem, type SupervisionLogItem } from '@my-hockey-network/core';
+import { useState, useEffect, type Dispatch, type SetStateAction } from "react";
+import {
+  getSupervisionControls,
+  getSupervisionLogs,
+  type SupervisionControlItem,
+  type SupervisionLogItem,
+} from "@my-hockey-network/core";
 
-import { extractErrorMessage } from '@/utils/toast';
-import { useDebounce } from '@/hooks/use-debounce';
+import { extractErrorMessage } from "@/utils/toast";
+import { useDebounce } from "@/hooks/use-debounce";
 
 export interface ActivityLogView {
   id: string;
@@ -15,6 +20,42 @@ export interface ActivityLogView {
 }
 
 type BooleanPermissions = Record<string, boolean | string>;
+
+function formatLogActivity(log: SupervisionLogItem): string {
+  const type = log.type;
+  const params = log.params || {};
+
+  switch (type) {
+    case "PROFILE_UPDATED": {
+      const fields = Array.isArray(params.fields) ? params.fields : [];
+      if (fields.length > 0) {
+        return `Updated profile fields: ${fields.join(", ")}`;
+      }
+      return "Updated profile details";
+    }
+    case "APPROVAL_DECIDED": {
+      const action = params.action || "";
+      const status = params.status || "DECIDED";
+      const statusText = status.toLowerCase();
+      if (action === "RECEIVE_CONNECTION_REQUEST") {
+        return `${statusText === "approved" ? "Approved" : "Declined"} connection request`;
+      }
+      if (action === "SET_PUBLIC_PROFILE") {
+        return `${statusText === "approved" ? "Approved" : "Declined"} post publication`;
+      }
+      return `${statusText === "approved" ? "Approved" : "Declined"} action request`;
+    }
+    case "CONNECTION_REQUEST_RECEIVED":
+      return "Received a connection request";
+    case "PROFILE_VISIBILITY_CHANGED":
+      return "Changed profile visibility";
+    default:
+      return type
+        .toLowerCase()
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+}
 
 /**
  * Supervision > Logs tab. Extracted from `screens/supervision-page.tsx`.
@@ -35,18 +76,24 @@ export function useSupervisionLogs(
 ) {
   const [liveLogs, setLiveLogs] = useState<ActivityLogView[]>([]);
   const [isLogsLoading, setIsLogsLoading] = useState(false);
-  const [logsSearchQuery, setLogsSearchQuery] = useState('');
+  const [hasMore, setHasMore] = useState(false);
+  const [logsSearchQuery, setLogsSearchQuery] = useState("");
   const debouncedLogsSearchQuery = useDebounce(logsSearchQuery, 800);
 
   useEffect(() => {
     if (!selectedWardId) {
       setLiveLogs([]);
+      setHasMore(false);
       return;
     }
 
-    const isRealUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(selectedWardId);
+    const isRealUuid =
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+        selectedWardId,
+      );
     if (!isRealUuid) {
       setLiveLogs([]);
+      setHasMore(false);
       return;
     }
 
@@ -58,19 +105,68 @@ export function useSupervisionLogs(
         const controls = controlsRes.controls;
         if (Array.isArray(controls)) {
           controls.forEach((c: SupervisionControlItem) => {
-            if (c.control === 'VIEW_FEED') setHomePermissions((prev) => ({ ...prev, viewFeed: !!c.value }));
-            if (c.control === 'CREATE_POST') setHomePermissions((prev) => ({ ...prev, createPosts: !!c.value }));
-            if (c.control === 'COMMENT_ON_POSTS') setHomePermissions((prev) => ({ ...prev, commentOnPosts: !!c.value }));
-            if (c.control === 'REACT_TO_POSTS') setHomePermissions((prev) => ({ ...prev, reactToPosts: !!c.value }));
-            if (c.control === 'SHARE_POSTS') setHomePermissions((prev) => ({ ...prev, sharePosts: !!c.value }));
-            if (c.control === 'FOLLOW_OTHERS') setNetworkPermissions((prev) => ({ ...prev, followOthers: !!c.value }));
-            if (c.control === 'ACCEPT_CONNECTIONS') setNetworkPermissions((prev) => ({ ...prev, acceptRequests: !!c.value }));
-            if (c.control === 'WHO_CAN_FOLLOW') setNetworkPermissions((prev) => ({ ...prev, whoCanFollowThem: String(c.value) }));
-            if (c.control === 'WHO_CAN_SEND_CONNECTION_REQUESTS') setNetworkPermissions((prev) => ({ ...prev, whoCanSendRequests: String(c.value) }));
-            if (c.control === 'SEND_MESSAGES') setMessagingPermissions((prev) => ({ ...prev, sendMessages: !!c.value }));
-            if (c.control === 'RECEIVE_MESSAGES') setMessagingPermissions((prev) => ({ ...prev, receiveMessages: !!c.value }));
-            if (c.control === 'CREATE_GROUP_CHATS') setMessagingPermissions((prev) => ({ ...prev, createGroupChats: !!c.value }));
-            if (c.control === 'WHO_CAN_MESSAGE_THEM') setMessagingPermissions((prev) => ({ ...prev, whoCanMessageThem: String(c.value) }));
+            if (c.control === "VIEW_FEED")
+              setHomePermissions((prev) => ({ ...prev, viewFeed: !!c.value }));
+            if (c.control === "CREATE_POST")
+              setHomePermissions((prev) => ({
+                ...prev,
+                createPosts: !!c.value,
+              }));
+            if (c.control === "COMMENT_ON_POSTS")
+              setHomePermissions((prev) => ({
+                ...prev,
+                commentOnPosts: !!c.value,
+              }));
+            if (c.control === "REACT_TO_POSTS")
+              setHomePermissions((prev) => ({
+                ...prev,
+                reactToPosts: !!c.value,
+              }));
+            if (c.control === "SHARE_POSTS")
+              setHomePermissions((prev) => ({
+                ...prev,
+                sharePosts: !!c.value,
+              }));
+            if (c.control === "FOLLOW_OTHERS")
+              setNetworkPermissions((prev) => ({
+                ...prev,
+                followOthers: !!c.value,
+              }));
+            if (c.control === "ACCEPT_CONNECTIONS")
+              setNetworkPermissions((prev) => ({
+                ...prev,
+                acceptRequests: !!c.value,
+              }));
+            if (c.control === "WHO_CAN_FOLLOW")
+              setNetworkPermissions((prev) => ({
+                ...prev,
+                whoCanFollowThem: String(c.value),
+              }));
+            if (c.control === "WHO_CAN_SEND_CONNECTION_REQUESTS")
+              setNetworkPermissions((prev) => ({
+                ...prev,
+                whoCanSendRequests: String(c.value),
+              }));
+            if (c.control === "SEND_MESSAGES")
+              setMessagingPermissions((prev) => ({
+                ...prev,
+                sendMessages: !!c.value,
+              }));
+            if (c.control === "RECEIVE_MESSAGES")
+              setMessagingPermissions((prev) => ({
+                ...prev,
+                receiveMessages: !!c.value,
+              }));
+            if (c.control === "CREATE_GROUP_CHATS")
+              setMessagingPermissions((prev) => ({
+                ...prev,
+                createGroupChats: !!c.value,
+              }));
+            if (c.control === "WHO_CAN_MESSAGE_THEM")
+              setMessagingPermissions((prev) => ({
+                ...prev,
+                whoCanMessageThem: String(c.value),
+              }));
           });
         }
 
@@ -78,14 +174,24 @@ export function useSupervisionLogs(
         const logItems = logsRes.items ?? [];
         const mappedLogs = logItems.map((log: SupervisionLogItem) => ({
           id: log.id,
-          dateTime: new Date(log.createdAt).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-          activity: log.summary || log.eventType || 'Supervision activity log',
-          initiatedBy: 'Parent',
-          actionText: 'View',
+          dateTime: new Date(log.createdAt).toLocaleString([], {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          activity: formatLogActivity(log),
+          initiatedBy: log.actorDisplayName || log.actorRoleLabel || "Parent",
+          actionText: "View",
         }));
         setLiveLogs(mappedLogs);
+        setHasMore(!!logsRes.hasMore);
       } catch (err: unknown) {
-        console.warn('❌ [SupervisionPage] Controls/Logs load notice:', extractErrorMessage(err));
+        console.warn(
+          "❌ [SupervisionPage] Controls/Logs load notice:",
+          extractErrorMessage(err),
+        );
       } finally {
         setIsLogsLoading(false);
       }
@@ -105,5 +211,11 @@ export function useSupervisionLogs(
     );
   });
 
-  return { filteredLogs, logsSearchQuery, setLogsSearchQuery, isLogsLoading };
+  return {
+    filteredLogs,
+    logsSearchQuery,
+    setLogsSearchQuery,
+    isLogsLoading,
+    hasMore,
+  };
 }

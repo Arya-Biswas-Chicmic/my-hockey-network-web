@@ -4,6 +4,7 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Enabled the Next page button in the Supervision "Logs" tab dynamically when the backend API returns a `hasMore: true` pagination flag.
 - Configured loading skeleton/shimmer indicators for the Supervision Permissions, Requests, and Logs tabs to trigger immediately and clear stale data when switching between children/players.
 - Removed mock data from the Supervision "Logs" tab and configured it to load live logs exclusively via the backend API.
 - Added hover states to `.mhn-parent-choice-card` that mirror `.mhn-active` styles for visual feedback.

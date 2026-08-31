@@ -1,14 +1,15 @@
-import { apiFetch } from './client';
-import { API_ENDPOINTS } from './urls';
+import { apiFetch } from "./client";
+import { API_ENDPOINTS } from "./urls";
 
 export interface CreateManagedChildDTO {
   displayName: string;
   firstName: string;
   lastName?: string;
   dateOfBirth: string; // YYYY-MM-DD
-  guardianRelation: 'MOTHER' | 'FATHER' | 'LEGAL_GUARDIAN' | 'GRANDPARENT' | 'OTHER';
+  guardianRelation:
+    "MOTHER" | "FATHER" | "LEGAL_GUARDIAN" | "GRANDPARENT" | "OTHER";
   email?: string;
-  profileVisibility?: 'CONNECTIONS' | 'PUBLIC' | 'ONLY_ME';
+  profileVisibility?: "CONNECTIONS" | "PUBLIC" | "ONLY_ME";
   requireApprovalAdultContact?: boolean;
   requireApprovalConnections?: boolean;
   requireApprovalTeamInvites?: boolean;
@@ -38,8 +39,18 @@ export interface SupervisionControlItem {
 export interface SupervisionLogItem {
   id: string;
   minorId: string;
-  eventType: string;
-  summary: string;
+  type: string;
+  actorUserId?: string | null;
+  actorDisplayName?: string | null;
+  actorRoleLabel?: string | null;
+  entityType?: string;
+  entityId?: string;
+  params?: {
+    fields?: string[];
+    action?: string;
+    status?: string;
+    [key: string]: unknown;
+  } | null;
   createdAt: string;
 }
 
@@ -49,7 +60,7 @@ export interface SupervisionLogItem {
 export function cleanEmptyFields<T extends object>(obj: T): Partial<T> {
   const result: Partial<T> = {};
   for (const [key, value] of Object.entries(obj)) {
-    if (value !== undefined && value !== null && value !== '') {
+    if (value !== undefined && value !== null && value !== "") {
       result[key as keyof T] = value;
     }
   }
@@ -60,7 +71,7 @@ export function cleanEmptyFields<T extends object>(obj: T): Partial<T> {
  * Format any date string (DD/MM/YYYY, DD-MM-YYYY, or YYYY-MM-DD) into ISO format YYYY-MM-DD
  */
 export function formatDobToIso(dob: string): string {
-  if (!dob) return '';
+  if (!dob) return "";
   const trimmed = dob.trim();
   // Already YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
@@ -84,11 +95,13 @@ export function formatDobToIso(dob: string): string {
 /**
  * Fetch Supervision Data (Parent-only list of managed children)
  */
-export async function getSupervisionData(clientType: 'web' | 'mobile' = 'web'): Promise<{ children: SupervisionChildItem[] }> {
+export async function getSupervisionData(
+  clientType: "web" | "mobile" = "web",
+): Promise<{ children: SupervisionChildItem[] }> {
   return apiFetch<{ children: SupervisionChildItem[] }>(
     API_ENDPOINTS.SUPERVISION.BASE,
-    { method: 'GET' },
-    clientType
+    { method: "GET" },
+    clientType,
   );
 }
 
@@ -97,7 +110,7 @@ export async function getSupervisionData(clientType: 'web' | 'mobile' = 'web'): 
  */
 export async function createManagedChild(
   dto: CreateManagedChildDTO,
-  clientType: 'web' | 'mobile' = 'web'
+  clientType: "web" | "mobile" = "web",
 ): Promise<{ child: SupervisionChildItem; profile?: SupervisionChildItem }> {
   const formattedDto: CreateManagedChildDTO = {
     ...dto,
@@ -109,19 +122,28 @@ export async function createManagedChild(
   const res = await apiFetch<Record<string, unknown>>(
     API_ENDPOINTS.SUPERVISION.CHILDREN,
     {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(cleanedPayload),
     },
-    clientType
+    clientType,
   );
 
-  const dataObj = (typeof res === 'object' && res !== null && 'data' in res ? res.data : undefined) as Record<string, unknown> | undefined;
-  const childObj = ((res?.child || res?.profile || dataObj?.child || dataObj?.profile || res) || {}) as SupervisionChildItem;
+  const dataObj = (
+    typeof res === "object" && res !== null && "data" in res
+      ? res.data
+      : undefined
+  ) as Record<string, unknown> | undefined;
+  const childObj = (res?.child ||
+    res?.profile ||
+    dataObj?.child ||
+    dataObj?.profile ||
+    res ||
+    {}) as SupervisionChildItem;
 
   return {
     child: childObj,
     profile: childObj,
-    ...(typeof res === 'object' && res !== null ? res : {}),
+    ...(typeof res === "object" && res !== null ? res : {}),
   };
 }
 
@@ -130,12 +152,12 @@ export async function createManagedChild(
  */
 export async function getSupervisionControls(
   minorId: string,
-  clientType: 'web' | 'mobile' = 'web'
+  clientType: "web" | "mobile" = "web",
 ): Promise<{ controls: SupervisionControlItem[] }> {
   return apiFetch<{ controls: SupervisionControlItem[] }>(
     API_ENDPOINTS.SUPERVISION.CONTROLS(minorId),
-    { method: 'GET' },
-    clientType
+    { method: "GET" },
+    clientType,
   );
 }
 
@@ -145,15 +167,15 @@ export async function getSupervisionControls(
 export async function updateSupervisionControls(
   minorId: string,
   updates: Array<{ control: string; value: boolean | string }>,
-  clientType: 'web' | 'mobile' = 'web'
+  clientType: "web" | "mobile" = "web",
 ): Promise<{ success: boolean; controls?: SupervisionControlItem[] }> {
   return apiFetch<{ success: boolean; controls?: SupervisionControlItem[] }>(
     API_ENDPOINTS.SUPERVISION.CONTROLS(minorId),
     {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify({ updates }),
     },
-    clientType
+    clientType,
   );
 }
 
@@ -163,17 +185,25 @@ export async function updateSupervisionControls(
 export async function getSupervisionLogs(
   minorId: string,
   params?: { cursor?: string; limit?: number },
-  clientType: 'web' | 'mobile' = 'web'
-): Promise<{ items: SupervisionLogItem[]; nextCursor?: string | null }> {
+  clientType: "web" | "mobile" = "web",
+): Promise<{
+  items: SupervisionLogItem[];
+  nextCursor?: string | null;
+  hasMore: boolean;
+}> {
   const query = new URLSearchParams();
-  if (params?.cursor) query.set('cursor', params.cursor);
-  if (params?.limit) query.set('limit', String(params.limit));
+  if (params?.cursor) query.set("cursor", params.cursor);
+  if (params?.limit) query.set("limit", String(params.limit));
 
-  const queryString = query.toString() ? `?${query.toString()}` : '';
-  return apiFetch<{ items: SupervisionLogItem[]; nextCursor?: string | null }>(
+  const queryString = query.toString() ? `?${query.toString()}` : "";
+  return apiFetch<{
+    items: SupervisionLogItem[];
+    nextCursor?: string | null;
+    hasMore: boolean;
+  }>(
     `${API_ENDPOINTS.SUPERVISION.LOGS(minorId)}${queryString}`,
-    { method: 'GET' },
-    clientType
+    { method: "GET" },
+    clientType,
   );
 }
 
@@ -198,13 +228,13 @@ interface SupervisionPermissionsPayload {
  * Note: Only called for minor players / wards, NOT for parent or coach roles.
  */
 export async function getMySupervisionPermissions(
-  clientType: 'web' | 'mobile' = 'web'
+  clientType: "web" | "mobile" = "web",
 ): Promise<SupervisionPermissionsResponse> {
   try {
     const res = await apiFetch<SupervisionPermissionsPayload>(
       API_ENDPOINTS.SUPERVISION.MY_PERMISSIONS,
-      { method: 'GET' },
-      clientType
+      { method: "GET" },
+      clientType,
     );
 
     const controlsList = res?.controls || res?.data?.controls || [];

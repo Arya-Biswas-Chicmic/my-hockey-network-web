@@ -11,6 +11,7 @@ export interface SupervisionLogsTabProps {
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
   isLoading?: boolean;
+  hasMore?: boolean;
 }
 
 /** Supervision > Logs tab. Extracted from `screens/supervision-page.tsx`. */
@@ -19,6 +20,7 @@ export function SupervisionLogsTab({
   searchQuery,
   onSearchQueryChange,
   isLoading = false,
+  hasMore = false,
 }: Readonly<SupervisionLogsTabProps>) {
   return (
     <div className="mhn-supervision-logs-wrapper">
@@ -81,7 +83,7 @@ export function SupervisionLogsTab({
         </span>
         <div className="mhn-logs-pagination-buttons">
           <Button className="mhn-page-btn" disabled>Previous</Button>
-          <Button className="mhn-page-btn" disabled={isLoading}>Next</Button>
+          <Button className="mhn-page-btn" disabled={!hasMore || isLoading}>Next</Button>
         </div>
       </div>
     </div>
