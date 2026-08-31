@@ -236,6 +236,12 @@ export const ProfilePage: React.FC<PageProps> = ({
     }
   }, [createPostRequestId]);
 
+  const handleDeclineChildRequestByCode = (code: string) => {
+    void childApprovals.handleDeclineCodeSubmit(code).catch((err) => {
+      console.error("Failed to decline request by code:", err);
+    });
+  };
+
   return (
     <div className="mhn-profile-page-root">
       <FeedPermissionBanner
@@ -366,16 +372,7 @@ export const ProfilePage: React.FC<PageProps> = ({
                       }
                       guardianRequestsQuery={guardianRequestsQuery}
                       isGuardianProcessing={guardianApproval.isProcessing}
-                      onDeclineByCode={(code) =>
-                        void childApprovals
-                          .handleDeclineCodeSubmit(code)
-                          .catch((err) =>
-                            console.error(
-                              "Failed to decline request by code:",
-                              err,
-                            ),
-                          )
-                      }
+                      onDeclineByCode={handleDeclineChildRequestByCode}
                       onOpenApproveModal={(targetName, code) =>
                         guardianApproval.setGuardianApprovalModalConfig({
                           isOpen: true,
