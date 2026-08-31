@@ -8,13 +8,15 @@ import {
 } from "@/components/features/profile";
 import { DeleteCareerModal } from "@/components/common/DeleteCareerModal";
 import { useAuth } from "@/hooks/use-auth";
-import { showSuccessToast } from "@/utils/toast";
+import { showSuccessToast, showToast } from "@/utils/toast";
 import { SUCCESS_MESSAGES } from "@my-hockey-network/constants";
 import { ProfileTabEnum } from "@my-hockey-network/contracts";
 import { ApprovalCodeModal } from "@/components/supervision/ApprovalCodeModal";
 import { ProfileGuardianRequestsTab } from "@/components/features/profile/ProfileGuardianRequestsTab";
-import { usePendingGuardianInvites } from "@/hooks/use-guardian-relationships";
-import { isMinorPlayerUser } from "@my-hockey-network/domain";
+import { ProfileChildApprovalsTab } from "@/components/features/profile/ProfileChildApprovalsTab";
+import { usePendingGuardianInvites, usePendingGuardianRequests } from "@/hooks/use-guardian-relationships";
+import { useSupervisionRequests } from "@/hooks/use-supervision-requests";
+import { isMinorPlayerUser, isParentUser } from "@my-hockey-network/domain";
 import { paths } from "@/constants/paths";
 
 import {
@@ -61,10 +63,17 @@ export const ProfilePage: React.FC<PageProps> = ({
   const searchParams = useSearchParams();
   const { requirePermission } = useFeedPermissions(onNavigate);
   const profileScrollRef = useRef<HTMLElement>(null);
+  const ownProfileId = user?.profile?.id || user?.id;
 
   const { cropModal, isUploadingAvatar, handleAvatarFileChange } =
     useProfileImageUploads({ setUserProfile, loadAuthMe });
+  const targetUserId =
+    searchParams.get("userId") ||
+    searchParams.get("selectedWardId") ||
+    searchParams.get("childId");
 
+  const isOwnProfile =
+    !targetUserId || targetUserId === ownProfileId || targetUserId === user?.id;
   const requestedProfileTab = searchParams.get("tab");
   const resolvedInitialProfileTab = Object.values(ProfileTabEnum).includes(
     requestedProfileTab as ProfileTabEnum,
@@ -75,22 +84,29 @@ export const ProfilePage: React.FC<PageProps> = ({
     resolvedInitialProfileTab,
   );
   const canViewGuardianInvites = isMinorPlayerUser(user);
+  const canViewChildApprovals = isParentUser(user) && isOwnProfile;
   const guardianInvitesQuery = usePendingGuardianInvites({
     enabled:
       canViewGuardianInvites &&
       activeProfileTab === ProfileTabEnum.GUARDIAN_REQUESTS,
   });
+  const guardianRequestsQuery = usePendingGuardianRequests({
+    enabled:
+      canViewChildApprovals &&
+      activeProfileTab === ProfileTabEnum.CHILD_APPROVAL_REQUESTS,
+  });
   const guardianApproval = useProfileGuardianApproval();
 
-  const targetUserId =
-    searchParams.get("userId") ||
-    searchParams.get("selectedWardId") ||
-    searchParams.get("childId");
+  const childApprovals = useSupervisionRequests({
+    activeMainTab: "requests",
+    requestsTabValue: "requests",
+    selectedWardId: "",
+    onWardApproved: () => {},
+    showToast,
+  });
 
-  const ownProfileId = user?.profile?.id || user?.id;
   const effectiveProfileId = targetUserId || ownProfileId || null;
-  const isOwnProfile =
-    !targetUserId || targetUserId === ownProfileId || targetUserId === user?.id;
+
   // `updateAuthProfile` updates only the authenticated user's profile. Managed-child
   // editing needs a dedicated, backend-authorized endpoint and must not be inferred from role.
   const canEditProfile = isOwnProfile;
@@ -105,6 +121,8 @@ export const ProfilePage: React.FC<PageProps> = ({
     if (!onNavigate) return;
     if (tab === ProfileTabEnum.GUARDIAN_REQUESTS) {
       onNavigate(paths.profileGuardianRequests);
+    } else if (tab === ProfileTabEnum.CHILD_APPROVAL_REQUESTS) {
+      onNavigate(`${paths.profile}?tab=${tab}`);
     } else if (initialProfileTab === ProfileTabEnum.GUARDIAN_REQUESTS) {
       onNavigate(`${paths.profile}?tab=${tab}`);
     }
@@ -300,6 +318,7 @@ export const ProfilePage: React.FC<PageProps> = ({
                 activeProfileTab={activeProfileTab}
                 onProfileTabChange={handleProfileTabChange}
                 canViewGuardianInvites={canViewGuardianInvites}
+                canViewChildApprovals={canViewChildApprovals}
               />
 
               <div>
@@ -362,6 +381,23 @@ export const ProfilePage: React.FC<PageProps> = ({
                       onApprove={guardianApproval.handleRequestApprove}
                     />
                   )}
+
+                {activeProfileTab === ProfileTabEnum.CHILD_APPROVAL_REQUESTS &&
+                  canViewChildApprovals && (
+                    <ProfileChildApprovalsTab
+                      items={childApprovals.livePendingRequests}
+                      isLoading={childApprovals.isRequestsLoading}
+                      actionLoading={childApprovals.requestActionLoading}
+                      notice={childApprovals.requestNotice}
+                      onApprove={(id) => void childApprovals.handleApproveApprovalItem(id)}
+                      onDecline={(id) => void childApprovals.handleDeclineApprovalItem(id)}
+                      guardianRequestsQuery={guardianRequestsQuery}
+                      isGuardianProcessing={guardianApproval.isProcessing}
+                      onDeclineByCode={(code) => void childApprovals.handleDeclineCodeSubmit(code).catch(() => {})}
+                      onOpenApproveModal={(targetName, code) => guardianApproval.setGuardianApprovalModalConfig({ isOpen: true, targetName, code, action: "approve" })}
+                      onOpenDeclineModal={(targetName) => guardianApproval.setGuardianApprovalModalConfig({ isOpen: true, targetName, code: "", action: "decline" })}
+                    />
+                  )}
               </div>
             </>
           )}
@@ -396,7 +432,18 @@ export const ProfilePage: React.FC<PageProps> = ({
             : "Confirm & Decline"
         }
         onClose={guardianApproval.closeApprovalModal}
-        onSubmit={guardianApproval.submitApprovalModal}
+        onSubmit={async (code) => {
+          if (activeProfileTab === ProfileTabEnum.CHILD_APPROVAL_REQUESTS) {
+            if (guardianApproval.guardianApprovalModalConfig.action === "approve") {
+              await childApprovals.handleApproveCodeSubmit(code);
+            } else {
+              await childApprovals.handleDeclineCodeSubmit(code);
+            }
+            guardianApproval.closeApprovalModal();
+          } else {
+            await guardianApproval.submitApprovalModal(code);
+          }
+        }}
       />
 
       {createPost.isCreatePostOpen && (

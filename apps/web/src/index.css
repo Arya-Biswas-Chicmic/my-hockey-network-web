@@ -10626,6 +10626,25 @@
   gap: 20px;
 }
 
+.mhn-child-approvals-header {
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.mhn-child-approvals-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-foreground);
+  margin: 0 0 4px;
+}
+
+.mhn-child-approvals-subtitle {
+  font-size: 13px;
+  color: var(--color-muted-foreground);
+  margin: 0;
+}
+
+
 .mhn-supervision-code-card {
   background-color: var(--color-background);
   border: 1px solid var(--color-border);

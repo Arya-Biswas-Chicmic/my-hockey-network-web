@@ -41,6 +41,8 @@ export interface ProfileHeroCardProps {
   activeProfileTab: ProfileTabEnum;
   onProfileTabChange: (tab: ProfileTabEnum) => void;
   canViewGuardianInvites: boolean;
+  /** Shown only to PARENT users on their own profile — displays the Child Approval Requests tab. */
+  canViewChildApprovals?: boolean;
   /** Rendered in place of the Edit Profile button when `canEditProfile` is
    * false — the other-user popup's Follow/Message actions (feedback
    * 2026-08-30: "instead of the edit profile we will have follow if not
@@ -86,6 +88,7 @@ export function ProfileHeroCard({
   activeProfileTab,
   onProfileTabChange,
   canViewGuardianInvites,
+  canViewChildApprovals = false,
   otherProfileActions,
   hideCareerTab = false,
 }: Readonly<ProfileHeroCardProps>) {
@@ -181,6 +184,17 @@ export function ProfileHeroCard({
               activeProfileTab === ProfileTabEnum.GUARDIAN_REQUESTS && 'font-bold text-[var(--tab-active-text)] after:bg-[var(--tab-active-underline)]',
             )}
           >Guardian Requests</Button>
+        ) : null}
+        {isOwnProfile && canViewChildApprovals ? (
+          <Button
+            role="tab"
+            aria-selected={activeProfileTab === ProfileTabEnum.CHILD_APPROVAL_REQUESTS}
+            onClick={() => onProfileTabChange(ProfileTabEnum.CHILD_APPROVAL_REQUESTS)}
+            className={cn(
+              'relative h-11 min-w-[130px] px-3 text-sm font-medium text-muted-foreground after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:rounded-t-full after:bg-transparent',
+              activeProfileTab === ProfileTabEnum.CHILD_APPROVAL_REQUESTS && 'text-foreground after:bg-foreground',
+            )}
+          >Child Requests</Button>
         ) : null}
       </nav>
     </section>

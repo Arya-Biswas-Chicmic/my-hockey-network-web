@@ -56,11 +56,16 @@ permissions.message` guard plus an identical 8-line CTA dispatch — 9 of the 10
   that is never used inside the component and never passed by `OnboardingModal` — dead since the file
   was created. Left alone pending a decision on whether that step should have a back affordance at
   all, rather than silently deleting a prop or wiring a new user-facing control.
+- Added a "Child Requests" tab to the Profile page for PARENT users, beside the Career tab. The tab uses `useChildApprovals` (backed by `useQuery`) to fetch all pending child approval requests via `getApprovals({ status: 'PENDING' })` and renders them in the same `SupervisionRequestRow` card grid as the Supervision Requested tab. Parents can Approve or Decline each request inline.
 - Fixed Team Detail's tab bar (Posts/Members/Events/Media/About) leaving dead space after "About"
   instead of spanning the card's full width (feedback 2026-08-31: "make top bar filled entire width,
   check marked area"). Each tab was `shrink-0` with a `gap-8`, clustering left; switched to `flex-1`
   per tab (matching Figma's own `flex-[193_0_0]` equal-width tab list) so the row fills the card
   edge-to-edge with no side padding, same as the design.
+- Migrated `useSupervisionLogs` from a sequential `useEffect`-based fetch to a single `useQuery` call, giving the hook automatic caching, deduplication, and TanStack Query loading states.
+- Removed the redundant `getSupervisionControls` fetch from `useSupervisionLogs`; controls are already fetched by `use-supervision-permissions.ts` on ward selection, so the duplicate call and its permission-setter fan-out were deleted entirely.
+- Gated the Requests tab skeleton loader behind a real ward-UUID check so the spinner only appears when switching between players, not on the initial tab visit without a selection.
+- Refactored permission updating state to track `updatingControlKeys` Record rather than a single string, enabling other switches and dropdowns to remain active and clickable in parallel during toggling.
 
 - Fixed Event Detail rendering wider (less left/right gutter) than Team/Group Detail at the same
   window size (feedback 2026-08-31: "make this view port consistent similar to team tab by making
