@@ -1,7 +1,7 @@
 import { resolveMediaUrl, resolveCoverUrl } from '@/utils/mediaUtils';
 import { getLocalAvatar } from '@/utils/local-avatar-storage';
 import type { CareerEntry } from '@my-hockey-network/core';
-import type { AuthMeResponse } from '@my-hockey-network/contracts';
+import type { AuthMeResponse, HeightValue, WeightValue } from '@my-hockey-network/contracts';
 
 export function calculateAge(dateOfBirth: string, today = new Date()): number | null {
   const dobDate = new Date(dateOfBirth);
@@ -100,8 +100,15 @@ export function useProfileViewModel(
   const liveShoots = isOwnProfile
     ? (valueFor('shootsCatches') as string | undefined) || (user?.profile?.shootsCatches as string | undefined) || null
     : (valueFor('shootsCatches') as string | undefined) || null;
-  const liveHeight = String(valueFor('height') || '—');
-  const liveWeight = String(valueFor('weight') || '—');
+  const heightVal = valueFor('height');
+  const liveHeight = typeof heightVal === 'object' && heightVal !== null
+    ? (heightVal as HeightValue).formatted || '—'
+    : String(heightVal || '—');
+
+  const weightVal = valueFor('weight');
+  const liveWeight = typeof weightVal === 'object' && weightVal !== null
+    ? (weightVal as WeightValue).formatted || '—'
+    : String(weightVal || '—');
   const followers = Number(valueFor('followers') || 0);
   const following = Number(valueFor('following') || 0);
 

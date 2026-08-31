@@ -34,6 +34,8 @@ export function useHomeFeed() {
   // Resolve the signed-in profile once before the first feed fetch — mirrors
   // the previous ref-guarded effect, just without owning the fetch itself.
   const [isAuthResolved, setIsAuthResolved] = useState(false);
+  const [hasInitialLoaded, setHasInitialLoaded] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -81,6 +83,12 @@ export function useHomeFeed() {
       : null,
     { staleTime: 5 * 60 * 1000 },
   );
+
+  useEffect(() => {
+    if (isAuthResolved && !feedQuery.isLoading) {
+      setHasInitialLoaded(true);
+    }
+  }, [isAuthResolved, feedQuery.isLoading]);
 
   const feedError: FeedErrorState | null = feedQuery.error
     ? {
@@ -167,7 +175,7 @@ export function useHomeFeed() {
     debouncedSearchQuery,
     sortBy,
     setSortBy,
-    isPageLoading: activeFeedTab === HomeFeedTab.FOR_YOU && (!isAuthResolved || (feedQuery.isLoading && feedQuery.items.length === 0)),
+    isPageLoading: !hasInitialLoaded,
     isFeedRefreshing: feedQuery.isLoading,
     feedPosts,
     feedError: activeFeedTab === HomeFeedTab.FOR_YOU ? feedError : null,

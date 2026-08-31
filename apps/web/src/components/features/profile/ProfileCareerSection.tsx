@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { BadgeCheck, Pencil, Plus, Trash2 } from 'lucide-react';
+import { BadgeCheck, Pencil, Plus, Trash2, X } from 'lucide-react';
 
 import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/common/Spinner';
@@ -175,9 +175,13 @@ export function ProfileCareerSection({
           type="button"
           onClick={() => (isFormOpen && !editingTeamId ? closeForm() : openAddForm())}
           className="mhn-btn-icon-clear"
-          title="Add Team"
+          title={isFormOpen && !editingTeamId ? 'Cancel' : 'Add Team'}
         >
-          <Plus size={20} aria-hidden="true" />
+          {isFormOpen && !editingTeamId ? (
+            <X size={20} aria-hidden="true" />
+          ) : (
+            <Plus size={20} aria-hidden="true" />
+          )}
         </Button>
       </div>
 
