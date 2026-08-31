@@ -9,20 +9,30 @@ import { getMyDemoMediaItems } from '@/demo-data/feed';
 
 export interface ProfileMediaTabProps {
   isOwnProfile: boolean;
+  /** The other-user profile popup's own preview/demo context — feedback
+   * 2026-08-30: "for others also add some demo data: post, event, stats,
+   * groups etc which will shown in others profile which don't have data".
+   * Unlike `isOwnProfile`, this is never true on the real `/profile` page
+   * (there, someone else's actual profile still shows the honest empty
+   * state below rather than fabricated content — see DEMO_DATA_POLICY.md). */
+  showDemoFallback?: boolean;
 }
 
 /** Same shared feed dataset the Home feed and Profile > Posts read from
  * (`@/demo-data/feed`) — a photo posted to the feed is the same photo shown
  * here, instead of an unrelated standalone media fixture. `getMyDemoMediaItems`
  * is always the VIEWER's own demo photos, so this must gate on `isOwnProfile`
- * — a prior version rendered them unconditionally, meaning viewing anyone
- * else's profile silently showed your own media as if it were theirs
- * (surfaced by the other-user profile popup exercising this path for real). */
-export function ProfileMediaTab({ isOwnProfile }: Readonly<ProfileMediaTabProps>) {
+ * (a prior version rendered them unconditionally, meaning viewing anyone
+ * else's profile silently showed your own media as if it were theirs,
+ * surfaced by the other-user profile popup exercising this path for real) —
+ * `showDemoFallback` opts back into showing this generic filler for that
+ * popup's own preview profiles specifically. */
+export function ProfileMediaTab({ isOwnProfile, showDemoFallback = false }: Readonly<ProfileMediaTabProps>) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const mediaItems = isOwnProfile ? getMyDemoMediaItems() : [];
+  const shouldShowContent = isOwnProfile || showDemoFallback;
+  const mediaItems = shouldShowContent ? getMyDemoMediaItems() : [];
 
-  if (!isOwnProfile) {
+  if (!shouldShowContent) {
     return <NoDataFound title="No Media Yet" description="This profile hasn't shared any photos or videos yet." />;
   }
 

@@ -90,6 +90,23 @@
   --radius: 0.5rem;
 }
 
+/* The one place every "active tab" underline/text pair reads from — Figma
+   (node 1806:15281, Home's For You/Network/Groups tabs) uses bold white
+   text with a blue 3px underline; several other tab bars had drifted to
+   blue TEXT (Home's own implementation, ironically) or a white/black
+   underline (Profile, Supervision, Network) instead. Every `.mhn-*-tab-
+   active`-style rule below points at these two variables instead of
+   hardcoding `var(--color-foreground)`/`var(--color-primary)` (or a stray
+   literal color) per tab bar, so a future color change only ever needs to
+   happen here (feedback 2026-08-30: "somewhere ... white and offwhite
+   color and somewhere dull blue color ... keep this in constant change
+   from single location"). Plain `:root`, not inside `@theme` above — these
+   are aliases for other tokens, not new theme colors of their own. */
+:root {
+  --tab-active-text: var(--color-foreground);
+  --tab-active-underline: var(--color-primary);
+}
+
 @keyframes mhn-spin {
   0% {
     transform: rotate(0deg);
@@ -2722,17 +2739,36 @@
   width: 100%;
 }
 
-/* The center feed column scrolls independently of the sidebar/right column
-   (`lg:overflow-y-auto` in home-page.tsx) — that part works on its own, no
-   styling needed. This only controls the scrollbar's own look: transparent
-   at rest (Figma's static mockup has no persistent scrollbar line — flagged
-   directly, 2026-08-27: "no lines in the figma, match exactly" — and an
-   always-visible thumb read as exactly that, a line), a subtle themed thumb
-   appears only on hover, matching how most modern browsers already behave
-   by default rather than adding a permanent decoration. */
+/* The single shared "this column is the scrollable region of a detail page"
+   factor — every route that needs its own content to scroll independently
+   of the fixed-height `.mhn-app-content` shell (Home's feed, Profile,
+   Event Detail, ...) used to hand-type the same four `lg:h-full
+   lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain` Tailwind utilities
+   at its own call site (feedback 2026-08-31: "keep it consist[ent]...
+   fix here only [by] adding [a] global factor" — a repeat of the same
+   "single source of truth" ask already applied to tab colors/search bar
+   elsewhere this project). Folded into the class itself so a page opts in
+   with just `className="mhn-layout-col-center"` and nothing else; this
+   also controls the scrollbar's own look: transparent at rest (Figma's
+   static mockup has no persistent scrollbar line — flagged directly,
+   2026-08-27: "no lines in the figma, match exactly" — an always-visible
+   thumb read as exactly that, a line), a subtle themed thumb appears only
+   on hover, matching how most modern browsers already behave by default
+   rather than adding a permanent decoration. Scoped to the `lg:` breakpoint
+   (matching Tailwind's `lg:` prefix) since mobile/tablet keep normal
+   document flow instead of a height-bounded inner scroller. */
 .mhn-layout-col-center {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
+}
+
+@media (min-width: 1024px) {
+  .mhn-layout-col-center {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 .mhn-layout-col-center:hover {
@@ -2781,8 +2817,10 @@
 .mhn-post-author-group {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 0;
   min-width: 0;
+  text-align: left;
 }
 
 .mhn-author-avatar-box {
@@ -2805,8 +2843,11 @@
 .mhn-author-meta {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   min-width: 0;
   padding: 4px 4px 4px 8px;
+  text-align: left;
 }
 
 .mhn-author-name {
@@ -2903,6 +2944,14 @@
   padding: 0;
 }
 
+/* 12px left, flush with the avatar's own left edge and the footer action
+   row below (`.mhn-post-footer` — also 12px) — confirmed against Figma
+   node 1806:15295: avatar, caption text, and the like/comment/repost row
+   all share that one 12px inset; only the NAME (to the right of the
+   avatar) sits further in. A prior pass here indented this to 68px to
+   match the name instead, which was backwards — reverted (feedback
+   2026-08-30: "main feed text should aligned with photo and like button
+   check figma"). */
 .mhn-post-copy {
   padding: 4px 12px 8px;
 }
@@ -2913,6 +2962,12 @@
   line-height: 20px;
   margin: 0;
   font-weight: 600;
+  /* Renders `\n\n`-separated paragraphs in `content` as real line breaks
+     instead of collapsing them — needed once Explore's posts moved onto
+     this shared component (feedback 2026-08-30: "make same feed card used
+     everywhere"), since their multi-paragraph copy previously relied on
+     hand-rolled `<p>` tags this component doesn't have. */
+  white-space: pre-line;
 }
 
 .mhn-post-more-btn {
@@ -3516,7 +3571,7 @@
   top: 16px;
   right: 13px;
   width: 136px;
-  height: 126px;
+  height: 124px;
   pointer-events: none;
   mix-blend-mode: normal;
 }
@@ -3526,6 +3581,14 @@
   height: 100%;
   object-fit: contain;
   object-position: right bottom;
+}
+
+.mhn-invite-illustration-img-dark {
+  display: none;
+}
+
+.mhn-invite-illustration-img-light {
+  display: block;
 }
 
 .like-count-icon {
@@ -9222,10 +9285,13 @@
 
 .mhn-tab-active {
   background-color: transparent;
-  color: var(--color-foreground);
+  color: var(--tab-active-text);
   font-weight: 700;
 }
 
+/* Was a white (`--color-foreground`) underline — Figma (node 1806:15281)
+   reserves blue for every active-tab underline, text stays white. Reads
+   the shared single-source pair (see `:root` near the top of this file). */
 .mhn-tab-active::after {
   content: '';
   position: absolute;
@@ -9233,7 +9299,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background-color: var(--color-foreground);
+  background-color: var(--tab-active-underline);
 }
 
 .mhn-supervision-tab-body {
@@ -11535,6 +11601,45 @@ img.secure {
   object-fit: contain;
 }
 
+/* Compact filters use Figma's centered label + chevron composition
+   (1725:20736), instead of the native select arrow pinned to the edge. */
+.mhn-dropdown-select--compact-centered {
+  height: 36px;
+  padding: 0;
+  border-color: var(--color-auth-stroke);
+  background-color: var(--color-background);
+  color: transparent;
+  text-align: center;
+}
+
+.mhn-dropdown-select--compact-centered option {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+.mhn-dropdown-centered-display {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--color-foreground);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  pointer-events: none;
+}
+
+.mhn-dropdown-centered-display svg {
+  flex: 0 0 auto;
+}
+
+.mhn-dropdown-select--compact-centered.mhn-dropdown-disabled +
+  .mhn-dropdown-centered-display {
+  color: var(--color-foreground-subtle);
+}
+
 /* Delete Career Modal Centralized Styles */
 .mhn-delete-modal-card {
   background-color: var(--color-background);
@@ -13041,8 +13146,8 @@ img.secure {
 }
 
 .mhn-connections-tab-btn.active {
-  border-bottom-color: var(--color-primary);
-  color: var(--color-foreground);
+  border-bottom-color: var(--tab-active-underline);
+  color: var(--tab-active-text);
   font-weight: 700;
 }
 
@@ -15421,6 +15526,14 @@ img.secure {
   mix-blend-mode: color-dodge;
 }
 
+:root.dark .mhn-invite-illustration-img-dark {
+  display: block;
+}
+
+:root.dark .mhn-invite-illustration-img-light {
+  display: none;
+}
+
 /* Figma's footer icons/counts are near-white (`text-white`), not the dimmer
    muted-secondary-text color the rest of the app uses for captions —
    they're a primary action row, not secondary metadata (feedback about the
@@ -16127,9 +16240,15 @@ img.secure {
   cursor: pointer;
 }
 
+/* Was `color: var(--color-primary)` — blue TEXT, when Figma (node
+   1806:15281) uses bold WHITE text and reserves blue for the underline
+   only. The JSX already added a `text-white` Tailwind utility expecting
+   that (see `HomeTabs.tsx`), but this same-specificity plain-CSS rule won
+   the cascade and overrode it. Reads the shared single-source pair (see
+   `:root` near the top of this file) like every other tab bar now does. */
 .mhn-feed-scope-tab-active {
-  color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
+  color: var(--tab-active-text);
+  border-bottom-color: var(--tab-active-underline);
 }
 
 /* Who to Follow widget (Home sidebar, replaces the fabricated-data Matches

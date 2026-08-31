@@ -1,6 +1,6 @@
 # Implementation status
 
-Last reviewed: 2026-08-30
+Last reviewed: 2026-08-31
 
 ## Completed
 
@@ -36,6 +36,129 @@ Last reviewed: 2026-08-30
   that is never used inside the component and never passed by `OnboardingModal` — dead since the file
   was created. Left alone pending a decision on whether that step should have a back affordance at
   all, rather than silently deleting a prop or wiring a new user-facing control.
+- Fixed Team Detail's tab bar (Posts/Members/Events/Media/About) leaving dead space after "About"
+  instead of spanning the card's full width (feedback 2026-08-31: "make top bar filled entire width,
+  check marked area"). Each tab was `shrink-0` with a `gap-8`, clustering left; switched to `flex-1`
+  per tab (matching Figma's own `flex-[193_0_0]` equal-width tab list) so the row fills the card
+  edge-to-edge with no side padding, same as the design.
+
+- Fixed Event Detail rendering wider (less left/right gutter) than Team/Group Detail at the same
+  window size (feedback 2026-08-31: "make this view port consistent similar to team tab by making
+  left and right event spacing like group tab"). It passed `maxWidth={1166}` to `PageShell`, widening
+  its own `--page-max-width`/`.mhn-app-content` grid track past the `932px` every other route
+  (including Team/Group Detail) renders at — those pages get their own 1166px two-column feel from an
+  *inner* `max-w-[1166px]` wrapper that is a no-op ceiling inside the shared 932px shell, not from a
+  page-specific `PageShell` override. Removed the override and moved the same `max-w-[1166px]
+  mx-auto` convention onto Event Detail's own inner section, so it now matches by construction
+  instead of diverging via a one-off width. Confirmed via `--page-max-width` reading `932px` on both
+  pages afterward, not just visually.
+
+- Consolidated the repeated "this column is the scrollable region of a fixed-height detail page"
+  pattern (`lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain`, hand-typed identically at
+  Home/Profile/Event Detail's own call sites) into `.mhn-layout-col-center` itself in `index.css`
+  (feedback 2026-08-31: "fix here only [by] adding [a] global factor"). Every consumer now just
+  needs the one class name; simplified all three call sites accordingly. Fixed the Teams list's card
+  grid redesign and Team Detail's own remaining issues from the same pass — Redesigned the Teams list
+  from a plain row list into a card grid matching Groups/Events (feedback: "Make sure team list will
+  be similar to card view like we have in groups or events... its not in figma we need to invoate
+  this") — no Figma reference exists for this specific view, so the card (banner + centered crest,
+  name, member count, a small overlapping roster-avatar preview, View/Join action) is an original
+  design consistent with the Group card's information density. Fixed Team Detail's (and Group
+  Detail's, same shared pattern) Events tab showing a redundant "Events" heading directly under a tab
+  bar that already says Events; removed it and let the search bar fill the row. Fixed Team Detail's
+  `WhoToFollowWidget` rendering empty — it never received `fallbackSuggestions` the way Home's own
+  usage does, so `useFollowSuggestions` had nothing to fall back to when the real suggestions API
+  returned empty (feedback: "who to follow is same compoent than why its not showing data").
+
+- Built the Team Detail page (Figma nodes 1686:8399 hero/Posts, 1696:9258 Members, 1696:10222 Events,
+  1884:14732 Media, 1733:21876 About), opened inline from `screens/teams-page.tsx` — same pattern as
+  Group Detail (no separate route). `TeamDetailView`/`TeamDetailContent` mirror `GroupDetailView`/
+  `GroupDetailContent`'s hero-card-plus-tabs shape: Posts reuses `FeedPostCard`, Events reuses
+  `EventCard` in `compact` mode for the horizontal list layout Figma shows, Media reuses the same
+  image-grid panel pattern as Group Detail, and the sidebar reuses the existing `WhoToFollowWidget`
+  verbatim (Figma's sidebar there is that exact Home widget). Members is a new tab: a searchable
+  roster list (avatar, name, position/jersey, per-row Follow) not covered by any existing pattern.
+  Team fixtures live in `demo-data/teams`, mirroring `demo-data/groups`'s
+  `DemoGroupDetail`/`getDemoGroupDetail` shape (`DemoTeamDetail`/`getDemoTeamDetail`). The Teams list's
+  "Posts · Staff · Roster" row sub-links were updated to "Posts · Members · Events" to match the real
+  tab set and now open Team Detail directly on that tab.
+
+- Fixed Event Detail's own content being unreachable past one viewport height (bug report
+  2026-08-31: "event page details scrolling is not working"). `.mhn-app-content` is `lg:h-dvh
+  lg:overflow-hidden` — every route needs its own internal scroll owner inside that, and the
+  rebuilt `event-detail-page.tsx` had none, so "About"/"Things to know"/the Organiser &amp;
+  Attendant list past the fold were silently clipped and unreachable by any scroll gesture, not
+  just visually cut off. Wrapped the page's content in a `mhn-layout-col-center` section with
+  `lg:h-full lg:min-h-0 lg:overflow-y-auto` and gave `PageShell` `lg:min-h-0 lg:flex-1`, the same
+  pattern Profile/Groups/Events already use. Verified live via `getBoundingClientRect()`/
+  `scrollHeight` that `.mhn-app-content` no longer overflows the viewport and the previously
+  clipped content now scrolls into view.
+
+- Rebuilt Event Detail from Figma node `1523:15029`, including the exact Heritage Classic artwork,
+  responsive action/about/metadata/guest layout, and the searchable Event Organiser & Attendant
+  `Dialog` from node `2238:49228`. Rebuilt Group Detail from node `1630:7646` with the supplied
+  Figma cover/media assets, Posts as the default tab, the shared `FeedPostCard`/`EventCard`, and
+  populated About, People, Events, Media, and Files tabs. Event and group preview content now lives
+  in typed `demo-data/events` and `demo-data/groups` facades; the Groups listing consumes the same
+  centralized group fixtures. Added fixture-contract and interaction coverage for organizer search,
+  follow/action states, shared post reuse, and every group tab.
+
+- Aligned compact Profile dropdowns to Figma node `1725:20736`. Profile Stats previously rendered
+  raw native selects, which pinned each browser-owned chevron to the far edge of its control rather
+  than centering the selected label and chevron as one unit. The existing shared `Dropdown` now has
+  a typed `compact-centered` variant with the Figma 36px height, 14px/20px regular label, 8px
+  label-to-chevron gap, and centered composition, reusing the existing Figma-sourced chevron icon.
+  Profile Stats' season/team/competition filters and Profile Events' relationship filter all use
+  that shared variant; ordinary form dropdowns retain their standard end-aligned affordance. Added
+  controlled-interaction and CSS-contract coverage.
+
+- Corrected the shared feed-card author alignment against Figma node `1468:10048`. The shared
+  `Button` primitive centers its contents by default, and `PostCardHeader` did not explicitly
+  restore left alignment inside the author metadata column; longer role/date subtitles therefore
+  made the name appear horizontally centered above them. `.mhn-post-author-group` now overrides
+  the button layout with `justify-content: flex-start`/`text-align: left`, while
+  `.mhn-author-meta` owns `align-items: flex-start`/`text-align: left` and retains Figma's 8px
+  avatar-to-copy inset. Because Home, Explore, Profile, and Saved all render the same
+  `FeedPostCard` -> `PostCardHeader` composition, the correction applies to every feed-card surface
+  without route-specific copies. Added component and CSS-contract coverage for the shared header.
+
+- Verified `FeedPostCard`/`PostCardHeader` against Figma node 1806:15295 ("Post") and confirmed the
+  Header of post spacing (avatar 48px, `pt-12px pl-12px pr-4px pb-8px`), the name/subtitle container
+  padding, and the caption/footer 12px-flush inset all already match exactly — measured via live
+  `getBoundingClientRect()` on desktop, tablet, and mobile widths, not just a screenshot. Added the one
+  real gap the spec called for that was missing: 4px between the author name and its subtitle line
+  (`.mhn-author-meta` gained `gap: 4px`) — previously they sat with no breathing room between them.
+  Migrated the Saved page off its own hand-rolled, hardcoded post/event card markup (own colors,
+  own 40px avatar, own "Remove from Saved" button, no profile-click wiring) onto the same shared
+  `FeedPostCard` component Home/Explore/Profile's Posts tab already use, via the existing
+  `toFeedPostProps` adapter in `@/demo-data/feed` — Saved is now the last surface to read the single
+  shared feed dataset through the shared card component rather than projecting it into a bespoke shape.
+  This also gives Saved profile-click navigation and a working "..." menu (Delete/Not interested) as
+  the replacement for its old bespoke remove button, for free. `FeedPostCard` is confirmed as the only
+  post-card implementation left in the web app outside chat/comment UI, which is a different domain.
+
+- Other-profile popup demo data, Career edit-modal, feed alignment, tab-color theming, and shared
+  search widget pass (feature/other_profile). `ProfileMediaTab`/`ProfileStatsTab`/`ProfileEventsTab`
+  gained a `showDemoFallback` flag: the real `/profile` page still shows an honest empty state for a
+  real other user's unset data, while the other-user profile popup opts in to generic demo filler so
+  Connections/Explore previews never look broken. `ProfilePostsTab` now renders a "No Feed Yet" empty
+  state instead of nothing when a profile has no posts. Fixed `ProfileCareerSection`'s edit flow: it
+  previously reopened the "add new" form at the top of the list; editing an existing entry now opens
+  the pre-filled form inline at that team's own position (extracted a shared `renderCareerForm()` to
+  deduplicate the add/edit JSX). Reverted an incorrect feed-caption-indent experiment: `.mhn-post-copy`
+  and the post footer row are flush at a 12px inset matching the avatar's own left edge (Figma node
+  1806:15295) — only the author name sits further right, past the avatar; a prior pass had indented
+  the caption to 68px to match the name instead, which was backwards. Migrated the Explore page's two
+  hand-rolled, hardcoded post cards onto the shared `FeedPostCard` component (the same one Home's feed
+  uses), which fixed a real bug where clicking an author's name in Explore did nothing (no
+  `onAuthorClick` wiring existed on the old hand-rolled markup) and made Explore's post alignment
+  identical to Home by construction. Introduced shared `--tab-active-text`/`--tab-active-underline`
+  CSS variables (Figma node 1806-15281) and applied them across every active-tab implementation (Home
+  category tabs, Supervision, Connections, Group Detail, Profile hero tab bar) instead of each tab bar
+  hardcoding its own mix of white/off-white text and a dull-blue underline. Consolidated the
+  Events/Groups/Teams/Notifications/Saved/Explore page search inputs onto the one shared
+  `SearchWidget` component (previously each had its own hand-rolled box with hardcoded colors and a
+  12px radius instead of the shared 8px/token-based look).
 
 - Completed the interrupted Settings/Help & Support pass from the supplied Figma/app screenshots.
   Settings now opens on Notification, uses the flat divider-row treatment from the Figma panel, and
@@ -2377,11 +2500,11 @@ FollowWidget`'s own row shape (`.mhn-who-to-follow-row`/`-avatar`/
 - Production web build must pass.
 - Web/native UI ownership and pnpm-only dependency management checks must pass.
 
-Latest measured enforced-code coverage: 95.32% statements, 89.08% branches, 98.14% functions, and
-95.48% lines (enforced boundary: `packages/api-client`, `auth`, `domain`, `validation` index files;
+Latest measured enforced-code coverage: 95.35% statements, 89.14% branches, 98.14% functions, and
+95.50% lines (enforced boundary: `packages/api-client`, `auth`, `domain`, `validation` index files;
 `packages/core/src/api/signUpRules.ts`; `apps/web/src/platform/auth-storage.ts`,
 `query/query-client.ts`, `utils/guardianUtils.ts`, `utils/mediaUtils.ts`, `utils/toast.ts`,
-`utils/dateUtils.ts`). The Vitest suite contains 241 tests across 34 test files, plus 6 Playwright smoke tests
+`utils/dateUtils.ts`). The Vitest suite contains 318 tests across 49 test files, plus 6 Playwright smoke tests
 (`apps/web/e2e/public.spec.ts`, run separately via `pnpm test:e2e`, not counted in the Vitest total).
 Web form validation, secure storage behavior, query/mutation hook behavior, route-guard
 fail-closed/redirect behavior, dialog/OTP-input keyboard and focus behavior, and route/form

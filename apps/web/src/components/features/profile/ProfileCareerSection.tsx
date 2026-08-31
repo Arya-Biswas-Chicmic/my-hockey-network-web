@@ -132,6 +132,40 @@ export function ProfileCareerSection({
     if (ok) closeForm();
   });
 
+  const renderCareerForm = () => (
+    <div className="mhn-add-team-card-form">
+      <CareerFormFields
+        values={values}
+        onChange={handleFieldChange}
+        errors={{
+          teamName: errors.teamName?.message ?? '',
+          position: errors.position?.message ?? '',
+          location: errors.location?.message ?? '',
+          startMonth: errors.startMonth?.message ?? '',
+          startYear: errors.startYear?.message ?? '',
+          endMonth: errors.endMonth?.message ?? '',
+          endYear: errors.endYear?.message ?? '',
+          note: errors.note?.message ?? '',
+        }}
+      />
+
+      <div className="mhn-team-actions-row">
+        <Button type="button" onClick={closeForm} className="mhn-btn-team-cancel">
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          onClick={handleSubmit}
+          disabled={isSavingTeam}
+          className={`mhn-btn-team-save ${isSavingTeam ? 'disabled' : 'active'}`}
+        >
+          {isSavingTeam && <Spinner size="sm" color="currentColor" />}
+          <span>Save</span>
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="mhn-about-section-content mhn-col-flex-gap-20">
       {/* Teams Header */}
@@ -147,40 +181,12 @@ export function ProfileCareerSection({
         </Button>
       </div>
 
-      {/* Add / Edit Team Form Card */}
-      {isFormOpen && (
-        <div className="mhn-add-team-card-form">
-          <CareerFormFields
-            values={values}
-            onChange={handleFieldChange}
-            errors={{
-              teamName: errors.teamName?.message ?? '',
-              position: errors.position?.message ?? '',
-              location: errors.location?.message ?? '',
-              startMonth: errors.startMonth?.message ?? '',
-              startYear: errors.startYear?.message ?? '',
-              endMonth: errors.endMonth?.message ?? '',
-              endYear: errors.endYear?.message ?? '',
-              note: errors.note?.message ?? '',
-            }}
-          />
-
-          <div className="mhn-team-actions-row">
-            <Button type="button" onClick={closeForm} className="mhn-btn-team-cancel">
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={isSavingTeam}
-              className={`mhn-btn-team-save ${isSavingTeam ? 'disabled' : 'active'}`}
-            >
-              {isSavingTeam && <Spinner size="sm" color="currentColor" />}
-              <span>Save</span>
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Add Team Form Card — only for the "add new" case. Editing an
+          EXISTING team renders this same form inline at that team's own
+          position in the list below instead (feedback 2026-08-30: "when
+          doing editing on existing career it again opening upward in add
+          new section instead it should show edit where we clicked edit"). */}
+      {isFormOpen && !editingTeamId && renderCareerForm()}
 
       {/* Saved Career Teams List */}
       <div className="mhn-col-flex-gap-12">
@@ -203,6 +209,10 @@ export function ProfileCareerSection({
             const dateRange = startText ? `${startText} - ${endText}` : endText;
             const locText = team.location ? ` · ${team.location}` : '';
             const subtitleStr = `${posText}${dateRange}${locText}`;
+
+            if (isFormOpen && editingTeamId === team.id) {
+              return <div key={team.id}>{renderCareerForm()}</div>;
+            }
 
             return (
               <div key={team.id} className="mhn-career-item-card">

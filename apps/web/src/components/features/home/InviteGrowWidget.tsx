@@ -5,6 +5,7 @@ import { Button } from '@/components/common/Button';
 interface InviteGrowWidgetProps {
   onInviteClick?: () => void;
   illustrationUrl?: string;
+  lightIllustrationUrl?: string;
 }
 
 /** Matches Figma node 1806:16060/1993:19390 exactly (feedback 2026-08-29:
@@ -26,6 +27,7 @@ interface InviteGrowWidgetProps {
 export const InviteGrowWidget: React.FC<InviteGrowWidgetProps> = ({
   onInviteClick,
   illustrationUrl = '/invite-grow-illustration.png',
+  lightIllustrationUrl = '/InviteGrow.webp',
 }) => {
   return (
     <div className="mhn-invite-grow-card">
@@ -48,7 +50,14 @@ export const InviteGrowWidget: React.FC<InviteGrowWidgetProps> = ({
           alt=""
           fill
           aria-hidden="true"
-          className="mhn-invite-illustration-img object-contain object-bottom-right"
+          className="mhn-invite-illustration-img mhn-invite-illustration-img-dark object-contain object-bottom-right"
+        />
+        <Image
+          src={lightIllustrationUrl}
+          alt=""
+          fill
+          aria-hidden="true"
+          className="mhn-invite-illustration-img mhn-invite-illustration-img-light object-contain object-bottom-right"
         />
       </div>
     </div>

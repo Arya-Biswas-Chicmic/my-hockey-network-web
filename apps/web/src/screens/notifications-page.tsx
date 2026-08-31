@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Search } from 'lucide-react';
 import { FeedPermissionBanner } from '@/components/common/FeedPermissionBanner';
 import { NotificationCard } from '@/components/features/notifications/NotificationCard';
 import { Button } from '@/components/common/Button';
-import { Input } from '@/components/common/FormControls';
 import { showSuccessToast, showInfoToast } from '@/utils/toast';
+import { SearchWidget } from '@/components/features/home/SearchWidget';
 import { PageShell } from '@/components/layout/PageShell';
 
 interface PageProps {
@@ -116,16 +115,9 @@ export const NotificationsPage: React.FC<PageProps> = ({ onNavigate, onLogout })
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-slate-100">Notifications</h1>
 
-          <div className="relative w-64">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
-            <Input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search"
-              className="w-full h-10 pl-9 pr-4 bg-[#0D1627] border border-[#182740] rounded-xl text-xs text-slate-100 placeholder:text-slate-400 outline-none focus:border-[#168BFF] transition-all"
-            />
-          </div>
+          {/* Shared `SearchWidget` (feedback 2026-08-30: "make sure we are
+              using same component everywhere for ... search bar"). */}
+          <SearchWidget value={searchQuery} onChange={setSearchQuery} className="w-64 flex-none" />
         </div>
 
         {/* Navigation Tabs Bar (All, Unread, Requests) */}

@@ -1,0 +1,37 @@
+{
+  "id": "heritage-classic-2026",
+  "title": "2026 Tim Hortons NHL Heritage Classic",
+  "bannerImage": "/classic.webp",
+  "description": "Get ready for an exciting night of ice hockey as two competitive teams face off in a fast-paced matchup filled with speed, skill, and intense on-ice action. Come support the players, enjoy the atmosphere, and experience the energy of live hockey with teammates, families, and fans. Whether you're following the season closely or joining us for your first game, this is a matchup you won't want to miss!",
+  "location": {
+    "title": "Princess Auto Stadium - Winnipeg",
+    "subtitle": "52.3 km away"
+  },
+  "schedule": {
+    "title": "Oct 25, 2026",
+    "subtitle": "5:00 PM - 7:00 PM"
+  },
+  "guests": {
+    "going": 13,
+    "interested": 240
+  },
+  "thingsToKnow": [
+    { "icon": "guardian", "label": "Guardian should be there" },
+    { "icon": "seating", "label": "Seating arrangement: seated & standing" },
+    { "icon": "kid-friendly", "label": "Kid friendly" },
+    { "icon": "pets", "label": "Pets not allowed" },
+    { "icon": "water", "label": "Free water stations" },
+    { "icon": "washrooms", "label": "Washrooms available" },
+    { "icon": "parking", "label": "Free parking" }
+  ],
+  "people": [
+    { "id": "event-person-1", "name": "Nathan MacKinnon", "role": "Organiser", "avatar": "/david.webp" },
+    { "id": "event-person-2", "name": "Auston Matthews", "role": "Organiser", "avatar": "/lucas.webp" },
+    { "id": "event-person-3", "name": "Sidney Crosby", "role": "Attendant", "avatar": "/jack.webp" },
+    { "id": "event-person-4", "name": "Alex Ovechkin", "role": "Manager", "avatar": "/ovechkin.webp" },
+    { "id": "event-person-5", "name": "Connor McDavid", "role": "Coordinator", "avatar": "/connor.webp" },
+    { "id": "event-person-6", "name": "Nathan MacKinnon", "role": "Supervisor", "avatar": "/gerard.webp" },
+    { "id": "event-person-7", "name": "Emily Johnson", "role": "Team Lead", "avatar": "/saylor.webp" },
+    { "id": "event-person-8", "name": "Liam Chen", "role": "Developer", "avatar": "/steve.webp" }
+  ]
+}

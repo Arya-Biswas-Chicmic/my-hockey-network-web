@@ -1,0 +1,69 @@
+{
+  "id": "grp-1",
+  "name": "San Jose Sharks",
+  "memberCount": "54.7K Members",
+  "coverImage": "/demo/groups/san-jose-cover.png",
+  "posts": [
+    {
+      "id": "demo-group-post-1",
+      "authorName": "KC Blueknocks",
+      "authorRole": "Official Team",
+      "authorTime": "1d",
+      "authorAvatar": "/KCBluenocks.webp",
+      "content": "First tournament of the season! Let’s go!\n\nBig thanks to all our players, coaches, and supporters who brought incredible energy to the rink today. On to the finals! 🏒⚡",
+      "postImage": "/playHockey.webp",
+      "likesCount": 13,
+      "commentsCount": 2,
+      "repostCount": 1
+    },
+    {
+      "id": "demo-group-post-2",
+      "authorName": "San Jose Sharks",
+      "authorRole": "Official Team",
+      "authorTime": "3d",
+      "authorAvatar": "/mhnStars.webp",
+      "content": "Practice brought focus, speed, and a lot of smiles. Proud of every player who showed up ready to work.",
+      "postImage": "/demo/groups/group-action.png",
+      "likesCount": 86,
+      "commentsCount": 9,
+      "repostCount": 4
+    }
+  ],
+  "about": {
+    "description": "The official community for San Jose Sharks players, supporters, families, and hockey fans. Follow team news, community events, training updates, and conversations from around the rink.",
+    "privacy": "Public group",
+    "visibility": "Anyone can see who's in the group and what they post.",
+    "created": "Created January 2021",
+    "location": "San Jose, California"
+  },
+  "people": [
+    { "id": "group-person-1", "name": "Matthew Schaefer", "role": "Admin", "avatar": "/david.webp" },
+    { "id": "group-person-2", "name": "Nathan MacKinnon", "role": "Moderator", "avatar": "/gerard.webp" },
+    { "id": "group-person-3", "name": "Auston Matthews", "role": "Member", "avatar": "/lucas.webp" },
+    { "id": "group-person-4", "name": "Sidney Crosby", "role": "Member", "avatar": "/jack.webp" },
+    { "id": "group-person-5", "name": "Alex Ovechkin", "role": "Member", "avatar": "/ovechkin.webp" },
+    { "id": "group-person-6", "name": "Connor McDavid", "role": "Member", "avatar": "/connor.webp" }
+  ],
+  "events": [
+    { "id": "group-event-1", "title": "2026 Tim Hortons NHL Heritage Classic", "image": "/classic.webp", "date": "Oct 25, 2026 · 5:00 PM", "location": "Princess Auto Stadium – Winnipeg", "interestedCount": "1.9K", "goingCount": "37", "isInterested": true },
+    { "id": "group-event-2", "title": "Community Skills Clinic", "image": "/event2.webp", "date": "Nov 8, 2026 · 10:00 AM", "location": "Sharks Ice at San Jose", "interestedCount": "824", "goingCount": "96", "isInterested": false },
+    { "id": "group-event-3", "title": "Fan Appreciation Night", "image": "/event3.webp", "date": "Dec 12, 2026 · 6:30 PM", "location": "SAP Center at San Jose", "interestedCount": "2.4K", "goingCount": "310", "isInterested": false }
+  ],
+  "media": [
+    { "id": "group-media-1", "src": "/demo/groups/group-team.png", "alt": "Youth hockey team celebrating together" },
+    { "id": "group-media-2", "src": "/demo/groups/group-action.png", "alt": "Hockey player carrying the puck" },
+    { "id": "group-media-3", "src": "/demo/groups/group-community.png", "alt": "Young hockey players with a team flag" },
+    { "id": "group-media-4", "src": "/playHockey.webp", "alt": "Hockey game action" }
+  ],
+  "files": [
+    { "id": "group-file-1", "name": "2026 Season Schedule.pdf", "type": "PDF", "size": "2.4 MB", "updated": "Updated 2 days ago" },
+    { "id": "group-file-2", "name": "Community Clinic Registration.docx", "type": "DOCX", "size": "860 KB", "updated": "Updated 1 week ago" },
+    { "id": "group-file-3", "name": "Team Travel Checklist.pdf", "type": "PDF", "size": "1.1 MB", "updated": "Updated 2 weeks ago" }
+  ],
+  "admin": { "id": "group-person-1", "name": "Matthew Schaefer", "role": "Admin", "avatar": "/david.webp" },
+  "suggestedGroups": [
+    { "id": "suggested-group-1", "name": "San Jose Sharks", "members": "54.7K members", "image": "/demo/groups/group-team.png" },
+    { "id": "suggested-group-2", "name": "New York Rangers", "members": "47.2K members", "image": "/demo/groups/group-action.png" },
+    { "id": "suggested-group-3", "name": "Chicago Blackhawks", "members": "39.8K members", "image": "/demo/groups/group-community.png" }
+  ]
+}

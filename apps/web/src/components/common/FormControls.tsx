@@ -8,6 +8,7 @@ import Image from 'next/image';
 
 import { sanitizeEmailInput, sanitizeNameInput, normalizeNameBlur } from '@my-hockey-network/validation';
 import { FormField } from '@/components/common/FormField';
+import { LoginChevronDownIcon } from '@/components/icons/LoginIcons';
 
 export interface EnhancedInputProps extends InputHTMLAttributes<HTMLInputElement> {
   isNameInput?: boolean;
@@ -129,6 +130,7 @@ export interface DropdownProps {
   className?: string;
   id?: string;
   name?: string;
+  variant?: 'default' | 'compact-centered';
 }
 
 export function Dropdown({
@@ -143,23 +145,26 @@ export function Dropdown({
   className = '',
   id,
   name,
+  variant = 'default',
 }: DropdownProps) {
   const generatedId = useId();
   const selectId = id || generatedId;
   const normalizedOptions = options.map((option) =>
     typeof option === 'string' ? { value: option, label: option } : option,
   );
+  const selectedLabel = normalizedOptions.find((option) => option.value === value)?.label || placeholder;
+  const isCompactCentered = variant === 'compact-centered';
 
   return (
     <FormField label={label} required={required} error={error} className={className} htmlFor={selectId}>
-      <div className="mhn-dropdown-wrapper">
+      <div className={`mhn-dropdown-wrapper ${isCompactCentered ? 'mhn-dropdown-wrapper--compact-centered' : ''}`}>
         <Select
           id={selectId}
           name={name}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           disabled={disabled}
-          className={`mhn-dropdown-select ${error ? 'mhn-dropdown-error' : ''} ${disabled ? 'mhn-dropdown-disabled' : ''}`}
+          className={`mhn-dropdown-select ${isCompactCentered ? 'mhn-dropdown-select--compact-centered' : ''} ${error ? 'mhn-dropdown-error' : ''} ${disabled ? 'mhn-dropdown-disabled' : ''}`}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${selectId}-error` : undefined}
         >
@@ -168,7 +173,14 @@ export function Dropdown({
             <option key={option.value} value={option.value}>{option.label}</option>
           ))}
         </Select>
-        <Image src="/arrowBottom.webp" alt="" aria-hidden="true" width={16} height={16} className="mhn-dropdown-arrow-icon" />
+        {isCompactCentered ? (
+          <span className="mhn-dropdown-centered-display" aria-hidden="true">
+            <span>{selectedLabel}</span>
+            <LoginChevronDownIcon size={8} />
+          </span>
+        ) : (
+          <Image src="/arrowBottom.webp" alt="" aria-hidden="true" width={16} height={16} className="mhn-dropdown-arrow-icon" />
+        )}
       </div>
     </FormField>
   );

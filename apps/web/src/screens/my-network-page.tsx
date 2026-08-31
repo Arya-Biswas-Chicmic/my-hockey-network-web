@@ -205,6 +205,7 @@ export const MyNetworkPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => 
           <GroupDetailView 
             groupId={selectedGroupId}
             onBackToGroups={() => setCurrentView(NetworkViewModeEnum.GROUPS)}
+            onEventClick={() => onNavigate?.('event-detail')}
           />
         ) : (
           <>

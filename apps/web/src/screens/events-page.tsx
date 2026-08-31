@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Search,
   SlidersHorizontal,
   Grid,
   List,
@@ -10,9 +9,9 @@ import {
 import { FeedPermissionBanner } from '@/components/common/FeedPermissionBanner';
 import { EventCard } from '@/components/features/events/EventCard';
 import { Button } from '@/components/common/Button';
-import { Input } from '@/components/common/FormControls';
 
 import { CategoryTabs, TabItem } from '@/components/features/home/HomeTabs';
+import { SearchWidget } from '@/components/features/home/SearchWidget';
 import { PageShell } from '@/components/layout/PageShell';
 
 const EVENTS_TOP_TABS: TabItem<'personal' | 'network' | 'explore'>[] = [
@@ -135,17 +134,12 @@ export const EventsPage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
           <h1 className="text-2xl font-bold text-slate-100">Events</h1>
 
           <div className="flex flex-wrap items-center gap-3">
-            {/* Search Input Box */}
-            <div className="relative w-60">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
-              <Input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search"
-                className="w-full h-10 pl-9 pr-3 bg-[#0D1627] border border-[#182740] rounded-xl text-xs text-slate-100 placeholder:text-slate-400 outline-none focus:border-[#168BFF] transition-all"
-              />
-            </div>
+            {/* Search Input Box — shared `SearchWidget` instead of a
+                hand-rolled box (feedback 2026-08-30: "make sure we are
+                using same component everywhere for ... search bar"); was
+                a hardcoded `#0D1627`/`rounded-xl` (12px) box, not the
+                project's established 8px-round, theme-token search style. */}
+            <SearchWidget value={searchQuery} onChange={setSearchQuery} className="w-60 flex-none" />
 
             {/* Filters Button */}
             <Button className="h-10 px-3.5 bg-[#0D1627] border border-[#182740] rounded-xl text-xs font-semibold text-slate-200 flex items-center gap-2 hover:bg-[#15243B] transition-colors">

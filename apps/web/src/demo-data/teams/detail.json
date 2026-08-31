@@ -1,0 +1,70 @@
+{
+  "id": "team-1",
+  "name": "Columbus Blue Jackets",
+  "logo": "/columbus.webp",
+  "followerCount": "1M Followers",
+  "tagline": "Official HockeyNetwork Page",
+  "stats": {
+    "leagues": 40,
+    "trophies": 7,
+    "members": 183
+  },
+  "posts": [
+    {
+      "id": "demo-team-post-1",
+      "authorName": "Columbus Blue Jackets",
+      "authorRole": "Official Team",
+      "authorTime": "1d",
+      "authorAvatar": "/columbus.webp",
+      "content": "First tournament of the season! Let’s go!\n\nBig thanks to all our players, coaches, and supporters who brought incredible energy to the rink today. On to the finals! 🏒⚡",
+      "postImage": "/playHockey.webp",
+      "likesCount": 13,
+      "commentsCount": 2,
+      "repostCount": 1
+    },
+    {
+      "id": "demo-team-post-2",
+      "authorName": "Columbus Blue Jackets",
+      "authorRole": "Official Team",
+      "authorTime": "3d",
+      "authorAvatar": "/columbus.webp",
+      "content": "Practice brought focus, speed, and a lot of smiles. Proud of every player who showed up ready to work.",
+      "postImage": "/HC.webp",
+      "likesCount": 86,
+      "commentsCount": 9,
+      "repostCount": 4
+    }
+  ],
+  "members": [
+    { "id": "team-member-1", "name": "Connor McDavid", "position": "LW", "jerseyNumber": "9", "avatar": "/connor.webp" },
+    { "id": "team-member-2", "name": "Auston Matthews", "position": "C", "jerseyNumber": "34", "avatar": "/lucas.webp" },
+    { "id": "team-member-3", "name": "Leon Draisaitl", "position": "RW", "jerseyNumber": "29", "avatar": "/jack.webp" },
+    { "id": "team-member-4", "name": "Nathan MacKinnon", "position": "C", "jerseyNumber": "29", "avatar": "/gerard.webp" },
+    { "id": "team-member-5", "name": "Devon Lane", "position": "C", "jerseyNumber": "17", "avatar": "/steve.webp" },
+    { "id": "team-member-6", "name": "Cameron Williamson", "position": "C", "jerseyNumber": "22", "avatar": "/saylor.webp" },
+    { "id": "team-member-7", "name": "Ralph Edwards", "position": "D", "jerseyNumber": "4", "avatar": "/david.webp" },
+    { "id": "team-member-8", "name": "Alex Ovechkin", "position": "LW", "jerseyNumber": "8", "avatar": "/ovechkin.webp" }
+  ],
+  "events": [
+    { "id": "team-event-1", "title": "2026 Tim Hortons NHL Heritage Classic", "image": "/classic.webp", "date": "October 25, 2026", "location": "Princess Auto Stadium – Winnipeg, Manitoba", "interestedCount": "1.9K", "goingCount": "37", "isInterested": false },
+    { "id": "team-event-2", "title": "Global Series Finland 2026", "image": "/event4.webp", "date": "December 6, 2026 at 14:20 IST", "location": "United Center – Chicago, Illinois", "interestedCount": "2.5K", "goingCount": "50", "isInterested": false }
+  ],
+  "media": [
+    { "id": "team-media-1", "src": "/HC.webp", "alt": "Player skating with the puck" },
+    { "id": "team-media-2", "src": "/HockeyClub2.webp", "alt": "Team lined up on the ice" },
+    { "id": "team-media-3", "src": "/kcBlue.webp", "alt": "Players celebrating on the bench" },
+    { "id": "team-media-4", "src": "/KCBluenocks.webp", "alt": "Player smiling in team jersey" },
+    { "id": "team-media-5", "src": "/playHockey.webp", "alt": "Player mid-game action" },
+    { "id": "team-media-6", "src": "/classic.webp", "alt": "Teammates celebrating a goal" }
+  ],
+  "about": {
+    "description": "The Columbus Blue Jackets are a professional ice hockey team based in Columbus, Ohio. Founded in 2000, the Blue Jackets compete in the National Hockey League (NHL) as a member of the Eastern Conference's Metropolitan Division.",
+    "location": "Columbus, OH, USA",
+    "mapImage": "/demo/groups/san-jose-cover.png",
+    "leagues": [
+      { "id": "team-league-1", "name": "National Hockey League {NHL}", "subtitle": "Primary league", "logo": "/columbus.webp" },
+      { "id": "team-league-2", "name": "Eastern Conference", "subtitle": "Conference", "logo": "/HC.webp" },
+      { "id": "team-league-3", "name": "Metropolitan Division", "subtitle": "Division", "logo": "/HockeyClub2.webp" }
+    ]
+  }
+}
