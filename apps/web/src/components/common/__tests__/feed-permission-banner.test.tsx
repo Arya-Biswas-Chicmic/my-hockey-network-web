@@ -19,6 +19,7 @@ vi.mock('@/hooks/use-feed-permissions', async () => {
 
 function mockPermissions(overrides: {
   allowed?: boolean;
+  reason?: string;
   message?: string | null;
   ctaText?: string | null;
   ctaAction?: FeedCtaAction;
@@ -60,12 +61,6 @@ describe('FeedPermissionBanner', () => {
     expect(screen.getByRole('button', { name: 'Manage Invitations' })).toBeTruthy();
   });
 
-  it('falls back to a default CTA label when the permission supplies none', () => {
-    mockPermissions({ ctaText: null });
-    render(<FeedPermissionBanner onNavigate={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Complete Profile' })).toBeTruthy();
-  });
-
   it.each([
     ['GUARDIAN_APPROVAL' as const, 'supervision'],
     ['COMPLETE_PROFILE' as const, 'profile'],
@@ -104,5 +99,34 @@ describe('FeedPermissionBanner', () => {
     fireEvent.click(screen.getByRole('button'));
     expect(onCompleteProfile).not.toHaveBeenCalled();
     expect(onNavigate).toHaveBeenCalledWith('supervision');
+  });
+});
+
+describe('actionable blocks only', () => {
+  // A parent-disabled control is explained where the blocked content would be
+  // (`PermissionCard` / `PermissionNotice`), so repeating it here put the same
+  // sentence on screen twice. The domain marks exactly these blocks by giving
+  // them no ctaAction.
+  it('stays silent for a block the user cannot act on', () => {
+    mockPermissions({
+      reason: 'SUPERVISION_CONTROL_RESTRICTED',
+      message: 'Your parent/guardian has disabled viewing feed posts.',
+      ctaText: null,
+      ctaAction: null,
+    });
+    const { container } = render(<FeedPermissionBanner onNavigate={vi.fn()} />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it.each([
+    ['UNAUTHENTICATED', 'Please sign in to interact with posts.', 'Sign In', 'LOGIN' as const],
+    ['PROFILE_INCOMPLETE', 'Please complete your profile.', 'Complete Profile', 'COMPLETE_PROFILE' as const],
+    ['GUARDIAN_APPROVAL_REQUIRED', 'Waiting for guardian approval.', 'Check Approval', 'GUARDIAN_APPROVAL' as const],
+  ])('still shows %s, which the user can act on', (reason, message, ctaText, ctaAction) => {
+    mockPermissions({ reason, message, ctaText, ctaAction });
+    render(<FeedPermissionBanner onNavigate={vi.fn()} />);
+
+    expect(screen.getByText(message)).toBeTruthy();
+    expect(screen.getByText(ctaText)).toBeTruthy();
   });
 });

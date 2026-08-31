@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { isEmailValid } from '@my-hockey-network/validation';
 import { FeedPermissionBanner } from '@/components/common/FeedPermissionBanner';
+import { PermissionCard } from '@/components/common/PermissionCard';
+import { PermissionControlKey } from '@my-hockey-network/contracts';
 import { PageShell } from '@/components/layout/PageShell';
 import { RightSidebar } from '@/components/layout/RightSidebar';
 import {
@@ -41,7 +43,7 @@ interface PostPrivacySettings {
 export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { requirePermission } = useFeedPermissions(onNavigate);
+  const { requirePermission, canViewFeed } = useFeedPermissions(onNavigate);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const createPostMutation = useCreatePostMutation();
   const createPostRequestId = useShellUiStore((state) => state.createPostRequestId);
@@ -173,27 +175,39 @@ export const HomePage: React.FC<PageProps> = ({ onNavigate, onLogout }) => {
       <PageShell className="mhn-home-main-layout lg:my-0 lg:min-h-0 lg:flex-1">
         {/* CENTER MAIN FEED COLUMN */}
         <section className="mhn-layout-col-center flex flex-col">
-          <HomeTabs activeTab={activeFeedTab} onChange={setActiveFeedTab} />
-
-          <Feed
-            activeTab={activeFeedTab}
-            posts={feedPosts}
-            isLoading={isFeedRefreshing}
-            error={feedError}
-            searchQuery={searchQuery}
-            hasNextPage={hasNextPage}
-            isFetchingNextPage={isFetchingNextPage}
-            onLoadMore={onLoadMore}
-            onRetry={refreshFeed}
-            onOpenCreatePost={handleOpenCreatePost}
-            onNavigate={onNavigate}
-            onFollowChange={handleFollowChange}
-            onDeleteSuccess={handlePostDeleteSuccess}
-            onUpdateSuccess={handlePostUpdateSuccess}
-            onRepostComplete={handleRepostComplete}
-          />
+          {/* The posts themselves are gated, not just annotated with a banner:
+              a guardian who disables VIEW_FEED expects the child not to read
+              the feed, and previously the banner rendered above a fully
+              populated one. `FeedPermissionBanner` above already states the
+              reason, so this renders nothing rather than repeating it. */}
+          {canViewFeed ? (
+            <>
+              <HomeTabs activeTab={activeFeedTab} onChange={setActiveFeedTab} />
+              <Feed
+                activeTab={activeFeedTab}
+                posts={feedPosts}
+                isLoading={isFeedRefreshing}
+                error={feedError}
+                searchQuery={searchQuery}
+                hasNextPage={hasNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+                onLoadMore={onLoadMore}
+                onRetry={refreshFeed}
+                onOpenCreatePost={handleOpenCreatePost}
+                onNavigate={onNavigate}
+                onFollowChange={handleFollowChange}
+                onDeleteSuccess={handlePostDeleteSuccess}
+                onUpdateSuccess={handlePostUpdateSuccess}
+                onRepostComplete={handleRepostComplete}
+              />
+            </>
+          ) : (
+            // The whole feed column is unavailable, so this gets the full card
+            // rather than the inline notice. Wording comes from
+            // `supervisionBlockedMessage`, matching every other blocked action.
+            <PermissionCard control={PermissionControlKey.VIEW_FEED} />
+          )}
         </section>
-
         {/* RIGHT SIDEBAR COLUMN */}
         <RightSidebar>
           <SearchWidget value={searchQuery} onChange={setSearchQuery} />

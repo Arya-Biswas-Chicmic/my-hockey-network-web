@@ -10,7 +10,7 @@ export interface WhoToFollowWidgetProps {
 }
 
 export function WhoToFollowWidget({ onViewAll, fallbackSuggestions }: Readonly<WhoToFollowWidgetProps>) {
-  const { suggestions, isLoading, followedIds, followingId, handleFollow } = useFollowSuggestions(fallbackSuggestions);
+  const { suggestions, isLoading, followedIds, followingId, handleFollow, canFollow } = useFollowSuggestions(fallbackSuggestions);
 
   return (
     <div className="mhn-sidebar-card mhn-who-to-follow-card">
@@ -42,6 +42,7 @@ export function WhoToFollowWidget({ onViewAll, fallbackSuggestions }: Readonly<W
               isFollowing={followedIds.has(person.id)}
               isLoading={followingId === person.id}
               onFollow={handleFollow}
+              canFollow={canFollow}
             />
           ))
         )}

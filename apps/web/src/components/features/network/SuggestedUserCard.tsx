@@ -1,4 +1,6 @@
 import { Button } from '@/components/common/Button';
+import { supervisionBlockedMessage } from '@my-hockey-network/domain';
+import { PermissionControlKey } from '@my-hockey-network/contracts';
 import React, { useState } from 'react';
 import { Spinner } from '@/components/common/Spinner';
 import { useAuth } from '@/hooks/use-auth';
@@ -30,12 +32,17 @@ export const SuggestedUserCard: React.FC<SuggestedUserProps> = ({
   isFollowing: initialFollowing = false,
   onFollow,
 }) => {
-  const { loadAuthMe, showToast } = useAuth();
+  const { loadAuthMe, showToast, checkSupervisionPermission } = useAuth();
+  const canFollow = checkSupervisionPermission(PermissionControlKey.FOLLOW_OTHERS);
   const [following, setFollowing] = useState(initialFollowing);
   const [isLoading, setIsLoading] = useState(false);
 
   const toggleFollow = async () => {
     if (isLoading) return;
+    if (!canFollow) {
+      showToast(supervisionBlockedMessage(PermissionControlKey.FOLLOW_OTHERS), 'error');
+      return;
+    }
     setIsLoading(true);
     const prevFollowing = following;
     const targetFollowing = !following;

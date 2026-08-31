@@ -4,6 +4,10 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import { Bell, ChevronDown, Home, MessageCircle, Users } from "lucide-react";
 
 import { Dropdown } from "@/components/common/FormControls";
+import {
+  AUDIENCE_CONTACT_OPTIONS,
+  VISIBILITY_AUDIENCE_LABELS,
+} from "@my-hockey-network/contracts";
 import { Switch } from "@/components/ui/switch";
 import { Spinner } from "@/components/common/Spinner";
 import { PermissionSkeletonLoader } from "@/components/supervision/permission-skeleton-loader";
@@ -94,6 +98,18 @@ export interface SupervisionPermissionsTabProps {
  * Extracted from `screens/supervision-page.tsx`; permission state and the
  * update API call live in `hooks/use-supervision-permissions.ts`.
  */
+/**
+ * Follow / connection-request / messaging audience choices, built from the
+ * contract enum so the value sent to the API is the one it stores
+ * (`HOCKEY_NETWORK`, `CONNECTIONS`, `HIDDEN`) while the parent still reads a
+ * plain label. These dropdowns previously used the labels as their values, so a
+ * saved control never matched an option and the selection rendered blank.
+ */
+const AUDIENCE_OPTIONS = AUDIENCE_CONTACT_OPTIONS.map((value) => ({
+  value,
+  label: VISIBILITY_AUDIENCE_LABELS[value],
+}));
+
 export function SupervisionPermissionsTab({
   isLoading,
   homePermissions,
@@ -233,7 +249,7 @@ export function SupervisionPermissionsTab({
               ) : (
                 <Dropdown
                   value={String(networkPermissions.whoCanFollowThem)}
-                  options={["Everyone", "Connections Only", "Nobody"]}
+                  options={AUDIENCE_OPTIONS}
                   onChange={(val) =>
                     onToggle("who_can_follow_them", val, setNetworkPermissions)
                   }
@@ -260,7 +276,7 @@ export function SupervisionPermissionsTab({
               ) : (
                 <Dropdown
                   value={String(networkPermissions.whoCanSendRequests)}
-                  options={["Everyone", "Connections Only", "Nobody"]}
+                  options={AUDIENCE_OPTIONS}
                   onChange={(val) =>
                     onToggle(
                       "who_can_send_requests",
@@ -347,7 +363,7 @@ export function SupervisionPermissionsTab({
               ) : (
                 <Dropdown
                   value={String(messagingPermissions.whoCanMessageThem)}
-                  options={["Connections Only", "Everyone", "Nobody"]}
+                  options={AUDIENCE_OPTIONS}
                   onChange={(val) =>
                     onToggle(
                       "who_can_message_them",

@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { supervisionBlockedMessage } from '@my-hockey-network/domain';
 import type { ReactNode } from 'react';
 import { QueryKeys, type AuthMeResponse, type OtpVerifyResponse } from '@my-hockey-network/contracts';
 import { getMySupervisionPermissions, getProfile } from '@my-hockey-network/core';
@@ -170,11 +171,20 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       // Minor permissions fail closed while unavailable or loading.
       if (!supervisionPermissions || isSupervisionPermissionsLoading) return false;
 
+      // The backend returns SCREAMING_SNAKE keys (`COMMENT_ON_POSTS`), while
+      // call sites pass a mix of that and lowercase (`comment_on_posts`).
+      // The previous normalisation only derived snake_case and camelCase, so a
+      // lowercase key never produced the uppercase form the payload actually
+      // uses — every lookup fell through to `undefined`, which is not `true`,
+      // so every supervised action read as blocked regardless of what the
+      // guardian had enabled.
       const snakeKey = controlKey.replace(/([A-Z])/g, '_$1').toLowerCase();
+      const screamingKey = snakeKey.toUpperCase();
       const camelKey = controlKey.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
 
       const val =
         supervisionPermissions[controlKey] ??
+        supervisionPermissions[screamingKey] ??
         supervisionPermissions[snakeKey] ??
         supervisionPermissions[camelKey];
 
@@ -186,7 +196,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const assertSupervisionPermission = useCallback(
     (controlKey: string, allowedAction: () => void) => {
       if (!checkSupervisionPermission(controlKey)) {
-        showCentralToast({ message: 'Your parent did not give permission for this feature.', type: 'error' });
+        showCentralToast({ message: supervisionBlockedMessage(controlKey), type: 'error' });
         return;
       }
       allowedAction();
