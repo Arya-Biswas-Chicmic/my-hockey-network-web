@@ -4,6 +4,7 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Configured the Teams add icon (`+`) on the profile page's Career tab to change dynamically to a close/cancel icon (`X`) when the add-team form is open.
 - Styled the outer container of the Guardian Requests tab on the profile page to use the same `rounded-lg border border-auth-stroke bg-auth-field p-5 text-foreground` styles as the Career tab, matching the design theme exactly.
 - Cleared the search bar automatically after successfully creating a new post from the home feed so that the user's new post is visible in the unfiltered feed.
 - Fixed the right sidebar search loading skeleton flash when typing. Sourced the `hasInitialLoaded` status in `useHomeFeed` to ensure the full-page layout skeleton does not unmount the page layout and search widgets during subsequent queries/filtering.
