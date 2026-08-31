@@ -2,7 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { getSupervisionControls, updateSupervisionControls, type SupervisionControlItem } from '@my-hockey-network/core';
-import { SupervisionControlKeyEnum, ToastTypeEnum } from '@my-hockey-network/contracts';
+import { SupervisionControlKeyEnum, ToastTypeEnum, VisibilityAudienceEnum } from '@my-hockey-network/contracts';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@my-hockey-network/constants';
 
 import { extractErrorMessage } from '@/utils/toast';
@@ -79,10 +79,15 @@ export function useSupervisionPermissions(showToast: (message: string, type: Toa
     sharePosts: true,
   });
 
+  // Enum values, not display labels: whatever sits in this state is what gets
+  // sent to `updateSupervisionControls`, so a label default ('Everyone') would
+  // be posted verbatim if a parent changed a different control before the real
+  // ones loaded. Labels are resolved at render time from
+  // `VISIBILITY_AUDIENCE_LABELS`.
   const [networkPermissions, setNetworkPermissions] = useState<PermissionState>({
     followOthers: true,
-    whoCanFollowThem: 'Everyone',
-    whoCanSendRequests: 'Everyone',
+    whoCanFollowThem: VisibilityAudienceEnum.HOCKEY_NETWORK,
+    whoCanSendRequests: VisibilityAudienceEnum.HOCKEY_NETWORK,
     acceptRequests: true,
   });
 
@@ -90,7 +95,7 @@ export function useSupervisionPermissions(showToast: (message: string, type: Toa
     sendMessages: true,
     receiveMessages: true,
     createGroupChats: false,
-    whoCanMessageThem: 'Connections Only',
+    whoCanMessageThem: VisibilityAudienceEnum.CONNECTIONS,
   });
 
   const [notificationPermissions, setNotificationPermissions] = useState<PermissionState>({

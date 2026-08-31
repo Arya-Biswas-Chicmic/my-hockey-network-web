@@ -1,4 +1,6 @@
 import React from 'react';
+import { supervisionBlockedMessage } from '@my-hockey-network/domain';
+import { PermissionControlKey } from '@my-hockey-network/contracts';
 import { FallbackImage } from '@/components/ui/fallback-image';
 import { Button } from '@/components/common/Button';
 import { FollowSuggestionUser } from '@/types/home.types';
@@ -7,6 +9,8 @@ import { useProfileClickHandler } from '@/hooks/use-profile-click';
 export interface FollowSuggestionItemProps {
   user: FollowSuggestionUser;
   onFollow: (user: FollowSuggestionUser) => void;
+  /** Whether a guardian permits following. Blocked follows explain on click. */
+  canFollow?: boolean;
   isFollowing?: boolean;
   isLoading?: boolean;
 }
@@ -14,6 +18,7 @@ export interface FollowSuggestionItemProps {
 export const FollowSuggestionItem: React.FC<FollowSuggestionItemProps> = ({
   user,
   onFollow,
+  canFollow = true,
   isFollowing = false,
   isLoading = false,
 }) => {
@@ -46,7 +51,8 @@ export const FollowSuggestionItem: React.FC<FollowSuggestionItemProps> = ({
       <Button
         disabled={isFollowing || isLoading}
         onClick={() => onFollow(user)}
-        className="mhn-who-to-follow-btn"
+        className={`mhn-who-to-follow-btn ${!canFollow ? 'mhn-action-item-blocked' : ''}`}
+        title={!canFollow ? supervisionBlockedMessage(PermissionControlKey.FOLLOW_OTHERS) : undefined}
       >
         {isFollowing ? 'Following' : 'Follow'}
       </Button>

@@ -1,4 +1,6 @@
 import { Button } from '@/components/common/Button';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { PermissionControlKey } from '@my-hockey-network/contracts';
 import { Input } from '@/components/common/FormControls';
 import React, { useState } from 'react';
 import { getComments, addComment, type PostCommentItem } from '@my-hockey-network/core';
@@ -214,7 +216,11 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
         </div>
       )}
 
-      {/* Figma Styled Comment Input Form */}
+      {/* Figma Styled Comment Input Form. Wrapped in the shared gate: a child
+          whose guardian has not enabled commenting previously got a fully
+          working composer that only failed on submit, after they had typed the
+          whole comment. The gate replaces it with the reason up front. */}
+      <PermissionGate control={PermissionControlKey.COMMENT_ON_POSTS} blockedAs="notice">
       <Form methods={commentForm} className="mhn-comment-input-form flex items-center gap-2" onSubmit={handleCommentSubmit} noValidate>
         <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-slate-800">
           <FallbackImage
@@ -261,6 +267,7 @@ export const PostCommentSection: React.FC<PostCommentSectionProps> = ({
           </div>
         </div>
       </Form>
+      </PermissionGate>
     </div>
   );
 };

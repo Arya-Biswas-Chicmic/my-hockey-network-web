@@ -32,10 +32,20 @@ export const FeedPermissionBanner: React.FC<FeedPermissionBannerProps> = ({
 
   if (permissions.allowed || !permissions.message) return null;
 
+  // This banner is for blocks the user can act on. The domain gives exactly the
+  // three actionable reasons a CTA (UNAUTHENTICATED → Sign In,
+  // PROFILE_INCOMPLETE → Complete Profile, GUARDIAN_APPROVAL_REQUIRED → Check
+  // Approval) and deliberately gives SUPERVISION_CONTROL_RESTRICTED none —
+  // nothing the child does will lift a parent's setting. Those are explained
+  // where the blocked content would be (`PermissionCard` / `PermissionNotice`),
+  // so surfacing them here too just repeated the same sentence twice on one
+  // screen.
+  if (!permissions.ctaAction) return null;
+
   return (
     <PendingBanner
       message={permissions.message}
-      actionText={permissions.ctaText || 'Complete Profile'}
+      actionText={permissions.ctaText ?? undefined}
       onActionClick={() => {
         if (permissions.ctaAction === 'COMPLETE_PROFILE' && onCompleteProfile) {
           onCompleteProfile();

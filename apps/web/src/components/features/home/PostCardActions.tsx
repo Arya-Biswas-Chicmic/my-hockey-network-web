@@ -1,4 +1,6 @@
 import { Button } from '@/components/common/Button';
+import { supervisionBlockedMessage } from '@my-hockey-network/domain';
+import { PermissionControlKey } from '@my-hockey-network/contracts';
 import { Spinner } from '@/components/common/Spinner';
 import { PostCommentSection } from '@/components/features/home/PostCommentSection';
 import {
@@ -11,9 +13,8 @@ import {
   RepostMenuRepostIcon,
   RepostMenuQuoteIcon,
 } from '@/components/icons/FeedActionIcons';
-import { LockKeyhole } from 'lucide-react';
 import { useState } from 'react';
-import { showInfoToast } from '@/utils/toast';
+import { showErrorToast, showInfoToast } from '@/utils/toast';
 import { formatCompactNumber } from '@/helpers/formatters';
 
 export interface PostCardActionsProps {
@@ -72,31 +73,31 @@ export function PostCardActions({
           <Button
             onClick={onLike}
             disabled={isLiking}
-            className="mhn-action-item"
-            aria-label="Like post"
-            title={!canReact ? 'Parent did not give permission' : undefined}
+            className={`mhn-action-item ${!canReact ? 'mhn-action-item-blocked' : ''}`}
+            aria-label={
+              canReact
+                ? 'Like post'
+                : `Like post — ${supervisionBlockedMessage(PermissionControlKey.REACT_TO_POSTS)}`
+            }
+            title={!canReact ? supervisionBlockedMessage(PermissionControlKey.REACT_TO_POSTS) : undefined}
           >
-            {!canReact ? (
-              <LockKeyhole size={16} className="text-slate-500" aria-hidden="true" />
-            ) : (
-              <span className={`mhn-like-badge ${isLiked ? 'mhn-like-badge-active' : ''}`}>
-                <FeedLikeSparkIcon size={12} aria-hidden="true" />
-              </span>
-            )}
+            <span className={`mhn-like-badge ${isLiked ? 'mhn-like-badge-active' : ''}`}>
+              <FeedLikeSparkIcon size={12} aria-hidden="true" />
+            </span>
             <span className="mhn-action-count">{formatCompactNumber(likes)}</span>
           </Button>
 
           <Button
             onClick={onToggleComments}
-            className={`mhn-action-item ${showComments ? 'mhn-action-item-active' : ''}`}
-            aria-label="Toggle comments"
-            title={!canComment ? 'Parent did not give permission' : undefined}
+            className={`mhn-action-item ${showComments ? 'mhn-action-item-active' : ''} ${!canComment ? 'mhn-action-item-blocked' : ''}`}
+            aria-label={
+              canComment
+                ? 'Toggle comments'
+                : `Comments — ${supervisionBlockedMessage(PermissionControlKey.COMMENT_ON_POSTS)}`
+            }
+            title={!canComment ? supervisionBlockedMessage(PermissionControlKey.COMMENT_ON_POSTS) : undefined}
           >
-            {!canComment ? (
-              <LockKeyhole size={16} className="text-slate-500" aria-hidden="true" />
-            ) : (
-              <FeedCommentIcon size={16} className="comment-count-icon text-slate-400" aria-hidden="true" />
-            )}
+            <FeedCommentIcon size={16} className="comment-count-icon text-slate-400" aria-hidden="true" />
             <span className="mhn-action-count">{formatCompactNumber(currentCommentsCount)}</span>
           </Button>
 
@@ -105,15 +106,17 @@ export function PostCardActions({
               <Button
                 onClick={onRepostButtonClick}
                 disabled={isSharing}
-                className={`mhn-action-item ${hasReposted ? 'mhn-action-item-reposted' : ''}`}
-                aria-label="Repost"
+                className={`mhn-action-item ${hasReposted ? 'mhn-action-item-reposted' : ''} ${!canShare ? 'mhn-action-item-blocked' : ''}`}
+                aria-label={
+                  canShare
+                    ? 'Repost'
+                    : `Repost — ${supervisionBlockedMessage(PermissionControlKey.SHARE_POSTS)}`
+                }
                 aria-haspopup="menu"
                 aria-expanded={isRepostMenuOpen}
-                title={!canShare ? 'Parent did not give permission' : hasReposted ? 'Undo Repost' : 'Repost or Quote'}
+                title={!canShare ? supervisionBlockedMessage(PermissionControlKey.SHARE_POSTS) : hasReposted ? 'Undo Repost' : 'Repost or Quote'}
               >
-                {!canShare ? (
-                  <LockKeyhole size={16} className="text-slate-500" aria-hidden="true" />
-                ) : isSharing ? (
+                {isSharing ? (
                   <Spinner size="sm" color="#10B981" />
                 ) : (
                   <FeedRepostIcon
@@ -148,11 +151,24 @@ export function PostCardActions({
         </div>
 
         <div className="mhn-post-actions-group-right">
+          {/* Sending a post externally is sharing, so it is governed by the same
+              SHARE_POSTS control as the repost button above — it was previously
+              the one share action a guardian could not restrict. Follows the
+              same pattern as the others: real icon kept, dimmed, not disabled,
+              with the reason toasted on click. */}
           <Button
-            onClick={() => showInfoToast('Sharing posts externally is not available yet.')}
-            className="mhn-action-item mhn-action-icon-only"
-            aria-label="Send post"
-            title="Send"
+            onClick={() =>
+              canShare
+                ? showInfoToast('Sharing posts externally is not available yet.')
+                : showErrorToast(supervisionBlockedMessage(PermissionControlKey.SHARE_POSTS))
+            }
+            className={`mhn-action-item mhn-action-icon-only ${!canShare ? 'mhn-action-item-blocked' : ''}`}
+            aria-label={
+              canShare
+                ? 'Send post'
+                : `Send post — ${supervisionBlockedMessage(PermissionControlKey.SHARE_POSTS)}`
+            }
+            title={!canShare ? supervisionBlockedMessage(PermissionControlKey.SHARE_POSTS) : 'Send'}
           >
             <FeedShareIcon size={18} aria-hidden="true" />
           </Button>

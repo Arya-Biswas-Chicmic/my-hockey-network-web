@@ -136,6 +136,22 @@ export function evaluateFeedPermissions(
   };
 }
 
+/**
+ * Whether the user may see feed posts at all.
+ *
+ * `evaluateFeedPermissions` already returns `allowed: false` for a disabled
+ * `VIEW_FEED` control, but nothing consumed that as a render gate — the Home
+ * screen showed the pending banner *above* a fully populated feed, so a
+ * supervised child whose guardian had turned viewing off could still read every
+ * post. This is the predicate the feed itself checks.
+ */
+export function canViewFeed(
+  user: AuthMeResponse | null,
+  controls?: Record<string, boolean | string> | null
+): boolean {
+  return evaluateFeedPermissions(user, controls).allowed;
+}
+
 export function canCreatePost(
   user: AuthMeResponse | null,
   controls?: Record<string, boolean | string> | null
@@ -206,4 +222,36 @@ export function canCreateGroupChats(
   if (!evaluateFeedPermissions(user, controls).allowed) return false;
   if (controls && controls[PermissionControlKey.CREATE_GROUP_CHATS] === false) return false;
   return true;
+}
+
+/**
+ * The user-facing reason a supervised child cannot perform a given action.
+ *
+ * Kept beside the permission predicates rather than in each component so the
+ * blocked-action wording has one owner. Previously five components hardcoded
+ * "Parent did not give permission" in a `title` attribute, the auth context
+ * toasted "Your parent did not give permission for this feature.", and
+ * `useFeedPermissions` toasted `PARENT_DISABLED_FEATURE` — three different
+ * sentences for the same state.
+ */
+export const SUPERVISION_BLOCKED_MESSAGES: Partial<Record<PermissionControlKey, string>> = {
+  [PermissionControlKey.VIEW_FEED]: 'Your parent hasn’t enabled viewing the feed yet.',
+  [PermissionControlKey.CREATE_POST]: 'Your parent hasn’t enabled posting yet.',
+  [PermissionControlKey.COMMENT_ON_POSTS]: 'Your parent hasn’t enabled commenting yet.',
+  [PermissionControlKey.REACT_TO_POSTS]: 'Your parent hasn’t enabled reactions yet.',
+  [PermissionControlKey.SHARE_POSTS]: 'Your parent hasn’t enabled sharing yet.',
+  [PermissionControlKey.FOLLOW_OTHERS]: 'Your parent hasn’t enabled following others yet.',
+  [PermissionControlKey.SEND_MESSAGES]: 'Your parent hasn’t enabled messaging yet.',
+  [PermissionControlKey.CREATE_GROUP_CHATS]: 'Your parent hasn’t enabled group chats yet.',
+};
+
+/** Fallback for a control with no specific copy. */
+export const SUPERVISION_BLOCKED_FALLBACK = 'Your parent/guardian has disabled this feature.';
+
+/** The message to show when `control` is blocked for a supervised child. */
+export function supervisionBlockedMessage(control: PermissionControlKey | string): string {
+  return (
+    SUPERVISION_BLOCKED_MESSAGES[control as PermissionControlKey] ??
+    SUPERVISION_BLOCKED_FALLBACK
+  );
 }

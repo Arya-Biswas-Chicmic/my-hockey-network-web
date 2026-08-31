@@ -1697,8 +1697,8 @@
 
 /* --- 2. Pending Guardian Notice Banner --- */
 .mhn-pending-banner {
-  background-color: #ebf4ff;
-  border-bottom: 1px solid #d0e2ff;
+  background-color: var(--color-accent-surface);
+  border-bottom: 1px solid var(--color-accent);
   padding: 12px 24px;
   display: flex;
   align-items: center;
@@ -1724,13 +1724,13 @@
   font-size: 16px;
   font-weight: 400;
   line-height: 22px;
-  color: #354766;
+  color: var(--color-accent-foreground);
 }
 
 .mhn-pending-banner-action {
   background: none;
   border: none;
-  color: #0057C2;
+  color: var(--color-auth-action);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -8408,6 +8408,121 @@
   background-size: 200% 100%;
   animation: mhnShimmer 1.5s infinite linear;
   border-radius: 8px;
+}
+
+/* --- Supervision permission card (PermissionCard.tsx) -----------------------
+   Same anatomy as `.mhn-server-down-modal` (pill / icon circle / title /
+   description / action) so the two read as one family, but in the accent
+   palette rather than destructive: a guardian restriction is a normal state of
+   the app, not an error. Rendered inline, not as an overlay, for the same
+   reason. */
+.mhn-permission-card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 44px 36px;
+  max-width: 520px;
+  width: 100%;
+  margin: 24px auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mhn-permission-card-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--color-accent-surface);
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent-foreground);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  letter-spacing: 0.04em;
+  margin-bottom: 24px;
+}
+
+.mhn-permission-card-icon-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+  color: var(--color-accent-foreground);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.mhn-permission-card-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--color-foreground);
+  margin: 0 0 12px 0;
+  letter-spacing: -0.02em;
+}
+
+.mhn-permission-card-description {
+  font-size: 15px;
+  color: var(--color-muted-foreground);
+  margin: 0;
+  line-height: 1.6;
+  max-width: 420px;
+}
+
+.mhn-permission-card-btn {
+  margin-top: 32px;
+  min-height: 44px;
+  padding: 0 24px;
+  border-radius: 8px;
+  background-color: var(--color-auth-action);
+  color: var(--color-primary-foreground);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.mhn-permission-card-btn:hover {
+  background-color: var(--color-primary-hover);
+}
+
+/* --- Supervision permission notice (PermissionGate.tsx) ---------------------
+   Inline "your parent hasn't enabled this" panel shown in place of a blocked
+   action. Token-driven, so it reads correctly in both themes. */
+.mhn-permission-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-secondary);
+  color: var(--color-muted-foreground);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.mhn-permission-notice-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+/* A supervised action the guardian has not enabled. The control keeps its own
+   icon — a like still looks like a like — rather than being swapped for a
+   padlock that hid what the button actually was.
+
+   Deliberately NOT `disabled`: the click handler already toasts the reason, and
+   a disabled button is removed from the tab order and (via the Button
+   primitive's `disabled:pointer-events-none`) suppresses its own tooltip, so a
+   child would be blocked with no way to find out why. Dimmed to signal the
+   state; still focusable, hoverable, and clickable. */
+.mhn-action-item-blocked {
+  opacity: 0.5;
 }
 
 /* --- Branded global loader (BrandLoader.tsx) ---------------------------------
