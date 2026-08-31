@@ -250,22 +250,25 @@ export const ProfilePage: React.FC<PageProps> = ({
     void childApprovals.handleDeclineApprovalItem(id);
   };
 
-  const handleOpenApproveModal = (targetName: string, code: string) => {
+  const handleOpenGuardianApprovalModal = (
+    targetName: string,
+    action: "approve" | "decline",
+    code = "",
+  ) => {
     guardianApproval.setGuardianApprovalModalConfig({
       isOpen: true,
       targetName,
       code,
-      action: "approve",
+      action,
     });
   };
 
+  const handleOpenApproveModal = (targetName: string, code: string) => {
+    handleOpenGuardianApprovalModal(targetName, "approve", code);
+  };
+
   const handleOpenDeclineModal = (targetName: string) => {
-    guardianApproval.setGuardianApprovalModalConfig({
-      isOpen: true,
-      targetName,
-      code: "",
-      action: "decline",
-    });
+    handleOpenGuardianApprovalModal(targetName, "decline");
   };
 
   return (

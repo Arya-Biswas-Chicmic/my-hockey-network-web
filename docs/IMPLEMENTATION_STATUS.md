@@ -4,6 +4,7 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Unified the state configuration logic of `handleOpenApproveModal` and `handleOpenDeclineModal` on the profile page into a single, reusable `handleOpenGuardianApprovalModal` function.
 - Extracted all remaining inline handlers of `ProfileChildApprovalsTab` (`onApprove`, `onDecline`, `onOpenApproveModal`, `onOpenDeclineModal`) to dedicated, component-scoped helper functions in `profile-page.tsx` for cleaner JSX structure.
 - Extracted the inline `onDeclineByCode` handler inside `ProfileChildApprovalsTab` to a dedicated, component-scoped `handleDeclineChildRequestByCode` function in `profile-page.tsx` for cleaner JSX structure.
 - Configured the Teams add icon (`+`) on the profile page's Career tab to change dynamically to a close/cancel icon (`X`) when the add-team form is open.
