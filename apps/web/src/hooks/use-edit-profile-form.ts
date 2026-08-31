@@ -6,7 +6,7 @@ import { resolveMediaUrl } from '@/utils/mediaUtils';
 import type { AuthMeResponse } from '@my-hockey-network/contracts';
 import { QueryKeys } from '@my-hockey-network/contracts';
 import { editProfileFormSchema, type EditProfileFormValues } from '@my-hockey-network/validation';
-import { globalQueryClient } from '@/query';
+import { globalQueryClient, invalidateQueryPrefix } from '@/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
 
@@ -69,6 +69,7 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
         shootsCatches: String(profRecord.shootsCatches || profRecord.shoots || ''),
         jerseyNumber: profRecord.jerseyNumber !== null && profRecord.jerseyNumber !== undefined ? String(profRecord.jerseyNumber) : '',
         genderCategory: String(profRecord.genderCategory || profRecord.gender || ''),
+        height: String(profRecord.height || ''),
         preferredLanguage: String(profRecord.preferredLanguage || 'en'),
         defaultVisibility: String(profRecord.defaultVisibility || 'CONNECTIONS'),
         avatarUrl: resolveMediaUrl(profRecord.avatarUrl as string | undefined, '/userPlaceholder.webp'),
@@ -103,7 +104,7 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
         freshData = extractProfileValues(profileData || user);
       }
 
-      void globalQueryClient.invalidateQueries({ queryKey: [QueryKeys.USER_PROFILE] });
+      void invalidateQueryPrefix(globalQueryClient, QueryKeys.USER_PROFILE);
       form.reset(freshData);
       setSaveSuccessMsg('Profile updated successfully!');
       window.setTimeout(() => {

@@ -59,6 +59,7 @@ export interface UpdateProfileDTO {
   shootsCatches?: string;
   jerseyNumber?: number;
   genderCategory?: string;
+  height?: string;
   avatarUrl?: string;
   avatarKey?: string;
   coverImageKey?: string;

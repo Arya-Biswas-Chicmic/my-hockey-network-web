@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { QueryKeys, type AuthMeResponse } from '@my-hockey-network/contracts';
 import { ERROR_MESSAGES } from '@my-hockey-network/constants';
-import { globalQueryClient } from '@/query';
+import { globalQueryClient, invalidateQueryPrefix } from '@/query';
 import { showErrorToast } from '@/utils/toast';
 import { useUpdateProfileMutation } from '@/hooks/use-update-profile';
 import type { EditProfileFormData } from '@/components/features/profile';
@@ -44,6 +44,7 @@ export function useProfileAboutSave({ setUserProfile, loadAuthMe }: UseProfileAb
         setUserProfile(res);
       }
       await loadAuthMe(true, true);
+      void invalidateQueryPrefix(globalQueryClient, QueryKeys.USER_PROFILE);
       setIntroSaveMsg('Intro saved successfully!');
       setTimeout(() => setIntroSaveMsg(null), 3000);
     } catch (err: unknown) {
@@ -65,6 +66,7 @@ export function useProfileAboutSave({ setUserProfile, loadAuthMe }: UseProfileAb
         setUserProfile(res);
       }
       await loadAuthMe(true, true);
+      void invalidateQueryPrefix(globalQueryClient, QueryKeys.USER_PROFILE);
       setDetailsSaveMsg('Personal details saved successfully!');
       setTimeout(() => setDetailsSaveMsg(null), 3000);
     } catch (err: unknown) {
@@ -101,6 +103,7 @@ export function useProfileAboutSave({ setUserProfile, loadAuthMe }: UseProfileAb
       shootsCatches: data?.shootsCatches || undefined,
       jerseyNumber: data?.jerseyNumber !== '' && data?.jerseyNumber !== null && data?.jerseyNumber !== undefined ? Number(data?.jerseyNumber) : undefined,
       genderCategory: data?.genderCategory || undefined,
+      height: data?.height || undefined,
       avatarKey: avatarKeyToSend,
       avatarUrl: avatarUrlToSend,
     };
@@ -110,6 +113,7 @@ export function useProfileAboutSave({ setUserProfile, loadAuthMe }: UseProfileAb
       if (res) {
         setUserProfile(res);
         void globalQueryClient.invalidateQueries({ queryKey: [QueryKeys.AUTH_ME] });
+        void invalidateQueryPrefix(globalQueryClient, QueryKeys.USER_PROFILE);
         await loadAuthMe(true, true);
         return res;
       }

@@ -28,3 +28,13 @@ export const LANGUAGE_OPTIONS = [
   { value: 'nl', label: 'Dutch (Nederlands)' },
   { value: 'sv', label: 'Swedish (Svenska)' },
 ] as const;
+
+export const HEIGHT_OPTIONS = Array.from({ length: 37 }, (_, i) => {
+  const inches = i + 48; // 48 inches = 4 feet
+  const feet = Math.floor(inches / 12);
+  const remainingInches = inches % 12;
+  const value = `${feet}' ${remainingInches}"`;
+  const label = `${feet}'${remainingInches}"`;
+  return { value, label };
+});
+

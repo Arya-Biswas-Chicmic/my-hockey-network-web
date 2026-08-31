@@ -4,6 +4,9 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Converted the previously read-only, disabled Height field in the Edit Profile modal to a dropdown `FormSelect` using static height choices from 4'0" to 7'0" (covering teen to adult ranges).
+- Updated backend API payloads, form schemas, and contracts (`AuthMeResponse['profile']`, `UpdateProfileDTO`, and `editProfileFormSchema`) to fully support editing and saving of player height.
+- Configured automated invalidation of the `USER_PROFILE` query cache on all profile-saving actions to ensure live details update immediately across the UI.
 - Removed mock career data from the Profile "Career" tab, replacing the `demoCareerEntries` fallback with a direct map over live `careerEntries` (displaying an empty state when none exist).
 - Re-wired the Profile "Child Requests" tab (for parent accounts) to use the exact same `useSupervisionRequests` API flow and shared modal states (`handleApproveCodeSubmit`, `handleDeclineCodeSubmit`) as the Supervision section's "Requested" tab.
 - Removed the standalone `use-child-approvals.ts` hook and redundant `childApprovalModalConfig` state entirely, opting for a clean reuse of the existing profile-level approval modal instead.

@@ -10,7 +10,7 @@ import { Spinner } from '@/components/common/Spinner';
 import { DiscardChangesDialog } from '@/components/features/profile/DiscardChangesDialog';
 import { FormInput, FormSelect, FormTextarea } from '@/components/form/fields';
 import { Form } from '@/components/ui/form';
-import { POSITION_OPTIONS, SHOOTS_OPTIONS } from '@/config/profile-options';
+import { HEIGHT_OPTIONS, POSITION_OPTIONS, SHOOTS_OPTIONS } from '@/config/profile-options';
 import { useEditProfileForm, type EditProfileFormData } from '@/hooks/use-edit-profile-form';
 import { useReferenceData } from '@/hooks/use-reference-data';
 
@@ -73,7 +73,26 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
           {isPlayer ? (
             <>
-              <div className="grid grid-cols-2 gap-3"><div className={fieldContainerClassName}><label className="auth-label" htmlFor="profile-height">Height</label><Input id="profile-height" value={heightDisplay} readOnly disabled className={`${fieldClassName} cursor-not-allowed opacity-70`} /></div><div className={fieldContainerClassName}><label className="auth-label" htmlFor="profile-weight">Weight</label><Input id="profile-weight" value={weightDisplay} readOnly disabled className={`${fieldClassName} cursor-not-allowed opacity-70`} /></div></div>
+              <div className="grid grid-cols-2 gap-3">
+                <FormSelect<EditProfileFormValues, 'height'>
+                  name="height"
+                  label="Height"
+                  options={[...HEIGHT_OPTIONS]}
+                  selectClassName={fieldClassName}
+                  containerClassName={fieldContainerClassName}
+                  errorClassName="text-xs text-destructive"
+                />
+                <div className={fieldContainerClassName}>
+                  <label className="auth-label" htmlFor="profile-weight">Weight</label>
+                  <Input
+                    id="profile-weight"
+                    value={weightDisplay}
+                    readOnly
+                    disabled
+                    className={`${fieldClassName} cursor-not-allowed opacity-70`}
+                  />
+                </div>
+              </div>
               <FormSelect<EditProfileFormValues, 'position'> name="position" label="Position" options={positions.length ? positions : [...POSITION_OPTIONS]} selectClassName={fieldClassName} containerClassName={fieldContainerClassName} errorClassName="text-xs text-destructive" />
               <FormSelect<EditProfileFormValues, 'shootsCatches'> name="shootsCatches" label="Shoots / Catches" options={SHOOTS_OPTIONS} selectClassName={fieldClassName} containerClassName={fieldContainerClassName} errorClassName="text-xs text-destructive" />
               <FormInput<EditProfileFormValues, 'jerseyNumber'> name="jerseyNumber" label="Jersey Number" type="number" min="0" max="99" inputClassName={fieldClassName} containerClassName={fieldContainerClassName} errorClassName="text-xs text-destructive" disableAutoSanitize />
