@@ -14,7 +14,10 @@ import { ProfileTabEnum } from "@my-hockey-network/contracts";
 import { ApprovalCodeModal } from "@/components/supervision/ApprovalCodeModal";
 import { ProfileGuardianRequestsTab } from "@/components/features/profile/ProfileGuardianRequestsTab";
 import { ProfileChildApprovalsTab } from "@/components/features/profile/ProfileChildApprovalsTab";
-import { usePendingGuardianInvites, usePendingGuardianRequests } from "@/hooks/use-guardian-relationships";
+import {
+  usePendingGuardianInvites,
+  usePendingGuardianRequests,
+} from "@/hooks/use-guardian-relationships";
 import { useSupervisionRequests } from "@/hooks/use-supervision-requests";
 import { isMinorPlayerUser, isParentUser } from "@my-hockey-network/domain";
 import { paths } from "@/constants/paths";
@@ -119,11 +122,11 @@ export const ProfilePage: React.FC<PageProps> = ({
     setActiveProfileTab(tab);
     profileScrollRef.current?.scrollTo({ top: 0 });
     if (!onNavigate) return;
-    if (tab === ProfileTabEnum.GUARDIAN_REQUESTS) {
-      onNavigate(paths.profileGuardianRequests);
-    } else if (tab === ProfileTabEnum.CHILD_APPROVAL_REQUESTS) {
-      onNavigate(`${paths.profile}?tab=${tab}`);
-    } else if (initialProfileTab === ProfileTabEnum.GUARDIAN_REQUESTS) {
+    if (
+      tab === ProfileTabEnum.GUARDIAN_REQUESTS ||
+      tab === ProfileTabEnum.CHILD_APPROVAL_REQUESTS ||
+      initialProfileTab === ProfileTabEnum.GUARDIAN_REQUESTS
+    ) {
       onNavigate(`${paths.profile}?tab=${tab}`);
     }
   };
@@ -175,8 +178,6 @@ export const ProfilePage: React.FC<PageProps> = ({
     careerEntries,
     profileDemoData.profile,
   );
-
-
 
   const about = useProfileAboutSave({ setUserProfile, loadAuthMe });
 
@@ -234,6 +235,41 @@ export const ProfilePage: React.FC<PageProps> = ({
       handleOpenCreatePost();
     }
   }, [createPostRequestId]);
+
+  const handleDeclineChildRequestByCode = (code: string) => {
+    void childApprovals.handleDeclineCodeSubmit(code).catch((err) => {
+      console.error("Failed to decline request by code:", err);
+    });
+  };
+
+  const handleApproveChildApprovalItem = (id: string) => {
+    void childApprovals.handleApproveApprovalItem(id);
+  };
+
+  const handleDeclineChildApprovalItem = (id: string) => {
+    void childApprovals.handleDeclineApprovalItem(id);
+  };
+
+  const handleOpenGuardianApprovalModal = (
+    targetName: string,
+    action: "approve" | "decline",
+    code = "",
+  ) => {
+    guardianApproval.setGuardianApprovalModalConfig({
+      isOpen: true,
+      targetName,
+      code,
+      action,
+    });
+  };
+
+  const handleOpenApproveModal = (targetName: string, code: string) => {
+    handleOpenGuardianApprovalModal(targetName, "approve", code);
+  };
+
+  const handleOpenDeclineModal = (targetName: string) => {
+    handleOpenGuardianApprovalModal(targetName, "decline");
+  };
 
   return (
     <div className="mhn-profile-page-root">
@@ -357,13 +393,13 @@ export const ProfilePage: React.FC<PageProps> = ({
                       isLoading={childApprovals.isRequestsLoading}
                       actionLoading={childApprovals.requestActionLoading}
                       notice={childApprovals.requestNotice}
-                      onApprove={(id) => void childApprovals.handleApproveApprovalItem(id)}
-                      onDecline={(id) => void childApprovals.handleDeclineApprovalItem(id)}
+                      onApprove={handleApproveChildApprovalItem}
+                      onDecline={handleDeclineChildApprovalItem}
                       guardianRequestsQuery={guardianRequestsQuery}
                       isGuardianProcessing={guardianApproval.isProcessing}
-                      onDeclineByCode={(code) => void childApprovals.handleDeclineCodeSubmit(code).catch((err) => console.error("Failed to decline request by code:", err))}
-                      onOpenApproveModal={(targetName, code) => guardianApproval.setGuardianApprovalModalConfig({ isOpen: true, targetName, code, action: "approve" })}
-                      onOpenDeclineModal={(targetName) => guardianApproval.setGuardianApprovalModalConfig({ isOpen: true, targetName, code: "", action: "decline" })}
+                      onDeclineByCode={handleDeclineChildRequestByCode}
+                      onOpenApproveModal={handleOpenApproveModal}
+                      onOpenDeclineModal={handleOpenDeclineModal}
                     />
                   )}
               </div>
@@ -402,7 +438,9 @@ export const ProfilePage: React.FC<PageProps> = ({
         onClose={guardianApproval.closeApprovalModal}
         onSubmit={async (code) => {
           if (activeProfileTab === ProfileTabEnum.CHILD_APPROVAL_REQUESTS) {
-            if (guardianApproval.guardianApprovalModalConfig.action === "approve") {
+            if (
+              guardianApproval.guardianApprovalModalConfig.action === "approve"
+            ) {
               await childApprovals.handleApproveCodeSubmit(code);
             } else {
               await childApprovals.handleDeclineCodeSubmit(code);

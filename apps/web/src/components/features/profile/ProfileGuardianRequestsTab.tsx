@@ -31,7 +31,7 @@ export function ProfileGuardianRequestsTab({
 }: Readonly<ProfileGuardianRequestsTabProps>) {
 
   return (
-    <div className="mhn-posts-container-card mhn-p-24">
+    <div className="rounded-lg border border-auth-stroke bg-auth-field p-5 text-foreground">
       <div className="mhn-posts-header-bar mhn-mb-20">
         <h3 className="mhn-posts-title">Pending Guardian Invites</h3>
       </div>
