@@ -40,6 +40,8 @@ function OtherUserProfileContent({ target }: Readonly<{ target: OtherProfileClic
   const location = demo?.city || target.location || '';
   const roleSubtitle = teamName ? `${roleTag} • @${teamName}` : roleTag;
   const age = demo?.dateOfBirth ? calculateAge(demo.dateOfBirth) : null;
+  const roleUpper = roleTag.toUpperCase();
+  const isPlayer = roleUpper === 'PLAYER' || roleUpper.includes('PLAYER') || roleUpper.includes('CENTER') || roleUpper.includes('WING') || roleUpper.includes('DEFENSE') || roleUpper.includes('GOALTENDER');
 
   const [isFollowing, setIsFollowing] = useState(Boolean(demo?.isFollowing));
 
@@ -95,6 +97,9 @@ function OtherUserProfileContent({ target }: Readonly<{ target: OtherProfileClic
           onProfileTabChange={setActiveTab}
           canViewGuardianInvites={false}
           hideCareerTab
+          bio={demo?.bio || ''}
+          city={location}
+          isPlayer={isPlayer}
           otherProfileActions={
             isFollowing ? (
               <Button variant="solid" onClick={handleMessageClick} className="h-9 w-full py-0 text-sm">Message</Button>

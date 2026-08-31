@@ -4,6 +4,10 @@ Last reviewed: 2026-08-31
 
 ## Completed
 
+- Tailored `ProfileHeroCard` layout to differentiate players from parents/guardians: players show a 6-item grid (AGE, DOB, HEIGHT, WEIGHT, POSITION, SHOOTS) while non-players show a 2-column grid containing only AGE and DOB.
+- Integrated the user's bio and city/location directly in the profile hero identity section for both players and parents/guardians.
+- Refactored profile submission in `useEditProfileForm` hook to use TanStack Query's `useMutation`, cleaning up manual promise handling and try/catch logic.
+- Fixed a modal layout flicker bug during Edit Profile saves: introduced an `isSuccess` guard in `useEditProfileForm` to prevent the form-sync `useEffect` from instantly clearing the success message when the parent `user` state updates.
 - Converted the previously read-only, disabled Height field in the Edit Profile modal to a dropdown `FormSelect` using static height choices from 4'0" to 7'0" (covering teen to adult ranges).
 - Updated backend API payloads, form schemas, and contracts (`AuthMeResponse['profile']`, `UpdateProfileDTO`, and `editProfileFormSchema`) to fully support editing and saving of player height.
 - Configured automated invalidation of the `USER_PROFILE` query cache on all profile-saving actions to ensure live details update immediately across the UI.

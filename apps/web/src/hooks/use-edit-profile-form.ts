@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 import { resolveMediaUrl } from '@/utils/mediaUtils';
 import type { AuthMeResponse } from '@my-hockey-network/contracts';
@@ -81,6 +82,7 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
   const [showDiscardConfirm, setShowDiscardConfirm] = useState<boolean>(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState<boolean>(false);
 
   const form = useForm<EditProfileFormValues>({
     resolver: zodResolver(editProfileFormSchema),
@@ -89,11 +91,12 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
   });
   const formData = useWatch({ control: form.control });
 
-  const submitProfile = form.handleSubmit(async (values) => {
-    setSubmissionError(null);
-
-    try {
-      const apiResponse = await onSave?.(values);
+  const saveMutation = useMutation({
+    mutationFn: async (values: EditProfileFormValues) => {
+      if (!onSave) throw new Error('Save handler is not configured.');
+      return onSave(values);
+    },
+    onSuccess: (apiResponse) => {
       let freshData: EditProfileFormData;
 
       if (apiResponse?.profile) {
@@ -105,28 +108,42 @@ export function useEditProfileForm({ isOpen, onClose, onSave, profileData }: Use
       }
 
       void invalidateQueryPrefix(globalQueryClient, QueryKeys.USER_PROFILE);
+      setIsSuccess(true);
       form.reset(freshData);
       setSaveSuccessMsg('Profile updated successfully!');
       window.setTimeout(() => {
         setSaveSuccessMsg(null);
         onClose();
       }, 1200);
-    } catch (error: unknown) {
+    },
+    onError: (error: unknown) => {
       const message = error instanceof Error ? error.message : 'Failed to update profile. Please try again.';
       setSubmissionError(message);
-    }
+    },
   });
 
-  // Sync form data whenever modal opens or user object updates
+  const submitProfile = form.handleSubmit(async (values) => {
+    setSubmissionError(null);
+    await saveMutation.mutateAsync(values);
+  });
+
+  // Sync form data whenever modal opens or user object updates, unless we just saved successfully
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isSuccess) {
       const init = extractProfileValues();
       form.reset(init);
       setSubmissionError(null);
       setSaveSuccessMsg(null);
       setShowDiscardConfirm(false);
     }
-  }, [form, isOpen, user, extractProfileValues]);
+  }, [form, isOpen, user, extractProfileValues, isSuccess]);
+
+  // Reset success state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setIsSuccess(false);
+    }
+  }, [isOpen]);
 
   const userEmail = user?.email || '';
   const userPrimaryRole = user?.primaryRole || user?.profile?.type || 'PLAYER';

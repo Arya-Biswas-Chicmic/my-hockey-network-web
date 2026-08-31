@@ -166,6 +166,8 @@ export const ProfilePage: React.FC<PageProps> = ({
     following,
     roleSubtitle,
     activeProfile,
+    liveBio,
+    isPlayer,
   } = useProfileViewModel(
     targetProfileRes,
     user,
@@ -282,6 +284,9 @@ export const ProfilePage: React.FC<PageProps> = ({
                 onProfileTabChange={handleProfileTabChange}
                 canViewGuardianInvites={canViewGuardianInvites}
                 canViewChildApprovals={canViewChildApprovals}
+                bio={liveBio}
+                city={liveCity}
+                isPlayer={isPlayer}
               />
 
               <div>

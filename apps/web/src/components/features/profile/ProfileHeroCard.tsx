@@ -53,6 +53,9 @@ export interface ProfileHeroCardProps {
    * sense for someone else's profile — the other-user popup hides this tab
    * rather than showing an "Add Team" CTA on a profile that isn't editable. */
   hideCareerTab?: boolean;
+  bio?: string;
+  city?: string;
+  isPlayer?: boolean;
 }
 
 export function formatDobDisplay(dob: string): string {
@@ -91,16 +94,24 @@ export function ProfileHeroCard({
   canViewChildApprovals = false,
   otherProfileActions,
   hideCareerTab = false,
+  bio,
+  city,
+  isPlayer = true,
 }: Readonly<ProfileHeroCardProps>) {
   const visibleTabs = hideCareerTab ? PROFILE_TABS.filter((t) => t.tab !== ProfileTabEnum.CAREER) : PROFILE_TABS;
-  const statGrid = [
-    { label: 'AGE', value: age === null ? '—' : String(age) },
-    { label: 'DOB', value: formatDobDisplay(dob) },
-    { label: 'HEIGHT', value: height || '—' },
-    { label: 'WEIGHT', value: weight || '—' },
-    { label: 'POSITION', value: position || '—' },
-    { label: 'SHOOTS', value: shoots || '—' },
-  ];
+  const statGrid = isPlayer
+    ? [
+        { label: 'AGE', value: age === null ? '—' : String(age) },
+        { label: 'DOB', value: formatDobDisplay(dob) },
+        { label: 'HEIGHT', value: height || '—' },
+        { label: 'WEIGHT', value: weight || '—' },
+        { label: 'POSITION', value: position || '—' },
+        { label: 'SHOOTS', value: shoots || '—' },
+      ]
+    : [
+        { label: 'AGE', value: age === null ? '—' : String(age) },
+        { label: 'DOB', value: formatDobDisplay(dob) },
+      ];
 
   return (
     <section className="shrink-0 overflow-hidden rounded-lg border border-auth-stroke bg-auth-field text-foreground">
@@ -136,10 +147,12 @@ export function ProfileHeroCard({
             </Button>
           </div>
           <p className="mt-2 break-words text-sm text-foreground/90">{roleSubtitle}</p>
+          {bio && <p className="mt-2 break-words text-sm text-foreground/80">{bio}</p>}
+          {city && <p className="mt-1 text-sm text-foreground/70 flex items-center gap-1">📍 {city}</p>}
         </div>
       </div>
 
-      <dl className="grid grid-cols-3 gap-1.5 px-6 max-[520px]:grid-cols-2 max-[520px]:px-4">
+      <dl className={cn("grid gap-1.5 px-6 max-[520px]:grid-cols-2 max-[520px]:px-4", isPlayer ? "grid-cols-3" : "grid-cols-2")}>
         {statGrid.map(({ label, value }) => (
           <div key={label} className="flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-lg border border-auth-stroke bg-background px-2 py-2 text-center">
             <dt className="text-[11px] font-normal leading-4 text-foreground/70">{label}</dt>
